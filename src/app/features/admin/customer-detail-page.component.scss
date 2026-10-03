@@ -108,3 +108,20 @@
   flex: 1;
   min-width: 140px;
 }
+.row.ar {
+  padding: 8px 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  .time {
+    width: 112px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+  .by {
+    max-width: 200px;
+  }
+}
+.min0 {
+  min-width: 0;
+}

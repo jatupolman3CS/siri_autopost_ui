@@ -29,6 +29,95 @@
         }
       }
     },
+    "/api/admin/health": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformHealthDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/audit": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEntryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/customers/{id}/impersonate": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/customers": {
       "get": {
         "tags": [
@@ -2353,6 +2442,82 @@
           }
         }
       },
+      "AuditAction": {
+        "enum": [
+          "plan_changed",
+          "status_changed",
+          "pause_changed",
+          "limits_changed",
+          "note_changed",
+          "device_revoked",
+          "failed_retried",
+          "refunded",
+          "payment_recorded",
+          "plan_settings_changed",
+          "promo_created",
+          "promo_toggled",
+          "impersonated"
+        ]
+      },
+      "AuditEntryDto": {
+        "required": [
+          "id",
+          "at",
+          "action",
+          "actorId",
+          "actorEmail",
+          "customerId",
+          "customerEmail",
+          "from",
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "action": {
+            "$ref": "#/components/schemas/AuditAction"
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorEmail": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "customerEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "from": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "to": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AuthResultDto": {
         "required": [
           "token",
@@ -3330,6 +3495,111 @@
           "line",
           "th"
         ]
+      },
+      "PlatformHealthDto": {
+        "required": [
+          "mrr",
+          "mrrPrev",
+          "churn",
+          "churnPrev",
+          "devicesActive",
+          "devices",
+          "successRate",
+          "successRatePrev",
+          "apiP95Ms",
+          "apiSamples",
+          "dbMs",
+          "queueDue",
+          "queueNext24h",
+          "latestExtension",
+          "onLatestExtension",
+          "errorRate24h",
+          "paymentsConnected"
+        ],
+        "type": "object",
+        "properties": {
+          "mrr": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mrrPrev": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "churn": {
+            "type": "number",
+            "format": "double"
+          },
+          "churnPrev": {
+            "type": "number",
+            "format": "double"
+          },
+          "devicesActive": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "devices": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "successRate": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "successRatePrev": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "apiP95Ms": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "apiSamples": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dbMs": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "queueDue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "queueNext24h": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "latestExtension": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "onLatestExtension": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errorRate24h": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "paymentsConnected": {
+            "type": "boolean"
+          }
+        }
       },
       "PlatformLimitsDto": {
         "required": [

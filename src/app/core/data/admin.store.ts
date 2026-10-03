@@ -1,8 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import {
   ApiAdminJob,
+  ApiAuditEntry,
   ApiCustomer,
   ApiCustomerStatus,
+  ApiHealth,
   ApiPlanSetting,
   ApiPromo,
   ApiService,
@@ -103,6 +105,10 @@ export class AdminStore {
   /** Newest posts across the platform (jobs page) and per customer (detail page). */
   readonly jobs = signal<ApiAdminJob[]>([]);
   readonly customerJobs = signal<Record<string, ApiAdminJob[]>>({});
+  /** Live KPIs and system health for the overview (null until loaded). */
+  readonly health = signal<ApiHealth | null>(null);
+  /** Activity log per customer, newest first. */
+  readonly audit = signal<Record<string, ApiAuditEntry[]>>({});
   readonly loaded = signal(false);
 
   async loadPlans(): Promise<void> {
@@ -115,14 +121,16 @@ export class AdminStore {
 
   /** Everything the admin pages show. */
   async load(): Promise<void> {
-    const [customers, tx, promos, summary, jobs] = await Promise.all([
+    const [customers, tx, promos, summary, jobs, health] = await Promise.all([
       this.api.adminCustomers(),
       this.api.adminTransactions(),
       this.api.adminPromos(),
       this.api.adminSummary(),
       this.api.adminJobs(undefined, 40),
+      this.api.adminHealth(),
       this.loadPlans(),
     ]);
+    this.health.set(health);
     this.customers.set(customers.map(toCustomer));
     this.transactions.set(tx.map(toTx));
     this.promos.set(promos.map(toPromo));
@@ -135,6 +143,11 @@ export class AdminStore {
   async loadCustomerJobs(id: string): Promise<void> {
     const list = await this.api.adminJobs(id, 8);
     this.customerJobs.update((m) => ({ ...m, [id]: list }));
+  }
+
+  async loadAudit(id: string): Promise<void> {
+    const list = await this.api.adminAudit(id, 30);
+    this.audit.update((m) => ({ ...m, [id]: list }));
   }
 
   customer(id: string): Customer | undefined {

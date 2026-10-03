@@ -135,6 +135,24 @@
           }
         </div>
       </section>
+
+      <section class="panel">
+        <h2 class="h2 mb4">{{ t().api.audit }}</h2>
+        @for (a of auditRows(); track a.id) {
+          <div class="row ar">
+            <span class="time">{{ a.time }}</span>
+            <div class="grow min0">
+              <div class="fs14 fw5">{{ a.label }}</div>
+              @if (a.detail) {
+                <div class="small ellipsis">{{ a.detail }}</div>
+              }
+            </div>
+            <span class="small muted ellipsis by">{{ a.by }}</span>
+          </div>
+        } @empty {
+          <p class="fs14 muted flush">{{ t().api.noAudit }}</p>
+        }
+      </section>
     </div>
 
     <section class="panel access">

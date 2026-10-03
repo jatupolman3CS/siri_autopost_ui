@@ -255,6 +255,12 @@ a.ext-status {
     color: var(--color-danger);
   }
 }
+.banner.assist {
+  border-color: var(--color-primary);
+  > .ph {
+    color: var(--color-primary);
+  }
+}
 .banner-text {
   flex: 1;
   min-width: 220px;

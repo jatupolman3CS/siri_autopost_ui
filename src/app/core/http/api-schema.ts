@@ -39,6 +39,116 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/admin/health': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PlatformHealthDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/audit': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          customerId?: string;
+          take?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AuditEntryDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers/{id}/impersonate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AuthResultDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/admin/customers': {
     parameters: {
       query?: never;
@@ -2242,6 +2352,36 @@ export interface components {
       autoPause: boolean;
       warmup: boolean;
     };
+    /** @enum {unknown} */
+    AuditAction:
+      | 'plan_changed'
+      | 'status_changed'
+      | 'pause_changed'
+      | 'limits_changed'
+      | 'note_changed'
+      | 'device_revoked'
+      | 'failed_retried'
+      | 'refunded'
+      | 'payment_recorded'
+      | 'plan_settings_changed'
+      | 'promo_created'
+      | 'promo_toggled'
+      | 'impersonated';
+    AuditEntryDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      at: string;
+      action: components['schemas']['AuditAction'];
+      /** Format: uuid */
+      actorId: string;
+      actorEmail: string;
+      /** Format: uuid */
+      customerId: null | string;
+      customerEmail: null | string;
+      from: null | string;
+      to: null | string;
+    };
     AuthResultDto: {
       token: string;
       /** Format: date-time */
@@ -2517,6 +2657,40 @@ export interface components {
     };
     /** @enum {unknown} */
     Platform: 'fb' | 'x' | 'ig' | 'tt' | 'line' | 'th';
+    PlatformHealthDto: {
+      /** Format: int32 */
+      mrr: number;
+      /** Format: int32 */
+      mrrPrev: number;
+      /** Format: double */
+      churn: number;
+      /** Format: double */
+      churnPrev: number;
+      /** Format: int32 */
+      devicesActive: number;
+      /** Format: int32 */
+      devices: number;
+      /** Format: double */
+      successRate: null | number;
+      /** Format: double */
+      successRatePrev: null | number;
+      /** Format: int32 */
+      apiP95Ms: null | number;
+      /** Format: int32 */
+      apiSamples: number;
+      /** Format: int32 */
+      dbMs: number;
+      /** Format: int32 */
+      queueDue: number;
+      /** Format: int32 */
+      queueNext24h: number;
+      latestExtension: null | string;
+      /** Format: int32 */
+      onLatestExtension: number;
+      /** Format: double */
+      errorRate24h: null | number;
+      paymentsConnected: boolean;
+    };
     PlatformLimitsDto: {
       /** Format: int32 */
       fb: number;

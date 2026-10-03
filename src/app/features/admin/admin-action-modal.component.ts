@@ -7,7 +7,9 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { AdminAction, AdminStore } from '../../core/data/admin.store';
+import { SessionStore } from '../../core/data/session.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
@@ -57,6 +59,8 @@ export class AdminActionModalComponent {
   readonly closed = output<void>();
 
   private readonly admin = inject(AdminStore);
+  private readonly session = inject(SessionStore);
+  private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   protected readonly t = inject(I18nService).t;
   protected readonly note = signal('');
@@ -89,7 +93,13 @@ export class AdminActionModalComponent {
     await this.admin.apply(r.id, r.action, r.tx, this.note());
     this.note.set('');
     this.closed.emit();
+    if (r.action === 'assist') {
+      // The customer's own dashboard, read-only, until the banner's "back to admin".
+      await this.session.startAssist(r.id);
+      this.notify.info(fmt(this.t().api.assistStarted, { c: c.name }));
+      void this.router.navigateByUrl('/app/overview');
+      return;
+    }
     this.notify.success(fmt(this.t().adm.done, { c: c.name, a: this.t().adm[r.action] }));
-    if (r.action === 'assist') this.notify.info(this.t().api.impersonateNote);
   }
 }

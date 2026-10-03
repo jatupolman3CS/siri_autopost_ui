@@ -1,6 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ApiCustomer, ApiTransaction } from '../http/api.service';
+import { ApiCustomer, ApiHealth, ApiTransaction } from '../http/api.service';
 import { provideApiTesting, settle } from '../../testing/api-testing';
 import { AdminStore } from './admin.store';
 
@@ -37,6 +37,26 @@ const tx = (over: Partial<ApiTransaction> = {}): ApiTransaction => ({
   ...over,
 });
 
+const HEALTH: ApiHealth = {
+  mrr: 790,
+  mrrPrev: 0,
+  churn: 0,
+  churnPrev: 0,
+  devicesActive: 1,
+  devices: 2,
+  successRate: 95,
+  successRatePrev: null,
+  apiP95Ms: 40,
+  apiSamples: 10,
+  dbMs: 1,
+  queueDue: 0,
+  queueNext24h: 3,
+  latestExtension: '2.5.0',
+  onLatestExtension: 1,
+  errorRate24h: null,
+  paymentsConnected: false,
+};
+
 describe('AdminStore', () => {
   let http: HttpTestingController;
   let admin: AdminStore;
@@ -54,6 +74,7 @@ describe('AdminStore', () => {
     http.expectOne('/api/admin/customers').flush(customers);
     http.expectOne('/api/admin/promos').flush([]);
     http.expectOne((r) => r.url === '/api/admin/jobs').flush([]);
+    http.expectOne('/api/admin/health').flush(HEALTH);
     http
       .expectOne('/api/plans')
       .flush([{ key: 'pro', price: 790, accounts: 10, posts: null, devices: 3, seats: 1 }]);
@@ -77,6 +98,28 @@ describe('AdminStore', () => {
     expect(admin.revenue()).toEqual([[2026, 8, 790]]);
     expect(admin.transactions()[0]).toMatchObject({ id: 't1', cust: 'c1', amount: 790 });
     expect(admin.loaded()).toBe(true);
+    expect(admin.health()?.latestExtension).toBe('2.5.0');
+  });
+
+  it('loads a customer activity log', async () => {
+    const done = admin.loadAudit('c1');
+    const req = http.expectOne((r) => r.url === '/api/admin/audit');
+    expect(req.request.params.get('customerId')).toBe('c1');
+    req.flush([
+      {
+        id: 'a1',
+        at: '2026-10-03T03:00:00Z',
+        action: 'impersonated',
+        actorId: 'admin',
+        actorEmail: 'admin@autopost.local',
+        customerId: 'c1',
+        customerEmail: 'mali@shop.co',
+        from: null,
+        to: null,
+      },
+    ]);
+    await done;
+    expect(admin.audit()['c1'][0].action).toBe('impersonated');
   });
 
   it('suspends a customer with the server answer', async () => {

@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { tokenStorage } from '../auth/token';
+import { AssistSession, assistStorage, tokenStorage } from '../auth/token';
 import { ApiAuthResult, ApiService, ApiUser } from '../http/api.service';
 import { PlanKey, Role } from './models';
 
@@ -9,6 +9,7 @@ import { PlanKey, Role } from './models';
 export class SessionStore {
   private readonly api = inject(ApiService);
   private readonly _user = signal<ApiUser | null>(null);
+  private readonly _assist = signal<AssistSession | null>(assistStorage.get());
 
   readonly user = this._user.asReadonly();
   readonly role = computed<Role>(() => this._user()?.role ?? 'guest');
@@ -18,6 +19,8 @@ export class SessionStore {
   readonly name = computed(() => this._user()?.name ?? '');
   readonly email = computed(() => this._user()?.email ?? '');
   readonly initials = computed(() => initialsOf(this.name() || this.email()));
+  /** Set while a platform admin sees the app as a customer (read-only, see the API). */
+  readonly assist = this._assist.asReadonly();
 
   /** Called once by the app initializer: a stored token that no longer works is dropped. */
   async restore(): Promise<void> {
@@ -25,7 +28,9 @@ export class SessionStore {
     try {
       this._user.set(await this.api.me());
     } catch {
-      tokenStorage.set(null);
+      // An expired assist session falls back to the admin's own sign-in.
+      if (this._assist()) await this.endAssist();
+      else tokenStorage.set(null);
     }
   }
 
@@ -40,7 +45,35 @@ export class SessionStore {
   /** Forgets the token; the workspace stores empty themselves when the user goes away. */
   signOut(): void {
     tokenStorage.set(null);
+    assistStorage.set(null);
+    this._assist.set(null);
     this._user.set(null);
+  }
+
+  /** The admin sees the app as this customer for an hour; their own token is kept to come back. */
+  async startAssist(customerId: string): Promise<void> {
+    const adminToken = tokenStorage.get();
+    if (!adminToken) return;
+    const r = await this.api.adminImpersonate(customerId);
+    const session = { adminToken, customerId, email: r.user.email, expiresAt: r.expiresAt };
+    assistStorage.set(session);
+    this._assist.set(session);
+    this.accept(r);
+  }
+
+  /** Back to the admin's own sign-in. Returns the customer that was being assisted. */
+  async endAssist(): Promise<string | null> {
+    const session = this._assist();
+    if (!session) return null;
+    assistStorage.set(null);
+    this._assist.set(null);
+    tokenStorage.set(session.adminToken);
+    try {
+      this._user.set(await this.api.me());
+    } catch {
+      this.signOut();
+    }
+    return session.customerId;
   }
 
   /** A paid plan records a charge (yearly = 12 months at 80%); see /api/billing/invoices. */

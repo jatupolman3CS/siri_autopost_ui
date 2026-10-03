@@ -98,6 +98,19 @@
       </button>
     </header>
 
+    @if (session.assist()) {
+      <div class="banner assist" role="status">
+        <i class="ph ph-eye"></i>
+        <div class="banner-text">
+          <div class="fw6">{{ assistTitle() }}</div>
+          <div class="muted">{{ t().api.assistBody }}</div>
+        </div>
+        <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="endAssist()">
+          {{ t().api.assistExit }}
+        </button>
+      </div>
+    }
+
     @if (!ext.online()) {
       <div class="banner">
         <i class="ph ph-wifi-slash"></i>

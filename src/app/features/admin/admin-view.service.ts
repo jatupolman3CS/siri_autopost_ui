@@ -1,10 +1,17 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { AdminStore } from '../../core/data/admin.store';
-import { Customer, CustomerStatus, LimitKey, STATUS_DOT, TxType } from '../../core/data/models';
+import {
+  Customer,
+  CustomerStatus,
+  LimitKey,
+  PlanKey,
+  STATUS_DOT,
+  TxType,
+} from '../../core/data/models';
 import { SEED } from '../../core/data/seed.data';
 import { baht, displayYear, fmtDate, hm, monthName } from '../../core/i18n/format';
-import { I18nService, ago } from '../../core/i18n/i18n.service';
-import { ApiAdminJob } from '../../core/http/api.service';
+import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
+import { ApiAdminJob, ApiAuditAction, ApiAuditEntry } from '../../core/http/api.service';
 
 export const CUSTOMER_STATUS: Record<
   CustomerStatus,
@@ -83,6 +90,35 @@ export class AdminViewService {
         canRefund: x.type === 'charge',
       }));
   });
+
+  /** One activity-log row: when, what, the values involved, and who did it. */
+  auditRow(e: ApiAuditEntry) {
+    const t = this.i18n.t();
+    const plan = (k: string | null) => (k && k in t.plans ? t.plans[k as PlanKey].name : (k ?? ''));
+    const status = (k: string | null) => {
+      const s = (k === 'past_due' ? 'pastdue' : k) as CustomerStatus | null;
+      return s && s in CUSTOMER_STATUS ? t.adm[CUSTOMER_STATUS[s][0]] : (k ?? '');
+    };
+    const detail: Partial<Record<ApiAuditAction, string>> = {
+      plan_changed: `${plan(e.from)} → ${plan(e.to)}`,
+      status_changed: `${status(e.from)} → ${status(e.to)}`,
+      pause_changed: e.to === 'paused' ? t.adm.pauseJobs : t.adm.resumeJobs,
+      limits_changed: e.to ?? '',
+      note_changed: e.to ?? '',
+      device_revoked: e.to ?? '',
+      failed_retried: e.to ?? '',
+      refunded: e.to ? baht(Number(e.to)) : '',
+      payment_recorded: e.to ? baht(Number(e.to)) : '',
+    };
+    const at = new Date(e.at);
+    return {
+      id: e.id,
+      time: `${fmtDate(at, this.i18n.li())} ${hm(at)}`,
+      label: t.api.actions[e.action],
+      detail: detail[e.action] ?? '',
+      by: fmt(t.api.auditBy, { e: e.actorEmail }),
+    };
+  }
 
   statusLabel(c: Customer): { label: string; dot: string } {
     const [key, dot] = CUSTOMER_STATUS[c.status];

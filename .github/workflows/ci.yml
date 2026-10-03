@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Angular format, build and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Prettier
+        run: npx prettier --check "src/**/*.{ts,html,scss}"
+      - name: API types match openapi.snapshot.json
+        run: npm run gen:api && git diff --exit-code src/app/core/http/api-schema.ts
+      - run: npm run build
+      - run: npx ng test --watch=false
+
+  legacy:
+    name: Legacy Vite build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: legacy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: legacy/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  docker:
+    name: Web image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t siriautopost-web .

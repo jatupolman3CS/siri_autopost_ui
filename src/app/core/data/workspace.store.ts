@@ -15,11 +15,16 @@ export class WorkspaceStore {
   readonly list = signal<Workspace[]>([]);
   readonly id = signal<string | null>(null);
   readonly current = computed(() => this.list().find((w) => w.id === this.id()) ?? null);
+  private readonly userId = computed(() => this.session.user()?.id ?? null);
 
   constructor() {
+    // Keyed on the user, not just "signed in": an admin's assist session switches users.
     effect(() => {
-      const signedIn = !this.session.isGuest();
-      untracked(() => (signedIn ? void this.load() : this.clear()));
+      const user = this.userId();
+      untracked(() => {
+        this.clear();
+        if (user) void this.load();
+      });
     });
   }
 

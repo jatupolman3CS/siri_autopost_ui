@@ -30,6 +30,9 @@ export type ApiAdminJob = S['AdminJobDto'];
 export type ApiPromo = S['PromoDto'];
 export type ApiCycle = S['BillingCycle'];
 export type ApiCustomerStatus = S['CustomerStatus'];
+export type ApiHealth = S['PlatformHealthDto'];
+export type ApiAuditEntry = S['AuditEntryDto'];
+export type ApiAuditAction = S['AuditAction'];
 
 /** Set on a request whose errors the caller shows itself (no toast from errorInterceptor). */
 export const QUIET = new HttpContextToken<boolean>(() => false);
@@ -173,6 +176,18 @@ export class ApiService {
   }
   adminSummary() {
     return run(this.http.get<ApiAdminSummary>('/api/admin/summary'));
+  }
+  adminHealth() {
+    return run(this.http.get<ApiHealth>('/api/admin/health'));
+  }
+  adminAudit(customerId?: string, take = 50) {
+    const params: Record<string, string> = { take: String(take) };
+    if (customerId) params['customerId'] = customerId;
+    return run(this.http.get<ApiAuditEntry[]>('/api/admin/audit', { params }));
+  }
+  /** A one-hour token to use the app as the customer. */
+  adminImpersonate(id: string) {
+    return run(this.http.post<ApiAuthResult>(`/api/admin/customers/${id}/impersonate`, {}));
   }
   adminJobs(customerId?: string, take = 30) {
     let params = new HttpParams().set('take', take);

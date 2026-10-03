@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AdminStore } from '../../core/data/admin.store';
-import { SEED } from '../../core/data/seed.data';
 import { baht } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { AdminViewService } from './admin-view.service';
@@ -133,25 +132,76 @@ export class AdminOverviewPageComponent {
   protected readonly view = inject(AdminViewService);
   protected readonly t = this.i18n.t;
 
+  /** Live figures from /api/admin/health; "—" until they arrive. */
   protected readonly kpis = computed(() => {
     const a = this.t().adm;
+    const api = this.t().api;
+    const h = this.admin.health();
+    const pct = (n: number | null | undefined) => (n == null ? '—' : `${n.toFixed(1)}%`);
+    const signed = (n: number, digits = 1) =>
+      `${n > 0 ? '+' : n < 0 ? '−' : '±'}${Math.abs(n).toFixed(digits)}`;
+    if (!h) return [a.mrr, a.churn, a.dae, a.tsr].map((label) => ({ label, value: '—', note: '' }));
+    const mrrChange = h.mrrPrev ? `${signed((100 * (h.mrr - h.mrrPrev)) / h.mrrPrev)}%` : '—';
     return [
-      { label: a.mrr, value: baht(this.view.mrr().total), note: a.mrrNote },
-      { label: a.churn, value: '3.1%', note: a.churnNote },
-      { label: a.dae, value: '1,248', note: a.daeNote },
-      { label: a.tsr, value: '94.8%', note: a.tsrNote },
+      { label: a.mrr, value: baht(h.mrr), note: fmt(api.vs30, { d: mrrChange }) },
+      {
+        label: a.churn,
+        value: pct(h.churn),
+        note: fmt(api.churnVs, { d: signed(h.churn - h.churnPrev) }),
+      },
+      {
+        label: a.dae,
+        value: h.devicesActive.toLocaleString(),
+        note: fmt(api.devicesActive, { n: h.devicesActive, total: h.devices }),
+      },
+      {
+        label: a.tsr,
+        value: pct(h.successRate),
+        note: h.successRate == null ? api.noData : fmt(api.tsrVs, { p: pct(h.successRatePrev) }),
+      },
     ];
   });
-  protected readonly health = computed(() =>
-    SEED.health.map((h) => ({
-      label: h.label[this.i18n.li()],
-      value: h.value,
-      dot: h.status === 'ok' ? 'var(--color-success)' : 'var(--color-warning)',
-    })),
-  );
+  protected readonly health = computed(() => {
+    const api = this.t().api;
+    const h = this.admin.health();
+    if (!h) return [];
+    const ok = 'var(--color-success)';
+    const warn = 'var(--color-warning)';
+    const onLatest =
+      h.latestExtension && h.devices ? Math.round((100 * h.onLatestExtension) / h.devices) : null;
+    return [
+      {
+        label: fmt(api.hApi, { n: h.apiSamples }),
+        value: h.apiP95Ms == null ? '—' : `${h.apiP95Ms} ms`,
+        dot: (h.apiP95Ms ?? 0) <= 500 ? ok : warn,
+      },
+      { label: api.hDb, value: `${h.dbMs} ms`, dot: h.dbMs <= 100 ? ok : warn },
+      {
+        label: api.hQueue,
+        value: `${h.queueDue.toLocaleString()} · ${h.queueNext24h.toLocaleString()}`,
+        dot: h.queueDue === 0 ? ok : warn,
+      },
+      {
+        label: fmt(api.hExt, { v: h.latestExtension ?? '—' }),
+        value: onLatest == null ? '—' : `${onLatest}%`,
+        dot: onLatest == null || onLatest >= 90 ? ok : warn,
+      },
+      {
+        label: api.hErr,
+        value: h.errorRate24h == null ? '—' : `${h.errorRate24h.toFixed(1)}%`,
+        dot: (h.errorRate24h ?? 0) <= 10 ? ok : warn,
+      },
+      {
+        label: api.hPay,
+        value: h.paymentsConnected ? 'OK' : api.payNone,
+        dot: h.paymentsConnected ? ok : warn,
+      },
+    ];
+  });
   protected readonly attention = computed(() => {
     const a = this.t().adm;
     const cs = this.admin.customers();
+    const latest = this.admin.health()?.latestExtension;
     return [
       {
         icon: 'ph-warning-circle',
@@ -169,7 +219,9 @@ export class AdminOverviewPageComponent {
         icon: 'ph-arrow-circle-up',
         color: 'var(--color-text-muted)',
         text: fmt(a.aOldExt, {
-          n: cs.filter((c) => c.ext !== '2.4.1' && c.status !== 'banned').length,
+          n: latest
+            ? cs.filter((c) => c.ext && c.ext !== latest && c.status !== 'banned').length
+            : 0,
         }),
         link: '/app/admin/customers',
       },

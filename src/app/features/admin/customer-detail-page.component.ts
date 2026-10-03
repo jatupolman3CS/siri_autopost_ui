@@ -61,7 +61,16 @@ export class CustomerDetailPageComponent {
       const id = this.id();
       if (id) untracked(() => void this.admin.loadCustomerJobs(id));
     });
+    // Every change to the customer row comes from an admin action: refresh their activity log.
+    effect(() => {
+      const c = this.admin.customer(this.id());
+      if (c) untracked(() => void this.admin.loadAudit(c.id));
+    });
   }
+
+  protected readonly auditRows = computed(() =>
+    (this.admin.audit()[this.id()] ?? []).map((e) => this.view.auditRow(e)),
+  );
 
   protected readonly head = computed(() => {
     const c = this.c();
@@ -79,9 +88,9 @@ export class CustomerDetailPageComponent {
     const c = this.c();
     const list: AdminAction[] =
       c.status === 'banned'
-        ? ['restore']
+        ? ['restore', 'assist']
         : c.status === 'suspended'
-          ? ['restore', 'ban', 'refund']
+          ? ['restore', 'ban', 'refund', 'assist']
           : ['suspend', 'ban', 'refund', 'assist'];
     return list.map((a) => ({ a, label: this.t().adm[a], primary: a === 'restore' }));
   });

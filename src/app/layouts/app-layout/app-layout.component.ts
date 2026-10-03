@@ -19,7 +19,8 @@ interface NavItem {
 }
 
 // Signed-in shell: collapsible sidebar, top bar (workspace, extension status, language, theme,
-// account) and the offline banner shown above every page while the extension is disconnected.
+// account), the assist banner while a platform admin sees the app as a customer, and the offline
+// banner shown above every page while the extension is disconnected.
 @Component({
   selector: 'app-app-layout',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, LangThemeSwitchComponent],
@@ -117,6 +118,17 @@ export class AppLayoutComponent {
     const ws = this.workspaces.switchTo(id);
     this.wsMenu.set(false);
     if (ws) this.notify.info(fmt(this.t().team.switched, { ws: ws.name }));
+  }
+
+  protected readonly assistTitle = computed(() => {
+    const a = this.session.assist();
+    return a ? fmt(this.t().api.assistTitle, { e: a.email, t: hm(new Date(a.expiresAt)) }) : '';
+  });
+
+  /** Ends an admin's assist session and goes back to that customer's admin page. */
+  protected async endAssist(): Promise<void> {
+    const id = await this.session.endAssist();
+    void this.router.navigateByUrl(id ? `/app/admin/customers/${id}` : '/app/admin');
   }
 
   protected logout(): void {
