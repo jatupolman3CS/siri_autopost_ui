@@ -38,7 +38,7 @@ export function tierViews(
       per: k === 'free' ? '' : t.common.perMonth,
       billed:
         k === 'free'
-          ? t.bill.trialNote
+          ? t.api.freeForever
           : cycle === 'year'
             ? fmt(t.bill.billedYear, { amt: baht(pm * 12) })
             : '',

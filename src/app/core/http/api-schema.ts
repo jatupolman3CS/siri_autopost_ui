@@ -621,7 +621,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/admin/transactions/{id}/paid': {
+  '/api/admin/transactions/{id}/retry': {
     parameters: {
       query?: never;
       header?: never;
@@ -1033,47 +1033,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/auth/me/plan': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['ChangePlanRequest'];
-          'text/json': components['schemas']['ChangePlanRequest'];
-          'application/*+json': components['schemas']['ChangePlanRequest'];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['UserDto'];
-          };
-        };
-      };
-    };
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/plans': {
     parameters: {
       query?: never;
@@ -1097,6 +1056,41 @@ export interface paths {
           };
           content: {
             'application/json': components['schemas']['PlanDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['BillingDto'];
           };
         };
       };
@@ -1138,6 +1132,132 @@ export interface paths {
     };
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/plan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ChangePlanRequest'];
+          'text/json': components['schemas']['ChangePlanRequest'];
+          'application/*+json': components['schemas']['ChangePlanRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PlanChangeDto'];
+          };
+        };
+        /** @description Unprocessable Entity */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ProblemDetails'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/checkout/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ConfirmCheckoutRequest'];
+          'text/json': components['schemas']['ConfirmCheckoutRequest'];
+          'application/*+json': components['schemas']['ConfirmCheckoutRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['UserDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/portal': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['UrlDto'];
+          };
+        };
+      };
+    };
     delete?: never;
     options?: never;
     head?: never;
@@ -2765,6 +2885,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/webhooks/stripe': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Bad Request */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'text/plain': components['schemas']['ProblemDetails'];
+            'application/json': components['schemas']['ProblemDetails'];
+            'text/json': components['schemas']['ProblemDetails'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/members': {
     parameters: {
       query?: never;
@@ -3096,6 +3260,7 @@ export interface components {
       | 'failed_retried'
       | 'refunded'
       | 'payment_recorded'
+      | 'payment_retried'
       | 'plan_settings_changed'
       | 'promo_created'
       | 'promo_toggled'
@@ -3126,6 +3291,28 @@ export interface components {
     };
     /** @enum {unknown} */
     BillingCycle: 'month' | 'year';
+    BillingDto: {
+      paymentsEnabled: boolean;
+      plan: components['schemas']['PlanKey'];
+      cycle: components['schemas']['BillingCycle'];
+      status: components['schemas']['CustomerStatus'];
+      hasSubscription: boolean;
+      /** Format: date-time */
+      renewsAt: null | string;
+      cancelAtPeriodEnd: boolean;
+      canManagePayment: boolean;
+      card: null | components['schemas']['CardDto'];
+      limits: components['schemas']['LimitsDto'];
+      usage: components['schemas']['UsageDto'];
+    };
+    CardDto: {
+      brand: string;
+      last4: string;
+      /** Format: int32 */
+      expMonth: number;
+      /** Format: int32 */
+      expYear: number;
+    };
     ChangePlanRequest: {
       plan: components['schemas']['PlanKey'];
       cycle: null | components['schemas']['BillingCycle'];
@@ -3150,6 +3337,9 @@ export interface components {
       revision: number;
       /** Format: date-time */
       updatedAt: null | string;
+    };
+    ConfirmCheckoutRequest: {
+      sessionId: string;
     };
     CreateSnippetRequest: {
       title: string;
@@ -3191,6 +3381,10 @@ export interface components {
       /** Format: int32 */
       workspaces: number;
       limits: components['schemas']['LimitOverridesDto'];
+      hasSubscription: boolean;
+      /** Format: date-time */
+      renewsAt: null | string;
+      cancelAtPeriodEnd: boolean;
     };
     CustomerJobsDto: {
       /** Format: int32 */
@@ -3342,7 +3536,6 @@ export interface components {
       | null;
     GoogleLogInRequest: {
       idToken: string;
-      plan: null | components['schemas']['PlanKey'];
     };
     GroupLinkDto: {
       name: string;
@@ -3385,6 +3578,16 @@ export interface components {
     };
     JsonElement: unknown;
     LimitOverridesDto: {
+      /** Format: int32 */
+      accounts: null | number;
+      /** Format: int32 */
+      posts: null | number;
+      /** Format: int32 */
+      devices: null | number;
+      /** Format: int32 */
+      seats: null | number;
+    };
+    LimitsDto: {
       /** Format: int32 */
       accounts: null | number;
       /** Format: int32 */
@@ -3477,6 +3680,10 @@ export interface components {
     };
     PausedRequest: {
       paused: boolean;
+    };
+    PlanChangeDto: {
+      user: components['schemas']['UserDto'];
+      checkoutUrl: null | string;
     };
     PlanDto: {
       key: components['schemas']['PlanKey'];
@@ -3620,7 +3827,7 @@ export interface components {
       year: number;
       /** Format: int32 */
       month: number;
-      /** Format: int32 */
+      /** Format: double */
       amount: number;
     };
     RoleRequest: {
@@ -3652,7 +3859,6 @@ export interface components {
       email: string;
       password: string;
       name: null | string;
-      plan: null | components['schemas']['PlanKey'];
     };
     SnippetDto: {
       /** Format: uuid */
@@ -3684,19 +3890,34 @@ export interface components {
       /** Format: uuid */
       userId: string;
       type: components['schemas']['TransactionType'];
-      /** Format: int32 */
+      /** Format: double */
       amount: number;
       plan: components['schemas']['PlanKey'];
       cycle: components['schemas']['BillingCycle'];
       promoCode: null | string;
       /** Format: date-time */
       createdAt: string;
+      receiptUrl: null | string;
+      refundable: boolean;
+      /** Format: uuid */
+      refundOfId: null | string;
     };
     /** @enum {unknown} */
     TransactionType: 'charge' | 'refund' | 'failed';
     UpdateDeviceRequest: {
       name: null | string;
       jobsPaused: null | boolean;
+    };
+    UrlDto: {
+      url: string;
+    };
+    UsageDto: {
+      /** Format: int32 */
+      accounts: number;
+      /** Format: int32 */
+      postsLast24h: number;
+      /** Format: int32 */
+      devices: number;
     };
     UserDto: {
       /** Format: uuid */

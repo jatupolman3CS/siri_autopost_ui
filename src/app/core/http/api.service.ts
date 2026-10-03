@@ -1,7 +1,6 @@
 import { HttpClient, HttpContext, HttpContextToken, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
-import { PlanKey } from '../data/models';
 import { components } from './api-schema';
 
 type S = components['schemas'];
@@ -23,6 +22,8 @@ export type ApiDevice = S['DeviceDto'];
 export type ApiPairingCode = S['PairingCodeDto'];
 export type ApiPlanSetting = S['PlanDto'];
 export type ApiTransaction = S['TransactionDto'];
+export type ApiBilling = S['BillingDto'];
+export type ApiPlanChange = S['PlanChangeDto'];
 export type ApiMember = S['MemberDto'];
 export type ApiRole = S['WorkspaceRole'];
 export type ApiCustomer = S['CustomerDto'];
@@ -59,32 +60,48 @@ export class ApiService {
   }
   /** Public sign-in settings; googleClientId is null while Google sign-in is off. */
   authConfig() {
-    return run(this.http.get<{ googleClientId: string | null }>('/api/auth/config', quiet));
+    return run(this.http.get<S['AuthConfigDto']>('/api/auth/config', quiet));
   }
   /** Signs in (or signs up) with the ID token from Google Identity Services. */
-  googleLogIn(idToken: string, plan: PlanKey | null) {
-    return run(this.http.post<ApiAuthResult>('/api/auth/google', { idToken, plan }, quiet));
+  googleLogIn(idToken: string) {
+    const body: S['GoogleLogInRequest'] = { idToken };
+    return run(this.http.post<ApiAuthResult>('/api/auth/google', body, quiet));
   }
   me() {
     return run(this.http.get<ApiUser>('/api/auth/me', quiet));
-  }
-  /** Records a charge for a paid plan (no payment provider yet). */
-  changePlan(plan: ApiPlan, cycle?: ApiCycle, promoCode?: string) {
-    return run(
-      this.http.put<ApiUser>('/api/auth/me/plan', {
-        plan,
-        cycle: cycle ?? null,
-        promoCode: promoCode || null,
-      }),
-    );
   }
 
   /** Public: prices and limits of every plan. */
   plans() {
     return run(this.http.get<ApiPlanSetting[]>('/api/plans', quiet));
   }
+  /** Plan, renewal date and card of the signed-in customer. */
+  billing() {
+    return run(this.http.get<ApiBilling>('/api/billing'));
+  }
   invoices() {
     return run(this.http.get<ApiTransaction[]>('/api/billing/invoices'));
+  }
+  /**
+   * Chooses a plan. A paid plan for a customer with no subscription answers with the Stripe Checkout
+   * address to pay at; any other change is applied at once (Free: at the end of the paid period).
+   */
+  changePlan(plan: ApiPlan, cycle?: ApiCycle, promoCode?: string) {
+    const body: S['ChangePlanRequest'] = {
+      plan,
+      cycle: cycle ?? null,
+      promoCode: promoCode || null,
+    };
+    return run(this.http.put<ApiPlanChange>('/api/billing/plan', body));
+  }
+  /** The customer is back from Stripe Checkout: applies the paid session. */
+  confirmCheckout(sessionId: string) {
+    const body: S['ConfirmCheckoutRequest'] = { sessionId };
+    return run(this.http.post<ApiUser>('/api/billing/checkout/confirm', body));
+  }
+  /** The Stripe Billing Portal address (card, invoices, cancel). */
+  billingPortal() {
+    return run(this.http.post<S['UrlDto']>('/api/billing/portal', {}));
   }
 
   workspaces() {
@@ -251,8 +268,8 @@ export class ApiService {
   adminRefund(txId: string) {
     return run(this.http.post<ApiTransaction>(`/api/admin/transactions/${txId}/refund`, {}));
   }
-  adminRecordPayment(txId: string) {
-    return run(this.http.post<ApiTransaction>(`/api/admin/transactions/${txId}/paid`, {}));
+  adminRetryPayment(txId: string) {
+    return run(this.http.post<ApiTransaction>(`/api/admin/transactions/${txId}/retry`, {}));
   }
   adminUpdatePlan(key: ApiPlan, body: Omit<ApiPlanSetting, 'key'>) {
     return run(this.http.put<ApiPlanSetting>(`/api/admin/plans/${key}`, body));

@@ -51,6 +51,9 @@ export function toCustomer(c: ApiCustomer): Customer {
     note: c.note ?? undefined,
     limits,
     workspaces: c.workspaces,
+    hasSubscription: c.hasSubscription,
+    renewsAt: c.renewsAt ? new Date(c.renewsAt) : null,
+    cancelAtPeriodEnd: c.cancelAtPeriodEnd,
   };
 }
 
@@ -60,6 +63,9 @@ const toTx = (t: ApiTransaction): Transaction => ({
   cust: t.userId,
   type: t.type,
   amount: t.amount,
+  refundable: t.refundable,
+  refundOf: t.refundOfId,
+  receiptUrl: t.receiptUrl,
 });
 
 const toPromo = (p: ApiPromo): Promo => ({
@@ -84,8 +90,8 @@ function toPlans(list: ApiPlanSetting[]): Record<PlanKey, PlanLimits> {
 }
 
 // Platform-owner data from /api/admin (customers, payments, promo codes, revenue) and the
-// plans from the public /api/plans, which the customer-facing pages read too. Without a
-// payment provider, charges are recorded (plan changes), not collected.
+// plans from the public /api/plans, which the customer-facing pages read too. Charges and
+// refunds are what Stripe reports; refunding and retrying a charge go through Stripe.
 @Injectable({ providedIn: 'root' })
 export class AdminStore {
   private readonly api = inject(ApiService);
@@ -170,8 +176,9 @@ export class AdminStore {
   }
 
   /**
-   * Runs an admin action. A refund refunds txId, or the customer's latest charge. "assist" only
-   * keeps the note: signing in as the customer is not available. The note is saved with every action.
+   * Runs an admin action. A refund refunds txId, or the customer's latest charge, through Stripe.
+   * "assist" only keeps the note (the page signs in as the customer, see SessionStore.startAssist).
+   * The note is saved with every action.
    */
   async apply(id: string, action: AdminAction, txId?: string, note?: string): Promise<void> {
     if (note?.trim()) this.replace(await this.api.adminSetNote(id, note.trim()));
@@ -230,9 +237,9 @@ export class AdminStore {
     return n;
   }
 
-  /** Records that a failed charge was paid (no payment provider is connected). */
+  /** Asks Stripe to collect a failed invoice again; when it works the row becomes a paid charge. */
   async retryCharge(txId: string): Promise<Customer | undefined> {
-    const tx = await this.api.adminRecordPayment(txId);
+    const tx = await this.api.adminRetryPayment(txId);
     await this.reloadMoney();
     this.customers.set((await this.api.adminCustomers()).map(toCustomer));
     return this.customer(tx.userId);

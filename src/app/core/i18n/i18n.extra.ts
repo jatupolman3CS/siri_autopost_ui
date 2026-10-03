@@ -110,9 +110,77 @@ export const AP_I18N_EXTRA = {
     'This account is suspended. Contact the platform admin.',
   ],
   promoCode: ['โค้ดส่วนลด (ถ้ามี)', 'Promo code (optional)'],
-  recordedCharge: [
-    'ระบบบันทึกยอด {amt} ไว้ในใบแจ้งหนี้ (ยังไม่ได้เชื่อมระบบตัดบัตร)',
-    '{amt} recorded on your invoices (card payments are not connected yet)',
+  // Billing through Stripe
+  goPay: ['ไปหน้าชำระเงิน', 'Go to payment'],
+  checkoutBody: [
+    'คุณจะถูกพาไปชำระเงินที่ Stripe โดยตรง (ข้อมูลบัตรไม่ผ่านระบบของเรา) แผนจะเริ่มใช้เมื่อชำระเงินสำเร็จ',
+    'You will be taken to Stripe to pay (card details never touch our system). The plan starts once the payment goes through.',
+  ],
+  changeBody: [
+    'เปลี่ยนแผนทันที Stripe คิดส่วนต่างตามจำนวนวันที่เหลือของรอบบิลและเรียกเก็บจากบัตรที่ผูกไว้ตอนนี้',
+    'The plan changes immediately. Stripe prorates the difference for the rest of the billing period and charges your card on file now.',
+  ],
+  cancelBody: [
+    'แผนปัจจุบันใช้งานได้ถึง {date} จากนั้นจะกลับไปเป็น Free และไม่มีการเรียกเก็บเงินอีก',
+    'Your current plan keeps working until {date}, then moves to Free with no further charges.',
+  ],
+  freeBody: ['ย้ายไปแผน Free ทันที', 'Move to the Free plan now.'],
+  resumeBody: [
+    'ยกเลิกการสิ้นสุดแผน แผนจะต่ออายุตามปกติ',
+    'Cancel the scheduled end: the plan renews as usual.',
+  ],
+  downgradeNote: [
+    'บัญชีและอุปกรณ์ที่เกินโควต้าของแผนใหม่จะยังอยู่ แต่เพิ่มใหม่ไม่ได้จนกว่าจะอยู่ในโควต้า',
+    'Accounts and devices over the new plan’s limits stay, but you cannot add more until you are within them.',
+  ],
+  promoFirstOnly: [
+    'โค้ดส่วนลดใช้กับใบแจ้งหนี้ใบแรกเท่านั้น',
+    'A promo code applies to the first invoice only',
+  ],
+  renewsOn: ['ต่ออายุอัตโนมัติ {date}', 'Renews automatically on {date}'],
+  endsOn: ['ยกเลิกแล้ว สิ้นสุด {date}', 'Cancelled, ends on {date}'],
+  noCharge: [
+    'แผนนี้ผู้ดูแลแพลตฟอร์มมอบให้ ไม่มีการเรียกเก็บเงิน',
+    'This plan was granted by the platform admin. No charges.',
+  ],
+  freeForever: ['ไม่มีค่าใช้จ่าย ไม่ต้องใช้บัตร', 'No cost, no card needed'],
+  freeNoRenewal: [
+    'แผน Free ไม่มีค่าใช้จ่ายและไม่มีวันหมดอายุ',
+    'The Free plan costs nothing and does not expire.',
+  ],
+  keepPlan: ['ต่ออายุแผนนี้', 'Keep this plan'],
+  noCard: ['ยังไม่มีบัตรที่ผูกไว้', 'No card on file'],
+  cardExpiringSoon: [
+    'บัตรใกล้หมดอายุ กรุณาอัปเดตก่อนวันต่ออายุเพื่อไม่ให้บริการสะดุด',
+    'Your card is about to expire. Update it before the renewal to avoid interruption.',
+  ],
+  managePayment: ['จัดการบัตรและใบแจ้งหนี้ที่ Stripe', 'Manage card and invoices at Stripe'],
+  paymentsOff: [
+    'ระบบชำระเงิน (Stripe) ยังไม่เปิดใช้งาน จึงยังซื้อแผนที่มีค่าใช้จ่ายไม่ได้',
+    'Payments (Stripe) are not switched on yet, so paid plans cannot be bought.',
+  ],
+  pastDue: [
+    'ตัดบัตรครั้งล่าสุดไม่สำเร็จ Stripe จะลองใหม่ให้อัตโนมัติ อัปเดตบัตรเพื่อไม่ให้แผนถูกยกเลิก',
+    'The last card payment failed. Stripe will retry automatically; update your card so the plan is not cancelled.',
+  ],
+  checkoutDone: [
+    'ชำระเงินสำเร็จ เปลี่ยนเป็นแผน {plan} แล้ว',
+    'Payment received. You are now on {plan}.',
+  ],
+  checkoutCancelled: [
+    'ยกเลิกการชำระเงิน ยังไม่มีการเปลี่ยนแผน',
+    'Payment cancelled. Your plan has not changed.',
+  ],
+  cancelScheduled: [
+    'จะยกเลิกแผนเมื่อสิ้นรอบบิล ({date})',
+    'The plan will be cancelled at the end of the period ({date})',
+  ],
+  resumed: ['ต่ออายุแผนตามปกติแล้ว', 'The plan will renew as usual'],
+  viewInvoice: ['ดูใบแจ้งหนี้', 'View invoice'],
+  auditSystem: ['ระบบ (Stripe)', 'System (Stripe)'],
+  paysViaStripe: [
+    'ลูกค้ารายนี้จ่ายผ่าน Stripe จึงเปลี่ยนแผนได้เฉพาะฝั่งลูกค้า (หรือให้ยกเลิกการสมัครก่อน)',
+    'This customer pays through Stripe, so only they can change plan (or cancel the subscription first).',
   ],
   noInvoices: ['ยังไม่มีใบแจ้งหนี้', 'No invoices yet'],
   inviteRole: ['บทบาท', 'Role'],
@@ -166,6 +234,7 @@ export const AP_I18N_EXTRA = {
     failed_retried: ['ลองงานที่ล้มเหลวใหม่', 'Failed posts retried'],
     refunded: ['คืนเงิน', 'Refunded'],
     payment_recorded: ['บันทึกว่าชำระแล้ว', 'Payment recorded'],
+    payment_retried: ['เรียกเก็บเงินซ้ำผ่าน Stripe', 'Charge retried through Stripe'],
     plan_settings_changed: ['แก้ราคา/ข้อจำกัดของแผน', 'Plan settings changed'],
     promo_created: ['สร้างโค้ดส่วนลด', 'Promo code created'],
     promo_toggled: ['เปิด/ปิดโค้ดส่วนลด', 'Promo code toggled'],

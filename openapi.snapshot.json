@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5107/"
+      "url": "http://localhost:5100/"
     }
   ],
   "paths": {
@@ -582,7 +582,7 @@
         }
       }
     },
-    "/api/admin/transactions/{id}/paid": {
+    "/api/admin/transactions/{id}/retry": {
       "post": {
         "tags": [
           "Admin"
@@ -964,10 +964,73 @@
         }
       }
     },
-    "/api/auth/me/plan": {
+    "/api/plans": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlanDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/invoices": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TransactionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/plan": {
       "put": {
         "tags": [
-          "Auth"
+          "Billing"
         ],
         "requestBody": {
           "content": {
@@ -995,6 +1058,55 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "$ref": "#/components/schemas/PlanChangeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/checkout/confirm": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmCheckoutRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmCheckoutRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmCheckoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
                   "$ref": "#/components/schemas/UserDto"
                 }
               }
@@ -1003,8 +1115,8 @@
         }
       }
     },
-    "/api/plans": {
-      "get": {
+    "/api/billing/portal": {
+      "post": {
         "tags": [
           "Billing"
         ],
@@ -1014,32 +1126,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PlanDto"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/billing/invoices": {
-      "get": {
-        "tags": [
-          "Billing"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TransactionDto"
-                  }
+                  "$ref": "#/components/schemas/UrlDto"
                 }
               }
             }
@@ -2778,6 +2865,38 @@
         }
       }
     },
+    "/api/webhooks/stripe": {
+      "post": {
+        "tags": [
+          "StripeWebhook"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/members": {
       "get": {
         "tags": [
@@ -3276,6 +3395,7 @@
           "failed_retried",
           "refunded",
           "payment_recorded",
+          "payment_retried",
           "plan_settings_changed",
           "promo_created",
           "promo_toggled",
@@ -3380,6 +3500,93 @@
           "month",
           "year"
         ]
+      },
+      "BillingDto": {
+        "required": [
+          "paymentsEnabled",
+          "plan",
+          "cycle",
+          "status",
+          "hasSubscription",
+          "renewsAt",
+          "cancelAtPeriodEnd",
+          "canManagePayment",
+          "card",
+          "limits",
+          "usage"
+        ],
+        "type": "object",
+        "properties": {
+          "paymentsEnabled": {
+            "type": "boolean"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/PlanKey"
+          },
+          "cycle": {
+            "$ref": "#/components/schemas/BillingCycle"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CustomerStatus"
+          },
+          "hasSubscription": {
+            "type": "boolean"
+          },
+          "renewsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean"
+          },
+          "canManagePayment": {
+            "type": "boolean"
+          },
+          "card": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CardDto"
+              }
+            ]
+          },
+          "limits": {
+            "$ref": "#/components/schemas/LimitsDto"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/UsageDto"
+          }
+        }
+      },
+      "CardDto": {
+        "required": [
+          "brand",
+          "last4",
+          "expMonth",
+          "expYear"
+        ],
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "last4": {
+            "type": "string"
+          },
+          "expMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expYear": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "ChangePlanRequest": {
         "required": [
@@ -3497,6 +3704,17 @@
           }
         }
       },
+      "ConfirmCheckoutRequest": {
+        "required": [
+          "sessionId"
+        ],
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          }
+        }
+      },
       "CreateSnippetRequest": {
         "required": [
           "title",
@@ -3573,7 +3791,10 @@
           "devices",
           "note",
           "workspaces",
-          "limits"
+          "limits",
+          "hasSubscription",
+          "renewsAt",
+          "cancelAtPeriodEnd"
         ],
         "type": "object",
         "properties": {
@@ -3642,6 +3863,19 @@
           },
           "limits": {
             "$ref": "#/components/schemas/LimitOverridesDto"
+          },
+          "hasSubscription": {
+            "type": "boolean"
+          },
+          "renewsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean"
           }
         }
       },
@@ -4157,23 +4391,12 @@
       },
       "GoogleLogInRequest": {
         "required": [
-          "idToken",
-          "plan"
+          "idToken"
         ],
         "type": "object",
         "properties": {
           "idToken": {
             "type": "string"
-          },
-          "plan": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/PlanKey"
-              }
-            ]
           }
         }
       },
@@ -4332,6 +4555,45 @@
       },
       "JsonElement": { },
       "LimitOverridesDto": {
+        "required": [
+          "accounts",
+          "posts",
+          "devices",
+          "seats"
+        ],
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "posts": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "devices": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "seats": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "LimitsDto": {
         "required": [
           "accounts",
           "posts",
@@ -4677,6 +4939,24 @@
         "properties": {
           "paused": {
             "type": "boolean"
+          }
+        }
+      },
+      "PlanChangeDto": {
+        "required": [
+          "user",
+          "checkoutUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          },
+          "checkoutUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -5181,8 +5461,8 @@
             "format": "int32"
           },
           "amount": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
           }
         }
       },
@@ -5284,8 +5564,7 @@
         "required": [
           "email",
           "password",
-          "name",
-          "plan"
+          "name"
         ],
         "type": "object",
         "properties": {
@@ -5299,16 +5578,6 @@
             "type": [
               "null",
               "string"
-            ]
-          },
-          "plan": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/PlanKey"
-              }
             ]
           }
         }
@@ -5423,7 +5692,10 @@
           "plan",
           "cycle",
           "promoCode",
-          "createdAt"
+          "createdAt",
+          "receiptUrl",
+          "refundable",
+          "refundOfId"
         ],
         "type": "object",
         "properties": {
@@ -5439,8 +5711,8 @@
             "$ref": "#/components/schemas/TransactionType"
           },
           "amount": {
-            "type": "integer",
-            "format": "int32"
+            "type": "number",
+            "format": "double"
           },
           "plan": {
             "$ref": "#/components/schemas/PlanKey"
@@ -5457,6 +5729,22 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "receiptUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "refundable": {
+            "type": "boolean"
+          },
+          "refundOfId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -5485,6 +5773,39 @@
               "null",
               "boolean"
             ]
+          }
+        }
+      },
+      "UrlDto": {
+        "required": [
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "UsageDto": {
+        "required": [
+          "accounts",
+          "postsLast24h",
+          "devices"
+        ],
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "postsLast24h": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "devices": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -5645,6 +5966,9 @@
     },
     {
       "name": "Posts"
+    },
+    {
+      "name": "StripeWebhook"
     },
     {
       "name": "Team"

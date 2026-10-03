@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AdminStore } from '../../core/data/admin.store';
-import { baht } from '../../core/i18n/format';
+import { baht, signed } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { AdminViewService } from './admin-view.service';
 
@@ -24,8 +24,6 @@ export class AdminOverviewPageComponent {
     const api = this.t().api;
     const h = this.admin.health();
     const pct = (n: number | null | undefined) => (n == null ? '—' : `${n.toFixed(1)}%`);
-    const signed = (n: number, digits = 1) =>
-      `${n > 0 ? '+' : n < 0 ? '−' : '±'}${Math.abs(n).toFixed(digits)}`;
     if (!h) return [a.mrr, a.churn, a.dae, a.tsr].map((label) => ({ label, value: '—', note: '' }));
     const mrrChange = h.mrrPrev ? `${signed((100 * (h.mrr - h.mrrPrev)) / h.mrrPrev)}%` : '—';
     return [

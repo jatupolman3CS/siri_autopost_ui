@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { PLAN_ORDER, PlanKey } from '../../core/data/models';
-import { ApiService } from '../../core/http/api.service';
+import { ApiService, ApiUser } from '../../core/http/api.service';
 import { SessionStore } from '../../core/data/session.store';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -51,7 +51,8 @@ function loadGsi(): Promise<GoogleId> {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Log in / create account against /api/auth. The account's role (shop user or platform admin)
-// comes from the server; signing up always creates a shop user on the chosen plan.
+// comes from the server. Signing up always creates a shop user on Free; a paid plan chosen on the
+// landing page (?plan=) is bought right afterwards: the billing page opens with it ready to confirm.
 @Component({
   selector: 'app-auth-page',
   imports: [RouterLink, InputFieldComponent],
@@ -136,11 +137,7 @@ export class AuthPageComponent {
     if (this.busy()) return;
     this.busy.set(true);
     try {
-      const user = await this.session.googleLogIn(idToken, this.pendingPlan());
-      const t = this.t().auth;
-      const admin = user.role === 'admin';
-      this.notify.success(admin ? t.welcomeAdmin : t.welcomeUser);
-      void this.router.navigateByUrl(admin ? '/app/admin' : '/app/overview');
+      this.welcome(await this.session.googleLogIn(idToken));
     } catch (e) {
       const a = this.t().api;
       this.notify.error(
@@ -149,6 +146,17 @@ export class AuthPageComponent {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Greets the new session and goes where it belongs: the plan picked before signing up, else the overview. */
+  private welcome(user: ApiUser): void {
+    const t = this.t().auth;
+    const admin = user.role === 'admin';
+    this.notify.success(admin ? t.welcomeAdmin : t.welcomeUser);
+    const plan = this.pendingPlan();
+    if (!admin && plan && plan !== 'free')
+      void this.router.navigate(['/app/billing'], { queryParams: { plan } });
+    else void this.router.navigateByUrl(admin ? '/app/admin' : '/app/overview');
   }
 
   protected readonly isLogin = computed(() => this.mode() === 'login');
@@ -178,13 +186,11 @@ export class AuthPageComponent {
     this.busy.set(true);
     const email = this.email().trim();
     try {
-      const user = this.isLogin()
-        ? await this.session.logIn(email, this.pass())
-        : await this.session.signUp(email, this.pass(), this.pendingPlan());
-      const t = this.t().auth;
-      const admin = user.role === 'admin';
-      this.notify.success(admin ? t.welcomeAdmin : t.welcomeUser);
-      void this.router.navigateByUrl(admin ? '/app/admin' : '/app/overview');
+      this.welcome(
+        this.isLogin()
+          ? await this.session.logIn(email, this.pass())
+          : await this.session.signUp(email, this.pass()),
+      );
     } catch (e) {
       const a = this.t().api;
       const status = e instanceof HttpErrorResponse ? e.status : 0;

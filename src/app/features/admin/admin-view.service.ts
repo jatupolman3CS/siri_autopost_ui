@@ -8,6 +8,7 @@ import {
   STATUS_DOT,
   TxType,
 } from '../../core/data/models';
+import { perMonth } from '../../core/data/plans';
 import { SEED } from '../../core/data/seed.data';
 import { baht, displayYear, fmtDate, hm, monthName } from '../../core/i18n/format';
 import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
@@ -42,16 +43,19 @@ export class AdminViewService {
   private readonly admin = inject(AdminStore);
   private readonly i18n = inject(I18nService);
 
-  /** MRR per paid plan from subscriber counts and current prices. */
+  /**
+   * MRR per paid plan: what every paying customer (active or past due) pays a month at their own
+   * billing cycle. The same definition as the server's (GET /api/admin/health).
+   */
   readonly mrr = computed(() => {
-    const plans = this.admin.plans();
-    const subs = this.admin.subs();
     const t = this.i18n.t();
-    const rows = (['basic', 'pro', 'agency'] as const).map((k) => ({
-      k,
-      amt: (plans[k].price || 0) * subs[k],
-      subs: subs[k],
-    }));
+    const paying = this.admin
+      .customers()
+      .filter((c) => (c.status === 'active' || c.status === 'pastdue') && c.plan !== 'free');
+    const rows = (['basic', 'pro', 'agency'] as const).map((k) => {
+      const mine = paying.filter((c) => c.plan === k);
+      return { k, amt: mine.reduce((n, c) => n + this.priceOf(c), 0), subs: mine.length };
+    });
     const total = rows.reduce((n, x) => n + x.amt, 0);
     const max = Math.max(1, ...rows.map((x) => x.amt));
     return {
@@ -67,6 +71,7 @@ export class AdminViewService {
 
   /** All transactions, newest first. */
   readonly txRows = computed(() => {
+    const refunded = new Set(this.admin.transactions().map((x) => x.refundOf));
     const t = this.i18n.t().adm;
     const li = this.i18n.li();
     const TY: Record<TxType, [string, string]> = {
@@ -87,7 +92,7 @@ export class AdminViewService {
         dot: TY[x.type][1],
         amount: (x.type === 'refund' ? '−' : '') + baht(x.amount),
         canRetry: x.type === 'failed',
-        canRefund: x.type === 'charge',
+        canRefund: !!x.refundable && !refunded.has(x.id),
       }));
   });
 
@@ -109,6 +114,7 @@ export class AdminViewService {
       failed_retried: e.to ?? '',
       refunded: e.to ? baht(Number(e.to)) : '',
       payment_recorded: e.to ? baht(Number(e.to)) : '',
+      payment_retried: e.to ? baht(Number(e.to)) : '',
     };
     const at = new Date(e.at);
     return {
@@ -116,7 +122,8 @@ export class AdminViewService {
       time: `${fmtDate(at, this.i18n.li())} ${hm(at)}`,
       label: t.api.actions[e.action],
       detail: detail[e.action] ?? '',
-      by: fmt(t.api.auditBy, { e: e.actorEmail }),
+      // A change Stripe made on its own has no person behind it.
+      by: fmt(t.api.auditBy, { e: e.actorEmail || t.api.auditSystem }),
     };
   }
 
@@ -143,8 +150,9 @@ export class AdminViewService {
     return `${monthName(c.since[1], li)} ${displayYear(c.since[0], li)}`;
   }
 
+  /** What the customer pays per month at their own billing cycle (yearly is 20% off). */
   priceOf(c: Customer): number {
-    return this.admin.plans()[c.plan].price || 0;
+    return perMonth(this.admin.plans(), c.plan, c.cycle);
   }
 
   /** Admin jobs (newest first) as list rows. */

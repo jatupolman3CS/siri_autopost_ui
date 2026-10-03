@@ -38,12 +38,13 @@ export class SessionStore {
     return this.accept(await this.api.logIn({ email, password }));
   }
 
-  async signUp(email: string, password: string, plan: PlanKey | null): Promise<ApiUser> {
-    return this.accept(await this.api.signUp({ email, password, name: null, plan }));
+  /** A new account always starts on Free; a paid plan is bought afterwards at Stripe Checkout. */
+  async signUp(email: string, password: string): Promise<ApiUser> {
+    return this.accept(await this.api.signUp({ email, password, name: null }));
   }
 
-  async googleLogIn(idToken: string, plan: PlanKey | null): Promise<ApiUser> {
-    return this.accept(await this.api.googleLogIn(idToken, plan));
+  async googleLogIn(idToken: string): Promise<ApiUser> {
+    return this.accept(await this.api.googleLogIn(idToken));
   }
 
   /** Forgets the token; the workspace stores empty themselves when the user goes away. */
@@ -80,9 +81,24 @@ export class SessionStore {
     return session.customerId;
   }
 
-  /** A paid plan records a charge (yearly = 12 months at 80%); see /api/billing/invoices. */
-  async setPlan(plan: PlanKey, cycle?: 'month' | 'year', promoCode?: string): Promise<void> {
-    this._user.set(await this.api.changePlan(plan, cycle, promoCode));
+  /**
+   * Chooses a plan. Resolves to the Stripe Checkout address when the customer has to pay first (the plan
+   * only changes once Stripe confirms the payment), otherwise null: the plan changed, or for Free it will
+   * at the end of the paid period.
+   */
+  async setPlan(
+    plan: PlanKey,
+    cycle?: 'month' | 'year',
+    promoCode?: string,
+  ): Promise<string | null> {
+    const r = await this.api.changePlan(plan, cycle, promoCode);
+    this._user.set(r.user);
+    return r.checkoutUrl;
+  }
+
+  /** The customer is back from Stripe Checkout: the server applies the paid session, and so do we. */
+  async confirmCheckout(sessionId: string): Promise<void> {
+    this._user.set(await this.api.confirmCheckout(sessionId));
   }
 
   private accept(r: ApiAuthResult): ApiUser {

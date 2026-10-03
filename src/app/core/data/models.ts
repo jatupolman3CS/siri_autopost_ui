@@ -166,6 +166,11 @@ export interface Customer {
   note?: string;
   limits?: Partial<Record<LimitKey, number>>;
   workspaces?: number;
+  /** Pays through a Stripe subscription (the admin cannot move its plan). */
+  hasSubscription?: boolean;
+  /** End of the current billing period; with cancelAtPeriodEnd, when the plan ends. */
+  renewsAt?: Date | null;
+  cancelAtPeriodEnd?: boolean;
 }
 
 /** Sample customer in the design data. */
@@ -181,6 +186,12 @@ export interface Transaction {
   cust: string;
   type: TxType;
   amount: number;
+  /** A charge paid at Stripe that has not been refunded yet. */
+  refundable?: boolean;
+  /** On a refund: the charge it gives back. */
+  refundOf?: string | null;
+  /** Stripe's hosted invoice page. */
+  receiptUrl?: string | null;
 }
 
 export interface Promo {

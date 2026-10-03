@@ -7,9 +7,6 @@
 .mp {
   margin: 0 0 8px;
 }
-.err {
-  color: var(--color-danger);
-}
 .cur {
   display: flex;
   align-items: flex-start;
@@ -73,14 +70,4 @@
   gap: 16px;
   padding: 8px 0;
   flex-wrap: wrap;
-}
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.two {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
 }

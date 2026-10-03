@@ -41,3 +41,8 @@ export function displayYear(y: number, li: number): number {
 function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
+
+/** "+4.2", "−1.0", "±0.0": a change with its sign (the minus is a real minus sign). */
+export function signed(n: number, digits = 1): string {
+  return `${n > 0 ? '+' : n < 0 ? '−' : '±'}${Math.abs(n).toFixed(digits)}`;
+}

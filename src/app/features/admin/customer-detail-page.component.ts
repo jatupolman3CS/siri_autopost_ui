@@ -116,15 +116,22 @@ export class CustomerDetailPageComponent {
         (n, x) => n + (x.type === 'charge' ? x.amount : x.type === 'refund' ? -x.amount : 0),
         0,
       );
-    const active = ['active', 'pastdue', 'trial'].includes(c.status);
-    const billable = active && c.plan !== 'free';
-    const price = this.view.priceOf(c);
-    const nextDate = fmtDate(new Date(now.getFullYear(), now.getMonth() + 1, 1), li, true);
+    // What Stripe will charge next: only a live subscription renews, and a cancelled one just ends.
+    const renews = c.renewsAt ? fmtDate(c.renewsAt, li, true) : '';
+    const next = c.hasSubscription && !c.cancelAtPeriodEnd;
+    const period = this.view.priceOf(c) * (c.cycle === 'year' ? 12 : 1);
+    const nextNote = !c.hasSubscription
+      ? c.plan === 'free'
+        ? ''
+        : this.t().api.noCharge
+      : c.cancelAtPeriodEnd
+        ? fmt(this.t().api.endsOn, { date: renews })
+        : `${c.cycle === 'year' ? a.cycleY : a.cycleM} · ${renews}`;
     return [
       {
         label: a.nextInvoice,
-        value: billable ? baht(Math.round(price * (c.cycle === 'year' ? 12 * 0.8 : 1))) : '—',
-        note: billable ? `${c.cycle === 'year' ? a.cycleY : a.cycleM} · ${nextDate}` : '',
+        value: next ? baht(period) : '—',
+        note: nextNote,
       },
       { label: a.lifetime, value: baht(paid), note: `${months} ${a.months}` },
       {

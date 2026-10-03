@@ -22,6 +22,9 @@ const customer = (over: Partial<ApiCustomer> = {}): ApiCustomer => ({
   note: null,
   workspaces: 1,
   limits: { accounts: null, posts: null, devices: null, seats: null },
+  hasSubscription: false,
+  renewsAt: null,
+  cancelAtPeriodEnd: false,
   ...over,
 });
 
@@ -34,6 +37,9 @@ const tx = (over: Partial<ApiTransaction> = {}): ApiTransaction => ({
   cycle: 'month',
   promoCode: null,
   createdAt: '2026-09-01T03:00:00Z',
+  receiptUrl: null,
+  refundable: true,
+  refundOfId: null,
   ...over,
 });
 
@@ -152,6 +158,35 @@ describe('AdminStore', () => {
     answerMoney([tx({ id: 't2', type: 'refund', amount: -790 }), tx()]);
     await done;
     expect(admin.transactions().map((t) => t.type)).toEqual(['refund', 'charge']);
+  });
+
+  it('asks Stripe to collect a failed charge again and reloads the money and the customers', async () => {
+    await load(
+      [customer({ status: 'past_due' })],
+      [tx({ id: 't9', type: 'failed', refundable: false })],
+    );
+    const done = admin.retryCharge('t9');
+    http
+      .expectOne({ method: 'POST', url: '/api/admin/transactions/t9/retry' })
+      .flush(tx({ id: 't9', type: 'charge' }));
+    await settle();
+    answerMoney([tx({ id: 't9', type: 'charge' })]);
+    await settle();
+    http.expectOne('/api/admin/customers').flush([customer({ status: 'active' })]);
+    expect((await done)?.status).toBe('active');
+    expect(admin.transactions()[0].type).toBe('charge');
+  });
+
+  it('keeps what Stripe says about a customer: subscription, renewal and scheduled cancellation', async () => {
+    await load([
+      customer({
+        hasSubscription: true,
+        renewsAt: '2026-11-01T00:00:00Z',
+        cancelAtPeriodEnd: true,
+      }),
+    ]);
+    expect(admin.customer('c1')).toMatchObject({ hasSubscription: true, cancelAtPeriodEnd: true });
+    expect(admin.customer('c1')!.renewsAt).toEqual(new Date('2026-11-01T00:00:00Z'));
   });
 
   it('saves plan limits, where 0 means unlimited', async () => {

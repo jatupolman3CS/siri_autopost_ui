@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AdminStore } from '../../core/data/admin.store';
-import { baht, monthName } from '../../core/i18n/format';
+import { baht, monthName, signed } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AdminActionModalComponent, AdminActionRequest } from './admin-action-modal.component';
@@ -24,6 +24,10 @@ export class FinancePageComponent {
   protected readonly kpis = computed(() => {
     const a = this.t().adm;
     const total = this.view.mrr().total;
+    const h = this.admin.health();
+    const mrrNote = h?.mrrPrev
+      ? fmt(this.t().api.vs30, { d: `${signed((100 * (h.mrr - h.mrrPrev)) / h.mrrPrev)}%` })
+      : '';
     const now = new Date();
     const y = now.getFullYear();
     const m = now.getMonth();
@@ -32,7 +36,7 @@ export class FinancePageComponent {
     const failed = thisMonth.filter((x) => x.type === 'failed');
     const refunded = thisMonth.filter((x) => x.type === 'refund').reduce((n, x) => n + x.amount, 0);
     return [
-      { label: a.mrr, value: baht(total), note: a.mrrNote },
+      { label: a.mrr, value: baht(total), note: mrrNote },
       { label: a.arr, value: baht(total * 12), note: 'MRR × 12' },
       {
         label: a.collected,

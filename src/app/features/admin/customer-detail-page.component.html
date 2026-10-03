@@ -42,6 +42,7 @@
             [label]="t().adm.changePlan"
             [options]="planOptions()"
             [value]="c().plan"
+            [disabled]="!!c().hasSubscription"
             (valueChange)="setPlan($event)"
           />
           @for (k of tiles(); track k.label) {
@@ -52,6 +53,9 @@
             </div>
           }
         </div>
+        @if (c().hasSubscription) {
+          <p class="small muted flush">{{ t().api.paysViaStripe }}</p>
+        }
         <div>
           <div class="fs14 fw5 mb4">{{ t().adm.invoices }}</div>
           @for (x of tx(); track x.id) {

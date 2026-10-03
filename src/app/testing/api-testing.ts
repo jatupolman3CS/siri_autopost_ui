@@ -91,10 +91,12 @@ export async function settle(): Promise<void> {
 /** Logs in and answers the workspace list, then the per-workspace loads it triggers. */
 export async function signIn(
   http: HttpTestingController,
-  data: { posts?: ApiPost[]; errors?: ApiPost[] } = {},
+  data: { posts?: ApiPost[]; errors?: ApiPost[]; user?: Partial<ApiUser> } = {},
 ): Promise<void> {
   const login = TestBed.inject(SessionStore).logIn(USER.email, 'password1');
-  http.expectOne('/api/auth/login').flush({ token: 't0k', expiresAt: '2099-01-01', user: USER });
+  http
+    .expectOne('/api/auth/login')
+    .flush({ token: 't0k', expiresAt: '2099-01-01', user: { ...USER, ...data.user } });
   await login;
   await settle();
   http

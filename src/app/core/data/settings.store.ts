@@ -26,12 +26,9 @@ export interface OfflineSettings {
   push: boolean;
 }
 
+/** Which billing cycle the plan cards price (the customer's own cycle comes from /api/billing). */
 export interface BillingSettings {
   cycle: 'month' | 'year';
-  nFail: boolean;
-  nExpire: boolean;
-  nRenew: boolean;
-  card: { last4: string; exp: string };
 }
 
 const PLATFORMS: PlatformKey[] = ['fb', 'x', 'ig', 'tt', 'line', 'th'];
@@ -52,8 +49,8 @@ export function defaultAntiBan(): AntiBanSettings {
 }
 
 // The posting engine's settings of the current workspace (anti-ban, offline policy) from
-// /engine, edited locally and sent with saveAb()/saveOff(). Billing preferences stay local:
-// payments are not part of the API yet.
+// /engine, edited locally and sent with saveAb()/saveOff(). The billing cycle toggle of the plan
+// cards is local too; everything about the customer's real billing is in BillingStore.
 @Injectable({ providedIn: 'root' })
 export class SettingsStore {
   private readonly api = inject(ApiService);
@@ -68,13 +65,7 @@ export class SettingsStore {
     email: true,
     push: false,
   });
-  readonly bill = signal<BillingSettings>({
-    cycle: 'month',
-    nFail: true,
-    nExpire: true,
-    nRenew: false,
-    card: { last4: '4242', exp: '11/26' },
-  });
+  readonly bill = signal<BillingSettings>({ cycle: 'month' });
   /** Whether the workspace's extension is connected (a paired device called in, and no simulated outage). */
   readonly extensionOnline = signal(true);
   /** "Simulate offline" is on (as opposed to every paired device being offline). */

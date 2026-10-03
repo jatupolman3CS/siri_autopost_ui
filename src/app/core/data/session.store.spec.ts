@@ -22,10 +22,45 @@ describe('SessionStore', () => {
     expect(session.isGuest()).toBe(false);
     expect(tokenStorage.get()).toBe('abc');
 
-    void session.setPlan('agency');
-    const req = http.expectOne('/api/auth/me/plan');
+    const change = session.setPlan('agency', 'year');
+    const req = http.expectOne('/api/billing/plan');
+    expect(req.request.method).toBe('PUT');
     expect(req.request.headers.get('Authorization')).toBe('Bearer abc');
-    req.flush({ ...USER, plan: 'agency' });
+    expect(req.request.body).toEqual({ plan: 'agency', cycle: 'year', promoCode: null });
+    req.flush({ user: { ...USER, plan: 'agency' }, checkoutUrl: null });
+    expect(await change).toBeNull();
+    expect(session.plan()).toBe('agency');
+  });
+
+  it('does not change the plan while the customer has to pay: it hands back the Stripe address', async () => {
+    tokenStorage.set('abc');
+    const change = session.setPlan('pro', 'month', 'LAUNCH20');
+    const req = http.expectOne('/api/billing/plan');
+    expect(req.request.body.promoCode).toBe('LAUNCH20');
+    req.flush({
+      user: { ...USER, plan: 'free' },
+      checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_1',
+    });
+    expect(await change).toBe('https://checkout.stripe.com/c/pay/cs_1');
+    expect(session.plan()).toBe('free');
+  });
+
+  it('applies the paid checkout session when the customer comes back from Stripe', async () => {
+    tokenStorage.set('abc');
+    const done = session.confirmCheckout('cs_test_1');
+    const req = http.expectOne('/api/billing/checkout/confirm');
+    expect(req.request.body).toEqual({ sessionId: 'cs_test_1' });
+    req.flush({ ...USER, plan: 'pro', cycle: 'year' });
+    await done;
+    expect(session.user()?.cycle).toBe('year');
+  });
+
+  it('signs up without a plan: a paid plan is bought afterwards', async () => {
+    const signUp = session.signUp('new@shop.co', 'password1');
+    const req = http.expectOne('/api/auth/signup');
+    expect(req.request.body).toEqual({ email: 'new@shop.co', password: 'password1', name: null });
+    req.flush({ token: 't', expiresAt: '2099-01-01', user: { ...USER, plan: 'free' } });
+    expect((await signUp).plan).toBe('free');
   });
 
   it('drops a stored token the server no longer accepts', async () => {
