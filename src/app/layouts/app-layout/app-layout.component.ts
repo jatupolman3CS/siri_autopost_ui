@@ -10,6 +10,9 @@ import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { LangThemeSwitchComponent } from '../lang-theme-switch.component';
 
+/** The extension's campaigns page; its label is not in the design's nav dictionary. */
+const EXT_CAMPAIGNS = 'extCampaigns';
+
 interface NavItem {
   path: string;
   key: string;
@@ -69,6 +72,7 @@ export class AppLayoutComponent {
       {
         label: t.gEngine,
         items: [
+          { path: '/app/campaigns', key: EXT_CAMPAIGNS, icon: 'ph-stack', exact: true },
           item('antiban', 'antiban', 'ph-shield-check'),
           item('offline', 'offline', 'ph-wifi-slash'),
           item('errors', 'errors', 'ph-warning-circle', this.posts.openErrors().length),
@@ -111,6 +115,7 @@ export class AppLayoutComponent {
   );
 
   protected label(key: string): string {
+    if (key === EXT_CAMPAIGNS) return this.t().api.ext.nav;
     return (this.t().nav as Record<string, string>)[key];
   }
 

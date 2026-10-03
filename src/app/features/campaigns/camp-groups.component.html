@@ -1,0 +1,115 @@
+<section class="panel stack ext-num">
+  <h2 class="h2"><span class="n">1</span>{{ x().groupsTitle }}</h2>
+  <p class="ext-hint">{{ x().groupsHint1 }}</p>
+  <p class="ext-hint">{{ x().groupsHint2 }}</p>
+
+  <div class="groups">
+    @for (r of rows(); track r.g) {
+      <div class="grow-row" [class.invalid]="r.invalid" [class.off]="!r.g.enabled">
+        <input
+          type="checkbox"
+          class="en"
+          [title]="x().groupOnOff"
+          [checked]="r.g.enabled"
+          (change)="edit(r.g, { enabled: $any($event.target).checked })"
+        />
+        <input
+          class="su-input ext-in"
+          [placeholder]="x().groupNamePh"
+          [attr.aria-label]="x().groupNamePh"
+          [value]="r.g.name"
+          (input)="edit(r.g, { name: $any($event.target).value })"
+        />
+        <input
+          class="su-input ext-in url"
+          spellcheck="false"
+          placeholder="https://www.facebook.com/groups/..."
+          [attr.aria-label]="x().groupUrl"
+          [class.su-input-error]="r.invalid || r.dup"
+          [value]="r.g.url"
+          (input)="setUrl(r.g, $any($event.target).value)"
+        />
+        <input
+          class="su-input ext-in"
+          [placeholder]="x().groupTextPh"
+          [attr.aria-label]="x().groupTextPh"
+          [value]="r.g.text"
+          (input)="edit(r.g, { text: $any($event.target).value })"
+        />
+        <label
+          class="limit"
+          [class.set]="r.g.dailyMax > 0"
+          [class.full]="r.full"
+          [title]="r.limitTitle"
+        >
+          {{ x().limitPre }}
+          <input
+            type="number"
+            min="0"
+            max="50"
+            step="1"
+            inputmode="numeric"
+            class="num"
+            [value]="r.g.dailyMax"
+            (input)="setMax(r.g, $any($event.target).value)"
+          />
+          {{ x().limitPost }}
+        </label>
+        <span
+          class="small count"
+          [class.ext-bad]="r.posts === 0 && r.g.enabled"
+          [title]="x().postsForGroupTitle"
+        >
+          @if (r.posts >= 0) {
+            {{ r.posts }} {{ x().postsShort }}
+          }
+        </span>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost del"
+          [title]="x().remove"
+          (click)="remove(r.g)"
+        >
+          <i class="ph ph-trash"></i>
+        </button>
+      </div>
+    } @empty {
+      <span class="small muted">{{ x().noGroups }}</span>
+    }
+  </div>
+
+  <div class="small">
+    <span class="ext-good">{{ info().active }}</span> · {{ info().withText }}
+    @if (info().problems) {
+      <div class="ext-bad">{{ info().problems }}</div>
+    }
+    @if (info().empty) {
+      <div class="ext-bad">{{ info().empty }}</div>
+    }
+  </div>
+
+  <details class="ext-more">
+    <summary>{{ x().bulkTitle }}</summary>
+    <p class="ext-hint">{{ x().bulkHint }}</p>
+    <textarea
+      class="su-textarea ext-ta"
+      rows="6"
+      spellcheck="false"
+      [attr.aria-label]="x().bulkTitle"
+      [placeholder]="x().bulkPh"
+      [value]="bulk()"
+      (input)="bulk.set($any($event.target).value)"
+    ></textarea>
+    <div class="actions mt8">
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="addBulk()">
+        {{ x().bulkAdd }}
+      </button>
+    </div>
+  </details>
+
+  <div>
+    <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="add()">
+      <i class="ph ph-plus"></i>{{ x().addGroup }}
+    </button>
+  </div>
+</section>

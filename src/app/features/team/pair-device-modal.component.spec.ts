@@ -14,6 +14,7 @@ const device = (id: string, name: string): ApiDevice => ({
   lastSeenAt: new Date().toISOString(),
   online: true,
   accountId: 'acc-' + id,
+  jobsPaused: false,
 });
 
 describe('PairDeviceModalComponent', () => {
@@ -50,6 +51,21 @@ describe('PairDeviceModalComponent', () => {
       '[data-testid="pair-code"]',
     );
     expect(code?.textContent).toContain('K7QF-2MXP');
+
+    // "Connect this Chrome" opens the address the extension watches for, in a new tab.
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    (fixture.nativeElement as HTMLElement).ownerDocument
+      .querySelector<HTMLButtonElement>('[data-testid="pair-connect"]')!
+      .click();
+    expect(open).toHaveBeenCalledTimes(1);
+    const [url, target] = open.mock.calls[0] as [string, string];
+    expect(target).toBe('_blank');
+    expect(url.startsWith(`${location.origin}/connect-extension#`)).toBe(true);
+    const params = new URLSearchParams(url.split('#')[1]);
+    expect(params.get('ap-pair')).toBe('1');
+    expect(params.get('code')).toBe('K7QF-2MXP');
+    expect(params.get('ws')).toBe('Shop');
+    open.mockRestore();
 
     // Nothing new yet.
     await vi.advanceTimersByTimeAsync(3000);

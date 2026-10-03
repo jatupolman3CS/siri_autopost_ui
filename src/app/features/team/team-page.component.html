@@ -110,9 +110,35 @@
               </div>
               <div class="small muted">{{ d.meta }}</div>
             </div>
-            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="askRevoke(d.id)">
-              {{ t().common.revoke }}
-            </button>
+            <div class="dev-actions">
+              <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/campaigns">
+                <i class="ph ph-stack"></i>{{ t().api.manageCampaigns }}
+              </a>
+              @if (canManageDevices()) {
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  (click)="renameDevice(d.id, d.name)"
+                >
+                  <i class="ph ph-pencil-simple"></i>{{ t().api.rename }}
+                </button>
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  (click)="toggleJobs(d.id, d.paused)"
+                >
+                  <i class="ph" [class]="d.paused ? 'ph-play' : 'ph-pause'"></i
+                  >{{ d.paused ? t().api.jobsResume : t().api.jobsPause }}
+                </button>
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  (click)="askRevoke(d.id)"
+                >
+                  {{ t().common.revoke }}
+                </button>
+              }
+            </div>
           </div>
         } @empty {
           @if (devices.loaded()) {

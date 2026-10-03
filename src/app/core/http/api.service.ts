@@ -33,6 +33,11 @@ export type ApiCustomerStatus = S['CustomerStatus'];
 export type ApiHealth = S['PlatformHealthDto'];
 export type ApiAuditEntry = S['AuditEntryDto'];
 export type ApiAuditAction = S['AuditAction'];
+export type ApiExtensionConfig = S['ExtensionConfigDto'];
+export type ApiConfigSaved = S['ConfigSavedDto'];
+export type ApiDeviceLive = S['DeviceLiveDto'];
+export type ApiDeviceLog = S['DeviceLogDto'];
+export type ApiDeviceCommand = S['DeviceCommandDto'];
 
 /** Set on a request whose errors the caller shows itself (no toast from errorInterceptor). */
 export const QUIET = new HttpContextToken<boolean>(() => false);
@@ -153,6 +158,19 @@ export class ApiService {
     // Quiet: the pairing dialog shows a refusal (plan limit) itself.
     return run(this.http.post<ApiPairingCode>(`/api/workspaces/${ws}/devices/pairing`, {}, quiet));
   }
+  /** Rename a browser or pause the jobs it takes (null keeps a value). */
+  updateDevice(
+    ws: string,
+    id: string,
+    body: { name?: string | null; jobsPaused?: boolean | null },
+  ) {
+    return run(
+      this.http.put<ApiDevice>(`/api/workspaces/${ws}/devices/${id}`, {
+        name: body.name ?? null,
+        jobsPaused: body.jobsPaused ?? null,
+      }),
+    );
+  }
   revokeDevice(ws: string, id: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/devices/${id}`));
   }
@@ -244,6 +262,67 @@ export class ApiService {
 
   skipWaiting(ws: string) {
     return run(this.http.post<ApiExtensionState>(`/api/workspaces/${ws}/engine/waiting/skip`, {}));
+  }
+
+  // ---------- the extension's own campaigns (per paired device) ----------
+  extConfig(ws: string, device: string) {
+    return run(this.http.get<ApiExtensionConfig>(`/api/workspaces/${ws}/devices/${device}/config`));
+  }
+  /** 409 when the settings changed since baseRevision (quiet: the campaigns page explains it). */
+  saveExtConfig(ws: string, device: string, settings: unknown, baseRevision: number | null) {
+    return run(
+      this.http.put<ApiConfigSaved>(
+        `/api/workspaces/${ws}/devices/${device}/config`,
+        { settings, baseRevision },
+        quiet,
+      ),
+    );
+  }
+  extImage(ws: string, imageId: string) {
+    return run(
+      this.http.get(`/api/workspaces/${ws}/extension-images/${encodeURIComponent(imageId)}`, {
+        ...quiet,
+        responseType: 'blob',
+      }),
+    );
+  }
+  /** A photo or video as a data URL, stored under the extension's id. */
+  putExtImage(ws: string, imageId: string, rec: { name: string; type: string; data: string }) {
+    return run(
+      this.http.put<void>(
+        `/api/workspaces/${ws}/extension-images/${encodeURIComponent(imageId)}`,
+        rec,
+        quiet,
+      ),
+    );
+  }
+  /** background: the page polls it, so failures do not toast. */
+  deviceLive(ws: string, device: string, background = false) {
+    return run(
+      this.http.get<ApiDeviceLive>(
+        `/api/workspaces/${ws}/devices/${device}/live`,
+        background ? quiet : {},
+      ),
+    );
+  }
+  sendDeviceCommand(ws: string, device: string, cmd: string, args: object = {}) {
+    return run(
+      this.http.post<ApiDeviceCommand>(`/api/workspaces/${ws}/devices/${device}/commands`, {
+        cmd,
+        args,
+      }),
+    );
+  }
+  deviceCommand(ws: string, device: string, id: string) {
+    return run(
+      this.http.get<ApiDeviceCommand>(
+        `/api/workspaces/${ws}/devices/${device}/commands/${id}`,
+        quiet,
+      ),
+    );
+  }
+  clearDeviceLogs(ws: string, device: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/devices/${device}/logs`));
   }
 }
 

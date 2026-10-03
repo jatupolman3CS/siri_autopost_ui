@@ -114,7 +114,10 @@ export class TeamPageComponent {
         id: d.id,
         name: d.name,
         online: d.online,
-        meta: [d.browser, d.version && 'v' + d.version, status].filter(Boolean).join(' · '),
+        paused: d.jobsPaused,
+        meta: [d.browser, d.version && 'v' + d.version, status, d.jobsPaused && t.api.jobsPausedTag]
+          .filter(Boolean)
+          .join(' · '),
       };
     });
   });
@@ -208,6 +211,22 @@ export class TeamPageComponent {
     await this.devices.revoke(id);
     this.notify.info(this.t().team.revoked);
     void Promise.all([this.settings.refreshPresence(), this.accounts.load()]);
+  }
+
+  /** Owners and admins control the paired browsers (the server refuses lower roles too). */
+  protected readonly canManageDevices = this.team.canManage;
+
+  protected async renameDevice(id: string, current: string): Promise<void> {
+    const name = prompt(this.t().api.renamePrompt, current)?.trim();
+    if (!name || name === current) return;
+    await this.devices.update(id, { name });
+    this.notify.success(fmt(this.t().api.renamed, { d: name }));
+    void this.accounts.load();
+  }
+
+  protected async toggleJobs(id: string, paused: boolean): Promise<void> {
+    await this.devices.update(id, { jobsPaused: !paused });
+    this.notify.info(paused ? this.t().api.jobsResumedNote : this.t().api.jobsPausedNote);
   }
 
   protected switchTo(id: string): void {

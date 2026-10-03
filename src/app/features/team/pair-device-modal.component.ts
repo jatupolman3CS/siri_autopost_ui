@@ -11,6 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { DevicesStore } from '../../core/data/devices.store';
+import { WorkspaceStore } from '../../core/data/workspace.store';
 import { ApiPairingCode } from '../../core/http/api.service';
 import { problemOf } from '../../core/http/problem-details';
 import { hm } from '../../core/i18n/format';
@@ -20,7 +21,18 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
 
 const POLL_MS = 3000;
 
-// "Add device": shows a pairing code for the extension and waits until a new device shows up.
+/**
+ * The address the extension watches for (client/background.js connectRequest): it takes the code
+ * from the hash and the API from this site's origin, then asks the person to allow it.
+ */
+export function connectUrl(origin: string, code: string, name: string, workspace: string): string {
+  const p = new URLSearchParams({ 'ap-pair': '1', code, name, ws: workspace });
+  return `${origin}/connect-extension#${p.toString()}`;
+}
+
+// "Add device": the web app pairs the Chrome it is open in. It creates a one-time code and opens
+// /connect-extension with it in a new tab; the extension takes over that tab, asks for one "Allow"
+// click and pairs. The dialog waits until the new device shows up. Nothing is typed into the extension.
 @Component({
   selector: 'app-pair-device-modal',
   imports: [ModalComponent],
@@ -32,26 +44,34 @@ const POLL_MS = 3000;
         <li>{{ t().api.pairStep2 }}</li>
         <li>{{ t().api.pairStep3 }}</li>
       </ol>
+      <label class="field">
+        <span class="small muted">{{ t().api.pairName }}</span>
+        <input
+          class="su-input"
+          maxlength="80"
+          [placeholder]="t().api.pairNamePh"
+          [value]="name()"
+          (input)="name.set($any($event.target).value)"
+        />
+      </label>
       <div class="field">
-        <div class="small muted">{{ t().api.pairUrl }}</div>
-        <div class="value">
-          <code class="url">{{ apiUrl }}</code>
-          <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="copy(apiUrl)">
-            <i class="ph ph-copy"></i>{{ t().api.copy }}
-          </button>
-        </div>
-      </div>
-      <div class="field">
-        <div class="small muted">{{ t().api.pairCode }}</div>
         @if (code(); as c) {
-          <div class="value">
-            <code class="code" data-testid="pair-code">{{ c.code }}</code>
-            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="copy(c.code)">
-              <i class="ph ph-copy"></i>{{ t().api.copy }}
-            </button>
-          </div>
+          <button
+            type="button"
+            class="su-btn su-btn-md su-btn-primary"
+            data-testid="pair-connect"
+            [disabled]="expired()"
+            (click)="connect(c.code)"
+          >
+            <i class="ph ph-plugs-connected"></i>{{ t().api.pairConnect }}
+          </button>
           <div class="small" [class.muted]="!expired()" [class.err]="expired()">
-            {{ expired() ? t().api.pairExpired : expiresLabel() }}
+            @if (expired()) {
+              {{ t().api.pairExpired }}
+            } @else {
+              {{ t().api.pairCode }} <code data-testid="pair-code">{{ c.code }}</code> ·
+              {{ expiresLabel() }}
+            }
           </div>
         } @else if (error()) {
           <div class="small err">{{ error() }}</div>
@@ -59,7 +79,7 @@ const POLL_MS = 3000;
           <div class="small muted">{{ t().api.loading }}</div>
         }
       </div>
-      @if (code() && !expired()) {
+      @if (opened() && code() && !expired()) {
         <div class="wait small muted">
           <i class="ph ph-circle-notch spin"></i>{{ t().api.pairWaiting }}
         </div>
@@ -70,7 +90,7 @@ const POLL_MS = 3000;
             {{ t().api.pairNew }}
           </button>
         }
-        <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="closed.emit()">
+        <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="closed.emit()">
           {{ t().api.done }}
         </button>
       </div>
@@ -93,26 +113,12 @@ const POLL_MS = 3000;
       gap: 6px;
       margin-bottom: 14px;
     }
-    .value {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
     code {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       background: var(--color-surface-muted);
       border-radius: var(--radius-sm);
-      padding: 6px 10px;
-    }
-    .url {
-      font-size: 14px;
-      word-break: break-all;
-    }
-    .code {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
+      padding: 2px 6px;
+      letter-spacing: 0.08em;
     }
     .err {
       color: var(--color-danger);
@@ -139,14 +145,16 @@ export class PairDeviceModalComponent {
   readonly paired = output<string>();
 
   private readonly devices = inject(DevicesStore);
+  private readonly workspaces = inject(WorkspaceStore);
   private readonly notify = inject(NotificationService);
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
 
-  /** The extension calls the API at the web app's own origin (/api is served from there). */
-  protected readonly apiUrl = typeof location === 'undefined' ? '' : location.origin;
   protected readonly code = signal<ApiPairingCode | null>(null);
   protected readonly error = signal('');
+  protected readonly name = signal(defaultName());
+  /** The connect tab was opened; the extension should be asking for "Allow" now. */
+  protected readonly opened = signal(false);
   private readonly now = signal(Date.now());
   protected readonly expired = computed(() => {
     const c = this.code();
@@ -171,6 +179,7 @@ export class PairDeviceModalComponent {
   protected async newCode(): Promise<void> {
     this.code.set(null);
     this.error.set('');
+    this.opened.set(false);
     try {
       this.code.set(await this.devices.createPairingCode());
     } catch (e) {
@@ -178,8 +187,16 @@ export class PairDeviceModalComponent {
     }
   }
 
-  protected copy(text: string): void {
-    void navigator.clipboard?.writeText(text).then(() => this.notify.info(this.t().api.copied));
+  /** Opens the connect address in a new tab; the extension of this Chrome picks it up. */
+  protected connect(code: string): void {
+    const url = connectUrl(
+      location.origin,
+      code,
+      this.name().trim(),
+      this.workspaces.current()?.name ?? '',
+    );
+    window.open(url, '_blank');
+    this.opened.set(true);
   }
 
   private async start(): Promise<void> {
@@ -205,4 +222,12 @@ export class PairDeviceModalComponent {
     this.paired.emit(fresh.name);
     this.closed.emit();
   }
+}
+
+/** "Chrome 3/10/2569" style default, the same shape the extension uses. */
+function defaultName(): string {
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+  const m = ua.match(/(Edg|OPR|Chrome)\/(\d+)/);
+  const browser = m ? `${m[1].replace('Edg', 'Edge').replace('OPR', 'Opera')} ${m[2]}` : 'Chrome';
+  return `${browser} ${new Date().toLocaleDateString('th-TH')}`;
 }

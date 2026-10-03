@@ -73,6 +73,14 @@ export const routes: Routes = [
           import('./features/library/library-page.component').then((m) => m.LibraryPageComponent),
       },
       {
+        path: 'campaigns',
+        title: page('Campaigns'),
+        loadComponent: () =>
+          import('./features/campaigns/campaigns-page.component').then(
+            (m) => m.CampaignsPageComponent,
+          ),
+      },
+      {
         path: 'antiban',
         title: page('Account safety'),
         loadComponent: () =>
@@ -116,6 +124,15 @@ export const routes: Routes = [
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
       },
     ],
+  },
+  {
+    // Opened by "Connect this Chrome"; the extension takes the tab over (no guard: it never needs one).
+    path: 'connect-extension',
+    title: page('Connect'),
+    loadComponent: () =>
+      import('./features/public/connect-extension-page.component').then(
+        (m) => m.ConnectExtensionPageComponent,
+      ),
   },
   { path: '**', redirectTo: '' },
 ];

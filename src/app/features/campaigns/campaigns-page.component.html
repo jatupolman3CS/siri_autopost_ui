@@ -1,0 +1,235 @@
+<div class="page">
+  <div class="page-head">
+    <div class="w720">
+      <h1>{{ x().title }}</h1>
+      <p>{{ x().sub }}</p>
+    </div>
+    @if (store.device()) {
+      <div class="actions">
+        @if (saveLabel()) {
+          <span class="small muted">{{ saveLabel() }}</span>
+        }
+        <span
+          class="ext-badge"
+          [class.on]="runBadge().cls === 'on'"
+          [class.busy]="runBadge().cls === 'busy'"
+          >{{ runBadge().label }}</span
+        >
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-primary"
+          [disabled]="readOnly() || store.running() || actions.pending()"
+          (click)="start()"
+        >
+          <i class="ph ph-play"></i>{{ x().start }}
+        </button>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-danger"
+          [disabled]="readOnly() || (!store.running() && !state().testing) || actions.pending()"
+          (click)="stop()"
+        >
+          <i class="ph ph-stop"></i>{{ x().stop }}
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (!devices.loaded()) {
+    <div class="panel muted">{{ t().api.loading }}</div>
+  } @else if (!devices.list().length) {
+    <div class="panel stack">
+      <app-empty-state
+        icon="ph-puzzle-piece"
+        [heading]="x().noDeviceTitle"
+        [description]="x().noDeviceBody"
+      />
+      <div class="center">
+        <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/team">{{
+          t().api.addDevice
+        }}</a>
+      </div>
+    </div>
+  } @else {
+    <section class="panel device">
+      <i class="ph ph-desktop-tower dev-icon"></i>
+      <div class="grow">
+        @if (devices.list().length > 1) {
+          <div class="su-select-wrap dev-sel">
+            <select
+              class="su-select ext-in"
+              [attr.aria-label]="x().device"
+              [value]="store.deviceId()"
+              (change)="selectDevice($any($event.target).value)"
+            >
+              @for (d of devices.list(); track d.id) {
+                <option [value]="d.id" [selected]="d.id === store.deviceId()">{{ d.name }}</option>
+              }
+            </select>
+            <i class="ph ph-caret-down su-select-caret"></i>
+          </div>
+        } @else {
+          <div class="fw6">{{ store.device()?.name }}</div>
+        }
+        <div class="small muted">
+          <span
+            class="dot"
+            [style.background]="
+              (store.live()?.online ?? store.device()?.online)
+                ? 'var(--color-success)'
+                : 'var(--color-danger)'
+            "
+          ></span>
+          {{ deviceLine() }} · {{ revisionLine() }}
+        </div>
+      </div>
+      @if (store.device(); as d) {
+        <div class="actions">
+          @if (d.jobsPaused) {
+            <span class="ext-badge busy">{{ t().api.jobsPausedTag }}</span>
+          }
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-ghost"
+            [disabled]="!canManageDevices()"
+            (click)="toggleJobs(d.id, d.jobsPaused)"
+          >
+            <i class="ph" [class]="d.jobsPaused ? 'ph-play' : 'ph-pause'"></i
+            >{{ d.jobsPaused ? t().api.jobsResume : t().api.jobsPause }}
+          </button>
+          <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/team">
+            <i class="ph ph-gear"></i>{{ t().team.devices }}
+          </a>
+        </div>
+      }
+      <p class="small muted hint">{{ x().syncHint }}</p>
+    </section>
+
+    @if (neverSynced()) {
+      <div class="callout warn">
+        <i class="ph ph-info"></i><span>{{ x().neverSynced }}</span>
+      </div>
+    }
+    @if (readOnly()) {
+      <div class="callout">
+        <i class="ph ph-eye"></i><span>{{ x().readOnly }}</span>
+      </div>
+    }
+
+    @if (store.settings()) {
+      <nav class="ext-tabs" [attr.aria-label]="x().campaigns">
+        @for (o of overview(); track o.c.id) {
+          <button
+            type="button"
+            class="tab"
+            [class.active]="o.c.id === store.campaign()?.id"
+            (click)="store.select(o.c.id)"
+          >
+            <span
+              class="dot"
+              [class.on]="o.c.enabled && (o.v.cls === 'on' || o.v.cls === 'busy')"
+              [class.off]="!o.c.enabled"
+            ></span>
+            {{ o.c.name || x().noName }}
+          </button>
+        }
+        <button type="button" class="tab add" [disabled]="readOnly()" (click)="add()">
+          <i class="ph ph-plus"></i>{{ x().addCampaign }}
+        </button>
+      </nav>
+
+      <div class="grid-2">
+        <fieldset class="stack ext-fs" [disabled]="readOnly()">
+          @if (current(); as cur) {
+            <section class="panel stack">
+              <div class="camp-head">
+                <label class="grow">
+                  <span class="su-field-label">{{ x().campName }}</span>
+                  <input
+                    class="su-input ext-in"
+                    maxlength="60"
+                    [value]="cur.c.name"
+                    (input)="rename(cur.c, $any($event.target).value)"
+                  />
+                </label>
+                <label class="ext-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="cur.c.enabled"
+                    (change)="setEnabled(cur.c, $any($event.target).checked)"
+                  />
+                  {{ x().campEnabled }}
+                </label>
+              </div>
+              <div class="small">
+                <span class="fw6">{{ cur.label }}</span> · <span class="muted">{{ cur.meta }}</span>
+              </div>
+              <div class="actions">
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-secondary"
+                  [disabled]="
+                    !store.running() || !cur.c.enabled || store.busy() || actions.pending()
+                  "
+                  (click)="runNow(cur.c)"
+                >
+                  <i class="ph ph-lightning"></i>{{ x().runNow }}
+                </button>
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  (click)="duplicate(cur.c)"
+                >
+                  <i class="ph ph-copy"></i>{{ x().duplicate }}
+                </button>
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost danger"
+                  (click)="remove(cur.c)"
+                >
+                  <i class="ph ph-trash"></i>{{ x().deleteCampaign }}
+                </button>
+              </div>
+            </section>
+            <app-camp-groups [campaign]="cur.c" />
+            <app-camp-posts [campaign]="cur.c" />
+            <app-camp-config [campaign]="cur.c" />
+          } @else {
+            <div class="panel muted">{{ x().noCampaign }}</div>
+          }
+        </fieldset>
+
+        <div class="stack">
+          <section class="panel stack">
+            <h2 class="h2">{{ x().overview }}</h2>
+            <div class="ov">
+              @for (o of overview(); track o.c.id) {
+                <button
+                  type="button"
+                  class="ov-row"
+                  [class.sel]="o.c.id === store.campaign()?.id"
+                  (click)="store.select(o.c.id)"
+                >
+                  <span class="fw6 ellipsis">{{ o.c.name || x().noName }}</span>
+                  <span class="ov-state" [class]="'ov-state ' + o.v.cls">{{ o.v.label }}</span>
+                  <span class="small muted ov-meta">{{ o.meta }}</span>
+                </button>
+              }
+            </div>
+            @if (currentLine()) {
+              <p class="small muted m0">{{ currentLine() }}</p>
+            }
+          </section>
+          <fieldset class="stack ext-fs" [disabled]="readOnly()">
+            <app-camp-global />
+          </fieldset>
+          <app-camp-test />
+          <app-camp-backup />
+          <app-camp-logs />
+        </div>
+      </div>
+    } @else {
+      <div class="panel muted">{{ t().api.loading }}</div>
+    }
+  }
+</div>

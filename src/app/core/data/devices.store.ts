@@ -33,6 +33,14 @@ export class DevicesStore {
     return wsId ? this.api.createPairingCode(wsId) : null;
   }
 
+  /** Renames a browser (its Facebook account follows) or pauses the posts it takes from the web. */
+  async update(id: string, patch: { name?: string; jobsPaused?: boolean }): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    const d = await this.api.updateDevice(wsId, id, patch);
+    this.list.update((l) => l.map((x) => (x.id === id ? d : x)));
+  }
+
   async revoke(id: string): Promise<void> {
     const wsId = this.ws.id();
     if (!wsId) return;

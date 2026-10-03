@@ -1307,6 +1307,255 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/device/sync': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SyncRequest'];
+          'text/json': components['schemas']['SyncRequest'];
+          'application/*+json': components['schemas']['SyncRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['DeviceSyncDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/config': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ExtensionConfigDto'];
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ConfigRequest'];
+          'text/json': components['schemas']['ConfigRequest'];
+          'application/*+json': components['schemas']['ConfigRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ConfigSavedDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/images/missing': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['IdsRequest'];
+          'text/json': components['schemas']['IdsRequest'];
+          'application/*+json': components['schemas']['IdsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MissingImagesDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/images/{imageId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          imageId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ExtensionImageDto'];
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          imageId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ExtensionImageDto'];
+          'text/json': components['schemas']['ExtensionImageDto'];
+          'application/*+json': components['schemas']['ExtensionImageDto'];
+        };
+      };
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/commands/{commandId}/result': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          commandId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['CommandResultRequest'];
+          'text/json': components['schemas']['CommandResultRequest'];
+          'application/*+json': components['schemas']['CommandResultRequest'];
+        };
+      };
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/devices': {
     parameters: {
       query?: never;
@@ -1389,7 +1638,35 @@ export interface paths {
       cookie?: never;
     };
     get?: never;
-    put?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          deviceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['UpdateDeviceRequest'];
+          'text/json': components['schemas']['UpdateDeviceRequest'];
+          'application/*+json': components['schemas']['UpdateDeviceRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['DeviceDto'];
+          };
+        };
+      };
+    };
     post?: never;
     delete: {
       parameters: {
@@ -1617,6 +1894,298 @@ export interface paths {
       };
     };
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/devices/{deviceId}/config': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          deviceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ExtensionConfigDto'];
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          deviceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SaveConfigRequest'];
+          'text/json': components['schemas']['SaveConfigRequest'];
+          'application/*+json': components['schemas']['SaveConfigRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ConfigSavedDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/extension-images/{imageId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          imageId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+            'application/octet-stream': unknown;
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          imageId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ImageRequest'];
+          'text/json': components['schemas']['ImageRequest'];
+          'application/*+json': components['schemas']['ImageRequest'];
+        };
+      };
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/devices/{deviceId}/live': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          deviceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['DeviceLiveDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/devices/{deviceId}/commands': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          deviceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['CommandRequest'];
+          'text/json': components['schemas']['CommandRequest'];
+          'application/*+json': components['schemas']['CommandRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['DeviceCommandDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/devices/{deviceId}/commands/{commandId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          deviceId: string;
+          commandId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['DeviceCommandDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/devices/{deviceId}/logs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          deviceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
     options?: never;
     head?: never;
     patch?: never;
@@ -2395,6 +2964,26 @@ export interface components {
       cycle: null | components['schemas']['BillingCycle'];
       promoCode: null | string;
     };
+    CommandRequest: {
+      cmd: string;
+      args: null | components['schemas']['JsonElement'];
+    };
+    CommandResultRequest: {
+      result: null | components['schemas']['JsonElement'];
+    };
+    /** @enum {unknown} */
+    CommandStatus: 'pending' | 'sent' | 'done' | 'expired';
+    ConfigRequest: {
+      settings: components['schemas']['JsonElement'];
+      /** Format: int32 */
+      baseRevision: null | number;
+    };
+    ConfigSavedDto: {
+      /** Format: int32 */
+      revision: number;
+      /** Format: date-time */
+      updatedAt: null | string;
+    };
     CreateSnippetRequest: {
       title: string;
       text: string;
@@ -2448,6 +3037,21 @@ export interface components {
     };
     /** @enum {unknown} */
     CustomerStatus: 'active' | 'trial' | 'past_due' | 'suspended' | 'banned';
+    DeviceCommandDto: {
+      /** Format: uuid */
+      id: string;
+      cmd: string;
+      status: components['schemas']['CommandStatus'];
+      result: null | components['schemas']['JsonElement'];
+      /** Format: date-time */
+      createdAt: string;
+    };
+    DeviceCommandItemDto: {
+      /** Format: uuid */
+      id: string;
+      cmd: string;
+      args: components['schemas']['JsonElement'];
+    };
     DeviceDto: {
       /** Format: uuid */
       id: string;
@@ -2461,6 +3065,33 @@ export interface components {
       online: boolean;
       /** Format: uuid */
       accountId: null | string;
+      jobsPaused: boolean;
+    };
+    DeviceLiveDto: {
+      /** Format: uuid */
+      deviceId: string;
+      online: boolean;
+      /** Format: date-time */
+      lastSeenAt: null | string;
+      version: string;
+      state: null | components['schemas']['JsonElement'];
+      /** Format: date-time */
+      stateAt: null | string;
+      /** Format: int32 */
+      revision: number;
+      logs: components['schemas']['DeviceLogDto'][];
+    };
+    DeviceLogDto: {
+      /** Format: int64 */
+      t: number;
+      level: string;
+      msg: string;
+    };
+    DeviceLogEntry: {
+      /** Format: int64 */
+      t: number;
+      level: null | string;
+      msg: null | string;
     };
     DeviceStatusDto: {
       /** Format: uuid */
@@ -2475,6 +3106,13 @@ export interface components {
       groups: number;
       online: boolean;
       antiBan: components['schemas']['AntiBanDto'];
+      jobsPaused: boolean;
+    };
+    DeviceSyncDto: {
+      /** Format: int32 */
+      revision: number;
+      hasContent: boolean;
+      commands: components['schemas']['DeviceCommandItemDto'][];
     };
     EngineSettingsDto: {
       antiBan: components['schemas']['AntiBanDto'];
@@ -2485,6 +3123,22 @@ export interface components {
       devices: number;
       /** Format: int32 */
       devicesOnline: number;
+    };
+    ExtensionConfigDto: {
+      /** Format: uuid */
+      deviceId: string;
+      /** Format: int32 */
+      revision: number;
+      settings: null | components['schemas']['JsonElement'];
+      /** Format: date-time */
+      updatedAt: null | string;
+      updatedByDevice: boolean;
+      hasContent: boolean;
+    };
+    ExtensionImageDto: {
+      name: string;
+      type: string;
+      data: string;
     };
     ExtensionStateDto: {
       online: boolean;
@@ -2513,8 +3167,16 @@ export interface components {
     HeartbeatRequest: {
       version: null | string;
     };
+    IdsRequest: {
+      ids: null | string[];
+    };
     /** Format: binary */
     IFormFile: string;
+    ImageRequest: {
+      name: string;
+      type: string;
+      data: string;
+    };
     InviteRequest: {
       email: string;
       role: components['schemas']['WorkspaceRole'];
@@ -2534,6 +3196,7 @@ export interface components {
       name: string;
       contentType: string;
     };
+    JsonElement: unknown;
     LimitOverridesDto: {
       /** Format: int32 */
       accounts: null | number;
@@ -2585,6 +3248,9 @@ export interface components {
       /** Format: date-time */
       lastSeenAt: null | string;
       you: boolean;
+    };
+    MissingImagesDto: {
+      missing: string[];
     };
     NoteRequest: {
       note: null | string;
@@ -2765,6 +3431,11 @@ export interface components {
     RoleRequest: {
       role: components['schemas']['WorkspaceRole'];
     };
+    SaveConfigRequest: {
+      settings: components['schemas']['JsonElement'];
+      /** Format: int32 */
+      baseRevision: null | number;
+    };
     ScheduleRequest: {
       content: string;
       mediaIds: null | string[];
@@ -2799,6 +3470,12 @@ export interface components {
     StatusRequest: {
       status: components['schemas']['CustomerStatus'];
     };
+    SyncRequest: {
+      version: null | string;
+      state: null | components['schemas']['JsonElement'];
+      logs: null | components['schemas']['DeviceLogEntry'][];
+      takeCommands: boolean;
+    };
     TargetSelection: {
       /** Format: uuid */
       accountId: string;
@@ -2820,6 +3497,10 @@ export interface components {
     };
     /** @enum {unknown} */
     TransactionType: 'charge' | 'refund' | 'failed';
+    UpdateDeviceRequest: {
+      name: null | string;
+      jobsPaused: null | boolean;
+    };
     UserDto: {
       /** Format: uuid */
       id: string;
