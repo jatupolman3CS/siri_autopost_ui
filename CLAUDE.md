@@ -42,7 +42,7 @@ Most of this repo is copied from the backend repo, so keep the two in sync:
 |---|---|---|
 | `dashboard.css`, `dashboard.js`, `lib/*`, `icons/*` | `client/` | none (byte-identical) |
 | `dashboard.html` | `client/dashboard.html` | adds `web/shim.css` and `<script type="module" src="web/shim.js">` |
-| `index.html`, `login.html`, `web/admin.js`, `web/shim.js` | `backend/AutoPost.Server/wwwroot/` | asset and editor paths without the `/app/` prefix |
-| `web/admin.css`, `web/shim.css` | `backend/AutoPost.Server/wwwroot/web/` | none |
+| `index.html`, `login.html`, `web/admin.js`, `web/shim.js` | `backend/SIRI.AUTOPOST.Server/wwwroot/` | asset and editor paths without the `/app/` prefix |
+| `web/admin.css`, `web/shim.css` | `backend/SIRI.AUTOPOST.Server/wwwroot/web/` | none |
 
 Changes to the dashboard or `lib/` usually start in the extension, which is the source of truth, and are then copied here. Shared modules such as `lib/shared.js` (settings defaults and `migrateSettings`) define the settings JSON shape that the backend also parses in `Services/Helpers.cs` (`SettingsJson`).
