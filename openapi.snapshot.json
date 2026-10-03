@@ -5902,7 +5902,9 @@
           "name",
           "posts7",
           "members",
-          "role"
+          "role",
+          "limits",
+          "advancedAntiBan"
         ],
         "type": "object",
         "properties": {
@@ -5923,6 +5925,12 @@
           },
           "role": {
             "$ref": "#/components/schemas/WorkspaceRole"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/LimitsDto"
+          },
+          "advancedAntiBan": {
+            "type": "boolean"
           }
         }
       },

@@ -3951,6 +3951,8 @@ export interface components {
       /** Format: int32 */
       members: number;
       role: components['schemas']['WorkspaceRole'];
+      limits: components['schemas']['LimitsDto'];
+      advancedAntiBan: boolean;
     };
     /** @enum {unknown} */
     WorkspaceRole: 'viewer' | 'editor' | 'admin' | 'owner';
