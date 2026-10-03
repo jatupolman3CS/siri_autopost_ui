@@ -1,0 +1,45 @@
+<form class="card form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="field">
+    <label for="content">ข้อความโพสต์</label>
+    <textarea
+      id="content"
+      rows="4"
+      formControlName="content"
+      placeholder="{สวัสดี|หวัดดี} ..."
+    ></textarea>
+    @if (showError('content')) {
+      <span class="error">กรุณาใส่ข้อความโพสต์ (ไม่เกิน 5000 ตัวอักษร)</span>
+    }
+    @for (msg of serverErrors()['content'] ?? []; track msg) {
+      <span class="error">{{ msg }}</span>
+    }
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="groupUrl">ลิงก์กลุ่ม</label>
+      <input
+        id="groupUrl"
+        formControlName="groupUrl"
+        placeholder="https://www.facebook.com/groups/..."
+      />
+      @if (showError('groupUrl')) {
+        <span class="error">กรุณาใส่ลิงก์กลุ่ม</span>
+      }
+      @for (msg of serverErrors()['groupUrl'] ?? []; track msg) {
+        <span class="error">{{ msg }}</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="scheduledAt">ตั้งเวลาโพสต์ (ไม่ใส่ก็ได้)</label>
+      <input id="scheduledAt" type="datetime-local" formControlName="scheduledAt" />
+    </div>
+  </div>
+
+  <div>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'กำลังบันทึก...' : 'บันทึกโพสต์' }}
+    </button>
+  </div>
+</form>

@@ -1,0 +1,23 @@
+<header class="page-head">
+  <h1>โพสต์อัตโนมัติ</h1>
+  <p class="summary">
+    ฉบับร่าง {{ store.countByStatus().Draft }} · ตั้งเวลา {{ store.countByStatus().Scheduled }} ·
+    เผยแพร่แล้ว {{ store.countByStatus().Published }} · ไม่สำเร็จ {{ store.countByStatus().Failed }}
+  </p>
+</header>
+
+<app-post-form
+  [saving]="store.saving()"
+  [serverErrors]="store.fieldErrors()"
+  (submitted)="create($event)"
+/>
+
+<section class="posts" aria-label="รายการโพสต์">
+  @if (store.loading()) {
+    <app-spinner />
+  } @else if (store.posts().length === 0) {
+    <p class="empty">ยังไม่มีโพสต์</p>
+  } @else {
+    <app-post-list [posts]="store.posts()" (deleted)="remove($event)" />
+  }
+</section>

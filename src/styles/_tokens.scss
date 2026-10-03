@@ -1,0 +1,66 @@
+// Design tokens (SIRI design system, AutoPost Dashboard palette from the Claude Design handoff).
+// Components use only these CSS variables, never raw colors.
+:root,
+:root[data-theme='light'] {
+  --color-bg: #ffffff;
+  --color-surface: #f7f9fc;
+  --color-surface-muted: #e8f0fc;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-muted: #5b6b82;
+  --color-text-inverse: #ffffff;
+  --color-primary: #1e6ce2;
+  --color-primary-hover: #1757b8;
+  --color-primary-foreground: #ffffff;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-focus-ring: #1e6ce2;
+
+  --font-sans:
+    'IBM Plex Sans Thai', system-ui, -apple-system, 'Noto Sans Thai', 'Leelawadee UI', sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+  --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.1), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.06);
+}
+
+@mixin dark-palette {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-muted: #273449;
+  --color-border: #334155;
+  --color-text: #f1f5f9;
+  --color-text-muted: #a3b1c6;
+  --color-text-inverse: #0f172a;
+  --color-primary-hover: #60a5fa;
+  --color-focus-ring: #60a5fa;
+}
+
+// Dark mode follows the OS unless ThemeService forces <html data-theme="light|dark">.
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include dark-palette;
+  }
+}
+
+:root[data-theme='dark'] {
+  @include dark-palette;
+}

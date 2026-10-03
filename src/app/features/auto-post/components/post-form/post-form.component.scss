@@ -1,0 +1,16 @@
+.form {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-md);
+}
+
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
