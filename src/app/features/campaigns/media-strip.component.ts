@@ -8,6 +8,7 @@ import {
   output,
 } from '@angular/core';
 import { CampaignsStore } from '../../core/data/campaigns.store';
+import '../../core/i18n/i18n.ext';
 import { I18nService } from '../../core/i18n/i18n.service';
 
 // Thumbnails of stored campaign media (photos and videos) with remove and, for the lead media,

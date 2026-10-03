@@ -9,7 +9,7 @@ import {
   TxType,
 } from '../../core/data/models';
 import { perMonth } from '../../core/data/plans';
-import { SEED } from '../../core/data/seed.data';
+import { PLATFORMS } from '../../core/data/platforms';
 import { baht, displayYear, fmtDate, hm, monthName } from '../../core/i18n/format';
 import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
 import { ApiAdminJob, ApiAuditAction, ApiAuditEntry } from '../../core/http/api.service';
@@ -161,7 +161,7 @@ export class AdminViewService {
   jobRows(list: ApiAdminJob[]): JobRow[] {
     const t = this.i18n.t();
     return list.map((j) => {
-      const platform = SEED.platforms[j.platform];
+      const platform = PLATFORMS[j.platform];
       const at = new Date(j.scheduledAt);
       return {
         time: `${fmtDate(at, this.i18n.li())} ${hm(at)}`,

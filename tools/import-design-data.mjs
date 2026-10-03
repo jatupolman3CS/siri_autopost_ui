@@ -18,6 +18,6 @@ writeFileSync(
 );
 writeFileSync(
   'src/app/core/data/seed.data.ts',
-  `${header}// Sample data authored for 2026-10-03; SeedLoader shifts every date to the real "today".\nimport { SeedData } from './models';\n\nexport const SEED: SeedData = ${JSON.stringify(AP_SEED, null, 2)};\n`,
+  `${header}// Sample data from the design (platforms, month and day names, plan limits, the landing-page preview).\nimport { SeedData } from './models';\n\nexport const SEED: SeedData = ${JSON.stringify(AP_SEED, null, 2)};\n`,
 );
 console.log('ok');

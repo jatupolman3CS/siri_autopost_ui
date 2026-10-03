@@ -6,7 +6,7 @@ import { ExtensionStore } from '../../core/data/extension.store';
 import { PlatformKey } from '../../core/data/models';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
-import { SEED } from '../../core/data/seed.data';
+import { PLATFORMS } from '../../core/data/platforms';
 import { SessionStore } from '../../core/data/session.store';
 import { SettingsStore } from '../../core/data/settings.store';
 import { DevicesStore } from '../../core/data/devices.store';
@@ -60,7 +60,7 @@ export class ExtensionPageComponent {
     const p = this.posts.next();
     const m = this.stats.nextInMin();
     if (!p) return { inMin: '', icon: 'ph-clock', time: '--:--', target: '', text: '' };
-    const platform = SEED.platforms[p.platform];
+    const platform = PLATFORMS[p.platform];
     return {
       inMin: fmt(this.t().ext.inMin, { m: m ?? 0 }),
       icon: platform.icon,
@@ -75,8 +75,8 @@ export class ExtensionPageComponent {
     const used = this.settings.used24h();
     const ready = this.posts.loaded() && this.accounts.loaded();
     return (['fb', 'ig', 'x'] as PlatformKey[]).map((k) => ({
-      icon: SEED.platforms[k].icon,
-      name: SEED.platforms[k].name,
+      icon: PLATFORMS[k].icon,
+      name: PLATFORMS[k].name,
       pct: ready ? Math.min(100, Math.round((used[k] / limits[k]) * 100)) : 0,
       label: `${ready ? used[k] : '—'}/${limits[k]}`,
     }));

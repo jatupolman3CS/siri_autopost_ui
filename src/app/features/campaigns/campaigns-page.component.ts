@@ -14,6 +14,7 @@ import { DevicesStore } from '../../core/data/devices.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { Campaign, fmtDateTime } from '../../core/ext/lib/shared.js';
 import { campaignMeta, campaignView } from '../../core/ext/run-view';
+import '../../core/i18n/i18n.ext';
 import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';

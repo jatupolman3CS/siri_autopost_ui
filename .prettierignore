@@ -1,0 +1,19 @@
+# Not formatted by Prettier (so `npx prettier --check .` agrees with CI's scoped check)
+/dist
+/node_modules
+/.angular
+package-lock.json
+# The old Vite app keeps the extension's own style; its files are byte copies of the backend's
+/legacy
+# The extension's libraries are copied byte for byte from siri_autopost_backend/client/lib
+/src/app/core/ext/lib/*.js
+# Generated from the API contract and the design handoff
+openapi.snapshot.json
+# Prose and config
+*.md
+.vscode
+.github
+deploy
+Jenkinsfile
+Dockerfile
+nginx.conf

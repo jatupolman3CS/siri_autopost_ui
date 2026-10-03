@@ -14,6 +14,7 @@ import {
   splitPageTags,
 } from '../../core/ext/lib/shared.js';
 import { shortGroup } from '../../core/ext/run-view';
+import '../../core/i18n/i18n.ext';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { MediaStripComponent } from './media-strip.component';
@@ -95,7 +96,7 @@ export class CampPostsComponent {
     const withText = groups.filter((g) => g.text.trim());
     const g = withText.length ? pick(withText) : (groups[0] ?? null);
     const text = composeText(p.text, g ? g.text : '', c.config.footer, c.config.footerPosition);
-    const head = g ? fmt(x.previewFor, { g: g.name || shortGroup(g.url) }) : x.preview;
+    const head = g ? fmt(x.previewFor, { g: g.name || shortGroup(g.url, x.groupWord) }) : x.preview;
     this.previews.update((v) => ({
       ...v,
       [p.id]: `${head}\n──────────\n${text || x.noText}${this.tagNote(c, text)}`,

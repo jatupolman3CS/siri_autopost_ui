@@ -3,6 +3,7 @@ import { CampaignsStore } from '../../core/data/campaigns.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { DEFAULT_GLOBAL, GlobalSettings, TelegramSettings } from '../../core/ext/lib/shared.js';
 import { guardLine } from '../../core/ext/run-view';
+import '../../core/i18n/i18n.ext';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { CampaignActions } from './campaign-actions.service';

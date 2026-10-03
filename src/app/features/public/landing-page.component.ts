@@ -7,7 +7,7 @@ import { samplePosts } from '../../core/data/sample';
 import { dkey } from '../../core/i18n/format';
 import { PlanKey } from '../../core/data/models';
 import { tierViews } from '../../core/data/plans';
-import { SEED } from '../../core/data/seed.data';
+import { PLATFORMS } from '../../core/data/platforms';
 import { SettingsStore } from '../../core/data/settings.store';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { CycleSwitchComponent } from '../../shared/components/cycle-switch.component';
@@ -30,7 +30,7 @@ export class LandingPageComponent {
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
 
-  protected readonly platforms = Object.values(SEED.platforms);
+  protected readonly platforms = Object.values(PLATFORMS);
   // The product preview runs on the design's sample posts (guests have no workspace).
   private readonly now = new Date();
   private readonly sample = computed(() => samplePosts(this.now, this.i18n.li()).map(withDay));

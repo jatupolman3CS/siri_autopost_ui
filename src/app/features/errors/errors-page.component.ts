@@ -3,7 +3,7 @@ import { STATUS_DOT } from '../../core/data/models';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
-import { SEED } from '../../core/data/seed.data';
+import { PLATFORMS } from '../../core/data/platforms';
 import { dkey, fmtDate, hm } from '../../core/i18n/format';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -40,7 +40,7 @@ export class ErrorsPageComponent {
     return list.map((e) => {
       const r = t.reasons[e.code];
       const pending = e.code === 'pending_approval';
-      const platform = SEED.platforms[e.platform];
+      const platform = PLATFORMS[e.platform];
       return {
         id: e.id,
         accountId: e.accountId,

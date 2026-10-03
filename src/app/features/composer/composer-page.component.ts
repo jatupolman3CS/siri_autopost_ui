@@ -7,7 +7,7 @@ import { PermissionsService } from '../../core/data/permissions.service';
 import { LibraryStore } from '../../core/data/library.store';
 import { PlatformKey, SocialAccount, accountKind } from '../../core/data/models';
 import { PostsStore } from '../../core/data/posts.store';
-import { SEED } from '../../core/data/seed.data';
+import { PLATFORMS } from '../../core/data/platforms';
 import { SettingsStore } from '../../core/data/settings.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -113,7 +113,7 @@ export class ComposerPageComponent {
       const checked = !!d.targets[a.id] && !disabled;
       return {
         id: a.id,
-        icon: SEED.platforms[a.platform].icon,
+        icon: PLATFORMS[a.platform].icon,
         label: `${a.name} · ${a.handle}`,
         checked,
         disabled,

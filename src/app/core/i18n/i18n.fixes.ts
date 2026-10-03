@@ -70,14 +70,14 @@ export const AP_I18N_FIXES = {
   ab: {
     // Facebook rolling 24-hour limit; the server fails the post (quota), it does not roll it over.
     limitsBody: [
-      'จำนวนโพสต์สูงสุดใน 24 ชั่วโมงแยกตามแพลตฟอร์ม เมื่อถึงเพดาน โพสต์ที่เหลือจะล้มเหลวด้วยสาเหตุโควตา (กดลองใหม่ภายหลังได้) ไม่ได้เลื่อนไปวันถัดไปให้เอง',
-      'Maximum posts per platform in any 24 hours. Once a limit is reached the remaining posts fail with a quota error (retry them later); nothing is rolled over to tomorrow',
+      'จำนวนโพสต์สูงสุดใน 24 ชั่วโมงต่อแพลตฟอร์ม เมื่อถึงเพดาน โพสต์ที่เหลือจะล้มเหลวด้วยสาเหตุโควตา (ลองใหม่ภายหลังได้) ไม่ถูกเลื่อนไปพรุ่งนี้เอง',
+      'Maximum posts per platform in any 24 hours. At the limit the rest fail with a quota error (retry later); nothing rolls over to tomorrow',
     ],
     usedToday: ['ใช้ไปใน 24 ชม.', 'Used in 24 h'],
     // The random wait is applied when posts are scheduled; the extension only enforces the minimum gap.
     delayBody: [
-      'โพสต์ที่ตั้งเวลาพร้อมกันจะถูกเว้นระยะแบบสุ่มระหว่างค่าต่ำสุดและสูงสุด และส่วนขยายจะไม่โพสต์จากบัญชีเดียวกันถี่กว่าค่าต่ำสุด',
-      'Posts scheduled together are spaced by a random wait between the minimum and the maximum, and the extension never posts from one account closer than the minimum',
+      'โพสต์ที่ตั้งเวลาพร้อมกันจะเว้นระยะสุ่มระหว่างค่าต่ำสุดถึงสูงสุด และไม่โพสต์จากบัญชีเดียวกันถี่กว่าค่าต่ำสุด',
+      'Posts scheduled together are spaced by a random wait between the minimum and maximum, and one account never posts closer than the minimum',
     ],
     riskNote: [
       'คำนวณจากค่าหน่วงต่ำสุด เพดาน Facebook และการพิมพ์/เลื่อนหน้าที่เปิดไว้',
@@ -139,8 +139,8 @@ export const AP_I18N_FIXES = {
     network: {
       title: ['โพสต์ไม่สำเร็จ', 'The post did not complete'],
       body: [
-        'ส่วนขยายทำโพสต์ไม่เสร็จ: การเชื่อมต่อหลุด เครื่องไม่ส่งผลกลับมาภายใน 15 นาที หรือไม่พบกลุ่มนี้ในส่วนขยายแล้ว โพสต์อาจออกไปแล้วหรือยังไม่ออกก็ได้',
-        'The extension did not finish the post: the connection dropped, the browser did not report back within 15 minutes, or the group is no longer in the extension. It may or may not have gone out',
+        'ส่วนขยายทำโพสต์ไม่เสร็จ (การเชื่อมต่อหลุด ไม่ส่งผลกลับใน 15 นาที หรือไม่พบกลุ่มแล้ว) โพสต์อาจออกไปแล้วหรือยังไม่ออกก็ได้',
+        'The extension did not finish the post (connection lost, no report within 15 minutes, or the group is gone). It may or may not have gone out',
       ],
       fix: [
         'ตรวจดูในกลุ่มก่อน ถ้ายังไม่มีโพสต์ค่อยกดลองใหม่',
@@ -195,7 +195,7 @@ export const AP_I18N_FIXES = {
     ],
     // No email is sent: the person joins when they sign up or log in with that address.
     invited: [
-      'เพิ่มคำเชิญสำหรับ {e} แล้ว เขาจะเข้าทีมเมื่อสมัครหรือเข้าสู่ระบบด้วยอีเมลนี้ (ระบบไม่ได้ส่งอีเมลให้)',
+      'เพิ่มคำเชิญสำหรับ {e} แล้ว เขาเข้าทีมเมื่อสมัครหรือเข้าสู่ระบบด้วยอีเมลนี้ (ไม่มีการส่งอีเมล)',
       'Invitation added for {e}. They join when they sign up or log in with this email (no email is sent)',
     ],
     // The device stops at its next call to the API, and has to be paired again from the web.
@@ -217,8 +217,8 @@ export const AP_I18N_FIXES = {
     ],
     // Suspend and ban block sign-in and posting and pause billing; neither cancels the subscription.
     aSuspend: [
-      'ลูกค้าเข้าสู่ระบบและโพสต์ไม่ได้จนกว่าจะคืนสถานะ และหยุดการเรียกเก็บเงินไว้ ส่วนขยายทุกเครื่องจะหยุดเมื่อติดต่อเซิร์ฟเวอร์ครั้งถัดไป',
-      'The customer cannot sign in or post until restored, and billing is paused. Every extension stops at its next call',
+      'ลูกค้าเข้าสู่ระบบและโพสต์ไม่ได้จนกว่าจะคืนสถานะ และหยุดเรียกเก็บเงินไว้ ส่วนขยายทุกเครื่องหยุดเมื่อติดต่อเซิร์ฟเวอร์ครั้งถัดไป',
+      'The customer cannot sign in or post until restored, and billing pauses. Every extension stops at its next call',
     ],
     aBan: [
       'บล็อกบัญชี: เข้าสู่ระบบและโพสต์ไม่ได้ และหยุดการเรียกเก็บเงินไว้ คืนสถานะได้ภายหลัง',

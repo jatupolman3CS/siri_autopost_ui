@@ -2,8 +2,8 @@ import { dkey } from '../i18n/format';
 import { L10n, PostItem, PostStatus } from './models';
 import { SEED } from './seed.data';
 
-// Sample posts from the design handoff, for screens that have no workspace data behind them:
-// the landing page preview (guests) and the platform-admin mock.
+// Sample posts from the design handoff, for the one screen that has no workspace data behind it:
+// the landing page preview (guests).
 export const CONTENTS: L10n[] = SEED.posts.map((p) => p.text);
 
 /**

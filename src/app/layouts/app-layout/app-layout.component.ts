@@ -117,7 +117,7 @@ export class AppLayoutComponent {
   );
 
   protected label(key: string): string {
-    if (key === EXT_CAMPAIGNS) return this.t().api.ext.nav;
+    if (key === EXT_CAMPAIGNS) return this.t().api.extNav;
     return (this.t().nav as Record<string, string>)[key];
   }
 

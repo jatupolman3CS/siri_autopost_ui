@@ -3,8 +3,7 @@ import { adminGuard, guestGuard, signedInGuard } from './core/auth/guards';
 import { AppLayoutComponent } from './layouts/app-layout/app-layout.component';
 import { PublicLayoutComponent } from './layouts/public-layout/public-layout.component';
 
-const page = (title: string) => `${title} · AutoPost`;
-
+// A route's `title` is the dotted path of its text in the dictionary (see DictionaryTitleStrategy).
 // Public pages for guests; everything under /app needs a signed-in user,
 // and /app/admin the platform-admin role. Every page is lazy loaded.
 export const routes: Routes = [
@@ -16,20 +15,19 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        title: 'AutoPost',
         loadComponent: () =>
           import('./features/public/landing-page.component').then((m) => m.LandingPageComponent),
       },
       {
         path: 'login',
-        title: page('Log in'),
+        title: 'auth.title',
         data: { mode: 'login' },
         loadComponent: () =>
           import('./features/public/auth-page.component').then((m) => m.AuthPageComponent),
       },
       {
         path: 'signup',
-        title: page('Sign up'),
+        title: 'auth.signupTitle',
         data: { mode: 'signup' },
         loadComponent: () =>
           import('./features/public/auth-page.component').then((m) => m.AuthPageComponent),
@@ -44,7 +42,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
       {
         path: 'overview',
-        title: page('Overview'),
+        title: 'nav.overview',
         loadComponent: () =>
           import('./features/overview/overview-page.component').then(
             (m) => m.OverviewPageComponent,
@@ -52,7 +50,7 @@ export const routes: Routes = [
       },
       {
         path: 'calendar',
-        title: page('Calendar'),
+        title: 'nav.calendar',
         loadComponent: () =>
           import('./features/calendar/calendar-page.component').then(
             (m) => m.CalendarPageComponent,
@@ -60,7 +58,7 @@ export const routes: Routes = [
       },
       {
         path: 'composer',
-        title: page('Write post'),
+        title: 'nav.composer',
         loadComponent: () =>
           import('./features/composer/composer-page.component').then(
             (m) => m.ComposerPageComponent,
@@ -68,13 +66,13 @@ export const routes: Routes = [
       },
       {
         path: 'library',
-        title: page('Library'),
+        title: 'nav.library',
         loadComponent: () =>
           import('./features/library/library-page.component').then((m) => m.LibraryPageComponent),
       },
       {
         path: 'campaigns',
-        title: page('Campaigns'),
+        title: 'api.extNav',
         loadComponent: () =>
           import('./features/campaigns/campaigns-page.component').then(
             (m) => m.CampaignsPageComponent,
@@ -82,37 +80,37 @@ export const routes: Routes = [
       },
       {
         path: 'antiban',
-        title: page('Account safety'),
+        title: 'nav.antiban',
         loadComponent: () =>
           import('./features/antiban/antiban-page.component').then((m) => m.AntibanPageComponent),
       },
       {
         path: 'offline',
-        title: page('Offline handling'),
+        title: 'nav.offline',
         loadComponent: () =>
           import('./features/offline/offline-page.component').then((m) => m.OfflinePageComponent),
       },
       {
         path: 'errors',
-        title: page('Error reports'),
+        title: 'nav.errors',
         loadComponent: () =>
           import('./features/errors/errors-page.component').then((m) => m.ErrorsPageComponent),
       },
       {
         path: 'billing',
-        title: page('Plans & billing'),
+        title: 'nav.billing',
         loadComponent: () =>
           import('./features/billing/billing-page.component').then((m) => m.BillingPageComponent),
       },
       {
         path: 'team',
-        title: page('Team & workspaces'),
+        title: 'nav.team',
         loadComponent: () =>
           import('./features/team/team-page.component').then((m) => m.TeamPageComponent),
       },
       {
         path: 'extension',
-        title: page('Extension popup'),
+        title: 'nav.extension',
         loadComponent: () =>
           import('./features/extension/extension-page.component').then(
             (m) => m.ExtensionPageComponent,
@@ -128,7 +126,7 @@ export const routes: Routes = [
   {
     // Opened by "Connect this Chrome"; the extension takes the tab over (no guard: it never needs one).
     path: 'connect-extension',
-    title: page('Connect'),
+    title: 'api.pairTitle',
     loadComponent: () =>
       import('./features/public/connect-extension-page.component').then(
         (m) => m.ConnectExtensionPageComponent,

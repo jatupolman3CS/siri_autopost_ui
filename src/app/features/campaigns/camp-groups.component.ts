@@ -12,6 +12,7 @@ import {
   usablePosts,
 } from '../../core/ext/lib/shared.js';
 import { shortGroup, usedToday } from '../../core/ext/run-view';
+import '../../core/i18n/i18n.ext';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 
@@ -81,7 +82,7 @@ export class CampGroupsComponent {
             names:
               empty
                 .slice(0, 5)
-                .map((g) => g.name || shortGroup(g.url))
+                .map((g) => g.name || shortGroup(g.url, x.groupWord))
                 .join(', ') + (empty.length > 5 ? ' ...' : ''),
           })
         : '',

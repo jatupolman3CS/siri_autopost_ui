@@ -3,6 +3,7 @@ import { Injector, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { SessionStore } from '../data/session.store';
+import { safeReturnUrl } from './guards';
 import { tokenStorage } from './token';
 
 // Sends the bearer token with every API call. A 401 means the token expired or was revoked,
@@ -33,8 +34,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             .endAssist()
             .then((id) => router.navigateByUrl(id ? `/app/admin/customers/${id}` : '/login'));
         else {
+          // Back to the page that was open once the person has signed in again.
+          const returnUrl = safeReturnUrl(router.url);
           session.signOut();
-          void router.navigateByUrl('/login');
+          void router.navigate(['/login'], returnUrl ? { queryParams: { returnUrl } } : {});
         }
       }
       return throwError(() => err);

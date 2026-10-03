@@ -10,6 +10,7 @@ import {
   usablePosts,
 } from '../../core/ext/lib/shared.js';
 import { shortGroup } from '../../core/ext/run-view';
+import '../../core/i18n/i18n.ext';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { CampaignActions } from './campaign-actions.service';
 
@@ -33,7 +34,7 @@ export class CampTestComponent {
 
   protected readonly groups = computed(() =>
     activeGroups(this.store.campaign() ?? emptyCampaign).map((g) => {
-      const label = g.name.trim() || shortGroup(g.url);
+      const label = g.name.trim() || shortGroup(g.url, this.x().groupWord);
       return {
         url: g.url,
         label: g.text.trim() ? `${label} (${g.text.trim().slice(0, 20)})` : label,

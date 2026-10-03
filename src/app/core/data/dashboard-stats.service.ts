@@ -4,7 +4,7 @@ import { Dict, I18nService } from '../i18n/i18n.service';
 import { AccountsStore } from './accounts.store';
 import { HEALTH_DOT, accountKind } from './models';
 import { PostsStore, QueueItem, postRow } from './posts.store';
-import { SEED } from './seed.data';
+import { PLATFORMS } from './platforms';
 
 const DAY_MS = 864e5;
 
@@ -98,7 +98,7 @@ export class DashboardStatsService {
     return this.accounts.list().map((a) => {
       const kind = accountKind(a);
       return {
-        icon: SEED.platforms[a.platform].icon,
+        icon: PLATFORMS[a.platform].icon,
         name: a.name,
         handle: a.handle,
         /** "Sample" for a new workspace's demo accounts, "Unbound" for one whose browser was unpaired. */
@@ -118,7 +118,7 @@ export class DashboardStatsService {
       .slice(0, 2)
       .map((e) => ({
         title: t.reasons[e.code].title,
-        meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${SEED.platforms[e.platform].name} · ${e.target}`,
+        meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${PLATFORMS[e.platform].name} · ${e.target}`,
       }));
   });
 }

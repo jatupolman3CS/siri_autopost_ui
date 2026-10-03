@@ -6,6 +6,7 @@ import {
   CommandResult,
 } from '../../core/data/campaigns.store';
 import { PermissionsService } from '../../core/data/permissions.service';
+import '../../core/i18n/i18n.ext';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 

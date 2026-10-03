@@ -99,5 +99,6 @@ export function usedToday(state: RunState, url: string, now = Date.now()): numbe
   return ((state.groupPostTimes ?? {})[u] ?? []).filter((t) => now - t < 24 * 3600000).length;
 }
 
-export const shortGroup = (url: string) =>
-  String(url).replace('https://www.facebook.com/groups/', 'กลุ่ม ').replace(/\/$/, '');
+/** A group's address as a short label: "group 123" (`word` is "group" in the page's language). */
+export const shortGroup = (url: string, word: string) =>
+  String(url).replace('https://www.facebook.com/groups/', `${word} `).replace(/\/$/, '');

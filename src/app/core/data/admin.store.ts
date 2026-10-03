@@ -11,8 +11,8 @@ import {
   ApiTransaction,
 } from '../http/api.service';
 import { loadWithRetry } from './loading';
+import { DESIGN_PLANS } from './plans';
 import { Customer, DiscountKey, LimitKey, PlanKey, PlanLimits, Promo, Transaction } from './models';
-import { SEED } from './seed.data';
 import { SessionStore } from './session.store';
 
 export type AdminAction = 'suspend' | 'ban' | 'refund' | 'assist' | 'restore';
@@ -88,7 +88,7 @@ const toPromo = (p: ApiPromo): Promo => ({
 });
 
 function toPlans(list: ApiPlanSetting[]): Record<PlanKey, PlanLimits> {
-  const out = structuredClone(SEED.planLimits);
+  const out = structuredClone(DESIGN_PLANS);
   for (const p of list)
     out[p.key] = {
       price: p.price,
@@ -115,7 +115,7 @@ export class AdminStore {
   readonly transactions = signal<Transaction[]>([]);
   readonly promos = signal<Promo[]>([]);
   /** The design's values until /api/plans answers. */
-  readonly plans = signal<Record<PlanKey, PlanLimits>>(structuredClone(SEED.planLimits));
+  readonly plans = signal<Record<PlanKey, PlanLimits>>(structuredClone(DESIGN_PLANS));
   readonly subs = signal<Record<'basic' | 'pro' | 'agency', number>>({
     basic: 0,
     pro: 0,

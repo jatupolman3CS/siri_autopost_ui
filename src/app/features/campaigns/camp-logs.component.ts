@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { CampaignsStore } from '../../core/data/campaigns.store';
 import { fmtDateTime } from '../../core/ext/lib/shared.js';
+import '../../core/i18n/i18n.ext';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { CampaignActions } from './campaign-actions.service';
 

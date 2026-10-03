@@ -6,6 +6,7 @@ import {
   DEFAULT_CONFIG,
   TypingSpeed,
 } from '../../core/ext/lib/shared.js';
+import '../../core/i18n/i18n.ext';
 import { I18nService } from '../../core/i18n/i18n.service';
 
 type NumKey = {

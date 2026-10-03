@@ -5,7 +5,7 @@ import { AntiBanSettings, SettingsStore } from '../../core/data/settings.store';
 import { PlatformKey } from '../../core/data/models';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
-import { SEED } from '../../core/data/seed.data';
+import { PLATFORMS } from '../../core/data/platforms';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { hm } from '../../core/i18n/format';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -88,7 +88,7 @@ export class AntibanPageComponent {
         const at = Math.max(p.dt.getTime(), earliest);
         last.set(p.accountId, at);
         const late = Math.round((at - p.dt.getTime()) / 60000);
-        const platform = SEED.platforms[p.platform];
+        const platform = PLATFORMS[p.platform];
         return {
           time: hm(new Date(at)),
           icon: platform.icon,
@@ -102,12 +102,12 @@ export class AntibanPageComponent {
     const ab = this.ab();
     const used = this.settings.used24h();
     const ready = this.posts.loaded() && this.accounts.loaded();
-    return (Object.keys(SEED.platforms) as PlatformKey[]).map((k) => {
+    return (Object.keys(PLATFORMS) as PlatformKey[]).map((k) => {
       const r = used[k] / ab.limits[k];
       return {
         k,
-        icon: SEED.platforms[k].icon,
-        name: SEED.platforms[k].name,
+        icon: PLATFORMS[k].icon,
+        name: PLATFORMS[k].name,
         limit: ab.limits[k],
         usedLabel: `${this.t().ab.usedToday} ${ready ? used[k] : '—'}/${ab.limits[k]}`,
         pct: ready ? Math.min(100, Math.round(r * 100)) : 0,

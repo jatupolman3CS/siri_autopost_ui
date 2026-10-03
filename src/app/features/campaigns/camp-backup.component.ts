@@ -5,6 +5,7 @@ import { fmtDateTime } from '../../core/ext/lib/shared.js';
 import { convertSiriExport, nameFromFile } from '../../core/ext/lib/siri-import.js';
 import { readZip } from '../../core/ext/lib/zip.js';
 import { downloadBlob, fileStamp, safeFileName } from '../../core/ext/media';
+import '../../core/i18n/i18n.ext';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { CampaignActions } from './campaign-actions.service';

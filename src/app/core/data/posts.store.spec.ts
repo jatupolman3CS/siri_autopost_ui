@@ -13,10 +13,13 @@ import { PostsStore } from './posts.store';
 describe('PostsStore', () => {
   let http: HttpTestingController;
   let store: PostsStore;
-  const now = new Date();
+  // Noon, so "an hour from now" is still today whatever time the suite runs at.
+  const now = new Date(2026, 9, 3, 12, 0);
   const at = (min: number) => new Date(now.getTime() + min * 60000).toISOString();
 
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(now);
     http = provideApiTesting();
     store = TestBed.inject(PostsStore);
     await signIn(http, {
@@ -36,7 +39,10 @@ describe('PostsStore', () => {
     });
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    http.verify();
+  });
 
   it('loads the months around today and the open errors of the workspace', () => {
     expect(store.posts().map((p) => p.id)).toEqual(['p1', 'p2']);

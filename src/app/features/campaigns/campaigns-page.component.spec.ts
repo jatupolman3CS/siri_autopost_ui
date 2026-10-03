@@ -2,6 +2,7 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { CampaignsStore } from '../../core/data/campaigns.store';
+import { assistStorage } from '../../core/auth/token';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { WORKSPACE, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { CampaignsPageComponent } from './campaigns-page.component';
@@ -95,5 +96,45 @@ describe('CampaignsPageComponent', () => {
     const editor = el.querySelector<HTMLFieldSetElement>('fieldset.ext-fs')!;
     expect(editor.disabled).toBe(true);
     expect(el.querySelector<HTMLButtonElement>('.page-head .su-btn-danger')!.disabled).toBe(true);
+  });
+
+  it('is read-only for an admin looking at the customer app (assist mode)', async () => {
+    TestBed.resetTestingModule();
+    http = provideApiTesting({
+      imports: [CampaignsPageComponent],
+      providers: [provideRouter([{ path: '**', children: [] }])],
+    });
+    assistStorage.set({
+      adminToken: 'a',
+      customerId: 'u-1',
+      email: 'owner@shop.co',
+      expiresAt: '2099-01-01T00:00:00Z',
+    });
+    TestBed.inject(CampaignsStore);
+    await signIn(http, { devices: [DEVICE] });
+    const el = await render();
+    expect(el.querySelector<HTMLFieldSetElement>('fieldset.ext-fs')!.disabled).toBe(true);
+    expect(el.querySelector<HTMLButtonElement>('.page-head .su-btn-danger')!.disabled).toBe(true);
+    expect(el.querySelector('.callout .ph-eye')).not.toBeNull();
+  });
+
+  describe('Telegram bot token', () => {
+    const tokenInput = (el: HTMLElement) =>
+      el.querySelector<HTMLInputElement>('app-camp-global input[type=password]')!;
+
+    it('can be seen and changed by an admin', async () => {
+      TestBed.inject(WorkspaceStore).list.set([{ ...WORKSPACE, role: 'admin' }]);
+      const el = await render();
+      expect(tokenInput(el).disabled).toBe(false);
+    });
+
+    it('is disabled with a hint for an editor: the API hides it and keeps the stored one', async () => {
+      TestBed.inject(WorkspaceStore).list.set([{ ...WORKSPACE, role: 'editor' }]);
+      const el = await render();
+      expect(tokenInput(el).disabled).toBe(true);
+      expect(tokenInput(el).placeholder).not.toBe('123456789:AA...');
+      const hints = [...el.querySelectorAll('app-camp-global .ext-hint')].map((h) => h.textContent);
+      expect(hints.some((h) => /Bot Token/.test(h ?? '') && /ผู้ดูแล/.test(h ?? ''))).toBe(true);
+    });
   });
 });

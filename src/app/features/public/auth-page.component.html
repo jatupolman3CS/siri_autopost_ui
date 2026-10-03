@@ -4,6 +4,12 @@
       <h1>{{ isLogin() ? t().auth.title : t().auth.signupTitle }}</h1>
       <p class="sub">{{ isLogin() ? t().auth.sub : t().auth.signupSub }}</p>
     </div>
+    @if (restoreFailed()) {
+      <div class="callout" role="status">
+        <i class="ph ph-warning-circle" style="color: var(--color-warning)"></i>
+        <span>{{ t().api.restoreFailed }}</span>
+      </div>
+    }
     @if (pendingPlan(); as p) {
       <div class="callout">
         <i class="ph ph-tag" style="color: var(--color-primary)"></i>
@@ -17,6 +23,7 @@
       [label]="t().auth.email"
       placeholder="name@shop.co"
       autocomplete="email"
+      [maxlength]="emailMax"
       [(value)]="email"
       [error]="errEmail()"
     />
@@ -25,6 +32,7 @@
       [label]="t().auth.password"
       placeholder="••••••••"
       [autocomplete]="isLogin() ? 'current-password' : 'new-password'"
+      [maxlength]="passwordMax"
       [(value)]="pass"
       [error]="errPass()"
     />

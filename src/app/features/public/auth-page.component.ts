@@ -12,8 +12,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { safeReturnUrl } from '../../core/auth/guards';
 import { PLAN_ORDER, PlanKey } from '../../core/data/models';
 import { ApiService, ApiUser } from '../../core/http/api.service';
+import { fieldErrors, problemMessage } from '../../core/http/problem-details';
 import { SessionStore } from '../../core/data/session.store';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -65,11 +67,18 @@ export class AuthPageComponent {
   readonly mode = input<'login' | 'signup'>('login');
   /** ?plan= chosen on the landing page. */
   readonly plan = input<string>();
+  /** ?returnUrl= the page of the app the person was sent away from (a deep link, the return from Stripe). */
+  readonly returnUrl = input<string>();
 
   private readonly router = inject(Router);
   private readonly session = inject(SessionStore);
   private readonly notify = inject(NotificationService);
   protected readonly t = inject(I18nService).t;
+  /** The API's limits on what a sign-up takes (Validators.cs): longer input is cut by the browser. */
+  protected readonly emailMax = 254;
+  protected readonly passwordMax = 100;
+  /** The stored sign-in could not be checked last time (the server was down): said above the form. */
+  protected readonly restoreFailed = inject(SessionStore).restoreFailed;
 
   protected readonly email = signal('');
   protected readonly pass = signal('');
@@ -148,14 +157,19 @@ export class AuthPageComponent {
     }
   }
 
-  /** Greets the new session and goes where it belongs: the plan picked before signing up, else the overview. */
+  /**
+   * Greets the new session and goes where it belongs: the plan picked before signing up, else the page the
+   * person was sent away from, else the overview.
+   */
   private welcome(user: ApiUser): void {
     const t = this.t().auth;
     const admin = user.role === 'admin';
     this.notify.success(admin ? t.welcomeAdmin : t.welcomeUser);
     const plan = this.pendingPlan();
+    const back = safeReturnUrl(this.returnUrl());
     if (!admin && plan && plan !== 'free')
       void this.router.navigate(['/app/billing'], { queryParams: { plan } });
+    else if (back) void this.router.navigateByUrl(back);
     else void this.router.navigateByUrl(admin ? '/app/admin' : '/app/overview');
   }
 
@@ -192,21 +206,30 @@ export class AuthPageComponent {
           : await this.session.signUp(email, this.pass()),
       );
     } catch (e) {
-      const a = this.t().api;
-      const status = e instanceof HttpErrorResponse ? e.status : 0;
-      const [field, msg]: ['email' | 'pass', string] =
-        status === 401
-          ? ['pass', a.authInvalid]
-          : status === 403
-            ? ['email', a.blocked]
-            : status === 409
-              ? ['email', a.emailTaken]
-              : status === 400
-                ? ['pass', a.passwordMin]
-                : ['pass', a.serverDown];
+      const [field, msg] = this.explain(e);
       this.serverErr.set({ field, msg, email: this.email(), pass: this.pass() });
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /**
+   * Which field the API's answer is about, and what to say. A 400 carries one message per field (Thai): the
+   * email's goes under the email, the password's under the password, whatever else under the password.
+   * A wrong password may be a Google-only account (the API answers alike on purpose): the Google button is named.
+   */
+  private explain(e: unknown): ['email' | 'pass', string] {
+    const a = this.t().api;
+    const status = e instanceof HttpErrorResponse ? e.status : 0;
+    if (status === 401)
+      return ['pass', this.googleReady() ? `${a.authInvalid} ${a.authTryGoogle}` : a.authInvalid];
+    if (status === 403) return ['email', a.blocked];
+    if (status === 409) return ['email', a.emailTaken];
+    if (status === 400) {
+      const fields = fieldErrors(e);
+      if (fields['email']) return ['email', fields['email']];
+      return ['pass', fields['password'] ?? problemMessage(e) ?? a.passwordMin];
+    }
+    return ['pass', a.serverDown];
   }
 }

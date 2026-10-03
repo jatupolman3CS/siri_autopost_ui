@@ -4,7 +4,7 @@ import { Dict } from '../i18n/i18n.service';
 import { ApiPost, ApiScheduleRequest, ApiService } from '../http/api.service';
 import { loadWithRetry } from './loading';
 import { ErrorItem, PostItem, STATUS_DOT } from './models';
-import { SEED } from './seed.data';
+import { PLATFORMS } from './platforms';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
 /** What a queue/list row shows for one post. */
@@ -46,7 +46,7 @@ export function withDay(p: PostItem): QueueItem {
 }
 
 export function postRow(p: PostItem, t: Dict): PostRow {
-  const platform = SEED.platforms[p.platform];
+  const platform = PLATFORMS[p.platform];
   return {
     id: p.id,
     time: hm(p.dt),
