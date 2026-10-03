@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AssistSession, assistStorage, tokenStorage } from '../auth/token';
 import { ApiAuthResult, ApiService, ApiUser } from '../http/api.service';
@@ -21,13 +22,22 @@ export class SessionStore {
   readonly initials = computed(() => initialsOf(this.name() || this.email()));
   /** Set while a platform admin sees the app as a customer (read-only, see the API). */
   readonly assist = this._assist.asReadonly();
+  /** The stored token could not be checked (server down or failing): it is kept, and a reload tries again. */
+  readonly restoreFailed = signal(false);
 
-  /** Called once by the app initializer: a stored token that no longer works is dropped. */
+  /**
+   * Called once by the app initializer. A stored token the server refuses (401) is dropped; one that could not
+   * be checked because the server was unreachable or failing is kept, so a reload signs in again.
+   */
   async restore(): Promise<void> {
     if (!tokenStorage.get()) return;
     try {
       this._user.set(await this.api.me());
-    } catch {
+    } catch (e) {
+      if (!(e instanceof HttpErrorResponse && e.status === 401)) {
+        this.restoreFailed.set(true);
+        return;
+      }
       // An expired assist session falls back to the admin's own sign-in.
       if (this._assist()) await this.endAssist();
       else tokenStorage.set(null);
@@ -103,6 +113,7 @@ export class SessionStore {
 
   private accept(r: ApiAuthResult): ApiUser {
     tokenStorage.set(r.token);
+    this.restoreFailed.set(false);
     this._user.set(r.user);
     return r.user;
   }

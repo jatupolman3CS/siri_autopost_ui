@@ -1,15 +1,17 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ExtensionStore } from '../../core/data/extension.store';
+import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
 import { OfflinePolicy, OfflineSettings, SettingsStore } from '../../core/data/settings.store';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
+import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 
 @Component({
   selector: 'app-offline-page',
-  imports: [CheckboxComponent, SelectFieldComponent],
+  imports: [CheckboxComponent, PermNoteComponent, SelectFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './offline-page.component.html',
   styleUrl: './offline-page.component.scss',
@@ -20,8 +22,11 @@ export class OfflinePageComponent {
   private readonly i18n = inject(I18nService);
   protected readonly settings = inject(SettingsStore);
   protected readonly ext = inject(ExtensionStore);
+  protected readonly perm = inject(PermissionsService);
   protected readonly t = this.i18n.t;
   protected readonly off = this.settings.off;
+  /** Admins change the policy, once it has loaded. */
+  protected readonly editable = computed(() => this.perm.canAdmin() && this.settings.loaded());
 
   protected readonly policyCards = computed(() => {
     const o = this.t().off;
@@ -30,12 +35,14 @@ export class OfflinePageComponent {
       ['queue', 'ph-queue', o.queue, o.queueBody],
       ['notify', 'ph-bell-ringing', o.notify, o.notifyBody],
     ];
+    // "Notify me" sends nothing yet (the API treats it like "Queue"): shown, not selectable.
     return cards.map(([id, icon, title, body]) => ({
       id,
       icon,
       title,
       body,
       selected: this.off().policy === id,
+      supported: id !== 'notify',
     }));
   });
 
@@ -60,6 +67,7 @@ export class OfflinePageComponent {
   protected readonly saving = signal(false);
 
   protected async save(): Promise<void> {
+    if (!this.editable()) return;
     this.saving.set(true);
     try {
       await this.settings.saveOff();

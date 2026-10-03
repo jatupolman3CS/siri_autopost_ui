@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { CampaignsStore } from '../../core/data/campaigns.store';
+import { PermissionsService } from '../../core/data/permissions.service';
 import { DEFAULT_GLOBAL, GlobalSettings, TelegramSettings } from '../../core/ext/lib/shared.js';
 import { guardLine } from '../../core/ext/run-view';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
@@ -29,6 +30,9 @@ export class CampGlobalComponent {
   private readonly notify = inject(NotificationService);
   private readonly i18n = inject(I18nService);
   protected readonly actions = inject(CampaignActions);
+  private readonly permissions = inject(PermissionsService);
+  /** The API shows the Bot Token to admins only (and keeps the stored one when others save). */
+  protected readonly canSeeToken = this.permissions.canAdmin;
   protected readonly x = computed(() => this.i18n.t().api.ext);
   protected readonly g = this.store.global;
 

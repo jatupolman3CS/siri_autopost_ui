@@ -1,5 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiMember, ApiRole, ApiService } from '../http/api.service';
+import { loadWithRetry } from './loading';
+import { PermissionsService } from './permissions.service';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
 // The current workspace's people: the owner, members and pending invitations
@@ -8,14 +10,22 @@ import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 export class TeamStore {
   private readonly api = inject(ApiService);
   private readonly workspaces = inject(WorkspaceStore);
+  private readonly permissions = inject(PermissionsService);
   private wsId: string | null = null;
 
   readonly members = signal<ApiMember[]>([]);
   readonly loaded = signal(false);
   /** The signed-in user's role in the current workspace. */
-  readonly role = computed<ApiRole>(() => this.workspaces.current()?.role ?? 'viewer');
-  /** Owners and admins invite, change roles and remove people. */
-  readonly canManage = computed(() => this.role() === 'owner' || this.role() === 'admin');
+  readonly role = this.permissions.role;
+  /** Owners and admins invite, change roles and remove people (never in assist mode). */
+  readonly canManage = this.permissions.canAdmin;
+  /** Seats (owner included, invitations too) the owner's plan allows; null = unlimited. */
+  readonly seatLimit = computed(() => this.workspaces.current()?.limits.seats ?? null);
+  /** Every seat is taken: the API would refuse another invitation. */
+  readonly seatsFull = computed(() => {
+    const max = this.seatLimit();
+    return max !== null && this.members().length >= max;
+  });
 
   constructor() {
     whenWorkspaceChanges((id) => {
@@ -29,10 +39,15 @@ export class TeamStore {
   async load(): Promise<void> {
     const ws = this.wsId;
     if (!ws) return;
-    const list = await this.api.members(ws);
-    if (ws !== this.wsId) return;
-    this.members.set(list);
-    this.loaded.set(true);
+    const ok = await loadWithRetry(
+      async () => {
+        const list = await this.api.members(ws);
+        if (ws !== this.wsId) return;
+        this.members.set(list);
+      },
+      () => ws === this.wsId,
+    );
+    if (ok && ws === this.wsId) this.loaded.set(true);
   }
 
   /** Throws the server's refusal (team full, already a member) for the form to show. */

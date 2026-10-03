@@ -1,16 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { STATUS_DOT } from '../../core/data/models';
 import { AccountsStore } from '../../core/data/accounts.store';
+import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
 import { SEED } from '../../core/data/seed.data';
 import { dkey, fmtDate, hm } from '../../core/i18n/format';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 
 @Component({
   selector: 'app-errors-page',
-  imports: [EmptyStateComponent],
+  imports: [EmptyStateComponent, PermNoteComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './errors-page.component.html',
   styleUrl: './errors-page.component.scss',
@@ -20,6 +22,7 @@ export class ErrorsPageComponent {
   private readonly i18n = inject(I18nService);
   private readonly accounts = inject(AccountsStore);
   protected readonly posts = inject(PostsStore);
+  protected readonly perm = inject(PermissionsService);
   protected readonly t = this.i18n.t;
   protected readonly filter = signal<'all' | 'today'>('all');
 
@@ -43,10 +46,10 @@ export class ErrorsPageComponent {
         accountId: e.accountId,
         icon: platform.icon,
         title: r.title,
-        body: r.body,
+        // What the extension or the server reported says more than the generic reason, so it replaces it.
+        body: e.detail || r.body,
         fix: r.fix,
         text: e.text,
-        detail: e.detail ?? '',
         meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${platform.name} · ${e.target}`,
         dot: pending ? STATUS_DOT.pending : STATUS_DOT.failed,
         statusLabel: pending ? t.status.pending : t.status.failed,

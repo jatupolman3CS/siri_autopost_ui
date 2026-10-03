@@ -1,7 +1,12 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { CampaignsStore, CommandResult } from '../../core/data/campaigns.store';
-import { WorkspaceStore } from '../../core/data/workspace.store';
-import { I18nService } from '../../core/i18n/i18n.service';
+import { Injectable, inject, signal } from '@angular/core';
+import {
+  COMMAND_LIFETIME_MIN,
+  COMMAND_WAIT_MIN,
+  CampaignsStore,
+  CommandResult,
+} from '../../core/data/campaigns.store';
+import { PermissionsService } from '../../core/data/permissions.service';
+import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 
 // The buttons of the extension's settings page, run on the device through the campaigns store, with the
@@ -11,12 +16,12 @@ export class CampaignActions {
   private readonly store = inject(CampaignsStore);
   private readonly notify = inject(NotificationService);
   private readonly i18n = inject(I18nService);
-  private readonly workspaces = inject(WorkspaceStore);
+  private readonly permissions = inject(PermissionsService);
 
   /** A command is on its way to the device. */
   readonly pending = signal(false);
-  /** Viewers read only; editors and up change the campaigns and press the buttons. */
-  readonly readOnly = computed(() => (this.workspaces.current()?.role ?? 'viewer') === 'viewer');
+  /** Viewers (and an admin in assist mode) read only; editors and up change the campaigns and press the buttons. */
+  readonly readOnly = this.permissions.readOnly;
 
   /**
    * Sends a command and toasts the outcome: okText on success, the device's own error otherwise.
@@ -26,7 +31,7 @@ export class CampaignActions {
     if (this.pending()) return null;
     const x = this.i18n.t().api.ext;
     this.pending.set(true);
-    this.notify.info(x.cmdSent);
+    this.notify.info(fmt(x.cmdSent, { n: COMMAND_WAIT_MIN }));
     try {
       const r = await this.store.command(cmd, args);
       if (r.ok) {
@@ -46,7 +51,7 @@ export class CampaignActions {
   errorText(r: CommandResult): string {
     const x = this.i18n.t().api.ext;
     if (r.error === 'expired') return x.cmdExpired;
-    if (r.error === 'timeout') return x.cmdTimeout;
+    if (r.error === 'timeout') return fmt(x.cmdTimeout, { m: COMMAND_LIFETIME_MIN });
     if (r.error === 'no-device') return x.noDeviceTitle;
     return r.error || x.cmdFailed;
   }

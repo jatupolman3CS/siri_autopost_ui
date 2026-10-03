@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import {
   ApiAdminJob,
   ApiAuditEntry,
@@ -10,20 +10,30 @@ import {
   ApiService,
   ApiTransaction,
 } from '../http/api.service';
+import { loadWithRetry } from './loading';
 import { Customer, DiscountKey, LimitKey, PlanKey, PlanLimits, Promo, Transaction } from './models';
 import { SEED } from './seed.data';
+import { SessionStore } from './session.store';
 
 export type AdminAction = 'suspend' | 'ban' | 'refund' | 'assist' | 'restore';
 
 const LIMIT_KEYS: LimitKey[] = ['accounts', 'posts', 'devices', 'seats'];
+/** How many entries of the platform-wide activity log are read (plan and promo changes are the ones shown). */
+const GLOBAL_AUDIT_TAKE = 100;
 
-const dateParts = (iso: string): number[] => {
-  const d = new Date(iso);
-  return [d.getFullYear(), d.getMonth(), d.getDate()];
-};
+const BANGKOK_OFFSET_MS = 7 * 3_600_000;
+
+/**
+ * [year, month0, day] on the Bangkok calendar, where the server counts the months of money (revenue, the
+ * "this month" of the finance page) and the days of charges and promo codes. Bangkok has no daylight saving.
+ */
+export function bangkokParts(date: Date | string): number[] {
+  const d = new Date(new Date(date).getTime() + BANGKOK_OFFSET_MS);
+  return [d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()];
+}
 
 export function toCustomer(c: ApiCustomer): Customer {
-  const since = new Date(c.since);
+  const [sinceYear, sinceMonth] = bangkokParts(c.since);
   const limits: Partial<Record<LimitKey, number>> = {};
   for (const k of LIMIT_KEYS) if (c.limits[k] != null) limits[k] = c.limits[k]!;
   return {
@@ -32,7 +42,7 @@ export function toCustomer(c: ApiCustomer): Customer {
     email: c.email,
     plan: c.plan,
     status: c.status === 'past_due' ? 'pastdue' : c.status,
-    since: [since.getFullYear(), since.getMonth()],
+    since: [sinceYear, sinceMonth],
     cycle: c.cycle,
     accounts: c.accounts,
     seats: c.seats,
@@ -59,7 +69,7 @@ export function toCustomer(c: ApiCustomer): Customer {
 
 const toTx = (t: ApiTransaction): Transaction => ({
   id: t.id,
-  date: dateParts(t.createdAt),
+  date: bangkokParts(t.createdAt),
   cust: t.userId,
   type: t.type,
   amount: t.amount,
@@ -72,7 +82,8 @@ const toPromo = (p: ApiPromo): Promo => ({
   code: p.code,
   discount: p.discount as DiscountKey,
   uses: p.uses,
-  expires: dateParts(p.expiresAt),
+  expires: bangkokParts(p.expiresAt),
+  expiresAt: new Date(p.expiresAt),
   active: p.active,
 });
 
@@ -91,10 +102,14 @@ function toPlans(list: ApiPlanSetting[]): Record<PlanKey, PlanLimits> {
 
 // Platform-owner data from /api/admin (customers, payments, promo codes, revenue) and the
 // plans from the public /api/plans, which the customer-facing pages read too. Charges and
-// refunds are what Stripe reports; refunding and retrying a charge go through Stripe.
+// refunds are what Stripe reports; refunding and retrying a charge go through Stripe. The admin
+// pages call load() whenever they are entered, and every action re-reads what it may have moved
+// (the money, the health figures, the customer's activity log). The data belongs to the signed-in
+// user: another sign-in (or an assist session) empties it, and an answer for the previous one is dropped.
 @Injectable({ providedIn: 'root' })
 export class AdminStore {
   private readonly api = inject(ApiService);
+  private readonly session = inject(SessionStore);
 
   readonly customers = signal<Customer[]>([]);
   readonly transactions = signal<Transaction[]>([]);
@@ -115,7 +130,42 @@ export class AdminStore {
   readonly health = signal<ApiHealth | null>(null);
   /** Activity log per customer, newest first. */
   readonly audit = signal<Record<string, ApiAuditEntry[]>>({});
+  /** Platform-wide activity log (plan settings and promo codes belong to no customer), newest first. */
+  readonly globalAudit = signal<ApiAuditEntry[]>([]);
+  /** Everything has arrived at least once for this user: the pages show "—" instead of zeros until then. */
   readonly loaded = signal(false);
+  private generation = 0;
+  private lastUser = this.session.user()?.id ?? null;
+
+  constructor() {
+    const userId = computed(() => this.session.user()?.id ?? null);
+    // Only a different user empties the data; the effect's first run (the same user) must not drop a load
+    // that has already started.
+    effect(() => {
+      const id = userId();
+      untracked(() => {
+        if (id === this.lastUser) return;
+        this.lastUser = id;
+        this.reset();
+      });
+    });
+  }
+
+  /** Forgets everything of the previous user (the plans are public and stay). */
+  private reset(): void {
+    this.generation++;
+    this.customers.set([]);
+    this.transactions.set([]);
+    this.promos.set([]);
+    this.subs.set({ basic: 0, pro: 0, agency: 0 });
+    this.revenue.set([]);
+    this.jobs.set([]);
+    this.customerJobs.set({});
+    this.health.set(null);
+    this.audit.set({});
+    this.globalAudit.set([]);
+    this.loaded.set(false);
+  }
 
   async loadPlans(): Promise<void> {
     try {
@@ -125,35 +175,62 @@ export class AdminStore {
     }
   }
 
-  /** Everything the admin pages show. */
+  /**
+   * Everything the admin pages show. Called each time an admin page is entered; it never throws: a server
+   * that is down is retried a few times, and `loaded` says whether the data came.
+   */
   async load(): Promise<void> {
-    const [customers, tx, promos, summary, jobs, health] = await Promise.all([
-      this.api.adminCustomers(),
-      this.api.adminTransactions(),
-      this.api.adminPromos(),
-      this.api.adminSummary(),
-      this.api.adminJobs(undefined, 40),
-      this.api.adminHealth(),
-      this.loadPlans(),
-    ]);
-    this.health.set(health);
-    this.customers.set(customers.map(toCustomer));
-    this.transactions.set(tx.map(toTx));
-    this.promos.set(promos.map(toPromo));
-    this.subs.set({ basic: summary.basic, pro: summary.pro, agency: summary.agency });
-    this.revenue.set(summary.revenue.map((r) => [r.year, r.month - 1, r.amount]));
-    this.jobs.set(jobs);
-    this.loaded.set(true);
+    const gen = this.generation;
+    const ok = await loadWithRetry(
+      async () => {
+        const [customers, tx, promos, summary, jobs, health, audit] = await Promise.all([
+          this.api.adminCustomers(),
+          this.api.adminTransactions(),
+          this.api.adminPromos(),
+          this.api.adminSummary(),
+          this.api.adminJobs(undefined, 40),
+          this.api.adminHealth(),
+          this.api.adminAudit(undefined, GLOBAL_AUDIT_TAKE),
+          this.loadPlans(),
+        ]);
+        if (gen !== this.generation) return;
+        this.health.set(health);
+        this.customers.set(customers.map(toCustomer));
+        this.transactions.set(tx.map(toTx));
+        this.promos.set(promos.map(toPromo));
+        this.subs.set({ basic: summary.basic, pro: summary.pro, agency: summary.agency });
+        this.revenue.set(summary.revenue.map((r) => [r.year, r.month - 1, r.amount]));
+        this.jobs.set(jobs);
+        this.globalAudit.set(audit);
+        this.loaded.set(true);
+      },
+      () => gen === this.generation,
+    );
+    if (!ok && gen === this.generation) this.loaded.set(false);
   }
 
   async loadCustomerJobs(id: string): Promise<void> {
+    const gen = this.generation;
     const list = await this.api.adminJobs(id, 8);
-    this.customerJobs.update((m) => ({ ...m, [id]: list }));
+    if (gen === this.generation) this.customerJobs.update((m) => ({ ...m, [id]: list }));
   }
 
   async loadAudit(id: string): Promise<void> {
+    const gen = this.generation;
     const list = await this.api.adminAudit(id, 30);
-    this.audit.update((m) => ({ ...m, [id]: list }));
+    if (gen === this.generation) this.audit.update((m) => ({ ...m, [id]: list }));
+  }
+
+  async loadGlobalAudit(): Promise<void> {
+    const gen = this.generation;
+    const list = await this.api.adminAudit(undefined, GLOBAL_AUDIT_TAKE);
+    if (gen === this.generation) this.globalAudit.set(list);
+  }
+
+  async loadHealth(): Promise<void> {
+    const gen = this.generation;
+    const health = await this.api.adminHealth();
+    if (gen === this.generation) this.health.set(health);
   }
 
   customer(id: string): Customer | undefined {
@@ -166,13 +243,31 @@ export class AdminStore {
   }
 
   private async reloadMoney(): Promise<void> {
+    const gen = this.generation;
     const [tx, summary] = await Promise.all([
       this.api.adminTransactions(),
       this.api.adminSummary(),
     ]);
+    if (gen !== this.generation) return;
     this.transactions.set(tx.map(toTx));
     this.subs.set({ basic: summary.basic, pro: summary.pro, agency: summary.agency });
     this.revenue.set(summary.revenue.map((r) => [r.year, r.month - 1, r.amount]));
+  }
+
+  /**
+   * Re-reads what an admin action may have moved, so no page keeps showing the old figures: the money
+   * (transactions, subscriber counts, revenue), the health numbers (MRR, devices, success rate) and the
+   * customer's activity log. A refresh that fails leaves what is shown; the action itself has succeeded.
+   */
+  private async refreshAfter(
+    id: string | null,
+    what: { money?: boolean; health?: boolean } = {},
+  ): Promise<void> {
+    await Promise.allSettled([
+      what.money ? this.reloadMoney() : undefined,
+      what.health ? this.loadHealth() : undefined,
+      id ? this.loadAudit(id) : this.loadGlobalAudit(),
+    ]);
   }
 
   /**
@@ -188,15 +283,16 @@ export class AdminStore {
       restore: 'active',
     };
     if (status[action]) this.replace(await this.api.adminSetStatus(id, status[action]!));
-    if (action === 'refund') {
+    if (action === 'refund')
       await (txId ? this.api.adminRefund(txId) : this.api.adminRefundLatest(id));
-      await this.reloadMoney();
-    }
+    // A suspended customer's subscription stops counting in the MRR, a refund moves the revenue. "Assist" and
+    // a note change nothing of that: only the activity log.
+    await this.refreshAfter(id, action === 'assist' ? {} : { money: true, health: true });
   }
 
   async setPlan(id: string, plan: PlanKey): Promise<void> {
     this.replace(await this.api.adminSetPlan(id, plan));
-    await this.reloadMoney();
+    await this.refreshAfter(id, { money: true, health: true });
   }
 
   /** 0 = unlimited; the other limits keep their overrides. */
@@ -212,28 +308,37 @@ export class AdminStore {
     } as Record<LimitKey, number | null>;
     limits[key] = Math.max(0, value || 0);
     this.replace(await this.api.adminSetLimits(id, limits));
+    await this.refreshAfter(id);
   }
 
   async revokeDevice(id: string, index: number): Promise<void> {
     const d = this.customer(id)?.devices[index];
-    if (d) this.replace(await this.api.adminRevokeDevice(id, d.id));
+    if (!d) return;
+    this.replace(await this.api.adminRevokeDevice(id, d.id));
+    await this.refreshAfter(id, { health: true });
   }
 
   async togglePaused(id: string): Promise<void> {
     const c = this.customer(id);
-    if (c) this.replace(await this.api.adminSetPaused(id, !c.paused));
+    if (!c) return;
+    this.replace(await this.api.adminSetPaused(id, !c.paused));
+    await this.refreshAfter(id, { health: true });
   }
 
   /** Moves failed posts back to the queue; returns how many. */
   async retryFailed(id: string): Promise<number> {
     const n = await this.api.adminRetryFailed(id);
+    const gen = this.generation;
     const [customers, jobs] = await Promise.all([
       this.api.adminCustomers(),
       this.api.adminJobs(undefined, 40),
     ]);
-    this.customers.set(customers.map(toCustomer));
-    this.jobs.set(jobs);
+    if (gen === this.generation) {
+      this.customers.set(customers.map(toCustomer));
+      this.jobs.set(jobs);
+    }
     if (this.customerJobs()[id]) await this.loadCustomerJobs(id);
+    await this.refreshAfter(id, { health: true });
     return n;
   }
 
@@ -241,7 +346,10 @@ export class AdminStore {
   async retryCharge(txId: string): Promise<Customer | undefined> {
     const tx = await this.api.adminRetryPayment(txId);
     await this.reloadMoney();
-    this.customers.set((await this.api.adminCustomers()).map(toCustomer));
+    const gen = this.generation;
+    const customers = await this.api.adminCustomers();
+    if (gen === this.generation) this.customers.set(customers.map(toCustomer));
+    await this.refreshAfter(tx.userId, { health: true });
     return this.customer(tx.userId);
   }
 
@@ -258,15 +366,18 @@ export class AdminStore {
     this.plans.update((p) =>
       toPlans([...Object.entries(p).map(([key, v]) => ({ key, ...v }) as ApiPlanSetting), saved]),
     );
+    await this.refreshAfter(null, { health: true });
   }
 
   async addPromo(code: string, discount: DiscountKey): Promise<void> {
     const p = await this.api.adminCreatePromo(code, discount);
     this.promos.update((list) => [toPromo(p), ...list]);
+    await this.refreshAfter(null);
   }
 
   async setPromoActive(code: string, active: boolean): Promise<void> {
     const p = await this.api.adminSetPromoActive(code, active);
     this.promos.update((list) => list.map((x) => (x.code === p.code ? toPromo(p) : x)));
+    await this.refreshAfter(null);
   }
 }

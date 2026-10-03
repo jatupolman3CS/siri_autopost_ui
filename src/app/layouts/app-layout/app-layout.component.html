@@ -117,34 +117,43 @@
         <div class="banner-text">
           <div class="fw6">{{ bannerTitle() }}</div>
           <div class="muted">{{ ext.simulated() ? bannerBody() : t().api.realOffline }}</div>
+          @if (ext.simulated()) {
+            <div class="small muted">{{ t().api.bannerNotYet }}</div>
+          }
         </div>
         <div class="actions">
           @if (ext.simulated()) {
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-secondary"
-              (click)="ext.bannerAction('skip')"
+              [disabled]="!perm.canEdit()"
+              [attr.title]="perm.editHint() || null"
+              (click)="ext.skipWaiting()"
             >
               {{ t().top.bannerSkip }}
             </button>
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-secondary"
-              (click)="ext.bannerAction('queue')"
+              disabled
+              [attr.title]="t().api.notYet"
             >
               {{ t().top.bannerQueue }}
             </button>
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-secondary"
-              (click)="ext.bannerAction('notify')"
+              disabled
+              [attr.title]="t().api.notYet"
             >
               {{ t().top.bannerNotify }}
             </button>
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-primary"
-              (click)="ext.toggleOnline()"
+              [disabled]="!perm.canAdmin() || ext.busy()"
+              [attr.title]="perm.adminHint() || null"
+              (click)="ext.toggleSimulation()"
             >
               {{ t().top.goOnline }}
             </button>

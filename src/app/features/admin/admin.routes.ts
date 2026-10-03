@@ -1,18 +1,24 @@
-import { inject, provideEnvironmentInitializer } from '@angular/core';
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateChildFn, Routes } from '@angular/router';
 import { AdminStore } from '../../core/data/admin.store';
 import { AdminViewService } from './admin-view.service';
 
 const page = (title: string) => `${title} · AutoPost`;
 
+/**
+ * Every admin page that is entered reads the data again (an environment initializer would run once per
+ * page load). The route does not wait for it: the pages show "—" until `AdminStore.loaded` and then fill in.
+ */
+export const loadAdminData: CanActivateChildFn = () => {
+  void inject(AdminStore).load();
+  return true;
+};
+
 export const ADMIN_ROUTES: Routes = [
   {
     path: '',
-    providers: [
-      AdminViewService,
-      // Entering the admin area (any page) loads its data.
-      provideEnvironmentInitializer(() => void inject(AdminStore).load()),
-    ],
+    providers: [AdminViewService],
+    canActivateChild: [loadAdminData],
     children: [
       {
         path: '',

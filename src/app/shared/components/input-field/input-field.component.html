@@ -10,6 +10,7 @@
   [disabled]="disabled()"
   [value]="value()"
   [attr.autocomplete]="autocomplete()"
+  [attr.maxlength]="maxlength()"
   [attr.aria-invalid]="error() ? true : null"
   [attr.aria-label]="label() ? null : placeholder()"
   (input)="value.set($any($event.target).value)"

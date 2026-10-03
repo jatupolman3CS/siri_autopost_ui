@@ -3,11 +3,13 @@
     <div class="w720">
       <h1>{{ t().ab.title }}</h1>
       <p>{{ t().ab.sub }}</p>
+      <app-perm-note level="admin" />
     </div>
     <button
       type="button"
       class="su-btn su-btn-sm su-btn-primary"
-      [disabled]="saving()"
+      [disabled]="saving() || !editable()"
+      [attr.title]="perm.adminHint() || null"
       (click)="save()"
     >
       {{ t().common.save }}
@@ -38,6 +40,7 @@
           type="range"
           min="1"
           max="30"
+          [disabled]="!editable()"
           [value]="ab().min"
           (input)="setMin($any($event.target).value)"
           [attr.aria-label]="t().ab.delayMin"
@@ -50,6 +53,7 @@
           type="range"
           min="2"
           max="60"
+          [disabled]="!editable()"
           [value]="ab().max"
           (input)="setMax($any($event.target).value)"
           [attr.aria-label]="t().ab.delayMax"
@@ -64,6 +68,8 @@
             <span class="grow ellipsis">{{ d.target }}</span>
             <span class="small muted nowrap">{{ d.wait }}</span>
           </div>
+        } @empty {
+          <p class="small muted">{{ t().api.noDispatch }}</p>
         }
       </div>
     </section>
@@ -73,6 +79,7 @@
         <h2 class="h2">{{ t().ab.limitsTitle }}</h2>
         <p class="sub">{{ t().ab.limitsBody }}</p>
       </div>
+      <p class="small muted">{{ t().api.limitsFbOnly }}</p>
       @for (r of limitRows(); track r.k) {
         <div class="row">
           <span class="pico"><i class="ph" [class]="r.icon"></i></span>
@@ -90,6 +97,7 @@
             min="1"
             max="200"
             class="num-input w76"
+            [disabled]="!editable()"
             [value]="r.limit"
             (change)="setLimit(r.k, $any($event.target).value)"
             [attr.aria-label]="r.name"
@@ -110,20 +118,27 @@
         <div class="lock">
           <i class="ph ph-lock-simple muted"></i>
           <span>{{ t().ab.locked }}</span>
-          <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/billing">{{
-            t().common.upgrade
-          }}</a>
+          @if (perm.role() === 'owner') {
+            <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/billing">{{
+              t().common.upgrade
+            }}</a>
+          }
         </div>
       }
     </div>
     <div class="human">
       @for (h of humanRows(); track h.k) {
-        <app-checkbox
-          [label]="h.label"
-          [checked]="h.on"
-          [disabled]="locked()"
-          (checkedChange)="setHuman(h.k, $event)"
-        />
+        <div>
+          <app-checkbox
+            [label]="h.label"
+            [checked]="h.on"
+            [disabled]="!editable() || locked() || !h.supported"
+            (checkedChange)="setHuman(h.k, $event)"
+          />
+          @if (!h.supported) {
+            <p class="small muted not-yet">{{ t().api.notYet }}</p>
+          }
+        </div>
       }
     </div>
   </section>

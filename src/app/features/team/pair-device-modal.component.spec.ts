@@ -24,9 +24,7 @@ describe('PairDeviceModalComponent', () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
     http = provideApiTesting({ imports: [PairDeviceModalComponent] });
     TestBed.inject(DevicesStore);
-    await signIn(http);
-    for (const r of http.match(`/api/workspaces/${WS}/devices`)) r.flush([device('d1', 'Old PC')]);
-    await settle();
+    await signIn(http, { devices: [device('d1', 'Old PC')] });
   });
 
   afterEach(() => vi.useRealTimers());

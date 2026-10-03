@@ -91,26 +91,30 @@ export class AdminOverviewPageComponent {
     const a = this.t().adm;
     const cs = this.admin.customers();
     const latest = this.admin.health()?.latestExtension;
+    // "—" until the customers have arrived, not "0 customers past due".
+    const n = (v: number) => (this.admin.loaded() ? v : '—');
     return [
       {
         icon: 'ph-warning-circle',
         color: 'var(--color-warning)',
-        text: fmt(a.aPastDue, { n: cs.filter((c) => c.status === 'pastdue').length }),
+        text: fmt(a.aPastDue, { n: n(cs.filter((c) => c.status === 'pastdue').length) }),
         link: '/app/admin/finance',
       },
       {
         icon: 'ph-x-circle',
         color: 'var(--color-danger)',
-        text: fmt(a.aFailedJobs, { n: cs.reduce((n, c) => n + c.jobs.failed, 0) }),
+        text: fmt(a.aFailedJobs, { n: n(cs.reduce((n, c) => n + c.jobs.failed, 0)) }),
         link: '/app/admin/jobs',
       },
       {
         icon: 'ph-arrow-circle-up',
         color: 'var(--color-text-muted)',
         text: fmt(a.aOldExt, {
-          n: latest
-            ? cs.filter((c) => c.ext && c.ext !== latest && c.status !== 'banned').length
-            : 0,
+          n: n(
+            latest
+              ? cs.filter((c) => c.ext && c.ext !== latest && c.status !== 'banned').length
+              : 0,
+          ),
         }),
         link: '/app/admin/customers',
       },

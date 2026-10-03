@@ -3,6 +3,7 @@
     <div>
       <h1>{{ t().cmp.title }}</h1>
       <p>{{ t().cmp.sub }}</p>
+      <app-perm-note level="edit" />
     </div>
   </div>
 
@@ -17,11 +18,14 @@
           [class.su-input-error]="!!d().errText"
           [placeholder]="t().cmp.placeholder"
           [value]="d().text"
+          [attr.maxlength]="limits.postText"
           (input)="setText($any($event.target).value)"
         ></textarea>
         <div class="counter">
           <span class="err">{{ d().errText }}</span>
-          <span class="muted">{{ d().text.length }} {{ t().cmp.chars }}</span>
+          <span class="muted"
+            >{{ d().text.length }} / {{ limits.postText }} {{ t().cmp.chars }}</span
+          >
         </div>
       </div>
       <app-select-field
@@ -79,6 +83,11 @@
               @if (a.demo) {
                 <span class="badge" [title]="t().api.demoHint">{{ t().api.demoAccount }}</span>
               }
+              @if (a.unbound) {
+                <span class="badge" [title]="t().api.unboundHint">{{
+                  t().api.unboundAccount
+                }}</span>
+              }
               <span class="pico s28"><i class="ph" [class]="a.icon"></i></span>
             </div>
             @if (a.showGroups) {
@@ -109,6 +118,12 @@
             @if (a.needsLogin) {
               <div class="relogin small">{{ t().cmp.relogin }}</div>
             }
+            @if (a.unbound) {
+              <div class="relogin small">{{ t().api.unboundHint }}</div>
+            }
+            @if (a.needsGroups) {
+              <div class="relogin small">{{ t().api.noGroupsYet }}</div>
+            }
           </div>
         }
       </section>
@@ -136,6 +151,9 @@
           [value]="d().repeat"
           (valueChange)="setRepeat($event)"
         />
+        @if (repeatNote()) {
+          <p class="small muted">{{ repeatNote() }}</p>
+        }
         <app-checkbox
           [label]="useDelayLabel()"
           [checked]="d().useDelay"
@@ -156,7 +174,8 @@
       <button
         type="button"
         class="su-btn su-btn-sm su-btn-primary"
-        [disabled]="busy()"
+        [disabled]="busy() || !perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
         (click)="submit()"
       >
         {{ t().cmp.submit }}<i class="ph ph-arrow-right"></i>

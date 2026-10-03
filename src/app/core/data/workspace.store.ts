@@ -1,5 +1,6 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ApiService } from '../http/api.service';
+import { loadWithRetry } from './loading';
 import { Workspace } from './models';
 import { SessionStore } from './session.store';
 
@@ -14,25 +15,48 @@ export class WorkspaceStore {
 
   readonly list = signal<Workspace[]>([]);
   readonly id = signal<string | null>(null);
+  /** The list for the current user has arrived (pages show "—" instead of zeros until it has). */
+  readonly loaded = signal(false);
   readonly current = computed(() => this.list().find((w) => w.id === this.id()) ?? null);
   private readonly userId = computed(() => this.session.user()?.id ?? null);
+  private lastUser: string | null = null;
+  private lastPlan: string | null = null;
 
   constructor() {
-    // Keyed on the user, not just "signed in": an admin's assist session switches users.
+    // Keyed on the user, not just "signed in": an admin's assist session switches users. A new plan of the
+    // same user moves the limits the list carries, so it is read again without emptying the stores.
     effect(() => {
-      const user = this.userId();
+      const user = this.session.user();
+      const id = user?.id ?? null;
+      const plan = user?.plan ?? null;
       untracked(() => {
-        this.clear();
-        if (user) void this.load();
+        if (id !== this.lastUser) {
+          this.lastUser = id;
+          this.lastPlan = plan;
+          this.clear();
+          if (id) void this.load();
+        } else if (plan !== this.lastPlan) {
+          this.lastPlan = plan;
+          if (id) void this.load();
+        }
       });
     });
   }
 
+  /** (Re)reads the list; transient failures are retried, and it never throws (`loaded` tells). */
   async load(): Promise<void> {
-    const list = await this.api.workspaces();
-    this.list.set(list);
-    const keep = this.id() ?? readStored();
-    this.select(list.find((w) => w.id === keep)?.id ?? list[0]?.id ?? null);
+    const user = this.userId();
+    const ok = await loadWithRetry(
+      async () => {
+        const list = await this.api.workspaces();
+        if (this.userId() !== user) return;
+        this.list.set(list);
+        const keep = this.id() ?? readStored();
+        this.select(list.find((w) => w.id === keep)?.id ?? list[0]?.id ?? null);
+      },
+      () => this.userId() === user,
+    );
+    if (ok && this.userId() === user) this.loaded.set(true);
   }
 
   switchTo(id: string): Workspace | undefined {
@@ -51,6 +75,7 @@ export class WorkspaceStore {
   private clear(): void {
     this.list.set([]);
     this.id.set(null);
+    this.loaded.set(false);
   }
 
   private select(id: string | null): void {

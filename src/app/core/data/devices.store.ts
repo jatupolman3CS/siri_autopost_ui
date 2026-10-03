@@ -1,6 +1,13 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { ApiDevice, ApiPairingCode, ApiService } from '../http/api.service';
+import { DeviceEventsService } from './device-events.service';
+import { loadWithRetry } from './loading';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
+
+/** Events that change what the device list shows: presence, pairing, a rename or a pause. */
+const DEVICE_EVENTS = ['device.online', 'device.paired', 'device.revoked', 'device.updated'];
+/** The event stream keeps the list fresh; this poll only runs while the stream is down. */
+const FALLBACK_POLL_MS = 60_000;
 
 // Browsers with the extension paired to the current workspace, and the pairing code flow.
 @Injectable({ providedIn: 'root' })
@@ -17,17 +24,49 @@ export class DevicesStore {
       this.loaded.set(false);
       if (id) void this.load(id);
     });
+    // Live: online dots, new and removed devices follow the event stream.
+    const events = inject(DeviceEventsService);
+    events.subscribe((e) => {
+      if (DEVICE_EVENTS.includes(e.type)) void this.refresh();
+    });
+    events.onResume(() => void this.refresh());
+    if (typeof window !== 'undefined') {
+      const timer = setInterval(() => {
+        if (!events.connected()) void this.refresh();
+      }, FALLBACK_POLL_MS);
+      inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    }
   }
 
+  /** Loads the list (transient failures are retried); an answer for a workspace left meanwhile is dropped. */
   async load(wsId = this.ws.id()): Promise<void> {
     if (!wsId) return;
-    const list = await this.api.devices(wsId);
-    if (this.ws.id() !== wsId) return;
-    this.list.set(list);
-    this.loaded.set(true);
+    const ok = await loadWithRetry(
+      async () => {
+        const list = await this.api.devices(wsId);
+        if (this.ws.id() === wsId) this.list.set(list);
+      },
+      () => this.ws.id() === wsId,
+    );
+    if (ok && this.ws.id() === wsId) this.loaded.set(true);
   }
 
-  /** A 10-minute code to type into the extension (fails when the plan has no device left). */
+  /** A quiet re-read for live updates: a failure leaves the list as it is. */
+  async refresh(): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    try {
+      const list = await this.api.devices(wsId, true);
+      if (this.ws.id() === wsId) {
+        this.list.set(list);
+        this.loaded.set(true);
+      }
+    } catch {
+      // The next event or poll tries again.
+    }
+  }
+
+  /** A 10-minute code for the extension to trade (fails when the plan has no device left). */
   async createPairingCode(): Promise<ApiPairingCode | null> {
     const wsId = this.ws.id();
     return wsId ? this.api.createPairingCode(wsId) : null;

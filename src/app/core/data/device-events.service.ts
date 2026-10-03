@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { tokenStorage } from '../auth/token';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
@@ -17,7 +17,6 @@ const RETRY_MIN_MS = 1000;
 const RETRY_MAX_MS = 30_000;
 /** The server pings every 15 s; this long without a byte means the connection is dead. */
 const STALL_MS = 45_000;
-const CATCH_UP_TAKE = 500;
 
 // The workspace's live event stream (Server-Sent Events over fetch, so the bearer token travels in a header).
 // Stores subscribe while a page shows a device; the service keeps one connection per workspace, reconnects
@@ -44,12 +43,19 @@ export class DeviceEventsService {
 
   constructor() {
     whenWorkspaceChanges((id) => this.switchTo(id));
-    if (typeof document !== 'undefined')
-      document.addEventListener('visibilitychange', () => {
+    if (typeof document !== 'undefined') {
+      const onVisible = (): void => {
         // A tab coming back may have had its stream killed silently: reconnect now instead of at the next ping.
         if (document.visibilityState === 'visible' && this.handlers.size && !this.connected())
           this.reconnectNow();
+      };
+      document.addEventListener('visibilitychange', onVisible);
+      inject(DestroyRef).onDestroy(() => {
+        document.removeEventListener('visibilitychange', onVisible);
+        this.handlers.clear();
+        this.stop();
       });
+    }
   }
 
   /** Receives every event of the current workspace; returns the unsubscribe function. */
@@ -117,8 +123,8 @@ export class DeviceEventsService {
         cache: 'no-store',
         signal: ctrl.signal,
       });
-      if (!res.ok || !res.body) throw new Error(`stream ${res.status}`);
       if (res.status === 401 || res.status === 403 || res.status === 404) return; // not ours: stop for good
+      if (!res.ok || !res.body) throw new Error(`stream ${res.status}`);
       this.attempt = 0;
       this.reconnects.update((n) => n + 1);
       this.connected.set(true);
@@ -212,5 +218,3 @@ export class DeviceEventsService {
     return 'event';
   }
 }
-
-export { CATCH_UP_TAKE };

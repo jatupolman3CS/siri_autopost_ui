@@ -16,6 +16,8 @@ export class NotificationService {
   readonly toasts = this._toasts.asReadonly();
 
   show(type: ToastType, message: string, durationMs = 4500): void {
+    // The same message already on screen (a retried load failing again) is not stacked.
+    if (this._toasts().some((t) => t.type === type && t.message === message)) return;
     const toast: Toast = { id: this.nextId++, type, message };
     this._toasts.update((list) => [...list, toast]);
     setTimeout(() => this.dismiss(toast.id), durationMs);

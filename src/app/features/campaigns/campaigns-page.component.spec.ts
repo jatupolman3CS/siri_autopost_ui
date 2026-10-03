@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { CampaignsStore } from '../../core/data/campaigns.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
-import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import { WORKSPACE, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { CampaignsPageComponent } from './campaigns-page.component';
 
 const BASE = `/api/workspaces/${WS}/devices/dev-1`;
@@ -40,8 +40,6 @@ describe('CampaignsPageComponent', () => {
     const fixture = TestBed.createComponent(CampaignsPageComponent);
     fixture.detectChanges();
     await settle();
-    http.expectOne(`/api/workspaces/${WS}/devices`).flush([DEVICE]);
-    await settle();
     for (const r of http.match(`${BASE}/live`))
       r.flush({
         deviceId: 'dev-1',
@@ -72,7 +70,7 @@ describe('CampaignsPageComponent', () => {
       providers: [provideRouter([{ path: '**', children: [] }])],
     });
     TestBed.inject(CampaignsStore);
-    await signIn(http);
+    await signIn(http, { devices: [DEVICE] });
   });
 
   afterEach(() => TestBed.resetTestingModule());
@@ -92,7 +90,7 @@ describe('CampaignsPageComponent', () => {
 
   it('lets a viewer look but not edit', async () => {
     const ws = TestBed.inject(WorkspaceStore);
-    ws.list.set([{ id: WS, name: 'Shop', posts7: 0, members: 2, role: 'viewer' }]);
+    ws.list.set([{ ...WORKSPACE, members: 2, role: 'viewer' }]);
     const el = await render();
     const editor = el.querySelector<HTMLFieldSetElement>('fieldset.ext-fs')!;
     expect(editor.disabled).toBe(true);

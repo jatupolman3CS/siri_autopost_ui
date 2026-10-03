@@ -16,6 +16,8 @@ export class InputFieldComponent {
   readonly error = input('');
   readonly disabled = input(false);
   readonly autocomplete = input<string | null>(null);
+  /** The most characters the API takes for this field (see core/http/input-limits.ts). */
+  readonly maxlength = input<number | null>(null);
   readonly value = model('');
   protected readonly id = `su-input-${nextId++}`;
 }

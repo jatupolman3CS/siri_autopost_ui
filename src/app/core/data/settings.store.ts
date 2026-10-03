@@ -1,6 +1,8 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { ApiEngine, ApiService } from '../http/api.service';
+import { AccountsStore } from './accounts.store';
 import { DeviceEventsService } from './device-events.service';
+import { loadWithRetry } from './loading';
 import { PlatformKey } from './models';
 import { PostsStore } from './posts.store';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
@@ -33,6 +35,9 @@ export interface BillingSettings {
 
 const PLATFORMS: PlatformKey[] = ['fb', 'x', 'ig', 'tt', 'line', 'th'];
 const PRESENCE_POLL_MS = 60_000;
+const DAY_MS = 864e5;
+/** Events after which the connection state (online, paired devices) is read again. */
+const PRESENCE_EVENTS = ['device.online', 'device.paired', 'device.revoked'];
 
 /** The server's defaults, shown until the workspace's own settings arrive. */
 export function defaultAntiBan(): AntiBanSettings {
@@ -48,24 +53,26 @@ export function defaultAntiBan(): AntiBanSettings {
   };
 }
 
+/** The server's default offline policy, shown until the workspace's own settings arrive. */
+export function defaultOffline(): OfflineSettings {
+  return { policy: 'queue', window: '2h', line: true, email: true, push: false };
+}
+
 // The posting engine's settings of the current workspace (anti-ban, offline policy) from
-// /engine, edited locally and sent with saveAb()/saveOff(). The billing cycle toggle of the plan
-// cards is local too; everything about the customer's real billing is in BillingStore.
+// /engine, edited locally and sent with saveAb()/saveOff() once they have loaded. The billing cycle toggle
+// of the plan cards is local too; everything about the customer's real billing is in BillingStore.
 @Injectable({ providedIn: 'root' })
 export class SettingsStore {
   private readonly api = inject(ApiService);
   private readonly ws = inject(WorkspaceStore);
   private readonly posts = inject(PostsStore);
+  private readonly accounts = inject(AccountsStore);
 
   readonly ab = signal<AntiBanSettings>(defaultAntiBan());
-  readonly off = signal<OfflineSettings>({
-    policy: 'queue',
-    window: '2h',
-    line: true,
-    email: true,
-    push: false,
-  });
+  readonly off = signal<OfflineSettings>(defaultOffline());
   readonly bill = signal<BillingSettings>({ cycle: 'month' });
+  /** The workspace's own settings have arrived (until then `ab`/`off` hold defaults and cannot be saved). */
+  readonly loaded = signal(false);
   /** Whether the workspace's extension is connected (a paired device called in, and no simulated outage). */
   readonly extensionOnline = signal(true);
   /** "Simulate offline" is on (as opposed to every paired device being offline). */
@@ -73,42 +80,79 @@ export class SettingsStore {
   readonly devices = signal(0);
   readonly devicesOnline = signal(0);
 
-  /** Posts sent today per platform, for the daily-limit bars. */
-  readonly usedToday = computed(() => {
+  /**
+   * Posts that went out in the last 24 hours per platform on the accounts a device posts for: what the
+   * server counts against the daily limits (success and posts waiting for a group admin). The sample
+   * accounts and their history never count.
+   */
+  readonly used24h = computed(() => {
     const used = Object.fromEntries(PLATFORMS.map((p) => [p, 0])) as Record<PlatformKey, number>;
-    for (const p of this.posts.today()) if (p.status === 'success') used[p.platform]++;
+    const connected = new Set(
+      this.accounts
+        .list()
+        .filter((a) => a.connected)
+        .map((a) => a.id),
+    );
+    const since = this.posts.now().getTime() - DAY_MS;
+    for (const p of this.posts.posts()) {
+      if (p.status !== 'success' && p.status !== 'pending') continue;
+      if (!connected.has(p.accountId) || !p.publishedAt || p.publishedAt.getTime() < since)
+        continue;
+      used[p.platform]++;
+    }
     return used;
   });
 
   constructor() {
     whenWorkspaceChanges((id) => {
+      // Nothing of the previous workspace stays: its settings must never be saved into this one.
+      this.loaded.set(false);
+      this.ab.set(defaultAntiBan());
+      this.off.set(defaultOffline());
+      this.extensionOnline.set(true);
+      this.simulatedOffline.set(false);
+      this.devices.set(0);
+      this.devicesOnline.set(0);
       if (id) void this.load(id);
     });
     // Devices call in every 30 s and post in the background: every minute, refresh the connection
     // state (not the settings being edited) and, when a device is paired, the posts.
-    if (typeof window !== 'undefined')
-      setInterval(() => {
+    if (typeof window !== 'undefined') {
+      const timer = setInterval(() => {
         this.refreshPresence(true)
           .then(() => (this.devices() > 0 ? this.posts.refresh() : undefined))
           .catch(() => undefined);
       }, PRESENCE_POLL_MS);
+      inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    }
     // Live, between those polls: a device coming online, pairing or unpairing refreshes the presence at once,
     // and a post that went out (or failed) refreshes the posts.
     const events = inject(DeviceEventsService);
     events.subscribe((e) => {
-      if (['device.online', 'device.paired', 'device.revoked'].includes(e.type))
-        this.refreshPresence(true).catch(() => undefined);
+      if (PRESENCE_EVENTS.includes(e.type)) this.refreshPresence(true).catch(() => undefined);
       else if (e.type === 'post') this.posts.refresh().catch(() => undefined);
     });
+    events.onResume(() => this.refreshPresence(true).catch(() => undefined));
   }
 
+  /** Loads the workspace's settings (transient failures are retried); a stale answer is dropped. */
   async load(wsId = this.ws.id()): Promise<void> {
-    if (wsId) this.apply(await this.api.engine(wsId));
+    if (!wsId) return;
+    const ok = await loadWithRetry(
+      async () => {
+        const e = await this.api.engine(wsId);
+        if (this.ws.id() === wsId) this.apply(e);
+      },
+      () => this.ws.id() === wsId,
+    );
+    if (ok && this.ws.id() === wsId) this.loaded.set(true);
   }
 
   async refreshPresence(quiet = false): Promise<void> {
     const wsId = this.ws.id();
-    if (wsId) this.applyPresence(await this.api.engine(wsId, quiet));
+    if (!wsId) return;
+    const e = await this.api.engine(wsId, quiet);
+    if (this.ws.id() === wsId) this.applyPresence(e);
   }
 
   patchAb(patch: Partial<AntiBanSettings>): void {
@@ -125,14 +169,17 @@ export class SettingsStore {
 
   async saveAb(): Promise<void> {
     const wsId = this.ws.id();
-    if (!wsId) return;
+    if (!wsId || !this.loaded()) return;
     const { autopause, ...rest } = this.ab();
-    this.apply(await this.api.saveAntiBan(wsId, { ...rest, autoPause: autopause }));
+    const e = await this.api.saveAntiBan(wsId, { ...rest, autoPause: autopause });
+    if (this.ws.id() === wsId) this.apply(e);
   }
 
   async saveOff(): Promise<void> {
     const wsId = this.ws.id();
-    if (wsId) this.apply(await this.api.saveOffline(wsId, this.off()));
+    if (!wsId || !this.loaded()) return;
+    const e = await this.api.saveOffline(wsId, this.off());
+    if (this.ws.id() === wsId) this.apply(e);
   }
 
   private apply(e: ApiEngine): void {

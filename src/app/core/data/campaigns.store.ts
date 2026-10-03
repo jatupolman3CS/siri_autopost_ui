@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiDeviceLive, ApiDeviceLog, ApiService } from '../http/api.service';
+import { problemMessage } from '../http/problem-details';
 import { applyImport, imageIdsOf, ParsedBackup } from '../ext/lib/backup.js';
 import {
   Campaign,
@@ -57,11 +58,28 @@ const FALLBACK_POLL_MS = 60_000;
 const RETRY_MS = 5000;
 /** While waiting for a command's answer, ask the server this often in case the stream is down. */
 const COMMAND_POLL_MS = 5000;
-const COMMAND_TIMEOUT_MS = 120_000;
+/** How long the page waits for a command's answer (the texts say it: keep them in step). */
+export const COMMAND_WAIT_MIN = 2;
+const COMMAND_TIMEOUT_MS = COMMAND_WAIT_MIN * 60_000;
+/** How long the API keeps a command nobody took (DeviceCommand.Lifetime); a timed-out one may still run. */
+export const COMMAND_LIFETIME_MIN = 10;
 /** Log lines kept on the page (what /live returns). */
 const LOG_LINES = 200;
 /** Error message of importParsed when the imported settings could not be saved yet. */
 export const SAVE_FAILED = 'save-failed';
+
+/**
+ * The API will not take these edits as they are (validation, rights, size): sending them again cannot
+ * change that, so only the next edit tries again. A busy or unreachable server (and 409, 408, 429) is retried.
+ */
+export function isRefusal(e: unknown): boolean {
+  return (
+    e instanceof HttpErrorResponse &&
+    e.status >= 400 &&
+    e.status < 500 &&
+    ![408, 409, 429].includes(e.status)
+  );
+}
 
 // The extension's own campaigns of one paired browser (the same settings as its settings page),
 // edited here and synced by the extension within ~30 s. Edits save on their own a moment after the
@@ -85,6 +103,8 @@ export class CampaignsStore {
   readonly updatedByDevice = signal(false);
   readonly loading = signal(false);
   readonly saveState = signal<SaveState>('idle');
+  /** The API's reason when it refused a save (null for an unreachable server). */
+  readonly saveError = signal<string | null>(null);
   /** Set when a save hit 409 and newer settings were loaded instead. */
   readonly reloadedAt = signal<number | null>(null);
   readonly live = signal<ApiDeviceLive | null>(null);
@@ -213,6 +233,11 @@ export class CampaignsStore {
     const seen = <T extends ApiDeviceLive>(l: T): T => ({ ...l, online: true, lastSeenAt: e.at });
     switch (e.type) {
       case 'device.state':
+        if (p['truncated']) {
+          // Too big for the event: the whole state is on /live.
+          void this.refreshLive();
+          break;
+        }
         this.live.update(
           (l) =>
             l && {
@@ -305,6 +330,7 @@ export class CampaignsStore {
       const r = await this.api.saveExtConfig(ws, device, s, this.revision());
       this.revision.set(r.revision);
       this.updatedByDevice.set(false);
+      this.saveError.set(null);
       // Edited again while saving: another save follows.
       if (this.saveState() === 'saving') this.saveState.set('saved');
       else if (!this.saveTimer) this.later(SAVE_DELAY_MS);
@@ -315,8 +341,11 @@ export class CampaignsStore {
         this.reloadedAt.set(Date.now());
         return;
       }
-      // Server unreachable or refused: the page shows it, and the edits go up again shortly.
+      // Server unreachable or refused: the page shows it. An unreachable or busy server gets the edits again
+      // shortly; a refusal (4xx) keeps them on the page until the next edit, which tries once more.
       this.saveState.set('error');
+      this.saveError.set(isRefusal(e) ? problemMessage(e) : null);
+      if (isRefusal(e)) return;
       this.saveTimer = setTimeout(() => {
         if (this.saveState() !== 'error') return;
         this.saveState.set('dirty');
@@ -477,9 +506,10 @@ export class CampaignsStore {
   // ---------- commands ----------
 
   /**
-   * Sends a button press to the device and waits (up to ~2 minutes) for its answer. The device holds a sync
-   * open on the server, so it usually answers within seconds; the answer comes back on the event stream, with
-   * a slow poll behind it. One nobody takes within 10 minutes expires.
+   * Sends a button press to the device and waits (COMMAND_WAIT_MIN minutes) for its answer. The device holds a
+   * sync open on the server, so it usually answers within seconds; the answer comes back on the event stream,
+   * with a slow poll behind it. A command nobody took stays queued for COMMAND_LIFETIME_MIN minutes, so one
+   * that timed out here may still run, and one nobody takes by then expires.
    */
   async command(cmd: string, args: object = {}): Promise<CommandResult> {
     const ws = this.ws.id();
@@ -537,6 +567,7 @@ export class CampaignsStore {
     this.live.set(null);
     this.revision.set(0);
     this.saveState.set('idle');
+    this.saveError.set(null);
   }
 }
 

@@ -241,6 +241,111 @@ export const AP_I18N_EXTRA = {
     impersonated: ['เปิดโหมดช่วยเหลือ', 'Assist mode opened'],
   },
 
+  // Permissions, live data and copy that says only what the system does (the audit fixes)
+  permEdit: [
+    'บทบาทของคุณคือผู้ชม: ดูได้อย่างเดียว แก้ไขอะไรที่นี่ไม่ได้',
+    'Your role is Viewer: you can look, but not change anything here',
+  ],
+  permAdmin: [
+    'เฉพาะผู้ดูแลหรือเจ้าของเวิร์กสเปซที่แก้ส่วนนี้ได้',
+    'Only an admin or the owner of the workspace can change this',
+  ],
+  permAssist: [
+    'โหมดช่วยเหลือดูได้อย่างเดียว แก้ไขอะไรไม่ได้',
+    'Assist mode is read-only: nothing can be changed',
+  ],
+  notYet: ['ยังไม่รองรับ', 'Not supported yet'],
+  dismissToast: ['ปิดการแจ้งเตือนนี้', 'Dismiss this notification'],
+  simEndedOffline: [
+    'เลิกจำลองออฟไลน์แล้ว แต่ยังไม่มีเครื่องที่ผูกไว้ออนไลน์ โพสต์จะเดินต่อเมื่อมีเครื่องออนไลน์',
+    'Simulation ended, but no paired device is online yet. Posting resumes when one is.',
+  ],
+  restoreFailed: [
+    'ตรวจสอบการเข้าสู่ระบบไม่ได้เพราะเซิร์ฟเวอร์ไม่ตอบ ระบบเก็บการเข้าสู่ระบบเดิมไว้ ลองรีโหลดหน้านี้อีกครั้ง',
+    'Your sign-in could not be checked because the server did not answer. It is kept: reload the page to try again.',
+  ],
+  bannerNotYet: [
+    '“เก็บไว้รอโพสต์” และ “ส่งแจ้งเตือน” ยังไม่รองรับ โพสต์ที่ค้างถูกเก็บไว้ในคิวอยู่แล้ว และไม่มีการส่งแจ้งเตือน',
+    '“Keep in queue” and “reminder” are not supported yet: waiting posts are already held in the queue and no reminder is sent.',
+  ],
+  channelsNotYet: [
+    'ยังไม่มีช่องทางแจ้งเตือนที่ใช้งานได้ ตัวเลือกเหล่านี้ยังไม่มีผล',
+    'No notification channel works yet; these choices have no effect.',
+  ],
+  limitsFbOnly: [
+    'ตอนนี้ส่วนขยายโพสต์ผ่าน Facebook เท่านั้น เพดานของแพลตฟอร์มอื่นเก็บไว้ใช้เมื่อเชื่อมต่อได้',
+    'Only Facebook is posted through the extension today; the other platforms’ limits are kept for when they can be connected.',
+  ],
+  noDispatch: [
+    'ยังไม่มีโพสต์ที่รอส่งจากบัญชีที่เชื่อมผ่านส่วนขยาย',
+    'No queued posts for an account connected through the extension.',
+  ],
+  prevMonth: ['เดือนก่อนหน้า', 'Previous month'],
+  nextMonth: ['เดือนถัดไป', 'Next month'],
+  mediaMax: ['แนบสื่อได้ไม่เกิน {n} ไฟล์ต่อโพสต์', 'A post takes at most {n} media files'],
+  noGroupsYet: [
+    'บัญชีนี้ยังไม่มีกลุ่ม: เปิดส่วนขยายแล้วเพิ่มกลุ่มในชุดโพสต์ก่อน',
+    'This account has no groups yet: open the extension and add groups to a campaign first',
+  ],
+  sumRandom: [' (เว้นระยะแบบสุ่ม)', ' (spaced randomly)'],
+  sumSame: [' (ทุกงานเริ่มพร้อมกัน)', ' (all at the start time)'],
+  sumRepeat: [
+    'จะสร้าง {total} งานโพสต์: วันละ {n} งานใน {p} แพลตฟอร์ม ระหว่าง {t1}–{t2} รวม {days} วัน',
+    'Creates {total} tasks: {n} a day across {p} platforms between {t1}–{t2}, on {days} days',
+  ],
+  repeatNote: [
+    'การทำซ้ำตั้งคิวล่วงหน้า {n} วันนับจากวันเริ่ม ไม่ได้ทำซ้ำไปเรื่อยๆ ตั้งเวลาใหม่เมื่อคิวหมด',
+    'Repeats are queued {n} days ahead of the start date, not forever. Schedule again when the queue runs out.',
+  ],
+  unboundAccount: ['ยกเลิกการผูก', 'Unbound'],
+  unboundHint: [
+    'เครื่องของบัญชีนี้ถูกยกเลิกการผูกแล้ว ประวัติยังอยู่ แต่จะโพสต์ไม่ได้จนกว่าจะจับคู่เครื่องใหม่',
+    'The browser of this account was unbound. Its history stays, but it cannot post until a browser is paired again.',
+  ],
+  seatsFull: [
+    'ที่นั่งเต็มแล้ว: แผนมี {n} ที่นั่ง (นับรวมเจ้าของและคำเชิญที่รออยู่)',
+    'All {n} seats are taken (owner and pending invitations included)',
+  ],
+  devicesFull: [
+    'จับคู่อุปกรณ์ครบ {n} เครื่องตามแผนแล้ว ยกเลิกการผูกเครื่องเดิมหรืออัปเกรดแผนเพื่อเพิ่ม',
+    'All {n} devices of the plan are paired. Unbind one or upgrade the plan to add another.',
+  ],
+  renameEmpty: ['กรุณาใส่ชื่อเครื่อง', 'Please enter a device name'],
+  sampleLog: ['ตัวอย่าง', 'sample'],
+  authTryGoogle: [
+    'ถ้าสมัครด้วย Google ให้เข้าสู่ระบบด้วยปุ่ม Google',
+    'If you signed up with Google, use the Google button.',
+  ],
+  // Plan card lines: the numbers come from /api/plans
+  planAccounts: ['บัญชีโซเชียล: {n}', 'Social accounts: {n}'],
+  planPosts: ['โพสต์ต่อ 24 ชม.: {n}', 'Posts per 24 h: {n}'],
+  planDevices: ['อุปกรณ์: {n}', 'Devices: {n}'],
+  planSeats: ['ที่นั่งทีม: {n}', 'Team seats: {n}'],
+  planAntiBan: ['Anti-ban ขั้นสูง', 'Advanced anti-ban'],
+  // Platform admin
+  savesAsYouGo: ['การเปลี่ยนแต่ละช่องบันทึกอัตโนมัติ', 'Each change saves as you make it'],
+  rate24Note: ['24 ชั่วโมงล่าสุด · เป้าหมาย ≥ 95%', 'Last 24 h · target ≥ 95%'],
+  pauseBlocked: [
+    'ลูกค้าถูกระงับอยู่ คืนสถานะก่อนจึงจะให้งานทำต่อได้',
+    'The customer is suspended. Restore them before resuming jobs.',
+  ],
+  usedOfPerWs: [
+    'ใช้ {n} จาก {m} (รวม {w} เวิร์กสเปซ ขีดจำกัดนับแยกแต่ละเวิร์กสเปซ)',
+    '{n} of {m} used (across {w} workspaces; the limit applies to each one)',
+  ],
+  promoOff: ['ปิดโค้ด', 'Switch off'],
+  promoOn: ['เปิดโค้ด', 'Switch on'],
+  promoSwitchedOff: ['ปิดโค้ด {c} แล้ว', 'Code {c} switched off'],
+  promoSwitchedOn: ['เปิดโค้ด {c} แล้ว', 'Code {c} switched on'],
+  promoInactive: ['ปิดอยู่', 'Off'],
+  errPromoChars: [
+    'โค้ดเป็นตัวอักษรหรือตัวเลข {min}–{max} ตัว ไม่มีช่องว่างหรือเครื่องหมาย',
+    'Letters and digits only, {min}–{max} characters, no spaces or symbols',
+  ],
+  planAudit: ['การเปลี่ยนแปลงแผนและโค้ดส่วนลด', 'Plan and promo code changes'],
+  nothingToRetry: ['ไม่มีงานที่ล้มเหลวให้ลองใหม่', 'No failed jobs to retry'],
+  planBlocked: ['ถูกระงับ', 'Suspended'],
+
   // The extension's own campaigns (features/campaigns): the same settings page as in the extension.
   ext: {
     nav: ['ชุดโพสต์ (ส่วนขยาย)', 'Campaigns (extension)'],
@@ -264,10 +369,6 @@ export const AP_I18N_EXTRA = {
       'เครื่องนี้ยังไม่เคยส่งชุดโพสต์ขึ้นมา อัปเดตส่วนขยายเป็นเวอร์ชันล่าสุด แล้วเปิด Chrome เครื่องนั้นไว้ (หรือกด "ซิงก์ตอนนี้" ในหน้าสถานะของส่วนขยาย)',
       'This browser has not sent its campaigns yet. Update the extension and keep that Chrome open (or press “Sync now” on the extension’s status page).',
     ],
-    readOnly: [
-      'สิทธิ์ผู้ชม: ดูได้อย่างเดียว แก้ไขหรือสั่งงานเครื่องไม่ได้',
-      'Viewer role: read only, no edits or commands.',
-    ],
     offlineSeen: ['ออฟไลน์ (เห็นล่าสุด {t})', 'Offline (last seen {t})'],
     version: ['ส่วนขยาย v{v}', 'extension v{v}'],
     revNone: ['ยังไม่มีชุดโพสต์บนเว็บ', 'No campaigns on the web yet'],
@@ -281,6 +382,11 @@ export const AP_I18N_EXTRA = {
       'The settings were changed elsewhere first; the latest version was loaded.',
     ],
     saveFailed: ['บันทึกไม่สำเร็จ', 'Save failed'],
+    tgTokenHidden: ['ซ่อนไว้ (เฉพาะผู้ดูแลเห็น)', 'Hidden (admins only)'],
+    tgTokenAdminOnly: [
+      'Bot Token เห็นและแก้ได้เฉพาะผู้ดูแลหรือเจ้าของเวิร์กสเปซ เมื่อคุณบันทึกที่นี่ ค่าที่ตั้งไว้เดิมจะไม่ถูกลบ',
+      'Only an admin or the owner can see and change the Bot Token. Saving here keeps the one already set.',
+    ],
     badgeStopped: ['หยุด', 'Stopped'],
     badgeRunning: ['ทำงานอยู่', 'Running'],
     badgePosting: ['กำลังโพสต์', 'Posting'],
@@ -289,16 +395,16 @@ export const AP_I18N_EXTRA = {
     started: ['เริ่มทำงานแล้ว', 'Started'],
     stopped: ['หยุดแล้ว', 'Stopped'],
     cmdSent: [
-      'ส่งคำสั่งไปที่เครื่องแล้ว รอเครื่องรับ (ไม่เกิน 1 นาที)…',
-      'Command sent; waiting for the browser (up to a minute)…',
+      'ส่งคำสั่งไปที่เครื่องแล้ว รอเครื่องรับ (ไม่เกิน {n} นาที)…',
+      'Command sent; waiting for the browser (up to {n} minutes)…',
     ],
     cmdExpired: [
       'เครื่องไม่ได้รับคำสั่ง (ออฟไลน์นานเกินไป)',
       'The browser never took the command (offline too long)',
     ],
     cmdTimeout: [
-      'ยังไม่ได้ผลจากเครื่อง เครื่องอาจออฟไลน์อยู่ ดูสถานะอีกครั้งภายหลัง',
-      'No answer from the browser yet; it may be offline. Check the status later.',
+      'ยังไม่ได้ผลจากเครื่อง เครื่องอาจออฟไลน์อยู่ คำสั่งยังค้างรออยู่ได้นานถึง {m} นาที และอาจทำงานภายหลัง ดูสถานะอีกครั้งในภายหลัง',
+      'No answer from the browser yet; it may be offline. The command stays queued for up to {m} minutes and may still run. Check the status later.',
     ],
     cmdFailed: ['ส่งคำสั่งไม่สำเร็จ', 'Could not send the command'],
     addCampaign: ['เพิ่มชุด', 'Add campaign'],

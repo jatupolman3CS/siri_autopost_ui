@@ -6,15 +6,26 @@
       @if (roleNote()) {
         <p class="small muted">{{ roleNote() }}</p>
       }
+      @if (seatsNote()) {
+        <p class="small muted">{{ seatsNote() }}</p>
+      }
+      <app-perm-note level="admin" />
     </div>
     <div class="actions">
-      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="open('ws')">
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary"
+        [disabled]="!perm.canCreateWorkspace()"
+        [attr.title]="perm.canCreateWorkspace() ? null : perm.adminHint()"
+        (click)="open('ws')"
+      >
         <i class="ph ph-plus"></i>{{ t().team.newWs }}
       </button>
       <button
         type="button"
         class="su-btn su-btn-sm su-btn-primary"
         [disabled]="!canInvite()"
+        [attr.title]="perm.adminHint() || null"
         (click)="open('invite')"
       >
         <i class="ph ph-user-plus"></i>{{ t().team.invite }}
@@ -57,7 +68,7 @@
                 <select
                   class="su-select role-sel"
                   [attr.aria-label]="t().team.role"
-                  (change)="setRole(r.m, $any($event.target).value)"
+                  (change)="setRole(r.m, $any($event.target))"
                 >
                   @for (o of roleOptions(); track o.value) {
                     <option [value]="o.value" [selected]="o.value === r.m.role">
@@ -83,6 +94,9 @@
             </div>
           }
         </div>
+        @if (!team.loaded()) {
+          <p class="small muted">{{ t().api.loading }}</p>
+        }
       </section>
 
       <section class="panel">
@@ -91,6 +105,8 @@
           <button
             type="button"
             class="su-btn su-btn-sm su-btn-secondary"
+            [disabled]="!perm.canAdmin() || devicesFull()"
+            [attr.title]="addDeviceHint() || null"
             (click)="modal.set('pair')"
           >
             <i class="ph ph-plus"></i>{{ t().api.addDevice }}
@@ -118,7 +134,7 @@
                 <button
                   type="button"
                   class="su-btn su-btn-sm su-btn-ghost"
-                  (click)="renameDevice(d.id, d.name)"
+                  (click)="askRename(d.id, d.name)"
                 >
                   <i class="ph ph-pencil-simple"></i>{{ t().api.rename }}
                 </button>
@@ -184,20 +200,57 @@
     <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="close()">
       {{ t().common.cancel }}
     </button>
-    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="confirmInvite()">
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      [disabled]="busy()"
+      (click)="confirmInvite()"
+    >
       {{ t().team.invite }}
     </button>
   </div>
 </app-modal>
 
 <app-modal [open]="modal() === 'ws'" [title]="t().team.newWs" (closed)="close()">
-  <app-input-field [label]="t().team.wsName" [(value)]="formWs" [error]="formErr()" />
+  <app-input-field
+    [label]="t().team.wsName"
+    [(value)]="formWs"
+    [error]="formErr()"
+    [maxlength]="limits.workspaceName"
+  />
   <div modal-footer>
     <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="close()">
       {{ t().common.cancel }}
     </button>
-    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="confirmWs()">
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      [disabled]="busy()"
+      (click)="confirmWs()"
+    >
       {{ t().team.newWs }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [open]="modal() === 'rename'" [title]="t().api.rename" (closed)="close()">
+  <app-input-field
+    [label]="t().api.renamePrompt"
+    [(value)]="formName"
+    [error]="formErr()"
+    [maxlength]="limits.deviceName"
+  />
+  <div modal-footer>
+    <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="close()">
+      {{ t().common.cancel }}
+    </button>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      [disabled]="busy()"
+      (click)="confirmRename()"
+    >
+      {{ t().common.save }}
     </button>
   </div>
 </app-modal>

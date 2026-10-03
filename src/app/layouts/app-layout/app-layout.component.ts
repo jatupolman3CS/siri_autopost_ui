@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ExtensionStore } from '../../core/data/extension.store';
+import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
 import { SessionStore } from '../../core/data/session.store';
 import { SettingsStore } from '../../core/data/settings.store';
@@ -39,6 +40,7 @@ export class AppLayoutComponent {
   protected readonly session = inject(SessionStore);
   protected readonly workspaces = inject(WorkspaceStore);
   protected readonly ext = inject(ExtensionStore);
+  protected readonly perm = inject(PermissionsService);
   private readonly posts = inject(PostsStore);
   private readonly settings = inject(SettingsStore);
 

@@ -1,15 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
-import { Draft, DraftStore } from '../../core/data/draft.store';
+import { Draft, DraftStore, canTarget } from '../../core/data/draft.store';
+import { INPUT_LIMITS } from '../../core/http/input-limits';
+import { PermissionsService } from '../../core/data/permissions.service';
 import { LibraryStore } from '../../core/data/library.store';
-import { PlatformKey, SocialAccount } from '../../core/data/models';
+import { PlatformKey, SocialAccount, accountKind } from '../../core/data/models';
 import { PostsStore } from '../../core/data/posts.store';
 import { SEED } from '../../core/data/seed.data';
 import { SettingsStore } from '../../core/data/settings.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
+import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 
@@ -20,10 +23,10 @@ interface Task {
 }
 
 /** One task per selected account; accounts that post to groups get one per selected group. */
-function taskList(d: Draft, accounts: SocialAccount[]): Task[] {
+export function taskList(d: Draft, accounts: SocialAccount[]): Task[] {
   const out: Task[] = [];
   for (const a of accounts) {
-    if (!d.targets[a.id] || a.health === 'relogin') continue;
+    if (!d.targets[a.id] || !canTarget(a)) continue;
     if (a.groups.length)
       d.groups
         .filter((g) => a.groups.includes(g))
@@ -31,6 +34,21 @@ function taskList(d: Draft, accounts: SocialAccount[]): Task[] {
     else out.push({ a: a.id, p: a.platform, t: a.defaultTarget });
   }
   return out;
+}
+
+/** The server queues repeats this many days ahead (Repeat.HorizonDays); nothing repeats beyond that. */
+export const REPEAT_HORIZON_DAYS = 14;
+
+/** How many days of the next REPEAT_HORIZON_DAYS the API schedules for a repeat (Occurrences in Posts.cs). */
+export function occurrences(start: Date, repeat: Draft['repeat']): number {
+  if (repeat === 'none') return 1;
+  if (repeat === 'weekly') return REPEAT_HORIZON_DAYS / 7;
+  let n = 0;
+  for (let i = 0; i < REPEAT_HORIZON_DAYS; i++) {
+    const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i).getDay();
+    if (repeat === 'daily' || (day !== 0 && day !== 6)) n++;
+  }
+  return n;
 }
 
 /** Local wall-clock time with its UTC offset, so the server repeats on the user's weekdays. */
@@ -47,7 +65,13 @@ export function localIso(d: Date): string {
 
 @Component({
   selector: 'app-composer-page',
-  imports: [RouterLink, CheckboxComponent, InputFieldComponent, SelectFieldComponent],
+  imports: [
+    RouterLink,
+    CheckboxComponent,
+    InputFieldComponent,
+    PermNoteComponent,
+    SelectFieldComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './composer-page.component.html',
   styleUrl: './composer-page.component.scss',
@@ -61,6 +85,8 @@ export class ComposerPageComponent {
   private readonly settings = inject(SettingsStore);
   private readonly i18n = inject(I18nService);
   protected readonly store = inject(DraftStore);
+  protected readonly perm = inject(PermissionsService);
+  protected readonly limits = INPUT_LIMITS;
   protected readonly t = this.i18n.t;
   protected readonly d = this.store.draft;
   protected readonly groups = this.accounts.allGroups;
@@ -83,7 +109,7 @@ export class ComposerPageComponent {
   protected readonly targetRows = computed(() => {
     const d = this.d();
     return this.accounts.list().map((a) => {
-      const disabled = a.health === 'relogin';
+      const disabled = !canTarget(a);
       const checked = !!d.targets[a.id] && !disabled;
       return {
         id: a.id,
@@ -92,9 +118,12 @@ export class ComposerPageComponent {
         checked,
         disabled,
         groups: a.groups,
-        demo: !a.connected,
+        demo: accountKind(a) === 'sample',
+        unbound: accountKind(a) === 'unbound',
         showGroups: a.groups.length > 0 && checked,
-        needsLogin: disabled,
+        needsLogin: a.health === 'relogin' && accountKind(a) !== 'unbound',
+        // A device's Facebook account posts to groups it has synced; with none there is nowhere to send.
+        needsGroups: a.connected && a.health !== 'relogin' && !a.groups.length,
       };
     });
   });
@@ -116,22 +145,49 @@ export class ComposerPageComponent {
     return fmt(this.t().cmp.useDelay, { a: ab.min, b: ab.max });
   });
 
-  /** "Creates N tasks across P platforms between HH:MM–HH:MM". */
+  /** The date and time picked, as a Date (NaN when incomplete). */
+  private readonly start = computed(() => {
+    const d = this.d();
+    const [y, mo, da] = d.date.split('-').map(Number);
+    const [hh, mm] = (d.time || '00:00').split(':').map(Number);
+    return new Date(y, mo - 1, da, hh, mm);
+  });
+
+  /**
+   * What scheduling will create: tasks per day, the span the smart delay spreads them over (or "all at the
+   * start time" when it is off), and for a repeat the total over the days the API queues ahead.
+   */
   protected readonly summary = computed(() => {
     const d = this.d();
+    const t = this.t();
     const tasks = taskList(d, this.accounts.list());
-    if (!tasks.length) return this.t().cmp.summaryEmpty;
+    if (!tasks.length) return t.cmp.summaryEmpty;
     const ab = this.settings.ab();
     const [h, m] = (d.time || '00:00').split(':').map(Number);
-    const endMin = h * 60 + m + (Math.max(0, tasks.length - 1) * (ab.min + ab.max)) / 2;
+    const spread = d.useDelay ? (Math.max(0, tasks.length - 1) * (ab.min + ab.max)) / 2 : 0;
+    const endMin = h * 60 + m + spread;
     const t2 = `${String(Math.floor(endMin / 60) % 24).padStart(2, '0')}:${String(Math.round(endMin % 60)).padStart(2, '0')}`;
-    return fmt(this.t().cmp.summary, {
-      n: tasks.length,
-      p: new Set(tasks.map((x) => x.p)).size,
-      t1: d.time,
-      t2,
-    });
+    const platforms = new Set(tasks.map((x) => x.p)).size;
+    const delay = d.useDelay ? t.api.sumRandom : t.api.sumSame;
+    const days = occurrences(this.start(), d.repeat);
+    if (days <= 1 && d.repeat === 'none')
+      return fmt(t.cmp.summary, { n: tasks.length, p: platforms, t1: d.time, t2 }) + delay;
+    return (
+      fmt(t.api.sumRepeat, {
+        total: tasks.length * days,
+        n: tasks.length,
+        days,
+        p: platforms,
+        t1: d.time,
+        t2,
+      }) + delay
+    );
   });
+
+  /** Repeats are queued REPEAT_HORIZON_DAYS ahead, not forever: said under the repeat choice. */
+  protected readonly repeatNote = computed(() =>
+    this.d().repeat === 'none' ? '' : fmt(this.t().api.repeatNote, { n: REPEAT_HORIZON_DAYS }),
+  );
 
   protected setText(v: string): void {
     this.store.patch({ text: v, errText: '' });
@@ -144,6 +200,10 @@ export class ComposerPageComponent {
 
   protected toggleMedia(id: string): void {
     const media = this.d().media;
+    if (!media.includes(id) && media.length >= INPUT_LIMITS.postMedia) {
+      this.notify.error(fmt(this.t().api.mediaMax, { n: INPUT_LIMITS.postMedia }));
+      return;
+    }
     this.store.patch({
       media: media.includes(id) ? media.filter((x) => x !== id) : [...media, id],
     });
@@ -183,12 +243,10 @@ export class ComposerPageComponent {
 
   /** Validates, then asks the server to queue one task per target, spaced by the smart delay. */
   protected async submit(): Promise<void> {
-    if (this.busy()) return;
+    if (this.busy() || !this.perm.canEdit()) return;
     const t = this.t().cmp;
     const d = this.d();
-    const [y, mo, da] = d.date.split('-').map(Number);
-    const [hh, mm] = (d.time || '00:00').split(':').map(Number);
-    const start = new Date(y, mo - 1, da, hh, mm);
+    const start = this.start();
     const tasks = taskList(d, this.accounts.list());
     const errs = {
       errText: d.text.trim() ? '' : t.errText,

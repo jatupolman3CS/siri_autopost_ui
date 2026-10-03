@@ -63,19 +63,25 @@
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-full"
-              [class.su-btn-primary]="ext.paused()"
-              [class.su-btn-secondary]="!ext.paused()"
+              [class.su-btn-primary]="ext.jobsPaused()"
+              [class.su-btn-secondary]="!ext.jobsPaused()"
+              [disabled]="!perm.canAdmin() || !devices.list().length"
+              [attr.title]="perm.adminHint() || null"
               (click)="ext.togglePause()"
             >
-              <i class="ph" [class.ph-play]="ext.paused()" [class.ph-pause]="!ext.paused()"></i>
-              {{ ext.paused() ? t().ext.resume : t().ext.pause }}
+              <i
+                class="ph"
+                [class.ph-play]="ext.jobsPaused()"
+                [class.ph-pause]="!ext.jobsPaused()"
+              ></i>
+              {{ ext.jobsPaused() ? t().ext.resume : t().ext.pause }}
             </button>
             <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/overview">{{
               t().ext.openDash
             }}</a>
           </div>
           <div>
-            <div class="small muted mb4">{{ t().ext.activity }}</div>
+            <div class="small muted mb4">{{ t().ext.activity }} · {{ t().api.sampleLog }}</div>
             @for (l of log(); track $index) {
               <div class="log small">
                 <span class="muted lt">{{ l.time }}</span
@@ -86,7 +92,7 @@
         </div>
         <div class="pop-foot small muted">
           <span>{{ bound() }}</span>
-          <span>{{ t().ext.version }}</span>
+          <span>{{ version() }}</span>
         </div>
       </div>
     </div>

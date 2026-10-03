@@ -58,13 +58,15 @@ export class AdminViewService {
     });
     const total = rows.reduce((n, x) => n + x.amt, 0);
     const max = Math.max(1, ...rows.map((x) => x.amt));
+    const ready = this.admin.loaded();
     return {
       total,
+      // "—" until the customers have arrived, not ฿0 and 0 subscribers.
       rows: rows.map((x) => ({
         name: t.plans[x.k].name,
-        amount: baht(x.amt),
-        subs: x.subs,
-        pct: Math.round((x.amt / max) * 100),
+        amount: ready ? baht(x.amt) : '—',
+        subs: ready ? x.subs : '—',
+        pct: ready ? Math.round((x.amt / max) * 100) : 0,
       })),
     };
   });

@@ -42,9 +42,27 @@
 .promo-tbl {
   grid-template-columns:
     minmax(120px, 1.4fr) minmax(90px, 1fr) minmax(60px, 0.7fr) minmax(110px, 1.2fr)
-    minmax(100px, 1fr);
+    minmax(100px, 1fr) minmax(110px, 1fr);
   gap: 0 8px;
-  min-width: 520px;
+  min-width: 640px;
+}
+
+.row.ar {
+  padding: 8px 0;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  .time {
+    width: 112px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+  .by {
+    max-width: 200px;
+  }
+}
+.min0 {
+  min-width: 0;
 }
 
 .form {

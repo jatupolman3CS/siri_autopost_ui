@@ -65,7 +65,7 @@
         <button
           type="button"
           class="su-btn su-btn-sm su-btn-secondary"
-          [disabled]="!billing.info()?.canManagePayment || busy()"
+          [disabled]="!billing.info()?.canManagePayment || busy() || perm.assist()"
           (click)="managePayment()"
         >
           {{ t().api.managePayment }}
@@ -138,7 +138,7 @@
     <button
       type="button"
       class="su-btn su-btn-sm su-btn-primary"
-      [disabled]="busy()"
+      [disabled]="busy() || perm.assist()"
       (click)="confirmPlan()"
     >
       {{ confirmLabel() }}

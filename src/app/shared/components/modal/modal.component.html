@@ -3,7 +3,12 @@
     <div class="su-modal-panel" role="dialog" aria-modal="true" [attr.aria-label]="title()">
       <div class="su-modal-head">
         <h2 class="su-modal-title">{{ title() }}</h2>
-        <button type="button" class="su-x" aria-label="ปิด" (click)="closed.emit()">
+        <button
+          type="button"
+          class="su-x"
+          [attr.aria-label]="t().common.close"
+          (click)="closed.emit()"
+        >
           <i class="ph ph-x" aria-hidden="true"></i>
         </button>
       </div>

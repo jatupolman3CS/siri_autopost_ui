@@ -11,7 +11,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { CampaignsStore } from '../../core/data/campaigns.store';
 import { DevicesStore } from '../../core/data/devices.store';
-import { WorkspaceStore } from '../../core/data/workspace.store';
+import { PermissionsService } from '../../core/data/permissions.service';
 import { Campaign, fmtDateTime } from '../../core/ext/lib/shared.js';
 import { campaignMeta, campaignView } from '../../core/ext/run-view';
 import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
@@ -55,7 +55,7 @@ export class CampaignsPageComponent {
   protected readonly x = computed(() => this.t().api.ext);
   protected readonly store = inject(CampaignsStore);
   protected readonly devices = inject(DevicesStore);
-  private readonly workspaces = inject(WorkspaceStore);
+  private readonly permissions = inject(PermissionsService);
   protected readonly actions = inject(CampaignActions);
   protected readonly readOnly = this.actions.readOnly;
 
@@ -90,7 +90,7 @@ export class CampaignsPageComponent {
       case 'saved':
         return this.t().api.saved;
       case 'error':
-        return x.saveFailed;
+        return this.store.saveError() ?? x.saveFailed;
       default:
         return '';
     }
@@ -173,9 +173,9 @@ export class CampaignsPageComponent {
   }
 
   /** Owners and admins control the paired browsers (the server checks it too). */
-  protected readonly canManageDevices = computed(() =>
-    ['owner', 'admin'].includes(this.workspaces.current()?.role ?? ''),
-  );
+  protected readonly canManageDevices = this.permissions.canAdmin;
+  protected readonly adminHint = this.permissions.adminHint;
+  protected readonly editHint = this.permissions.editHint;
 
   protected async toggleJobs(id: string, paused: boolean): Promise<void> {
     await this.devices.update(id, { jobsPaused: !paused });

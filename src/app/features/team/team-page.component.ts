@@ -1,19 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
-import { AdminStore } from '../../core/data/admin.store';
 import { DevicesStore } from '../../core/data/devices.store';
-import { SessionStore } from '../../core/data/session.store';
+import { PermissionsService } from '../../core/data/permissions.service';
 import { SettingsStore } from '../../core/data/settings.store';
 import { TeamStore } from '../../core/data/team.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { fmtDate, hm } from '../../core/i18n/format';
 import { ApiMember, ApiRole } from '../../core/http/api.service';
-import { problemOf } from '../../core/http/problem-details';
+import { INPUT_LIMITS } from '../../core/http/input-limits';
+import { problemMessage } from '../../core/http/problem-details';
 import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 import { PairDeviceModalComponent } from './pair-device-modal.component';
 
@@ -25,6 +26,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     RouterLink,
     InputFieldComponent,
     ModalComponent,
+    PermNoteComponent,
     SelectFieldComponent,
     PairDeviceModalComponent,
   ],
@@ -34,8 +36,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 })
 export class TeamPageComponent {
   private readonly notify = inject(NotificationService);
-  private readonly session = inject(SessionStore);
-  private readonly admin = inject(AdminStore);
+  protected readonly perm = inject(PermissionsService);
   protected readonly team = inject(TeamStore);
   protected readonly devices = inject(DevicesStore);
   private readonly accounts = inject(AccountsStore);
@@ -44,19 +45,48 @@ export class TeamPageComponent {
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
 
-  protected readonly modal = signal<'invite' | 'ws' | 'revoke' | 'pair' | 'remove' | null>(null);
+  protected readonly limits = INPUT_LIMITS;
+  protected readonly modal = signal<
+    'invite' | 'ws' | 'revoke' | 'pair' | 'remove' | 'rename' | null
+  >(null);
   protected readonly revokeId = signal<string | null>(null);
+  protected readonly renameId = signal<string | null>(null);
+  protected readonly formName = signal('');
+  /** A request from a dialog is on its way: its confirm button waits. */
+  protected readonly busy = signal(false);
   protected readonly removing = signal<ApiMember | null>(null);
   protected readonly formEmail = signal('');
   protected readonly formRole = signal<string>('editor');
   protected readonly formWs = signal('');
   protected readonly formErr = signal('');
 
+  /** The owner's limits (plan and the platform admin's overrides), whoever looks at the page. */
+  private readonly limitsNow = computed(() => this.workspaces.current()?.limits ?? null);
   /** Seats (owner included) come from the owner's plan; one seat leaves no room to invite. */
   protected readonly gated = computed(
-    () => this.team.role() === 'owner' && this.admin.plans()[this.session.plan()].seats === 1,
+    () => this.team.role() === 'owner' && this.limitsNow()?.seats === 1,
   );
-  protected readonly canInvite = computed(() => this.team.canManage() && !this.gated());
+  protected readonly canInvite = computed(
+    () => this.team.canManage() && !this.gated() && !this.team.seatsFull(),
+  );
+  /** Why "invite" is off when the role would allow it: the seats are taken. */
+  protected readonly seatsNote = computed(() =>
+    this.team.canManage() && !this.gated() && this.team.seatsFull()
+      ? fmt(this.t().api.seatsFull, { n: this.team.seatLimit() ?? 0 })
+      : '',
+  );
+  /** Every device the plan allows is paired: the API would refuse another pairing code. */
+  protected readonly devicesFull = computed(() => {
+    const max = this.limitsNow()?.devices ?? null;
+    return max !== null && this.devices.list().length >= max;
+  });
+  protected readonly addDeviceHint = computed(() =>
+    !this.perm.canAdmin()
+      ? this.perm.adminHint()
+      : this.devicesFull()
+        ? fmt(this.t().api.devicesFull, { n: this.limitsNow()?.devices ?? 0 })
+        : '',
+  );
   protected readonly roleNote = computed(() =>
     this.team.role() === 'owner'
       ? ''
@@ -88,7 +118,15 @@ export class TeamPageComponent {
           ? ago(t, m.lastSeenAt ? new Date(m.lastSeenAt) : null)
           : t.api.invitePending,
         pending: !m.active,
-        remove: owner ? '' : m.you ? t.api.leaveTeam : manage ? t.api.removeMember : '',
+        remove: owner
+          ? ''
+          : m.you
+            ? this.perm.assist()
+              ? ''
+              : t.api.leaveTeam
+            : manage
+              ? t.api.removeMember
+              : '',
       };
     });
   });
@@ -98,7 +136,7 @@ export class TeamPageComponent {
   );
 
   protected readonly devicesBody = computed(() => {
-    const max = this.admin.plans()[this.session.plan()].devices;
+    const max = this.limitsNow()?.devices;
     return max ? fmt(this.t().team.devicesBody, { n: max }) : this.t().team.devicesUnl;
   });
   protected readonly deviceRows = computed(() => {
@@ -160,19 +198,28 @@ export class TeamPageComponent {
       this.formErr.set(this.t().team.errEmail);
       return;
     }
+    if (this.busy()) return;
+    this.busy.set(true);
     try {
       await this.team.invite(email, this.formRole() as ApiRole);
     } catch (e) {
-      this.formErr.set(problemOf(e)?.title ?? this.t().api.serverDown);
+      this.formErr.set(problemMessage(e) ?? this.t().api.serverDown);
       return;
+    } finally {
+      this.busy.set(false);
     }
     this.close();
     this.notify.success(fmt(this.t().team.invited, { e: email }));
   }
 
-  protected async setRole(m: ApiMember, role: string): Promise<void> {
-    await this.team.changeRole(m.id!, role as ApiRole);
-    this.notify.success(this.t().api.saved);
+  /** Changes a member's role; when the API refuses, the select goes back to the role they have. */
+  protected async setRole(m: ApiMember, select: HTMLSelectElement): Promise<void> {
+    try {
+      await this.team.changeRole(m.id!, select.value as ApiRole);
+      this.notify.success(this.t().api.saved);
+    } catch {
+      select.value = m.role;
+    }
   }
 
   protected askRemove(m: ApiMember): void {
@@ -194,14 +241,28 @@ export class TeamPageComponent {
       this.formErr.set(this.t().team.errWs);
       return;
     }
-    await this.workspaces.create(name);
+    if (this.busy() || !this.perm.canCreateWorkspace()) return;
+    this.busy.set(true);
+    try {
+      await this.workspaces.create(name);
+    } catch {
+      return; // the interceptor says why (name too long, ...); the dialog stays open
+    } finally {
+      this.busy.set(false);
+    }
     this.close();
     this.notify.success(fmt(this.t().team.wsCreated, { ws: name }));
   }
 
   /** The new device brings its Facebook account and puts the extension online. */
   protected onPaired(): void {
-    void Promise.all([this.settings.refreshPresence(), this.accounts.load()]);
+    this.syncAfterDeviceChange();
+  }
+
+  private syncAfterDeviceChange(): void {
+    void Promise.all([this.settings.refreshPresence(true), this.accounts.refresh()]).catch(
+      () => undefined,
+    );
   }
 
   protected async confirmRevoke(): Promise<void> {
@@ -210,18 +271,40 @@ export class TeamPageComponent {
     if (!id) return;
     await this.devices.revoke(id);
     this.notify.info(this.t().team.revoked);
-    void Promise.all([this.settings.refreshPresence(), this.accounts.load()]);
+    this.syncAfterDeviceChange();
   }
 
   /** Owners and admins control the paired browsers (the server refuses lower roles too). */
   protected readonly canManageDevices = this.team.canManage;
 
-  protected async renameDevice(id: string, current: string): Promise<void> {
-    const name = prompt(this.t().api.renamePrompt, current)?.trim();
-    if (!name || name === current) return;
-    await this.devices.update(id, { name });
+  protected askRename(id: string, current: string): void {
+    this.renameId.set(id);
+    this.formName.set(current);
+    this.formErr.set('');
+    this.modal.set('rename');
+  }
+
+  protected async confirmRename(): Promise<void> {
+    const id = this.renameId();
+    const name = this.formName().trim();
+    const current = this.devices.list().find((d) => d.id === id)?.name;
+    if (!id || this.busy()) return;
+    if (!name) {
+      this.formErr.set(this.t().api.renameEmpty);
+      return;
+    }
+    if (name === current) return this.close();
+    this.busy.set(true);
+    try {
+      await this.devices.update(id, { name });
+    } catch {
+      return; // the interceptor says why; the dialog stays open
+    } finally {
+      this.busy.set(false);
+    }
+    this.close();
     this.notify.success(fmt(this.t().api.renamed, { d: name }));
-    void this.accounts.load();
+    this.syncAfterDeviceChange();
   }
 
   protected async toggleJobs(id: string, paused: boolean): Promise<void> {

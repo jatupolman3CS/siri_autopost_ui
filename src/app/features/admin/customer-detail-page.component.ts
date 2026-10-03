@@ -9,7 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AdminAction, AdminStore } from '../../core/data/admin.store';
+import { AdminAction, AdminStore, bangkokParts } from '../../core/data/admin.store';
 import { Customer, LimitKey, PLAN_ORDER, PlanKey } from '../../core/data/models';
 import { baht, fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
@@ -57,14 +57,14 @@ export class CustomerDetailPageComponent {
   protected readonly c = computed(() => this.admin.customer(this.id()) ?? BLANK);
 
   constructor() {
+    // The store re-reads the activity log after every action; opening the page reads it once.
     effect(() => {
       const id = this.id();
-      if (id) untracked(() => void this.admin.loadCustomerJobs(id));
-    });
-    // Every change to the customer row comes from an admin action: refresh their activity log.
-    effect(() => {
-      const c = this.admin.customer(this.id());
-      if (c) untracked(() => void this.admin.loadAudit(c.id));
+      if (id)
+        untracked(() => {
+          this.admin.loadCustomerJobs(id).catch(() => undefined);
+          this.admin.loadAudit(id).catch(() => undefined);
+        });
     });
   }
 
@@ -103,11 +103,8 @@ export class CustomerDetailPageComponent {
     const c = this.c();
     const a = this.t().adm;
     const li = this.i18n.li();
-    const now = new Date();
-    const months = Math.max(
-      1,
-      (now.getFullYear() - c.since[0]) * 12 + (now.getMonth() - c.since[1]) + 1,
-    );
+    const [nowYear, nowMonth] = bangkokParts(new Date());
+    const months = Math.max(1, (nowYear - c.since[0]) * 12 + (nowMonth - c.since[1]) + 1);
     // Charges minus refunds recorded for this customer.
     const paid = this.admin
       .transactions()
@@ -161,18 +158,25 @@ export class CustomerDetailPageComponent {
     const a = this.t().adm;
     const lim = this.view.effectiveLimits(c);
     const planDef = this.admin.plans()[c.plan];
-    const rows: [LimitKey, string, number][] = [
-      ['devices', a.devLimit, c.devices.length],
-      ['accounts', a.accLimit, c.accounts],
-      ['posts', a.postLimit, c.jobs.ok + c.jobs.failed],
-      ['seats', a.seatLimit, c.seats],
+    const workspaces = c.workspaces ?? 1;
+    // Accounts and posts are counted over all of the customer's workspaces (and so are the numbers here);
+    // devices and seats are limits of each workspace, so with several the totals cannot be compared 1:1.
+    // Posts are what went out in the last 24 hours (sent or waiting for a group admin), never the failed ones.
+    const rows: [LimitKey, string, number, boolean][] = [
+      ['devices', a.devLimit, c.devices.length, true],
+      ['accounts', a.accLimit, c.accounts, false],
+      ['posts', a.postLimit, c.jobs.ok, false],
+      ['seats', a.seatLimit, c.seats, true],
     ];
-    return rows.map(([k, label, used]) => ({
-      k,
-      label,
-      value: c.limits?.[k] !== undefined ? c.limits[k] : planDef[k] || 0,
-      usedLabel: fmt(a.usedOf, { n: used, m: lim[k] ? String(lim[k]) : '∞' }),
-    }));
+    return rows.map(([k, label, used, perWorkspace]) => {
+      const vars = { n: used, m: lim[k] ? String(lim[k]) : '∞', w: workspaces };
+      return {
+        k,
+        label,
+        value: c.limits?.[k] !== undefined ? c.limits[k] : planDef[k] || 0,
+        usedLabel: fmt(perWorkspace && workspaces > 1 ? this.t().api.usedOfPerWs : a.usedOf, vars),
+      };
+    });
   });
 
   protected readonly devices = computed(() =>
@@ -200,17 +204,17 @@ export class CustomerDetailPageComponent {
     void this.admin.setLimit(this.c().id, k, parseInt(v, 10));
   }
 
-  protected saveLimits(): void {
-    this.notify.success(fmt(this.t().adm.limitsSaved, { c: this.c().name }));
-  }
-
   protected async revoke(i: number): Promise<void> {
     await this.admin.revokeDevice(this.c().id, i);
     this.notify.info(this.t().adm.revokeDone);
   }
 
+  /** A suspended or banned customer is paused by the API, and cannot be resumed before being restored. */
+  protected readonly blocked = computed(() => ['suspended', 'banned'].includes(this.c().status));
+
   protected async toggleJobs(): Promise<void> {
     const c = this.c();
+    if (this.blocked() && c.paused) return;
     await this.admin.togglePaused(c.id);
     const a = this.t().adm;
     this.notify.show(
@@ -221,7 +225,7 @@ export class CustomerDetailPageComponent {
 
   protected async retryFailed(): Promise<void> {
     const n = await this.admin.retryFailed(this.c().id);
-    if (n) this.notify.success(fmt(this.t().adm.retried, { n }));
+    this.notify.info(n ? fmt(this.t().adm.retried, { n }) : this.t().api.nothingToRetry);
   }
 
   protected async retryCharge(txId: string): Promise<void> {

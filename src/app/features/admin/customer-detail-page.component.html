@@ -99,17 +99,14 @@
               class="su-btn su-btn-sm"
               [class.su-btn-primary]="c().paused"
               [class.su-btn-secondary]="!c().paused"
+              [disabled]="blocked() && c().paused"
+              [attr.title]="blocked() && c().paused ? t().api.pauseBlocked : null"
               (click)="toggleJobs()"
             >
               <i class="ph" [class.ph-play]="c().paused" [class.ph-pause]="!c().paused"></i>
               {{ c().paused ? t().adm.resumeJobs : t().adm.pauseJobs }}
             </button>
-            <button
-              type="button"
-              class="su-btn su-btn-sm su-btn-secondary"
-              [disabled]="c().jobs.failed === 0"
-              (click)="retryFailed()"
-            >
+            <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="retryFailed()">
               <i class="ph ph-arrow-counter-clockwise"></i>{{ t().adm.retryFailed }}
             </button>
           </div>
@@ -181,10 +178,7 @@
         </div>
       }
       <div class="save-row">
-        <span class="small muted">{{ t().adm.unlimitedHint }}</span>
-        <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="saveLimits()">
-          {{ t().adm.saveLimits }}
-        </button>
+        <span class="small muted">{{ t().adm.unlimitedHint }} · {{ t().api.savesAsYouGo }}</span>
       </div>
       <div class="devices">
         <div class="fs14 fw5 mb4">{{ t().adm.boundDevices }} ({{ c().devices.length }})</div>

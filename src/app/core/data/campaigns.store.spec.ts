@@ -70,9 +70,7 @@ describe('CampaignsStore', () => {
   beforeEach(async () => {
     http = provideApiTesting();
     store = TestBed.inject(CampaignsStore);
-    await signIn(http);
-    http.expectOne(`/api/workspaces/${WS}/devices`).flush([DEVICE]);
-    await settle();
+    await signIn(http, { devices: [DEVICE] });
     store.ensureDevice();
     await settle();
     http.expectOne(`${BASE}/config`).flush(config(3, 'ชุด A'));
@@ -242,6 +240,57 @@ describe('CampaignsStore', () => {
     (events as unknown as { dispatch(block: string): void }).dispatch(
       `event: device.state\ndata: ${JSON.stringify({ seq: ++seq, deviceId: 'other', type: 'device.state', payload: { state: { running: false } }, at: '' })}`,
     );
+    expect(store.running()).toBe(true);
+    stop();
+  });
+
+  it('does not resend edits the API refused (4xx), says why, and tries again on the next edit', async () => {
+    vi.useFakeTimers();
+    store.change((s) => (s.campaigns[0].name = 'ชุด D'));
+    await vi.advanceTimersByTimeAsync(900);
+    http
+      .expectOne(`${BASE}/config`)
+      .flush({ title: 'บทบาทของคุณแก้ไขไม่ได้' }, { status: 403, statusText: 'Forbidden' });
+    await settle();
+    expect(store.saveState()).toBe('error');
+    expect(store.saveError()).toBe('บทบาทของคุณแก้ไขไม่ได้');
+    expect(store.unsaved()).toBe(true);
+    // Sending the same edits again cannot change the answer: nothing goes out by itself.
+    await vi.advanceTimersByTimeAsync(60_000);
+    http.expectNone(`${BASE}/config`);
+    // The next edit is a new attempt.
+    store.change((s) => (s.campaigns[0].name = 'ชุด E'));
+    await vi.advanceTimersByTimeAsync(900);
+    http.expectOne(`${BASE}/config`).flush({ revision: 4, updatedAt: '' });
+    await settle();
+    expect(store.saveState()).toBe('saved');
+    expect(store.saveError()).toBeNull();
+  });
+
+  it('still retries when the server is busy or the call is rate limited', async () => {
+    vi.useFakeTimers();
+    store.change((s) => (s.campaigns[0].name = 'ชุด F'));
+    await vi.advanceTimersByTimeAsync(900);
+    http.expectOne(`${BASE}/config`).flush({}, { status: 429, statusText: 'Too Many Requests' });
+    await settle();
+    expect(store.saveError()).toBeNull();
+    await vi.advanceTimersByTimeAsync(5000);
+    http.expectOne(`${BASE}/config`).flush({ revision: 4, updatedAt: '' });
+    await settle();
+    expect(store.saveState()).toBe('saved');
+  });
+
+  it('reads the whole state from /live when the event only says it was too big', async () => {
+    const events = TestBed.inject(DeviceEventsService);
+    const stop = store.watch();
+    http.expectOne(`${BASE}/live`).flush(live(3));
+    await settle();
+    (events as unknown as { dispatch(block: string): void }).dispatch(
+      `event: device.state\ndata: ${JSON.stringify({ seq: 500, deviceId: DEVICE.id, type: 'device.state', payload: { truncated: true, at: '2026-10-03T02:00:00Z' }, at: '' })}`,
+    );
+    await settle();
+    http.expectOne(`${BASE}/live`).flush(live(3, { running: true }));
+    await settle();
     expect(store.running()).toBe(true);
     stop();
   });

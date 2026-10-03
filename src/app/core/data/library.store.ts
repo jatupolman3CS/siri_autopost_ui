@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiMedia, ApiService, ApiSnippet } from '../http/api.service';
+import { loadWithRetry } from './loading';
 import { MediaItem, Snippet } from './models';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
@@ -32,6 +33,8 @@ export class LibraryStore {
 
   readonly media = signal<MediaItem[]>([]);
   readonly snippets = signal<Snippet[]>([]);
+  /** Media and snippets of the current workspace have arrived. */
+  readonly loaded = signal(false);
   /** mediaId -> object URL of the image. */
   readonly thumbs = signal<Record<string, string>>({});
 
@@ -41,16 +44,27 @@ export class LibraryStore {
       this.thumbs.set({});
       this.media.set([]);
       this.snippets.set([]);
+      this.loaded.set(false);
       if (id) void this.load(id);
     });
   }
 
+  /** Loads the library (transient failures are retried); an answer for a workspace left meanwhile is dropped. */
   async load(wsId: string): Promise<void> {
-    const [media, snippets] = await Promise.all([this.api.media(wsId), this.api.snippets(wsId)]);
-    if (this.ws.id() !== wsId) return;
-    this.media.set(media.map(toMedia));
-    this.snippets.set(snippets.map(toSnippet));
-    for (const m of media) if (m.kind === 'image') void this.loadThumb(wsId, m.id);
+    const ok = await loadWithRetry(
+      async () => {
+        const [media, snippets] = await Promise.all([
+          this.api.media(wsId),
+          this.api.snippets(wsId),
+        ]);
+        if (this.ws.id() !== wsId) return;
+        this.media.set(media.map(toMedia));
+        this.snippets.set(snippets.map(toSnippet));
+        for (const m of media) if (m.kind === 'image') void this.loadThumb(wsId, m.id);
+      },
+      () => this.ws.id() === wsId,
+    );
+    if (ok && this.ws.id() === wsId) this.loaded.set(true);
   }
 
   async addSnippet(title: string, text: string): Promise<void> {

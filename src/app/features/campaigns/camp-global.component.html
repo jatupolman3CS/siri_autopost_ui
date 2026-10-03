@@ -60,11 +60,15 @@
         class="su-input ext-in"
         autocomplete="off"
         spellcheck="false"
-        placeholder="123456789:AA..."
+        [disabled]="!canSeeToken()"
+        [placeholder]="canSeeToken() ? '123456789:AA...' : x().tgTokenHidden"
         [value]="g.telegram.botToken"
         (input)="setTg('botToken', $any($event.target).value.trim())"
       />
     </label>
+    @if (!canSeeToken()) {
+      <p class="ext-hint">{{ x().tgTokenAdminOnly }}</p>
+    }
     <label class="field">
       Chat ID
       <span class="chat">

@@ -1,7 +1,8 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { dkey, hm } from '../i18n/format';
 import { Dict } from '../i18n/i18n.service';
 import { ApiPost, ApiScheduleRequest, ApiService } from '../http/api.service';
+import { loadWithRetry } from './loading';
 import { ErrorItem, PostItem, STATUS_DOT } from './models';
 import { SEED } from './seed.data';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
@@ -36,6 +37,7 @@ export function toItem(p: ApiPost): PostItem {
     status: p.status,
     code: p.failureCode ?? null,
     detail: p.failureDetail,
+    publishedAt: p.publishedAt ? new Date(p.publishedAt) : null,
   };
 }
 
@@ -85,8 +87,10 @@ export class PostsStore {
 
   private readonly _posts = signal<PostItem[]>([]);
   private readonly _errors = signal<ErrorItem[]>([]);
-  private loaded = new Set<string>();
+  private monthsLoaded = new Set<string>();
 
+  /** The months around today and the error reports of the current workspace have arrived. */
+  readonly loaded = signal(false);
   readonly posts = this._posts.asReadonly();
   /** Open error reports (failed, or held for group approval), newest first. */
   readonly errors = this._errors.asReadonly();
@@ -107,29 +111,45 @@ export class PostsStore {
   );
 
   constructor() {
-    if (typeof window !== 'undefined') setInterval(() => this.now.set(minuteNow()), 30_000);
+    if (typeof window !== 'undefined') {
+      const timer = setInterval(() => this.now.set(minuteNow()), 30_000);
+      inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    }
     whenWorkspaceChanges((id) => {
-      this.loaded = new Set();
+      this.monthsLoaded = new Set();
       this._posts.set([]);
       this._errors.set([]);
-      if (!id) return;
-      const n = this.now();
-      for (const d of [-1, 0, 1]) void this.ensureMonth(n.getFullYear(), n.getMonth() + d);
-      void this.loadErrors();
+      this.loaded.set(false);
+      if (id) void this.loadInitial(id);
     });
+  }
+
+  /** The months around today and the errors; transient failures are retried, then `loaded` is set. */
+  private async loadInitial(wsId: string): Promise<void> {
+    const n = this.now();
+    const ok = await loadWithRetry(
+      async () => {
+        await Promise.all([
+          ...[-1, 0, 1].map((d) => this.ensureMonth(n.getFullYear(), n.getMonth() + d)),
+          this.loadErrors(),
+        ]);
+      },
+      () => this.ws.id() === wsId,
+    );
+    if (ok && this.ws.id() === wsId) this.loaded.set(true);
   }
 
   row(p: PostItem, t: Dict): PostRow {
     return postRow(p, t);
   }
 
-  /** Loads one calendar month (m may be out of 0..11; it is normalized). */
+  /** Loads one calendar month (m may be out of 0..11; it is normalized). Rejects when the API does. */
   async ensureMonth(y: number, m: number, force = false): Promise<void> {
     const wsId = this.ws.id();
     const from = new Date(y, m, 1);
     const key = monthKey(from.getFullYear(), from.getMonth());
-    if (!wsId || (!force && this.loaded.has(key))) return;
-    this.loaded.add(key);
+    if (!wsId || (!force && this.monthsLoaded.has(key))) return;
+    this.monthsLoaded.add(key);
     const to = new Date(from.getFullYear(), from.getMonth() + 1, 1);
     try {
       const list = (await this.api.posts(wsId, from, to)).map(toItem);
@@ -141,15 +161,18 @@ export class PostsStore {
           .sort((a, b) => a.dt.getTime() - b.dt.getTime()),
       );
     } catch (e) {
-      this.loaded.delete(key);
+      this.monthsLoaded.delete(key);
       throw e;
     }
   }
 
-  /** Re-reads every loaded month and the error reports. */
+  /** Re-reads every loaded month and the error reports; a failure leaves what is shown (and is toasted). */
   async refresh(): Promise<void> {
-    const months = [...this.loaded].map((k) => k.split('-').map(Number));
-    await Promise.all([...months.map(([y, m]) => this.ensureMonth(y, m, true)), this.loadErrors()]);
+    const months = [...this.monthsLoaded].map((k) => k.split('-').map(Number));
+    await Promise.allSettled([
+      ...months.map(([y, m]) => this.ensureMonth(y, m, true)),
+      this.loadErrors(),
+    ]);
   }
 
   async schedule(body: ApiScheduleRequest): Promise<number> {

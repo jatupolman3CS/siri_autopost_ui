@@ -3,15 +3,23 @@
     <div>
       <h1>{{ t().lib.title }}</h1>
       <p>{{ t().lib.sub }}</p>
+      <app-perm-note level="edit" />
     </div>
     <div class="actions">
-      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="openSnippet()">
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+        (click)="openSnippet()"
+      >
         <i class="ph ph-text-t"></i>{{ t().lib.newSnippet }}
       </button>
       <button
         type="button"
         class="su-btn su-btn-sm su-btn-primary"
-        [disabled]="uploading()"
+        [disabled]="uploading() || !perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
         (click)="picker.click()"
       >
         <i class="ph ph-upload-simple"></i>{{ t().lib.upload }}
@@ -35,7 +43,10 @@
       [attr.aria-selected]="tab() === 'media'"
       (click)="tab.set('media')"
     >
-      {{ t().lib.tabMedia }} ({{ library.media().length }})
+      {{ t().lib.tabMedia }}
+      @if (library.loaded()) {
+        ({{ library.media().length }})
+      }
     </button>
     <button
       type="button"
@@ -44,7 +55,10 @@
       [attr.aria-selected]="tab() === 'text'"
       (click)="tab.set('text')"
     >
-      {{ t().lib.tabText }} ({{ library.snippets().length }})
+      {{ t().lib.tabText }}
+      @if (library.loaded()) {
+        ({{ library.snippets().length }})
+      }
     </button>
   </div>
 
@@ -79,7 +93,6 @@
           <div class="fs14 fw6">{{ s.title }}</div>
           <p class="fs14 muted grow-p">{{ s.text }}</p>
           <div class="foot">
-            <span class="small muted">{{ s.used }}</span>
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-ghost"
@@ -96,14 +109,28 @@
 
 <app-modal [open]="modal()" [title]="t().lib.newSnippet" (closed)="modal.set(false)">
   <div class="form">
-    <app-input-field [label]="t().lib.snippetTitle" [(value)]="formTitle" />
-    <app-input-field [label]="t().lib.snippetText" [(value)]="formText" [error]="formErr()" />
+    <app-input-field
+      [label]="t().lib.snippetTitle"
+      [(value)]="formTitle"
+      [maxlength]="limits.snippetTitle"
+    />
+    <app-input-field
+      [label]="t().lib.snippetText"
+      [(value)]="formText"
+      [error]="formErr()"
+      [maxlength]="limits.snippetText"
+    />
   </div>
   <div modal-footer>
     <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="modal.set(false)">
       {{ t().common.cancel }}
     </button>
-    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="saveSnippet()">
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      [disabled]="!perm.canEdit()"
+      (click)="saveSnippet()"
+    >
       {{ t().common.save }}
     </button>
   </div>

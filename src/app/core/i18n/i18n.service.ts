@@ -1,8 +1,25 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { AP_I18N } from './i18n.data';
 import { AP_I18N_EXTRA } from './i18n.extra';
+import { AP_I18N_FIXES, Fixes } from './i18n.fixes';
 
-const SOURCE = { ...AP_I18N, api: AP_I18N_EXTRA };
+const isNode = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/**
+ * `base` with `fixes` laid over it: branches merge key by key, and a leaf (a [th, en] pair) or a list in
+ * `fixes` replaces the original whole. The result keeps the type of `base`, so the dictionary stays typed.
+ */
+export function applyFixes<T>(base: T, fixes: Fixes<T>): T {
+  if (!isNode(base) || !isNode(fixes)) return fixes as unknown as T;
+  const out: Record<string, unknown> = { ...base };
+  for (const [key, fix] of Object.entries(fixes))
+    out[key] = fix === undefined ? out[key] : applyFixes(out[key], fix as never);
+  return out as T;
+}
+
+// The generated design dictionary with the corrections of i18n.fixes.ts over it, and the API's own strings.
+const SOURCE = { ...applyFixes(AP_I18N, AP_I18N_FIXES), api: AP_I18N_EXTRA };
 
 export type Lang = 'th' | 'en';
 

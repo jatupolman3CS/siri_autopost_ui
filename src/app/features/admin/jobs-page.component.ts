@@ -24,6 +24,7 @@ export class JobsPageComponent {
 
   protected readonly kpis = computed(() => {
     const a = this.t().adm;
+    const ready = this.admin.loaded();
     const tot = this.live().reduce(
       (s, c) => ({
         running: s.running + (c.paused ? 0 : c.jobs.running),
@@ -33,13 +34,17 @@ export class JobsPageComponent {
       }),
       { running: 0, queued: 0, failed: 0, ok: 0 },
     );
+    // Nothing finished (or nothing loaded yet) is "—", not a 100% success rate.
     const rate =
-      tot.ok + tot.failed ? Math.round((tot.ok / (tot.ok + tot.failed)) * 1000) / 10 : 100;
+      ready && tot.ok + tot.failed
+        ? `${Math.round((tot.ok / (tot.ok + tot.failed)) * 1000) / 10}%`
+        : '—';
+    const n = (v: number) => (ready ? v : '—');
     return [
-      { label: a.gRunning, value: tot.running, note: a.gRunningNote },
-      { label: a.gQueued, value: tot.queued, note: a.gQueuedNote },
-      { label: a.gFailed, value: tot.failed, note: a.gFailedNote },
-      { label: a.gRate, value: rate + '%', note: a.tsrNote },
+      { label: a.gRunning, value: n(tot.running), note: a.gRunningNote },
+      { label: a.gQueued, value: n(tot.queued), note: a.gQueuedNote },
+      { label: a.gFailed, value: n(tot.failed), note: a.gFailedNote },
+      { label: a.gRate, value: rate, note: this.t().api.rate24Note },
     ];
   });
 
@@ -56,6 +61,8 @@ export class JobsPageComponent {
       failed: c.jobs.failed,
       last: this.view.ago(c.lastActive),
       pauseLabel: c.paused ? a.resumeJobs : a.pauseJobs,
+      // A suspended or banned customer is paused by the API and cannot be resumed before being restored.
+      pauseOff: c.paused && ['suspended', 'banned'].includes(c.status),
     }));
   });
 
@@ -64,7 +71,7 @@ export class JobsPageComponent {
 
   protected async toggle(id: string): Promise<void> {
     const c = this.admin.customer(id);
-    if (!c) return;
+    if (!c || (c.paused && ['suspended', 'banned'].includes(c.status))) return;
     await this.admin.togglePaused(id);
     const a = this.t().adm;
     this.notify.show(
@@ -75,6 +82,6 @@ export class JobsPageComponent {
 
   protected async retry(id: string): Promise<void> {
     const n = await this.admin.retryFailed(id);
-    if (n) this.notify.success(fmt(this.t().adm.retried, { n }));
+    this.notify.info(n ? fmt(this.t().adm.retried, { n }) : this.t().api.nothingToRetry);
   }
 }

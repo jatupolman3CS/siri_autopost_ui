@@ -3,6 +3,7 @@
     <div>
       <h1>{{ t().err.title }}</h1>
       <p>{{ t().err.sub }}</p>
+      <app-perm-note level="edit" />
     </div>
     <div class="seg">
       <button type="button" [class.on]="filter() === 'all'" (click)="filter.set('all')">
@@ -32,9 +33,6 @@
             ><span class="fw5">{{ t().err.whatToDo }}: </span>{{ e.fix }}</span
           >
         </div>
-        @if (e.detail) {
-          <div class="small muted">{{ e.detail }}</div>
-        }
         <div class="fs14 muted">“{{ e.text }}”</div>
       </div>
       <div class="btns">
@@ -42,6 +40,8 @@
           <button
             type="button"
             class="su-btn su-btn-sm su-btn-primary su-btn-full"
+            [disabled]="!perm.canEdit()"
+            [attr.title]="perm.editHint() || null"
             (click)="retry(e.id)"
           >
             <i class="ph ph-arrow-counter-clockwise"></i>{{ t().common.retryNow }}
@@ -51,6 +51,8 @@
           <button
             type="button"
             class="su-btn su-btn-sm su-btn-secondary su-btn-full"
+            [disabled]="!perm.canEdit()"
+            [attr.title]="perm.editHint() || null"
             (click)="signin(e.accountId)"
           >
             {{ t().err.signin }}
@@ -59,6 +61,8 @@
         <button
           type="button"
           class="su-btn su-btn-sm su-btn-ghost su-btn-full"
+          [disabled]="!perm.canEdit()"
+          [attr.title]="perm.editHint() || null"
           (click)="skip(e.id)"
         >
           {{ e.skipLabel }}

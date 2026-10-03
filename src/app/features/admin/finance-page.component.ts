@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { AdminStore } from '../../core/data/admin.store';
+import { AdminStore, bangkokParts } from '../../core/data/admin.store';
 import { baht, monthName, signed } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -23,32 +23,35 @@ export class FinancePageComponent {
 
   protected readonly kpis = computed(() => {
     const a = this.t().adm;
-    const total = this.view.mrr().total;
     const h = this.admin.health();
+    const ready = this.admin.loaded();
+    // The server's MRR (the overview's figure); the sum of the customer rows is the same number until the
+    // customers have loaded.
+    const total = h ? h.mrr : this.view.mrr().total;
+    const na = (v: string | number) => (ready ? v : '—');
     const mrrNote = h?.mrrPrev
       ? fmt(this.t().api.vs30, { d: `${signed((100 * (h.mrr - h.mrrPrev)) / h.mrrPrev)}%` })
       : '';
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
+    // The server counts months on the Bangkok calendar, wherever the admin's browser is.
+    const [y, m] = bangkokParts(new Date());
     const thisMonth = this.admin.transactions().filter((x) => x.date[0] === y && x.date[1] === m);
     const charges = thisMonth.filter((x) => x.type === 'charge');
     const failed = thisMonth.filter((x) => x.type === 'failed');
     const refunded = thisMonth.filter((x) => x.type === 'refund').reduce((n, x) => n + x.amount, 0);
     return [
-      { label: a.mrr, value: baht(total), note: mrrNote },
-      { label: a.arr, value: baht(total * 12), note: 'MRR × 12' },
+      { label: a.mrr, value: na(baht(total)), note: mrrNote },
+      { label: a.arr, value: na(baht(total * 12)), note: 'MRR × 12' },
       {
         label: a.collected,
-        value: baht(charges.reduce((n, x) => n + x.amount, 0)),
+        value: na(baht(charges.reduce((n, x) => n + x.amount, 0))),
         note: `${charges.length} ${a.tyCharge}`,
       },
       {
         label: a.failedCharges,
-        value: failed.length,
+        value: na(failed.length),
         note: baht(failed.reduce((n, x) => n + x.amount, 0)),
       },
-      { label: a.refunds, value: baht(refunded), note: a.refundsNote },
+      { label: a.refunds, value: na(baht(refunded)), note: a.refundsNote },
     ];
   });
 

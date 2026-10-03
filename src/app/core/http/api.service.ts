@@ -110,8 +110,11 @@ export class ApiService {
   createWorkspace(name: string) {
     return run(this.http.post<ApiWorkspace>('/api/workspaces', { name }));
   }
-  accounts(ws: string) {
-    return run(this.http.get<ApiAccount[]>(`/api/workspaces/${ws}/accounts`));
+  /** background: live refreshes do not toast when the server is unreachable. */
+  accounts(ws: string, background = false) {
+    return run(
+      this.http.get<ApiAccount[]>(`/api/workspaces/${ws}/accounts`, background ? quiet : {}),
+    );
   }
   reconnect(ws: string, id: string) {
     return run(this.http.post<ApiAccount>(`/api/workspaces/${ws}/accounts/${id}/reconnect`, {}));
@@ -177,8 +180,11 @@ export class ApiService {
       this.http.post<ApiExtensionState>(`/api/workspaces/${ws}/engine/extension`, { online }),
     );
   }
-  devices(ws: string) {
-    return run(this.http.get<ApiDevice[]>(`/api/workspaces/${ws}/devices`));
+  /** background: live refreshes do not toast when the server is unreachable. */
+  devices(ws: string, background = false) {
+    return run(
+      this.http.get<ApiDevice[]>(`/api/workspaces/${ws}/devices`, background ? quiet : {}),
+    );
   }
   createPairingCode(ws: string) {
     // Quiet: the pairing dialog shows a refusal (plan limit) itself.

@@ -11,6 +11,7 @@ import {
 import { Router } from '@angular/router';
 import { BillingStore } from '../../core/data/billing.store';
 import { PLAN_ORDER, PlanKey } from '../../core/data/models';
+import { PermissionsService } from '../../core/data/permissions.service';
 import { perMonth, tierViews } from '../../core/data/plans';
 import { AdminStore } from '../../core/data/admin.store';
 import { SessionStore } from '../../core/data/session.store';
@@ -50,6 +51,7 @@ export class BillingPageComponent {
   private readonly router = inject(Router);
   private readonly i18n = inject(I18nService);
   protected readonly session = inject(SessionStore);
+  protected readonly perm = inject(PermissionsService);
   protected readonly billing = inject(BillingStore);
   protected readonly settings = inject(SettingsStore);
   protected readonly t = this.i18n.t;
@@ -147,7 +149,8 @@ export class BillingPageComponent {
         highlighted: cur,
         variant: cur ? 'secondary' : p.k === 'pro' || p.k === 'agency' ? 'primary' : 'secondary',
         cta: resume ? t.api.keepPlan : cur && sameCycle ? t.common.currentPlan : t.common.choose,
-        disabled: cur && sameCycle && !resume,
+        // An admin looking at the customer's app (assist) can change nothing.
+        disabled: (cur && sameCycle && !resume) || this.perm.assist(),
       };
     });
   });
@@ -249,7 +252,7 @@ export class BillingPageComponent {
 
   protected async confirmPlan(): Promise<void> {
     const k = this.planModal();
-    if (!k || this.busy()) return;
+    if (!k || this.busy() || this.perm.assist()) return;
     this.busy.set(true);
     try {
       const a = this.t().api;
@@ -277,7 +280,7 @@ export class BillingPageComponent {
   }
 
   protected async managePayment(): Promise<void> {
-    if (this.busy()) return;
+    if (this.busy() || this.perm.assist()) return;
     this.busy.set(true);
     try {
       await this.billing.openPortal();

@@ -2,14 +2,17 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 import { DraftStore } from '../../core/data/draft.store';
 import { LibraryStore } from '../../core/data/library.store';
+import { PermissionsService } from '../../core/data/permissions.service';
+import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 
 @Component({
   selector: 'app-library-page',
-  imports: [ModalComponent, InputFieldComponent],
+  imports: [ModalComponent, InputFieldComponent, PermNoteComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './library-page.component.html',
   styleUrl: './library-page.component.scss',
@@ -20,6 +23,8 @@ export class LibraryPageComponent {
   private readonly draft = inject(DraftStore);
   private readonly i18n = inject(I18nService);
   protected readonly library = inject(LibraryStore);
+  protected readonly perm = inject(PermissionsService);
+  protected readonly limits = INPUT_LIMITS;
   protected readonly t = this.i18n.t;
 
   protected readonly tab = signal<'media' | 'text'>('media');
@@ -41,16 +46,13 @@ export class LibraryPageComponent {
       used: fmt(this.t().lib.usedN, { n: m.used }),
     }));
   });
+  // Snippets carry no use count (the API does not track it), so their cards show none.
   protected readonly snippetRows = computed(() =>
-    this.library.snippets().map((s) => ({
-      id: s.id,
-      title: s.title,
-      text: s.text,
-      used: fmt(this.t().lib.usedN, { n: s.used }),
-    })),
+    this.library.snippets().map((s) => ({ id: s.id, title: s.title, text: s.text })),
   );
 
   protected openSnippet(): void {
+    if (!this.perm.canEdit()) return;
     this.formTitle.set('');
     this.formText.set('');
     this.formErr.set('');
@@ -58,6 +60,7 @@ export class LibraryPageComponent {
   }
 
   protected async saveSnippet(): Promise<void> {
+    if (!this.perm.canEdit()) return;
     const title = this.formTitle().trim();
     const text = this.formText().trim();
     if (!title || !text) {
@@ -73,7 +76,7 @@ export class LibraryPageComponent {
   protected async upload(input: HTMLInputElement): Promise<void> {
     const files = Array.from(input.files ?? []);
     input.value = '';
-    if (!files.length) return;
+    if (!files.length || !this.perm.canEdit()) return;
     this.uploading.set(true);
     this.tab.set('media');
     const a = this.t().api;
@@ -88,7 +91,10 @@ export class LibraryPageComponent {
   }
 
   protected useMedia(id: string): void {
-    this.draft.addMedia(id);
+    if (!this.draft.addMedia(id)) {
+      this.notify.error(fmt(this.t().api.mediaMax, { n: INPUT_LIMITS.postMedia }));
+      return;
+    }
     void this.router.navigateByUrl('/app/composer');
   }
 

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { NotificationService, ToastType } from '../../../core/services/notification.service';
 
 const ICONS: Record<ToastType, [string, string]> = {
@@ -16,5 +17,6 @@ const ICONS: Record<ToastType, [string, string]> = {
 })
 export class ToastOutletComponent {
   protected readonly notify = inject(NotificationService);
+  protected readonly dict = inject(I18nService).t;
   protected readonly icons = ICONS;
 }

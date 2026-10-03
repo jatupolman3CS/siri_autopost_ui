@@ -12,7 +12,7 @@
         type="button"
         class="su-x"
         (click)="notify.dismiss(t.id)"
-        aria-label="ปิดการแจ้งเตือนนี้"
+        [attr.aria-label]="dict().api.dismissToast"
       >
         <i class="ph ph-x" aria-hidden="true"></i>
       </button>

@@ -27,6 +27,10 @@ export interface Workspace {
   members: number;
   /** The signed-in user's role in it. */
   role: MemberRole;
+  /** The owner's effective limits (plan with the admin's overrides), whoever works in the workspace; null = unlimited. */
+  limits: Record<LimitKey, number | null>;
+  /** The owner's plan includes the advanced anti-ban settings. */
+  advancedAntiBan: boolean;
 }
 
 /** A connected social account (from the API). */
@@ -42,6 +46,21 @@ export interface SocialAccount {
   groups: string[];
   /** Posts through a paired browser; false for the sample accounts of a new workspace. */
   connected: boolean;
+}
+
+/** Prefix of the Facebook account a paired browser brings (SocialAccount.ForDevice in the API). */
+const DEVICE_ACCOUNT_PREFIX = 'Facebook · ';
+
+/**
+ * What an account is: one a browser posts for (`connected`), one whose browser was unbound (it keeps its
+ * history but cannot post until the browser is paired again), or a sample account of a new workspace.
+ * The API has no flag for the difference, so an unbound account is told by the name it got from its browser.
+ */
+export type AccountKind = 'connected' | 'unbound' | 'sample';
+
+export function accountKind(a: Pick<SocialAccount, 'connected' | 'name'>): AccountKind {
+  if (a.connected) return 'connected';
+  return a.name.startsWith(DEVICE_ACCOUNT_PREFIX) ? 'unbound' : 'sample';
 }
 
 /** Sample account in the design data (landing preview, admin mock). */
@@ -181,7 +200,7 @@ export interface SeedCustomer extends Omit<Customer, 'lastActive' | 'devices'> {
 
 export interface Transaction {
   id: string;
-  /** [year, month0, day] */
+  /** [year, month0, day] on the Bangkok calendar */
   date: number[];
   cust: string;
   type: TxType;
@@ -198,8 +217,11 @@ export interface Promo {
   code: string;
   discount: DiscountKey;
   uses: number;
-  /** [year, month0, day] */
+  /** [year, month0, day] on the Bangkok calendar */
   expires: number[];
+  /** The instant it stops working (the server accepts the code until then). */
+  expiresAt: Date;
+  /** Switched on; an active code past `expiresAt` is expired. */
   active: boolean;
 }
 
@@ -216,7 +238,7 @@ export interface SeedFailure {
 
 export interface SeedData {
   user: { name: L10n; email: string; initials: string };
-  workspaces: Omit<Workspace, 'role'>[];
+  workspaces: Omit<Workspace, 'role' | 'limits' | 'advancedAntiBan'>[];
   platforms: Record<PlatformKey, Platform>;
   groups: string[];
   // Collections, target sets and schedules come from a later design iteration
@@ -241,7 +263,7 @@ export interface SeedData {
   transactions: Transaction[];
   /** [year, month0, amount] */
   revenue: number[][];
-  promos: Promo[];
+  promos: Omit<Promo, 'expiresAt'>[];
   health: { label: L10n; value: string; status: 'ok' | 'warn' }[];
   thMonths: string[];
   thMonthsFull: string[];
@@ -265,6 +287,8 @@ export interface PostItem {
   code: ErrorCode | null;
   /** What the extension reported, when it did. */
   detail?: string | null;
+  /** When it went out (success and approval-pending posts); counts toward the 24-hour limits. */
+  publishedAt?: Date | null;
 }
 
 export interface ErrorItem extends PostItem {

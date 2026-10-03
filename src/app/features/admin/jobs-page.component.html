@@ -40,15 +40,16 @@
           <div class="td">{{ c.failed }}</div>
           <div class="td muted">{{ c.last }}</div>
           <div class="td tight">
-            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="toggle(c.id)">
-              {{ c.pauseLabel }}
-            </button>
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-ghost"
-              [disabled]="c.failed === 0"
-              (click)="retry(c.id)"
+              [disabled]="c.pauseOff"
+              [attr.title]="c.pauseOff ? t().api.pauseBlocked : null"
+              (click)="toggle(c.id)"
             >
+              {{ c.pauseLabel }}
+            </button>
+            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="retry(c.id)">
               {{ t().adm.retryFailed }}
             </button>
             <a

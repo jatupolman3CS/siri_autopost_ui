@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, HostListener, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  inject,
+  input,
+  output,
+} from '@angular/core';
+import { I18nService } from '../../../core/i18n/i18n.service';
 
 // Design-system modal. Body content is projected; put the buttons in <div modal-footer>.
 @Component({
@@ -11,6 +19,7 @@ export class ModalComponent {
   readonly open = input(false);
   readonly title = input('');
   readonly closed = output<void>();
+  protected readonly t = inject(I18nService).t;
 
   @HostListener('document:keydown.escape')
   protected onEscape(): void {

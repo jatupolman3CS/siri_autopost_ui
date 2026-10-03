@@ -116,7 +116,7 @@ export class PairDeviceModalComponent {
   private async poll(): Promise<void> {
     this.now.set(Date.now());
     if (!this.code() || this.expired()) return;
-    await this.devices.load().catch(() => undefined);
+    await this.devices.refresh();
     const fresh = this.devices.list().find((d) => !this.known.has(d.id));
     if (!fresh) return;
     this.stop();

@@ -3,11 +3,13 @@
     <div class="w720">
       <h1>{{ t().off.title }}</h1>
       <p>{{ t().off.sub }}</p>
+      <app-perm-note level="admin" />
     </div>
     <button
       type="button"
       class="su-btn su-btn-sm su-btn-primary"
-      [disabled]="saving()"
+      [disabled]="saving() || !editable()"
+      [attr.title]="perm.adminHint() || null"
       (click)="save()"
     >
       {{ t().common.save }}
@@ -23,6 +25,7 @@
           class="pc"
           [class.on]="pc.selected"
           [attr.aria-pressed]="pc.selected"
+          [disabled]="!editable() || !pc.supported"
           (click)="settings.patchOff({ policy: pc.id })"
         >
           <div class="pc-top">
@@ -31,6 +34,9 @@
           </div>
           <div class="fw6">{{ pc.title }}</div>
           <div class="fs14 muted">{{ pc.body }}</div>
+          @if (!pc.supported) {
+            <div class="small muted">{{ t().api.notYet }}</div>
+          }
         </button>
       }
     </div>
@@ -42,7 +48,7 @@
         [label]="t().off.window"
         [options]="windowOptions()"
         [value]="off().window"
-        [disabled]="off().policy !== 'queue'"
+        [disabled]="!editable() || off().policy === 'skip'"
         (valueChange)="settings.patchOff({ window: $any($event) })"
       />
       <div>
@@ -50,18 +56,22 @@
         <app-checkbox
           [label]="t().off.cLine"
           [checked]="off().line"
+          [disabled]="true"
           (checkedChange)="set({ line: $event })"
         />
         <app-checkbox
           [label]="t().off.cEmail"
           [checked]="off().email"
+          [disabled]="true"
           (checkedChange)="set({ email: $event })"
         />
         <app-checkbox
           [label]="t().off.cPush"
           [checked]="off().push"
+          [disabled]="true"
           (checkedChange)="set({ push: $event })"
         />
+        <p class="small muted">{{ t().api.channelsNotYet }}</p>
       </div>
     </section>
 
@@ -81,12 +91,13 @@
         <button
           type="button"
           class="su-btn su-btn-sm"
-          [class.su-btn-secondary]="ext.online()"
-          [class.su-btn-primary]="!ext.online()"
-          [disabled]="ext.busy()"
-          (click)="ext.toggleOnline()"
+          [class.su-btn-secondary]="!ext.simulated()"
+          [class.su-btn-primary]="ext.simulated()"
+          [disabled]="ext.busy() || !perm.canAdmin()"
+          [attr.title]="perm.adminHint() || null"
+          (click)="ext.toggleSimulation()"
         >
-          {{ ext.online() ? t().off.simOff : t().off.simOn }}
+          {{ ext.simulated() ? t().off.simOn : t().off.simOff }}
         </button>
       </div>
       <div class="fs14 fw5">{{ t().off.waiting }} ({{ waitingRows().length }})</div>

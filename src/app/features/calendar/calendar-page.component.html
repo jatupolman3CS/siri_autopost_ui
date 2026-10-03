@@ -3,13 +3,14 @@
     <div>
       <h1>{{ t().cal.title }}</h1>
       <p>{{ t().cal.sub }}</p>
+      <app-perm-note level="edit" />
     </div>
     <div class="actions">
-      <button type="button" class="nav-btn" (click)="nav(-1)" aria-label="previous month">
+      <button type="button" class="nav-btn" (click)="nav(-1)" [attr.aria-label]="t().api.prevMonth">
         <i class="ph ph-caret-left"></i>
       </button>
       <span class="cal-title">{{ title() }}</span>
-      <button type="button" class="nav-btn" (click)="nav(1)" aria-label="next month">
+      <button type="button" class="nav-btn" (click)="nav(1)" [attr.aria-label]="t().api.nextMonth">
         <i class="ph ph-caret-right"></i>
       </button>
       <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="today()">
@@ -83,12 +84,20 @@
           <div class="fs14">{{ p.text }}</div>
           @if (p.editable) {
             <div class="btns">
-              <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="edit(p.item)">
+              <button
+                type="button"
+                class="su-btn su-btn-sm su-btn-ghost"
+                [disabled]="!perm.canEdit()"
+                [attr.title]="perm.editHint() || null"
+                (click)="edit(p.item)"
+              >
                 {{ t().common.edit }}
               </button>
               <button
                 type="button"
                 class="su-btn su-btn-sm su-btn-ghost"
+                [disabled]="!perm.canEdit()"
+                [attr.title]="perm.editHint() || null"
                 (click)="deleteId.set(p.id)"
               >
                 {{ t().common.remove }}
@@ -129,7 +138,12 @@
     <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="deleteId.set(null)">
       {{ t().common.cancel }}
     </button>
-    <button type="button" class="su-btn su-btn-sm su-btn-danger" (click)="confirmDelete()">
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-danger"
+      [disabled]="!perm.canEdit()"
+      (click)="confirmDelete()"
+    >
       {{ t().common.remove }}
     </button>
   </div>

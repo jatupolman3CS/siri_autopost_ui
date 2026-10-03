@@ -10,6 +10,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { DraftStore } from '../../core/data/draft.store';
+import { PermissionsService } from '../../core/data/permissions.service';
 import { STATUS_DOT } from '../../core/data/models';
 import { PostsStore, QueueItem } from '../../core/data/posts.store';
 import { dayNames, displayYear, dkey, fmtDate, monthName } from '../../core/i18n/format';
@@ -17,10 +18,11 @@ import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 
 @Component({
   selector: 'app-calendar-page',
-  imports: [RouterLink, EmptyStateComponent, ModalComponent],
+  imports: [RouterLink, EmptyStateComponent, ModalComponent, PermNoteComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './calendar-page.component.html',
   styleUrl: './calendar-page.component.scss',
@@ -36,6 +38,7 @@ export class CalendarPageComponent {
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
   protected readonly posts = inject(PostsStore);
+  protected readonly perm = inject(PermissionsService);
 
   protected readonly calY = signal(this.posts.now().getFullYear());
   protected readonly calM = signal(this.posts.now().getMonth());
@@ -47,7 +50,8 @@ export class CalendarPageComponent {
     effect(() => {
       const y = this.calY();
       const m = this.calM();
-      for (const d of [-1, 0, 1]) void this.posts.ensureMonth(y, m + d);
+      // A month that fails to load is toasted and asked for again the next time the calendar shows it.
+      for (const d of [-1, 0, 1]) this.posts.ensureMonth(y, m + d).catch(() => undefined);
     });
     effect(() => {
       const d = this.day();
@@ -150,7 +154,7 @@ export class CalendarPageComponent {
   protected async confirmDelete(): Promise<void> {
     const id = this.deleteId();
     this.deleteId.set(null);
-    if (!id) return;
+    if (!id || !this.perm.canEdit()) return;
     await this.posts.remove(id);
     this.notify.info(this.t().common.deleted);
   }

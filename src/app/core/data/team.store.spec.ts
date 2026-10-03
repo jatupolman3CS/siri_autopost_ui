@@ -45,6 +45,13 @@ describe('TeamStore', () => {
     expect(team.canManage()).toBe(true);
   });
 
+  it('counts the seats of the owner plan: the owner row and invitations take one each', async () => {
+    expect(team.seatLimit()).toBe(3);
+    expect(team.seatsFull()).toBe(false);
+    team.members.set([OWNER, INVITED, { ...INVITED, id: 'm-2', email: 'two@shop.co' }]);
+    expect(team.seatsFull()).toBe(true);
+  });
+
   it('invites, then reloads the members and the workspace counts', async () => {
     const done = team.invite('new@shop.co', 'editor');
     const req = http.expectOne(`/api/workspaces/${WS}/members`);

@@ -92,6 +92,7 @@
             type="button"
             class="su-btn su-btn-sm su-btn-ghost"
             [disabled]="!canManageDevices()"
+            [attr.title]="canManageDevices() ? null : adminHint()"
             (click)="toggleJobs(d.id, d.jobsPaused)"
           >
             <i class="ph" [class]="d.jobsPaused ? 'ph-play' : 'ph-pause'"></i
@@ -112,7 +113,7 @@
     }
     @if (readOnly()) {
       <div class="callout">
-        <i class="ph ph-eye"></i><span>{{ x().readOnly }}</span>
+        <i class="ph ph-eye"></i><span>{{ editHint() }}</span>
       </div>
     }
 

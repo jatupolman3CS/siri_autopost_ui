@@ -72,6 +72,32 @@ describe('SessionStore', () => {
     expect(tokenStorage.get()).toBeNull();
   });
 
+  it.each([
+    ['the server is unreachable', 0],
+    ['the server fails', 500],
+    ['the gateway is down', 502],
+  ])('keeps the stored token when %s: only a 401 drops it', async (_why, status) => {
+    tokenStorage.set('still-good');
+    const restore = session.restore();
+    http.expectOne('/api/auth/me').flush(null, { status, statusText: 'x' });
+    await restore;
+    expect(tokenStorage.get()).toBe('still-good');
+    expect(session.isGuest()).toBe(true); // not signed in this visit, but nothing was thrown away
+    expect(session.restoreFailed()).toBe(true);
+  });
+
+  it('forgets a failed restore once someone signs in', async () => {
+    tokenStorage.set('still-good');
+    const restore = session.restore();
+    http.expectOne('/api/auth/me').flush(null, { status: 503, statusText: 'x' });
+    await restore;
+    const login = session.logIn(USER.email, 'password1');
+    http.expectOne('/api/auth/login').flush({ token: 'new', expiresAt: '2099-01-01', user: USER });
+    await login;
+    expect(session.restoreFailed()).toBe(false);
+    expect(tokenStorage.get()).toBe('new');
+  });
+
   it('assists a customer with their token and comes back to the admin', async () => {
     const admin = { ...USER, id: 'admin-1', role: 'admin' as const };
     const login = session.logIn('admin@autopost.local', 'admin1234');

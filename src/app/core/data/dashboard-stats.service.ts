@@ -2,7 +2,7 @@ import { Injectable, computed, inject } from '@angular/core';
 import { dayNames, dkey, fmtDate, hm } from '../i18n/format';
 import { Dict, I18nService } from '../i18n/i18n.service';
 import { AccountsStore } from './accounts.store';
-import { HEALTH_DOT } from './models';
+import { HEALTH_DOT, accountKind } from './models';
 import { PostsStore, QueueItem, postRow } from './posts.store';
 import { SEED } from './seed.data';
 
@@ -14,20 +14,30 @@ export interface Kpi {
   note: string;
 }
 
-/** Success/failure counts of the 7 days before now, and today's remaining queue. */
-export function kpisOf(items: QueueItem[], today: QueueItem[], now: Date, t: Dict): Kpi[] {
+/**
+ * Success/failure counts of the 7 days before now, and today's remaining queue. Until the posts have
+ * arrived (`ready` false) every value is "—", and so is the rate when nothing was sent or failed.
+ */
+export function kpisOf(
+  items: QueueItem[],
+  today: QueueItem[],
+  now: Date,
+  t: Dict,
+  ready = true,
+): Kpi[] {
   const to = now.getTime();
   const from = to - 7 * DAY_MS;
   const in7 = items.filter((p) => p.dt.getTime() >= from && p.dt.getTime() <= to);
   const ok = in7.filter((p) => p.status === 'success').length;
   const fail = in7.filter((p) => p.status === 'failed').length;
-  const rate = ok + fail ? Math.round((ok / (ok + fail)) * 1000) / 10 : 100;
+  const rate = ok + fail ? `${Math.round((ok / (ok + fail)) * 1000) / 10}%` : '—';
   const queued = today.filter((p) => p.status === 'queued' || p.status === 'waiting').length;
+  const val = (v: string | number) => (ready ? v : '—');
   return [
-    { label: t.ov.kSuccess, value: ok, note: t.ov.last7 },
-    { label: t.ov.kFailed, value: fail, note: t.ov.last7 },
-    { label: t.ov.kRate, value: rate + '%', note: t.ov.target },
-    { label: t.ov.kQueued, value: queued, note: t.ov.remaining },
+    { label: t.ov.kSuccess, value: val(ok), note: t.ov.last7 },
+    { label: t.ov.kFailed, value: val(fail), note: t.ov.last7 },
+    { label: t.ov.kRate, value: val(rate), note: t.ov.target },
+    { label: t.ov.kQueued, value: val(queued), note: t.ov.remaining },
   ];
 }
 
@@ -46,8 +56,11 @@ export class DashboardStatsService {
   private readonly accounts = inject(AccountsStore);
   private readonly i18n = inject(I18nService);
 
+  /** The posts of the workspace have arrived: until then the figures read "—", not 0 or 100%. */
+  readonly ready = this.posts.loaded;
+
   readonly kpis = computed<Kpi[]>(() =>
-    kpisOf(this.posts.items(), this.posts.today(), this.posts.now(), this.i18n.t()),
+    kpisOf(this.posts.items(), this.posts.today(), this.posts.now(), this.i18n.t(), this.ready()),
   );
 
   readonly queueRows = computed(() => queueRowsOf(this.posts.today(), this.i18n.t()));
@@ -82,14 +95,20 @@ export class DashboardStatsService {
 
   readonly accountRows = computed(() => {
     const t = this.i18n.t();
-    return this.accounts.list().map((a) => ({
-      icon: SEED.platforms[a.platform].icon,
-      name: a.name,
-      handle: a.handle,
-      demo: !a.connected,
-      dot: HEALTH_DOT[a.health],
-      healthLabel: t.health[a.health],
-    }));
+    return this.accounts.list().map((a) => {
+      const kind = accountKind(a);
+      return {
+        icon: SEED.platforms[a.platform].icon,
+        name: a.name,
+        handle: a.handle,
+        /** "Sample" for a new workspace's demo accounts, "Unbound" for one whose browser was unpaired. */
+        badge:
+          kind === 'sample' ? t.api.demoAccount : kind === 'unbound' ? t.api.unboundAccount : '',
+        badgeHint: kind === 'sample' ? t.api.demoHint : kind === 'unbound' ? t.api.unboundHint : '',
+        dot: HEALTH_DOT[a.health],
+        healthLabel: t.health[a.health],
+      };
+    });
   });
 
   readonly recentErrors = computed(() => {

@@ -81,6 +81,9 @@ input[type='range'] {
     font-size: 18px;
   }
 }
+.not-yet {
+  margin: -8px 0 8px 44px;
+}
 .human {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

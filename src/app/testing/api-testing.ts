@@ -3,11 +3,22 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { authInterceptor } from '../core/auth/auth.interceptor';
 import { SessionStore } from '../core/data/session.store';
-import { ApiAccount, ApiPost, ApiUser } from '../core/http/api.service';
+import { ApiAccount, ApiDevice, ApiPost, ApiUser, ApiWorkspace } from '../core/http/api.service';
 
 // Test helpers: a signed-in user with one workspace, served by HttpTestingController.
 
 export const WS = 'ws-1';
+
+/** The workspace list entry the helpers answer with; pass `workspace` to signIn() to change it. */
+export const WORKSPACE: ApiWorkspace = {
+  id: WS,
+  name: 'Shop',
+  posts7: 0,
+  members: 1,
+  role: 'owner',
+  limits: { accounts: 10, posts: null, devices: 3, seats: 3 },
+  advancedAntiBan: true,
+};
 
 export const USER: ApiUser = {
   id: 'u-1',
@@ -91,7 +102,13 @@ export async function settle(): Promise<void> {
 /** Logs in and answers the workspace list, then the per-workspace loads it triggers. */
 export async function signIn(
   http: HttpTestingController,
-  data: { posts?: ApiPost[]; errors?: ApiPost[]; user?: Partial<ApiUser> } = {},
+  data: {
+    posts?: ApiPost[];
+    errors?: ApiPost[];
+    user?: Partial<ApiUser>;
+    workspace?: Partial<ApiWorkspace>;
+    devices?: ApiDevice[];
+  } = {},
 ): Promise<void> {
   const login = TestBed.inject(SessionStore).logIn(USER.email, 'password1');
   http
@@ -99,9 +116,7 @@ export async function signIn(
     .flush({ token: 't0k', expiresAt: '2099-01-01', user: { ...USER, ...data.user } });
   await login;
   await settle();
-  http
-    .expectOne('/api/workspaces')
-    .flush([{ id: WS, name: 'Shop', posts7: 0, members: 1, role: 'owner' }]);
+  http.expectOne('/api/workspaces').flush([{ ...WORKSPACE, ...data.workspace }]);
   await settle();
   answerWorkspaceLoads(http, data);
   await settle();
@@ -109,7 +124,12 @@ export async function signIn(
 
 export function answerWorkspaceLoads(
   http: HttpTestingController,
-  data: { posts?: ApiPost[]; errors?: ApiPost[]; simulatedOffline?: boolean } = {},
+  data: {
+    posts?: ApiPost[];
+    errors?: ApiPost[];
+    simulatedOffline?: boolean;
+    devices?: ApiDevice[];
+  } = {},
 ): void {
   const base = `/api/workspaces/${WS}`;
   for (const r of http.match((req) => req.url === `${base}/posts`)) {
@@ -126,6 +146,7 @@ export function answerWorkspaceLoads(
   for (const r of http.match(`${base}/accounts`)) r.flush(ACCOUNTS);
   for (const r of http.match(`${base}/media`)) r.flush([]);
   for (const r of http.match(`${base}/snippets`)) r.flush([]);
+  for (const r of http.match(`${base}/devices`)) r.flush(data.devices ?? []);
   for (const r of http.match(`${base}/engine`))
     r.flush({
       antiBan: {
