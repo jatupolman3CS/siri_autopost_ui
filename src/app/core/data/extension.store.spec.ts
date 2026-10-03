@@ -1,32 +1,35 @@
+import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import {
+  WS,
+  answerWorkspaceLoads,
+  provideApiTesting,
+  settle,
+  signIn,
+} from '../../testing/api-testing';
 import { ExtensionStore } from './extension.store';
-import { PostsStore } from './posts.store';
-import { SettingsStore } from './settings.store';
 
 describe('ExtensionStore', () => {
+  let http: HttpTestingController;
   let ext: ExtensionStore;
-  let posts: PostsStore;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    http = provideApiTesting();
     ext = TestBed.inject(ExtensionStore);
-    posts = TestBed.inject(PostsStore);
+    await signIn(http);
   });
 
-  it('holds at most the next 4 posts of today while offline', () => {
-    const due = posts.today().filter((p) => p.status === 'queued' && p.dt > posts.now).length;
-    ext.toggleOnline();
-    expect(ext.online()).toBe(false);
-    expect(posts.waiting().length).toBe(Math.min(4, due));
-  });
+  afterEach(() => http.verify());
 
-  it('sends waiting posts on reconnect, or skips them with the skip policy', () => {
-    ext.toggleOnline();
-    const waiting = posts.waiting().map((p) => p.id);
-    TestBed.inject(SettingsStore).patchOff({ policy: 'skip' });
-    ext.toggleOnline();
+  it('simulates going offline through the API, then reloads the posts', async () => {
     expect(ext.online()).toBe(true);
-    expect(posts.waiting().length).toBe(0);
-    for (const id of waiting)
-      expect(posts.posts().find((p) => p.id === id)?.status).toBe('skipped');
+    const done = ext.toggleOnline();
+    const req = http.expectOne(`/api/workspaces/${WS}/engine/extension`);
+    expect(req.request.body).toEqual({ online: false });
+    req.flush({ online: false, affected: 4 });
+    await settle();
+    answerWorkspaceLoads(http);
+    await done;
+    expect(ext.online()).toBe(false);
   });
 });

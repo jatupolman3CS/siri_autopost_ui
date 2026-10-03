@@ -1,25 +1,90 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { ApiMedia, ApiService, ApiSnippet } from '../http/api.service';
 import { MediaItem, Snippet } from './models';
-import { SEED } from './seed.data';
+import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
-// Reusable media and text snippets of the workspace.
+function toMedia(m: ApiMedia): MediaItem {
+  return {
+    id: m.id,
+    name: m.name,
+    meta: `${m.contentType} · ${fileSize(m.size)}`,
+    kind: m.kind,
+    used: m.usedCount,
+  };
+}
+
+function toSnippet(s: ApiSnippet): Snippet {
+  return { id: s.id, title: s.title, text: s.text, used: s.usedCount };
+}
+
+export function fileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+// Uploaded media and text snippets of the current workspace. Image thumbnails are fetched
+// with the bearer token and shown through object URLs (an <img src> cannot send the token).
 @Injectable({ providedIn: 'root' })
 export class LibraryStore {
-  readonly media = signal<MediaItem[]>(SEED.media.map((m) => ({ ...m })));
-  readonly snippets = signal<Snippet[]>(SEED.snippets.map((s) => ({ ...s })));
+  private readonly api = inject(ApiService);
+  private readonly ws = inject(WorkspaceStore);
 
-  addSnippet(title: string, text: string): void {
-    this.snippets.update((list) => [
-      { id: 's' + Date.now(), title: [title, title], text: [text, text], used: 0 },
-      ...list,
-    ]);
+  readonly media = signal<MediaItem[]>([]);
+  readonly snippets = signal<Snippet[]>([]);
+  /** mediaId -> object URL of the image. */
+  readonly thumbs = signal<Record<string, string>>({});
+
+  constructor() {
+    whenWorkspaceChanges((id) => {
+      for (const url of Object.values(this.thumbs())) URL.revokeObjectURL(url);
+      this.thumbs.set({});
+      this.media.set([]);
+      this.snippets.set([]);
+      if (id) void this.load(id);
+    });
   }
 
-  /** Upload placeholder: real file uploads arrive with the media API. */
-  addSampleMedia(label: readonly [string, string]): void {
-    this.media.update((list) => [
-      { id: 'm' + Date.now(), label, meta: '1080×1080 · 900 KB', kind: 'image', used: 0 },
-      ...list,
-    ]);
+  async load(wsId: string): Promise<void> {
+    const [media, snippets] = await Promise.all([this.api.media(wsId), this.api.snippets(wsId)]);
+    if (this.ws.id() !== wsId) return;
+    this.media.set(media.map(toMedia));
+    this.snippets.set(snippets.map(toSnippet));
+    for (const m of media) if (m.kind === 'image') void this.loadThumb(wsId, m.id);
+  }
+
+  async addSnippet(title: string, text: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    const s = await this.api.createSnippet(wsId, title, text);
+    this.snippets.update((list) => [toSnippet(s), ...list]);
+  }
+
+  /** Uploads files one by one; returns how many the server accepted. */
+  async upload(files: File[]): Promise<number> {
+    const wsId = this.ws.id();
+    if (!wsId) return 0;
+    let ok = 0;
+    for (const f of files) {
+      try {
+        const m = await this.api.upload(wsId, f);
+        this.media.update((list) => [toMedia(m), ...list]);
+        if (m.kind === 'image') void this.loadThumb(wsId, m.id);
+        ok++;
+      } catch {
+        // Counted as failed; the interceptor or the caller tells the user.
+      }
+    }
+    return ok;
+  }
+
+  private async loadThumb(wsId: string, id: string): Promise<void> {
+    try {
+      const blob = await this.api.mediaContent(wsId, id);
+      if (this.ws.id() !== wsId) return;
+      this.thumbs.update((t) => ({ ...t, [id]: URL.createObjectURL(blob) }));
+    } catch {
+      // Keeps the icon placeholder.
+    }
   }
 }

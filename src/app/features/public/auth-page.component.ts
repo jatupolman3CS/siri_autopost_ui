@@ -1,19 +1,19 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { PLAN_ORDER, PlanKey, Role } from '../../core/data/models';
+import { PLAN_ORDER, PlanKey } from '../../core/data/models';
 import { SessionStore } from '../../core/data/session.store';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
-import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Log in / create account. No backend auth yet: any valid email signs in, and the role picker
-// (labelled as a prototype option, as in the design) decides between shop user and platform admin.
+// Log in / create account against /api/auth. The account's role (shop user or platform admin)
+// comes from the server; signing up always creates a shop user on the chosen plan.
 @Component({
   selector: 'app-auth-page',
-  imports: [RouterLink, InputFieldComponent, SelectFieldComponent],
+  imports: [RouterLink, InputFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="auth">
@@ -46,15 +46,17 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           [(value)]="pass"
           [error]="errPass()"
         />
-        @if (isLogin()) {
-          <app-select-field
-            [label]="t().auth.roleLabel"
-            [options]="roleOptions()"
-            [(value)]="role"
-          />
-        }
-        <button type="submit" class="su-btn su-btn-md su-btn-primary su-btn-full">
-          {{ isLogin() ? t().auth.submit : t().auth.create }}<i class="ph ph-arrow-right"></i>
+        <button
+          type="submit"
+          class="su-btn su-btn-md su-btn-primary su-btn-full"
+          [disabled]="busy()"
+          [attr.aria-busy]="busy()"
+        >
+          @if (busy()) {
+            {{ t().api.loading }}
+          } @else {
+            {{ isLogin() ? t().auth.submit : t().auth.create }}<i class="ph ph-arrow-right"></i>
+          }
         </button>
         <div class="switch">
           <span>{{ isLogin() ? t().auth.noAccount : t().auth.haveAccount }}</span>
@@ -127,8 +129,19 @@ export class AuthPageComponent {
 
   protected readonly email = signal('');
   protected readonly pass = signal('');
-  protected readonly role = signal<string>('user');
   protected readonly submitted = signal(false);
+  protected readonly busy = signal(false);
+  /** Server answer for the last attempt, shown under its field until the input changes. */
+  private readonly serverErr = signal<{
+    field: 'email' | 'pass';
+    msg: string;
+    email: string;
+    pass: string;
+  } | null>(null);
+  private readonly server = computed(() => {
+    const s = this.serverErr();
+    return s && s.email === this.email() && s.pass === this.pass() ? s : null;
+  });
 
   protected readonly isLogin = computed(() => this.mode() === 'login');
   protected readonly pendingPlan = computed<PlanKey | null>(() => {
@@ -136,24 +149,48 @@ export class AuthPageComponent {
     const p = this.plan() as PlanKey | undefined;
     return p && PLAN_ORDER.includes(p) ? p : 'free';
   });
-  protected readonly roleOptions = computed(() => [
-    { value: 'user', label: this.t().auth.roleUser },
-    { value: 'admin', label: this.t().auth.roleAdmin },
-  ]);
-  protected readonly errEmail = computed(() =>
-    this.submitted() && !EMAIL_RE.test(this.email().trim()) ? this.t().auth.errEmail : '',
-  );
-  protected readonly errPass = computed(() =>
-    this.submitted() && !this.pass() ? this.t().auth.errPass : '',
-  );
+  protected readonly errEmail = computed(() => {
+    if (!this.submitted()) return '';
+    if (!EMAIL_RE.test(this.email().trim())) return this.t().auth.errEmail;
+    const s = this.server();
+    return s?.field === 'email' ? s.msg : '';
+  });
+  protected readonly errPass = computed(() => {
+    if (!this.submitted()) return '';
+    if (!this.pass()) return this.t().auth.errPass;
+    if (!this.isLogin() && this.pass().length < 8) return this.t().api.passwordMin;
+    const s = this.server();
+    return s?.field === 'pass' ? s.msg : '';
+  });
 
-  protected submit(): void {
+  protected async submit(): Promise<void> {
+    this.serverErr.set(null);
     this.submitted.set(true);
-    if (this.errEmail() || this.errPass()) return;
-    const role: Role = this.isLogin() ? (this.role() as Role) : 'user';
-    this.session.signIn(role, this.pendingPlan() ?? undefined);
-    const t = this.t().auth;
-    this.notify.success(role === 'admin' ? t.welcomeAdmin : t.welcomeUser);
-    void this.router.navigateByUrl(role === 'admin' ? '/app/admin' : '/app/overview');
+    if (this.errEmail() || this.errPass() || this.busy()) return;
+    this.busy.set(true);
+    const email = this.email().trim();
+    try {
+      const user = this.isLogin()
+        ? await this.session.logIn(email, this.pass())
+        : await this.session.signUp(email, this.pass(), this.pendingPlan());
+      const t = this.t().auth;
+      const admin = user.role === 'admin';
+      this.notify.success(admin ? t.welcomeAdmin : t.welcomeUser);
+      void this.router.navigateByUrl(admin ? '/app/admin' : '/app/overview');
+    } catch (e) {
+      const a = this.t().api;
+      const status = e instanceof HttpErrorResponse ? e.status : 0;
+      const [field, msg]: ['email' | 'pass', string] =
+        status === 401
+          ? ['pass', a.authInvalid]
+          : status === 409
+            ? ['email', a.emailTaken]
+            : status === 400
+              ? ['pass', a.passwordMin]
+              : ['pass', a.serverDown];
+      this.serverErr.set({ field, msg, email: this.email(), pass: this.pass() });
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

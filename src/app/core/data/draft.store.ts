@@ -1,7 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { dkey } from '../i18n/format';
-import { CLOCK } from './clock';
-import { SEED } from './seed.data';
+import { AccountsStore } from './accounts.store';
+import { SocialAccount } from './models';
 
 export interface Draft {
   text: string;
@@ -14,38 +14,81 @@ export interface Draft {
   time: string;
   repeat: 'none' | 'daily' | 'weekdays' | 'weekly';
   useDelay: boolean;
+  /** True until the user picks targets: the defaults follow the workspace's accounts. */
+  autoTargets: boolean;
+  /** A queued post being edited: it is deleted once the new version is scheduled. */
+  replaces: string | null;
   errText: string;
   errTargets: string;
   errTime: string;
+}
+
+/** 14:00 today as in the design; once that has passed, the full hour after next. */
+function defaultSlot(now = new Date()): { date: string; time: string } {
+  const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14);
+  if (at <= now) at.setTime(new Date(now).setMinutes(0, 0, 0) + 2 * 3600_000);
+  return { date: dkey(at), time: `${String(at.getHours()).padStart(2, '0')}:00` };
 }
 
 export function blankDraft(): Draft {
   return {
     text: '',
     media: [],
-    targets: { a1: true, a3: true },
-    groups: SEED.groups.slice(0, 3),
-    date: dkey(CLOCK.now),
-    time: '14:00',
+    targets: {},
+    groups: [],
+    ...defaultSlot(),
     repeat: 'none',
     useDelay: true,
+    autoTargets: true,
+    replaces: null,
     errText: '',
     errTargets: '',
     errTime: '',
   };
 }
 
+/** As in the design: the first group-posting account with three of its groups, plus Instagram. */
+export function defaultTargets(list: SocialAccount[]): Pick<Draft, 'targets' | 'groups'> {
+  const page = list.find((a) => a.groups.length && a.health !== 'relogin');
+  const ig = list.find((a) => a.platform === 'ig' && a.health !== 'relogin');
+  const targets: Record<string, boolean> = {};
+  if (page) targets[page.id] = true;
+  if (ig) targets[ig.id] = true;
+  return { targets, groups: page ? page.groups.slice(0, 3) : [] };
+}
+
 // The composer's draft lives here so the calendar ("edit") and the library ("use") can fill it.
 @Injectable({ providedIn: 'root' })
 export class DraftStore {
+  private readonly accounts = inject(AccountsStore);
   readonly draft = signal<Draft>(blankDraft());
+
+  constructor() {
+    // Keep the targets valid for the current workspace's accounts.
+    effect(() => {
+      const list = this.accounts.list();
+      untracked(() =>
+        this.draft.update((d) => {
+          if (d.autoTargets) return { ...d, ...defaultTargets(list) };
+          const ids = new Set(list.map((a) => a.id));
+          const groups = new Set(list.flatMap((a) => a.groups));
+          return {
+            ...d,
+            targets: Object.fromEntries(Object.entries(d.targets).filter(([id]) => ids.has(id))),
+            groups: d.groups.filter((g) => groups.has(g)),
+          };
+        }),
+      );
+    });
+  }
 
   patch(patch: Partial<Draft>): void {
     this.draft.update((d) => ({ ...d, ...patch }));
   }
 
   reset(patch: Partial<Draft> = {}): void {
-    this.draft.set({ ...blankDraft(), ...patch });
+    const base = { ...blankDraft(), ...defaultTargets(this.accounts.list()) };
+    this.draft.set({ ...base, ...patch });
   }
 
   appendText(text: string): void {

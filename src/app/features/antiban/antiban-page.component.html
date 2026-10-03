@@ -4,7 +4,12 @@
       <h1>{{ t().ab.title }}</h1>
       <p>{{ t().ab.sub }}</p>
     </div>
-    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="save()">
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      [disabled]="saving()"
+      (click)="save()"
+    >
       {{ t().common.save }}
     </button>
   </div>

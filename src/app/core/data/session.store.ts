@@ -1,58 +1,61 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { tokenStorage } from '../auth/token';
+import { ApiAuthResult, ApiService, ApiUser } from '../http/api.service';
 import { PlanKey, Role } from './models';
-import { SEED } from './seed.data';
 
-const STORAGE_KEY = 'ap-session';
-
-interface Persisted {
-  role: Role;
-  plan: PlanKey;
-}
-
-// Who is signed in and on which plan. There is no backend auth yet: like the design
-// prototype, any valid email signs in and the role is picked on the login form.
+// Who is signed in, from the API's JWT login. The token persists in localStorage and is
+// checked against /api/auth/me when the app starts (see restore()).
 @Injectable({ providedIn: 'root' })
 export class SessionStore {
-  private readonly stored = readStored();
+  private readonly api = inject(ApiService);
+  private readonly _user = signal<ApiUser | null>(null);
 
-  readonly role = signal<Role>(this.stored.role);
-  readonly plan = signal<PlanKey>(this.stored.plan);
-  readonly user = SEED.user;
-  readonly isGuest = computed(() => this.role() === 'guest');
+  readonly user = this._user.asReadonly();
+  readonly role = computed<Role>(() => this._user()?.role ?? 'guest');
+  readonly plan = computed<PlanKey>(() => this._user()?.plan ?? 'free');
+  readonly isGuest = computed(() => !this._user());
   readonly isAdmin = computed(() => this.role() === 'admin');
+  readonly name = computed(() => this._user()?.name ?? '');
+  readonly email = computed(() => this._user()?.email ?? '');
+  readonly initials = computed(() => initialsOf(this.name() || this.email()));
 
-  signIn(role: Role, plan?: PlanKey): void {
-    this.role.set(role);
-    if (plan) this.plan.set(plan);
-    this.persist();
-  }
-
-  signOut(): void {
-    this.role.set('guest');
-    this.persist();
-  }
-
-  setPlan(plan: PlanKey): void {
-    this.plan.set(plan);
-    this.persist();
-  }
-
-  private persist(): void {
+  /** Called once by the app initializer: a stored token that no longer works is dropped. */
+  async restore(): Promise<void> {
+    if (!tokenStorage.get()) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ role: this.role(), plan: this.plan() }));
+      this._user.set(await this.api.me());
     } catch {
-      // Session lasts for this visit only.
+      tokenStorage.set(null);
     }
+  }
+
+  async logIn(email: string, password: string): Promise<ApiUser> {
+    return this.accept(await this.api.logIn({ email, password }));
+  }
+
+  async signUp(email: string, password: string, plan: PlanKey | null): Promise<ApiUser> {
+    return this.accept(await this.api.signUp({ email, password, name: null, plan }));
+  }
+
+  /** Forgets the token; the workspace stores empty themselves when the user goes away. */
+  signOut(): void {
+    tokenStorage.set(null);
+    this._user.set(null);
+  }
+
+  async setPlan(plan: PlanKey): Promise<void> {
+    this._user.set(await this.api.changePlan(plan));
+  }
+
+  private accept(r: ApiAuthResult): ApiUser {
+    tokenStorage.set(r.token);
+    this._user.set(r.user);
+    return r.user;
   }
 }
 
-function readStored(): Persisted {
-  try {
-    const v = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as Partial<Persisted> | null;
-    if (v && ['guest', 'user', 'admin'].includes(v.role ?? '') && v.plan)
-      return { role: v.role as Role, plan: v.plan };
-  } catch {
-    // Fall through to the defaults.
-  }
-  return { role: 'guest', plan: 'free' };
+function initialsOf(name: string): string {
+  const parts = name.split(/[\s@._-]+/).filter(Boolean);
+  const letters = parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0, 2);
+  return letters.toUpperCase();
 }

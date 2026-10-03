@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { AccountsStore } from '../../core/data/accounts.store';
 import { DraftStore } from '../../core/data/draft.store';
 import { STATUS_DOT } from '../../core/data/models';
 import { PostsStore, QueueItem } from '../../core/data/posts.store';
@@ -31,16 +32,23 @@ export class CalendarPageComponent {
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   private readonly draft = inject(DraftStore);
+  private readonly accounts = inject(AccountsStore);
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
   protected readonly posts = inject(PostsStore);
 
-  protected readonly calY = signal(this.posts.now.getFullYear());
-  protected readonly calM = signal(this.posts.now.getMonth());
-  protected readonly selDay = signal(this.posts.todayKey);
+  protected readonly calY = signal(this.posts.now().getFullYear());
+  protected readonly calM = signal(this.posts.now().getMonth());
+  protected readonly selDay = signal(this.posts.todayKey());
   protected readonly deleteId = signal<string | null>(null);
 
   constructor() {
+    // The grid shows a few days of the neighbouring months too.
+    effect(() => {
+      const y = this.calY();
+      const m = this.calM();
+      for (const d of [-1, 0, 1]) void this.posts.ensureMonth(y, m + d);
+    });
     effect(() => {
       const d = this.day();
       if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
@@ -61,7 +69,6 @@ export class CalendarPageComponent {
   protected readonly cells = computed(() => {
     const y = this.calY();
     const m = this.calM();
-    const li = this.i18n.li();
     const t = this.t();
     const startDow = new Date(y, m, 1).getDay();
     const dim = new Date(y, m + 1, 0).getDate();
@@ -75,11 +82,11 @@ export class CalendarPageComponent {
         key,
         day: d.getDate(),
         inMonth: d.getMonth() === m,
-        isToday: key === this.posts.todayKey,
+        isToday: key === this.posts.todayKey(),
         isSel: key === this.selDay(),
         chips: list
           .slice(0, 3)
-          .map((p) => ({ dot: STATUS_DOT[p.status], time: p.time, text: this.posts.text(p, li) })),
+          .map((p) => ({ dot: STATUS_DOT[p.status], time: p.time, text: p.text })),
         more: list.length > 3 ? fmt(t.cal.moreN, { n: list.length - 3 }) : '',
         date: d,
       };
@@ -92,10 +99,9 @@ export class CalendarPageComponent {
     return fmtDate(new Date(y, m - 1, d), this.i18n.li(), true);
   });
   protected readonly selRows = computed(() => {
-    const li = this.i18n.li();
     const t = this.t();
     return this.selList().map((p) => ({
-      ...this.posts.row(p, li, t),
+      ...this.posts.row(p, t),
       item: p,
       editable: p.status === 'queued',
       isFailed: p.status === 'failed' || p.status === 'pending',
@@ -115,9 +121,9 @@ export class CalendarPageComponent {
   }
 
   protected today(): void {
-    this.calY.set(this.posts.now.getFullYear());
-    this.calM.set(this.posts.now.getMonth());
-    this.selDay.set(this.posts.todayKey);
+    this.calY.set(this.posts.now().getFullYear());
+    this.calM.set(this.posts.now().getMonth());
+    this.selDay.set(this.posts.todayKey());
   }
 
   protected addOnDay(): void {
@@ -125,23 +131,27 @@ export class CalendarPageComponent {
     void this.router.navigateByUrl('/app/composer');
   }
 
-  /** Moves a queued post back into the composer (it is re-created when scheduled again). */
+  /** Opens a queued post in the composer; the old post is deleted once the edit is scheduled. */
   protected edit(p: QueueItem): void {
-    this.posts.remove(p.id);
+    const toGroup = !!this.accounts.byId(p.accountId)?.groups.length;
     this.draft.reset({
-      text: this.posts.text(p, this.i18n.li()),
+      text: p.text,
+      media: p.mediaIds,
       date: p.key,
       time: p.time,
       targets: { [p.accountId]: true },
-      groups: p.accountId === 'a1' ? [p.target[0]] : [],
+      groups: toGroup ? [p.target] : [],
+      autoTargets: false,
+      replaces: p.id,
     });
     void this.router.navigateByUrl('/app/composer');
   }
 
-  protected confirmDelete(): void {
+  protected async confirmDelete(): Promise<void> {
     const id = this.deleteId();
-    if (id) this.posts.remove(id);
     this.deleteId.set(null);
+    if (!id) return;
+    await this.posts.remove(id);
     this.notify.info(this.t().common.deleted);
   }
 }

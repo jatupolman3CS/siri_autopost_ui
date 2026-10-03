@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminStore } from '../../core/data/admin.store';
-import { DashboardStatsService } from '../../core/data/dashboard-stats.service';
+import { kpisOf, queueRowsOf } from '../../core/data/dashboard-stats.service';
+import { groupByDay, withDay } from '../../core/data/posts.store';
+import { samplePosts } from '../../core/data/sample';
+import { dkey } from '../../core/i18n/format';
 import { PlanKey } from '../../core/data/models';
 import { tierViews } from '../../core/data/plans';
 import { SEED } from '../../core/data/seed.data';
@@ -24,12 +27,20 @@ export class LandingPageComponent {
   private readonly router = inject(Router);
   private readonly settings = inject(SettingsStore);
   private readonly admin = inject(AdminStore);
-  protected readonly t = inject(I18nService).t;
-  protected readonly stats = inject(DashboardStatsService);
+  private readonly i18n = inject(I18nService);
+  protected readonly t = this.i18n.t;
 
   protected readonly platforms = Object.values(SEED.platforms);
-  protected readonly kpis = computed(() => this.stats.kpis().slice(0, 3));
-  protected readonly queue = computed(() => this.stats.queueRows().slice(0, 4));
+  // The product preview runs on the design's sample posts (guests have no workspace).
+  private readonly now = new Date();
+  private readonly sample = computed(() => samplePosts(this.now, this.i18n.li()).map(withDay));
+  private readonly sampleToday = computed(
+    () => groupByDay(this.sample()).get(dkey(this.now)) ?? [],
+  );
+  protected readonly kpis = computed(() =>
+    kpisOf(this.sample(), this.sampleToday(), this.now, this.t()).slice(0, 3),
+  );
+  protected readonly queue = computed(() => queueRowsOf(this.sampleToday(), this.t()).slice(0, 4));
 
   protected readonly steps = computed(() => {
     const l = this.t().land;

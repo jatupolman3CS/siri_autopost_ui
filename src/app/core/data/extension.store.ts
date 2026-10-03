@@ -1,54 +1,61 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { dkey } from '../i18n/format';
+import { ApiService } from '../http/api.service';
 import { I18nService, fmt } from '../i18n/i18n.service';
 import { NotificationService } from '../services/notification.service';
 import { PostsStore } from './posts.store';
 import { SettingsStore } from './settings.store';
+import { WorkspaceStore } from './workspace.store';
 
 // Connection state of the browser extension and what happens to due posts while it is offline.
-// "Simulate offline / reconnect" mirrors the design prototype until devices report real heartbeats.
+// "Simulate offline / reconnect" goes through the API (/engine/extension) until devices report
+// real heartbeats: going offline holds the next due posts as `waiting`, reconnecting releases
+// them by the workspace's offline policy.
 @Injectable({ providedIn: 'root' })
 export class ExtensionStore {
+  private readonly api = inject(ApiService);
+  private readonly ws = inject(WorkspaceStore);
   private readonly posts = inject(PostsStore);
   private readonly settings = inject(SettingsStore);
   private readonly notify = inject(NotificationService);
   private readonly i18n = inject(I18nService);
 
-  readonly online = signal(true);
+  readonly online = this.settings.extensionOnline.asReadonly();
+  /** Pausing lives in the extension popup preview only. */
   readonly paused = signal(false);
+  readonly busy = signal(false);
+  /** When this session saw the extension go offline (unknown after a reload). */
+  readonly offlineSince = signal<Date | null>(null);
 
-  toggleOnline(): void {
+  async toggleOnline(): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId || this.busy()) return;
     const t = this.i18n.t();
-    if (this.online()) {
-      // The next few posts due today now wait for the extension.
-      let n = 0;
-      const now = this.posts.now;
-      const today = this.posts.todayKey;
-      this.posts.setStatuses((p) =>
-        p.status === 'queued' && p.dt > now && dkey(p.dt) === today && n++ < 4
-          ? 'waiting'
-          : p.status,
-      );
-      this.online.set(false);
-      this.notify.error(t.off.toastOffline);
-    } else {
-      const skip = this.settings.off().policy === 'skip';
-      this.posts.setStatuses((p) =>
-        p.status === 'waiting' ? (skip ? 'skipped' : 'success') : p.status,
-      );
-      this.online.set(true);
-      this.notify.success(skip ? t.off.toastOnlineSkip : t.off.toastOnline);
+    const goOnline = !this.online();
+    this.busy.set(true);
+    try {
+      const r = await this.api.setExtensionOnline(wsId, goOnline);
+      this.settings.extensionOnline.set(r.online);
+      this.offlineSince.set(r.online ? null : new Date());
+      await this.posts.refresh();
+      if (!goOnline) this.notify.error(t.off.toastOffline);
+      else
+        this.notify.success(
+          this.settings.off().policy === 'skip' ? t.off.toastOnlineSkip : t.off.toastOnline,
+        );
+    } finally {
+      this.busy.set(false);
     }
   }
 
-  bannerAction(kind: 'skip' | 'queue' | 'notify'): void {
+  async bannerAction(kind: 'skip' | 'queue' | 'notify'): Promise<void> {
     const t = this.i18n.t();
-    const n = this.posts.waiting().length;
-    if (kind === 'skip') {
-      this.posts.setStatuses((p) => (p.status === 'waiting' ? 'skipped' : p.status));
-      this.notify.info(fmt(t.off.toastSkipped, { n }));
+    const wsId = this.ws.id();
+    if (kind === 'skip' && wsId) {
+      const r = await this.api.skipWaiting(wsId);
+      await this.posts.refresh();
+      this.notify.info(fmt(t.off.toastSkipped, { n: r.affected }));
     } else if (kind === 'queue') {
-      this.notify.info(fmt(t.off.toastQueued, { n }));
+      this.notify.info(fmt(t.off.toastQueued, { n: this.posts.waiting().length }));
     } else {
       this.notify.success(t.off.toastNotified);
     }

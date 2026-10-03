@@ -4,7 +4,116 @@
  */
 
 export interface paths {
-  '/api/posts': {
+  '/api/auth/signup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SignUpCommand'];
+          'text/json': components['schemas']['SignUpCommand'];
+          'application/*+json': components['schemas']['SignUpCommand'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AuthResultDto'];
+          };
+        };
+        /** @description Bad Request */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ValidationProblemDetails'];
+          };
+        };
+        /** @description Conflict */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ProblemDetails'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/login': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['LogInCommand'];
+          'text/json': components['schemas']['LogInCommand'];
+          'application/*+json': components['schemas']['LogInCommand'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AuthResultDto'];
+          };
+        };
+        /** @description Unauthorized */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ProblemDetails'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/me': {
     parameters: {
       query?: never;
       header?: never;
@@ -26,7 +135,288 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            'application/json': components['schemas']['PostDto'][];
+            'application/json': components['schemas']['UserDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/me/plan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ChangePlanRequest'];
+          'text/json': components['schemas']['ChangePlanRequest'];
+          'application/*+json': components['schemas']['ChangePlanRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['UserDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/engine': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['EngineSettingsDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/engine/anti-ban': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AntiBanDto'];
+          'text/json': components['schemas']['AntiBanDto'];
+          'application/*+json': components['schemas']['AntiBanDto'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['EngineSettingsDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/engine/offline': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['OfflineDto'];
+          'text/json': components['schemas']['OfflineDto'];
+          'application/*+json': components['schemas']['OfflineDto'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['EngineSettingsDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/engine/extension': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ExtensionStateRequest'];
+          'text/json': components['schemas']['ExtensionStateRequest'];
+          'application/*+json': components['schemas']['ExtensionStateRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ExtensionStateDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/engine/waiting/skip': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ExtensionStateDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/media': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MediaDto'][];
           };
         };
       };
@@ -36,24 +426,212 @@ export interface paths {
       parameters: {
         query?: never;
         header?: never;
-        path?: never;
+        path: {
+          wsId: string;
+        };
         cookie?: never;
       };
       requestBody: {
         content: {
-          'application/json': components['schemas']['CreatePostCommand'];
-          'text/json': components['schemas']['CreatePostCommand'];
-          'application/*+json': components['schemas']['CreatePostCommand'];
+          'multipart/form-data': {
+            file?: components['schemas']['IFormFile'];
+          };
         };
       };
       responses: {
-        /** @description Created */
-        201: {
+        /** @description OK */
+        200: {
           headers: {
             [name: string]: unknown;
           };
           content: {
-            'application/json': components['schemas']['PostDto'];
+            'application/json': components['schemas']['MediaDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/media/{mediaId}/content': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          mediaId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+            'application/octet-stream': unknown;
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/snippets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['SnippetDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['CreateSnippetRequest'];
+          'text/json': components['schemas']['CreateSnippetRequest'];
+          'application/*+json': components['schemas']['CreateSnippetRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['SnippetDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/posts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          from?: string;
+          to?: string;
+        };
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PostDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/posts/schedule': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ScheduleRequest'];
+          'text/json': components['schemas']['ScheduleRequest'];
+          'application/*+json': components['schemas']['ScheduleRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ScheduleResultDto'];
           };
         };
         /** @description Bad Request */
@@ -73,49 +651,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/posts/{id}': {
+  '/api/workspaces/{wsId}/posts/{postId}': {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    get: operations['GetById'];
-    put: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          id: string;
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['UpdatePostRequest'];
-          'text/json': components['schemas']['UpdatePostRequest'];
-          'application/*+json': components['schemas']['UpdatePostRequest'];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['PostDto'];
-          };
-        };
-      };
-    };
+    get?: never;
+    put?: never;
     post?: never;
     delete: {
       parameters: {
         query?: never;
         header?: never;
         path: {
-          id: string;
+          wsId: string;
+          postId: string;
         };
         cookie?: never;
       };
@@ -137,47 +689,459 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/posts/{postId}/retry': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          postId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PostDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/posts/{postId}/dismiss': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          postId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PostDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/errors': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PostDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['WorkspaceDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['CreateWorkspaceRequest'];
+          'text/json': components['schemas']['CreateWorkspaceRequest'];
+          'application/*+json': components['schemas']['CreateWorkspaceRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['WorkspaceDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/accounts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AccountDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/accounts/{accountId}/reconnect': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          accountId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AccountDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    CreatePostCommand: {
-      content: string;
-      groupUrl: string;
+    AccountDto: {
+      /** Format: uuid */
+      id: string;
+      platform: components['schemas']['Platform'];
+      name: string;
+      handle: string;
+      defaultTarget: string;
+      health: components['schemas']['AccountHealth'];
+      groups: string[];
+    };
+    /** @enum {unknown} */
+    AccountHealth: 'ok' | 'warn' | 'relogin';
+    AntiBanDto: {
+      /** Format: int32 */
+      min: number;
+      /** Format: int32 */
+      max: number;
+      limits: components['schemas']['PlatformLimitsDto'];
+      typing: boolean;
+      scroll: boolean;
+      shuffle: boolean;
+      autoPause: boolean;
+      warmup: boolean;
+    };
+    AuthResultDto: {
+      token: string;
       /** Format: date-time */
-      scheduledAt: null | string;
+      expiresAt: string;
+      user: components['schemas']['UserDto'];
+    };
+    ChangePlanRequest: {
+      plan: components['schemas']['PlanKey'];
+    };
+    CreateSnippetRequest: {
+      title: string;
+      text: string;
+    };
+    CreateWorkspaceRequest: {
+      name: string;
+    };
+    EngineSettingsDto: {
+      antiBan: components['schemas']['AntiBanDto'];
+      offline: components['schemas']['OfflineDto'];
+      extensionOnline: boolean;
+    };
+    ExtensionStateDto: {
+      online: boolean;
+      /** Format: int32 */
+      affected: number;
+    };
+    ExtensionStateRequest: {
+      online: boolean;
+    };
+    /** @enum {unknown} */
+    FailureCode:
+      | 'rate_limit'
+      | 'session'
+      | 'network'
+      | 'pending_approval'
+      | 'media_too_large'
+      | 'quota'
+      | null;
+    /** Format: binary */
+    IFormFile: string;
+    LogInCommand: {
+      email: string;
+      password: string;
+    };
+    MediaDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      contentType: string;
+      kind: components['schemas']['MediaKind'];
+      /** Format: int64 */
+      size: number;
+      /** Format: int32 */
+      usedCount: number;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    /** @enum {unknown} */
+    MediaKind: 'image' | 'video';
+    OfflineDto: {
+      policy: components['schemas']['OfflinePolicy'];
+      window: string;
+      line: boolean;
+      email: boolean;
+      push: boolean;
+    };
+    /** @enum {unknown} */
+    OfflinePolicy: 'skip' | 'queue' | 'notify';
+    /** @enum {unknown} */
+    PlanKey: 'free' | 'basic' | 'pro' | 'agency';
+    /** @enum {unknown} */
+    Platform: 'fb' | 'x' | 'ig' | 'tt' | 'line' | 'th';
+    PlatformLimitsDto: {
+      /** Format: int32 */
+      fb: number;
+      /** Format: int32 */
+      x: number;
+      /** Format: int32 */
+      ig: number;
+      /** Format: int32 */
+      tt: number;
+      /** Format: int32 */
+      line: number;
+      /** Format: int32 */
+      th: number;
     };
     PostDto: {
       /** Format: uuid */
       id: string;
+      /** Format: uuid */
+      accountId: string;
+      platform: components['schemas']['Platform'];
+      target: string;
       content: string;
-      groupUrl: string;
-      status: string;
+      mediaIds: string[];
       /** Format: date-time */
-      scheduledAt: null | string;
+      scheduledAt: string;
+      status: components['schemas']['PostStatus'];
+      failureCode: null | components['schemas']['FailureCode'];
       /** Format: date-time */
       publishedAt: null | string;
-      failureReason: null | string;
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
     };
-    UpdatePostRequest: {
+    /** @enum {unknown} */
+    PostStatus: 'queued' | 'posting' | 'success' | 'failed' | 'skipped' | 'pending' | 'waiting';
+    ProblemDetails: {
+      type?: null | string;
+      title?: null | string;
+      /** Format: int32 */
+      status?: null | number;
+      detail?: null | string;
+      instance?: null | string;
+    };
+    ScheduleRequest: {
       content: string;
+      mediaIds: null | string[];
       /** Format: date-time */
-      scheduledAt: null | string;
+      startAt: string;
+      useDelay: boolean;
+      repeat: string;
+      targets: components['schemas']['TargetSelection'][];
     };
+    ScheduleResultDto: {
+      /** Format: int32 */
+      created: number;
+      /** Format: date-time */
+      firstAt: string;
+      /** Format: date-time */
+      lastAt: string;
+    };
+    SignUpCommand: {
+      email: string;
+      password: string;
+      name: null | string;
+      plan: null | components['schemas']['PlanKey'];
+    };
+    SnippetDto: {
+      /** Format: uuid */
+      id: string;
+      title: string;
+      text: string;
+      /** Format: int32 */
+      usedCount: number;
+    };
+    TargetSelection: {
+      /** Format: uuid */
+      accountId: string;
+      groups: null | string[];
+    };
+    UserDto: {
+      /** Format: uuid */
+      id: string;
+      email: string;
+      name: string;
+      role: components['schemas']['UserRole'];
+      plan: components['schemas']['PlanKey'];
+    };
+    /** @enum {unknown} */
+    UserRole: 'user' | 'admin';
     ValidationProblemDetails: {
       type?: null | string;
       title?: null | string;
       /** Format: int32 */
-      status?: null | number | string;
+      status?: null | number;
       detail?: null | string;
       instance?: null | string;
       errors?: {
         [key: string]: string[];
       };
+    };
+    WorkspaceDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** Format: int32 */
+      posts7: number;
+      /** Format: int32 */
+      members: number;
     };
   };
   responses: never;
@@ -187,27 +1151,4 @@ export interface components {
   pathItems: never;
 }
 export type $defs = Record<string, never>;
-export interface operations {
-  GetById: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['PostDto'];
-        };
-      };
-    };
-  };
-}
+export type operations = Record<string, never>;

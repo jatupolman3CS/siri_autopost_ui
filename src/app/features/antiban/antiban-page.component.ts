@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AntiBanSettings, SettingsStore } from '../../core/data/settings.store';
 import { PlatformKey } from '../../core/data/models';
@@ -51,12 +51,12 @@ export class AntibanPageComponent {
   /** The next 5 queued posts, spaced by the current delay range. */
   protected readonly dispatch = computed(() => {
     const ab = this.ab();
-    const li = this.i18n.li();
     const fr = [0.35, 0.8, 0.5, 0.65, 0.2];
-    let cur = this.posts.now.getTime();
+    const now = this.posts.now();
+    let cur = now.getTime();
     return this.posts
       .items()
-      .filter((p) => p.status === 'queued' && p.dt > this.posts.now)
+      .filter((p) => p.status === 'queued' && p.dt > now)
       .sort((a, b) => a.dt.getTime() - b.dt.getTime())
       .slice(0, 5)
       .map((p, i) => {
@@ -66,7 +66,7 @@ export class AntibanPageComponent {
         return {
           time: hm(new Date(cur)),
           icon: platform.icon,
-          target: `${platform.name} · ${p.target[li]}`,
+          target: `${platform.name} · ${p.target}`,
           wait: `+${wait} ${this.t().common.min}`,
         };
       });
@@ -74,7 +74,7 @@ export class AntibanPageComponent {
 
   protected readonly limitRows = computed(() => {
     const ab = this.ab();
-    const used = this.settings.usedToday;
+    const used = this.settings.usedToday();
     return (Object.keys(SEED.platforms) as PlatformKey[]).map((k) => {
       const r = used[k] / ab.limits[k];
       return {
@@ -122,7 +122,15 @@ export class AntibanPageComponent {
     this.settings.patchAb({ [k]: on } as Partial<AntiBanSettings>);
   }
 
-  protected save(): void {
-    this.notify.success(this.t().ab.saved);
+  protected readonly saving = signal(false);
+
+  protected async save(): Promise<void> {
+    this.saving.set(true);
+    try {
+      await this.settings.saveAb();
+      this.notify.success(this.t().ab.saved);
+    } finally {
+      this.saving.set(false);
+    }
   }
 }

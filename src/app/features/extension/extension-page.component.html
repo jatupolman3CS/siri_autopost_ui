@@ -32,8 +32,8 @@
         <div class="pop-body">
           <div>
             <div class="small muted">{{ t().ext.connectedTo }}</div>
-            <div class="fw6">{{ team.current().name }}</div>
-            <div class="small muted">{{ session.user.email }}</div>
+            <div class="fw6">{{ workspaces.current()?.name }}</div>
+            <div class="small muted">{{ session.email() }}</div>
           </div>
           <div class="next">
             <div class="next-head small muted">

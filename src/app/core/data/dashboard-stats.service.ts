@@ -1,10 +1,12 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { dayNames, dkey, fmtDate, hm } from '../i18n/format';
-import { I18nService } from '../i18n/i18n.service';
-import { CLOCK } from './clock';
+import { Dict, I18nService } from '../i18n/i18n.service';
+import { AccountsStore } from './accounts.store';
 import { HEALTH_DOT } from './models';
-import { PostsStore } from './posts.store';
+import { PostsStore, QueueItem, postRow } from './posts.store';
 import { SEED } from './seed.data';
+
+const DAY_MS = 864e5;
 
 export interface Kpi {
   label: string;
@@ -12,44 +14,48 @@ export interface Kpi {
   note: string;
 }
 
-// Figures shown on the overview (and the landing page preview), derived from the posts store.
+/** Success/failure counts of the 7 days before now, and today's remaining queue. */
+export function kpisOf(items: QueueItem[], today: QueueItem[], now: Date, t: Dict): Kpi[] {
+  const to = now.getTime();
+  const from = to - 7 * DAY_MS;
+  const in7 = items.filter((p) => p.dt.getTime() >= from && p.dt.getTime() <= to);
+  const ok = in7.filter((p) => p.status === 'success').length;
+  const fail = in7.filter((p) => p.status === 'failed').length;
+  const rate = ok + fail ? Math.round((ok / (ok + fail)) * 1000) / 10 : 100;
+  const queued = today.filter((p) => p.status === 'queued' || p.status === 'waiting').length;
+  return [
+    { label: t.ov.kSuccess, value: ok, note: t.ov.last7 },
+    { label: t.ov.kFailed, value: fail, note: t.ov.last7 },
+    { label: t.ov.kRate, value: rate + '%', note: t.ov.target },
+    { label: t.ov.kQueued, value: queued, note: t.ov.remaining },
+  ];
+}
+
+/** Today's queue: two finished posts before the first live one, eight rows in all. */
+export function queueRowsOf(today: QueueItem[], t: Dict) {
+  const firstLive = today.findIndex((p) => ['posting', 'queued', 'waiting'].includes(p.status));
+  const start = Math.max(0, (firstLive < 0 ? today.length : firstLive) - 2);
+  return today.slice(start, start + 8).map((p) => postRow(p, t));
+}
+
+// Figures shown on the overview, derived from the posts and accounts stores.
+// The landing page preview uses kpisOf/queueRowsOf on sample posts instead.
 @Injectable({ providedIn: 'root' })
 export class DashboardStatsService {
   private readonly posts = inject(PostsStore);
+  private readonly accounts = inject(AccountsStore);
   private readonly i18n = inject(I18nService);
 
-  readonly kpis = computed<Kpi[]>(() => {
-    const t = this.i18n.t();
-    const now = this.posts.now.getTime();
-    const from = now - 7 * CLOCK.DAY_MS;
-    const in7 = this.posts.items().filter((p) => p.dt.getTime() >= from && p.dt.getTime() <= now);
-    const ok = in7.filter((p) => p.status === 'success').length;
-    const fail = in7.filter((p) => p.status === 'failed').length;
-    const rate = ok + fail ? Math.round((ok / (ok + fail)) * 1000) / 10 : 100;
-    const queued = this.posts
-      .today()
-      .filter((p) => p.status === 'queued' || p.status === 'waiting').length;
-    return [
-      { label: t.ov.kSuccess, value: ok, note: t.ov.last7 },
-      { label: t.ov.kFailed, value: fail, note: t.ov.last7 },
-      { label: t.ov.kRate, value: rate + '%', note: t.ov.target },
-      { label: t.ov.kQueued, value: queued, note: t.ov.remaining },
-    ];
-  });
+  readonly kpis = computed<Kpi[]>(() =>
+    kpisOf(this.posts.items(), this.posts.today(), this.posts.now(), this.i18n.t()),
+  );
 
-  /** Today's queue: two finished posts before the first live one, eight rows in all. */
-  readonly queueRows = computed(() => {
-    const { li, t } = { li: this.i18n.li(), t: this.i18n.t() };
-    const today = this.posts.today();
-    const firstLive = today.findIndex((p) => ['posting', 'queued', 'waiting'].includes(p.status));
-    const start = Math.max(0, (firstLive < 0 ? today.length : firstLive) - 2);
-    return today.slice(start, start + 8).map((p) => this.posts.row(p, li, t));
-  });
+  readonly queueRows = computed(() => queueRowsOf(this.posts.today(), this.i18n.t()));
 
   readonly nextInMin = computed(() => {
     const nxt = this.posts.next();
     return nxt
-      ? Math.max(1, Math.round((nxt.dt.getTime() - this.posts.now.getTime()) / 60000))
+      ? Math.max(1, Math.round((nxt.dt.getTime() - this.posts.now().getTime()) / 60000))
       : null;
   });
 
@@ -58,7 +64,7 @@ export class DashboardStatsService {
     const li = this.i18n.li();
     const raw = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(this.posts.now.getTime() - i * CLOCK.DAY_MS);
+      const d = new Date(this.posts.now().getTime() - i * DAY_MS);
       const list = this.posts.byDay().get(dkey(d)) ?? [];
       const ok = list.filter((p) => p.status === 'success').length;
       const fail = list.filter((p) => p.status === 'failed').length;
@@ -75,17 +81,14 @@ export class DashboardStatsService {
   });
 
   readonly accountRows = computed(() => {
-    const { li, t } = { li: this.i18n.li(), t: this.i18n.t() };
-    return SEED.accounts.map((a) => {
-      const h = this.posts.health(a.id);
-      return {
-        icon: SEED.platforms[a.platform].icon,
-        name: a.name,
-        handle: a.handle[li],
-        dot: HEALTH_DOT[h],
-        healthLabel: t.health[h],
-      };
-    });
+    const t = this.i18n.t();
+    return this.accounts.list().map((a) => ({
+      icon: SEED.platforms[a.platform].icon,
+      name: a.name,
+      handle: a.handle,
+      dot: HEALTH_DOT[a.health],
+      healthLabel: t.health[a.health],
+    }));
   });
 
   readonly recentErrors = computed(() => {
@@ -95,7 +98,7 @@ export class DashboardStatsService {
       .slice(0, 2)
       .map((e) => ({
         title: t.reasons[e.code].title,
-        meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${SEED.platforms[e.platform].name} · ${e.target[li]}`,
+        meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${SEED.platforms[e.platform].name} · ${e.target}`,
       }));
   });
 }

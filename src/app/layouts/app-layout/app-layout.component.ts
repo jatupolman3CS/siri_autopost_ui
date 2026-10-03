@@ -4,7 +4,8 @@ import { ExtensionStore } from '../../core/data/extension.store';
 import { PostsStore } from '../../core/data/posts.store';
 import { SessionStore } from '../../core/data/session.store';
 import { SettingsStore } from '../../core/data/settings.store';
-import { TeamStore } from '../../core/data/team.store';
+import { WorkspaceStore } from '../../core/data/workspace.store';
+import { hm } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { LangThemeSwitchComponent } from '../lang-theme-switch.component';
@@ -32,7 +33,7 @@ export class AppLayoutComponent {
   protected readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
   protected readonly session = inject(SessionStore);
-  protected readonly team = inject(TeamStore);
+  protected readonly workspaces = inject(WorkspaceStore);
   protected readonly ext = inject(ExtensionStore);
   private readonly posts = inject(PostsStore);
   private readonly settings = inject(SettingsStore);
@@ -97,6 +98,10 @@ export class AppLayoutComponent {
   });
 
   protected readonly planName = computed(() => this.t().plans[this.session.plan()].name);
+  protected readonly bannerTitle = computed(() => {
+    const since = this.ext.offlineSince();
+    return since ? fmt(this.t().api.offlineSince, { t: hm(since) }) : this.t().top.extOffline;
+  });
   protected readonly bannerBody = computed(() =>
     fmt(this.t().top.bannerBody, {
       n: this.posts.waiting().length,
@@ -109,7 +114,7 @@ export class AppLayoutComponent {
   }
 
   protected switchWs(id: string): void {
-    const ws = this.team.switchTo(id);
+    const ws = this.workspaces.switchTo(id);
     this.wsMenu.set(false);
     if (ws) this.notify.info(fmt(this.t().team.switched, { ws: ws.name }));
   }

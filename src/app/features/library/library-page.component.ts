@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router } from '@angular/router';
 import { DraftStore } from '../../core/data/draft.store';
 import { LibraryStore } from '../../core/data/library.store';
-import { AP_I18N } from '../../core/i18n/i18n.data';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
@@ -23,9 +22,22 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
           <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="openSnippet()">
             <i class="ph ph-text-t"></i>{{ t().lib.newSnippet }}
           </button>
-          <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="upload()">
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-primary"
+            [disabled]="uploading()"
+            (click)="picker.click()"
+          >
             <i class="ph ph-upload-simple"></i>{{ t().lib.upload }}
           </button>
+          <input
+            #picker
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            hidden
+            (change)="upload(picker)"
+          />
         </div>
       </div>
 
@@ -54,7 +66,13 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
         <div class="grid g180">
           @for (m of mediaRows(); track m.id) {
             <div class="panel panel-hover card">
-              <div class="thumb"><i class="ph" [class]="m.icon"></i></div>
+              <div class="thumb">
+                @if (m.src) {
+                  <img [src]="m.src" alt="" />
+                } @else {
+                  <i class="ph" [class]="m.icon"></i>
+                }
+              </div>
               <div class="fw5 fs14 ellipsis">{{ m.label }}</div>
               <div class="small muted">{{ m.meta }}</div>
               <div class="small muted">{{ m.used }}</div>
@@ -157,6 +175,12 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
       justify-content: center;
       color: var(--color-text-muted);
       font-size: 32px;
+      overflow: hidden;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
     }
     .grow-p {
       margin: 0;
@@ -189,25 +213,27 @@ export class LibraryPageComponent {
   protected readonly formText = signal('');
   protected readonly formErr = signal('');
 
+  protected readonly uploading = signal(false);
+
   protected readonly mediaRows = computed(() => {
-    const li = this.i18n.li();
+    const thumbs = this.library.thumbs();
     return this.library.media().map((m) => ({
       id: m.id,
       icon: m.kind === 'video' ? 'ph-video' : 'ph-image',
-      label: m.label[li],
+      src: thumbs[m.id] ?? null,
+      label: m.name,
       meta: m.meta,
       used: fmt(this.t().lib.usedN, { n: m.used }),
     }));
   });
-  protected readonly snippetRows = computed(() => {
-    const li = this.i18n.li();
-    return this.library.snippets().map((s) => ({
+  protected readonly snippetRows = computed(() =>
+    this.library.snippets().map((s) => ({
       id: s.id,
-      title: s.title[li],
-      text: s.text[li],
+      title: s.title,
+      text: s.text,
       used: fmt(this.t().lib.usedN, { n: s.used }),
-    }));
-  });
+    })),
+  );
 
   protected openSnippet(): void {
     this.formTitle.set('');
@@ -216,23 +242,34 @@ export class LibraryPageComponent {
     this.modal.set(true);
   }
 
-  protected saveSnippet(): void {
+  protected async saveSnippet(): Promise<void> {
     const title = this.formTitle().trim();
     const text = this.formText().trim();
     if (!title || !text) {
       this.formErr.set(this.t().lib.errTitle);
       return;
     }
-    this.library.addSnippet(title, text);
+    await this.library.addSnippet(title, text);
     this.modal.set(false);
     this.tab.set('text');
     this.notify.success(this.t().lib.added);
   }
 
-  protected upload(): void {
-    this.library.addSampleMedia(AP_I18N.lib.newFile);
+  protected async upload(input: HTMLInputElement): Promise<void> {
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (!files.length) return;
+    this.uploading.set(true);
     this.tab.set('media');
-    this.notify.success(this.t().lib.uploaded);
+    const a = this.t().api;
+    if (files.length > 1) this.notify.info(fmt(a.uploading, { n: files.length }));
+    try {
+      const ok = await this.library.upload(files);
+      if (ok) this.notify.success(fmt(a.uploaded, { n: ok }));
+      if (ok < files.length) this.notify.error(a.uploadFailed);
+    } finally {
+      this.uploading.set(false);
+    }
   }
 
   protected useMedia(id: string): void {

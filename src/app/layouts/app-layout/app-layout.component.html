@@ -47,16 +47,16 @@
           [attr.aria-expanded]="wsMenu()"
         >
           <i class="ph ph-buildings muted"></i>
-          <span class="ellipsis">{{ team.current().name }}</span>
+          <span class="ellipsis">{{ workspaces.current()?.name ?? t().api.loading }}</span>
           <i class="ph ph-caret-down muted caret"></i>
         </button>
         @if (wsMenu()) {
           <div class="scrim" (click)="wsMenu.set(false)"></div>
           <div class="ws-menu">
-            @for (w of team.workspaces(); track w.id) {
-              <button type="button" [class.cur]="w.id === team.wsId()" (click)="switchWs(w.id)">
+            @for (w of workspaces.list(); track w.id) {
+              <button type="button" [class.cur]="w.id === workspaces.id()" (click)="switchWs(w.id)">
                 <span>{{ w.name }}</span>
-                @if (w.id === team.wsId()) {
+                @if (w.id === workspaces.id()) {
                   <i class="ph ph-check"></i>
                 }
               </button>
@@ -79,7 +79,7 @@
           <i class="ph ph-shield-star icon-only"></i>
         </span>
       }
-      <div class="avatar">{{ session.user.initials }}</div>
+      <div class="avatar" [title]="session.email()">{{ session.initials() }}</div>
       <button
         type="button"
         class="icon-btn logout"
@@ -95,7 +95,7 @@
       <div class="banner">
         <i class="ph ph-wifi-slash"></i>
         <div class="banner-text">
-          <div class="fw6">{{ t().top.bannerTitle }}</div>
+          <div class="fw6">{{ bannerTitle() }}</div>
           <div class="muted">{{ bannerBody() }}</div>
         </div>
         <div class="actions">

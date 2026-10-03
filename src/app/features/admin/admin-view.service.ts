@@ -9,7 +9,7 @@ import {
   STATUS_DOT,
   TxType,
 } from '../../core/data/models';
-import { CONTENTS } from '../../core/data/posts.store';
+import { CONTENTS } from '../../core/data/sample';
 import { SEED } from '../../core/data/seed.data';
 import { baht, displayYear, fmtDate, hm, monthName } from '../../core/i18n/format';
 import { I18nService } from '../../core/i18n/i18n.service';

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ExtensionStore } from '../../core/data/extension.store';
 import { PostsStore } from '../../core/data/posts.store';
 import { OfflinePolicy, OfflineSettings, SettingsStore } from '../../core/data/settings.store';
@@ -18,7 +18,12 @@ import { SelectFieldComponent } from '../../shared/components/select-field/selec
           <h1>{{ t().off.title }}</h1>
           <p>{{ t().off.sub }}</p>
         </div>
-        <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="save()">
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-primary"
+          [disabled]="saving()"
+          (click)="save()"
+        >
           {{ t().common.save }}
         </button>
       </div>
@@ -92,6 +97,7 @@ import { SelectFieldComponent } from '../../shared/components/select-field/selec
               class="su-btn su-btn-sm"
               [class.su-btn-secondary]="ext.online()"
               [class.su-btn-primary]="!ext.online()"
+              [disabled]="ext.busy()"
               (click)="ext.toggleOnline()"
             >
               {{ ext.online() ? t().off.simOff : t().off.simOn }}
@@ -235,16 +241,23 @@ export class OfflinePageComponent {
   });
 
   protected readonly waitingRows = computed(() => {
-    const li = this.i18n.li();
     const t = this.t();
-    return this.posts.waiting().map((p) => this.posts.row(p, li, t));
+    return this.posts.waiting().map((p) => this.posts.row(p, t));
   });
 
   protected set(patch: Partial<OfflineSettings>): void {
     this.settings.patchOff(patch);
   }
 
-  protected save(): void {
-    this.notify.success(this.t().off.saved);
+  protected readonly saving = signal(false);
+
+  protected async save(): Promise<void> {
+    this.saving.set(true);
+    try {
+      await this.settings.saveOff();
+      this.notify.success(this.t().off.saved);
+    } finally {
+      this.saving.set(false);
+    }
   }
 }

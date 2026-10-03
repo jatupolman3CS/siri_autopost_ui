@@ -15,29 +15,37 @@ Frontend ของ **AutoPost** สร้างตามดีไซน์ "Auto
 | เจ้าของแพลตฟอร์ม (admin) | ภาพรวมแพลตฟอร์ม, ลูกค้า + รายละเอียดลูกค้า, การเงิน, แผนและโค้ดส่วนลด, งานที่กำลังรัน |
 | ตัวอย่าง | หน้าต่างส่วนขยาย (popup) |
 
-**สถานะข้อมูล:** ตอนนี้ทุกหน้าใช้ข้อมูลตัวอย่างจากดีไซน์ (เก็บในหน่วยความจำของเบราว์เซอร์ รีเฟรชแล้วรีเซ็ต) ยกเว้นการเข้าสู่ระบบ/แผน ภาษา และธีมที่จำไว้ใน localStorage
-การเข้าสู่ระบบยังไม่ต่อ backend: ใส่อีเมลใดก็ได้ แล้วเลือก "ผู้ใช้งาน (ร้านค้า)" หรือ "ผู้ดูแลแพลตฟอร์ม" (เหมือนต้นแบบในดีไซน์)
+**สถานะข้อมูล:** หน้าเวิร์กสเปซและระบบโพสต์อัตโนมัติใช้ข้อมูลจริงจาก `SIRIAUTOPOST.Api` (repo `siri_autopost_backend`):
+สมัคร/เข้าสู่ระบบ (JWT), เวิร์กสเปซ, บัญชีโซเชียล, ตั้งเวลาโพสต์/แก้/ลบ, ปฏิทิน, รายงานข้อผิดพลาด (ลองใหม่/ข้าม/เชื่อมต่อใหม่), อัปโหลดสื่อและข้อความสำเร็จรูป, ตั้งค่า anti-ban และเมื่อออฟไลน์, จำลองส่วนขยายออฟไลน์ และเปลี่ยนแผน
+
+ยังเป็น **ข้อมูลตัวอย่าง** (ยังไม่มี API): สมาชิกทีมและอุปกรณ์, การชำระเงิน (บัตร/ใบแจ้งหนี้), หน้าเจ้าของแพลตฟอร์ม (admin) ทั้งหมด, ตัวอย่างหน้าต่างส่วนขยาย และภาพตัวอย่างบนหน้าแรก
+เวิร์กสเปซใหม่จะมีบัญชีโซเชียลและประวัติโพสต์ตัวอย่างให้ลองใช้ เพราะยังเชื่อมบัญชีผ่านส่วนขยายไม่ได้ และยังไม่มีตัวโพสต์จริง (โพสต์ที่ตั้งเวลาไว้จะอยู่สถานะ "รอโพสต์")
 
 ## เริ่มพัฒนา
 
 ต้องใช้ Node.js **22.22.3+** หรือ **24.15+**
 
+ต้องรัน API ก่อน (ดู README ของ `siri_autopost_backend`: `cd src/SIRIAUTOPOST.Api && dotnet run` ที่ http://localhost:5100) แล้ว:
+
 ```bash
 npm install
-npm start          # http://localhost:4200
+npm start          # http://localhost:4200 (ส่ง /api ไปที่ http://localhost:5100)
 npm test           # unit test (Vitest)
 npm run build      # -> dist/siri-autopost-ui/browser
+npm run gen:api    # สร้าง type ของ API ใหม่จาก openapi.snapshot.json
 ```
+
+บัญชีผู้ดูแลตอนพัฒนา: `admin@autopost.local` / `admin1234` หรือสมัครบัญชีใหม่ได้ที่ `/signup` (รหัสผ่านอย่างน้อย 8 ตัวอักษร)
 
 ## โครงสร้าง
 
 ```text
 src/app/
 ├── core/
-│   ├── data/        # store ของแต่ละโดเมน (posts, settings, library, team, admin, extension, session, draft) + ข้อมูลตัวอย่าง
+│   ├── data/        # store ของแต่ละโดเมน (session, workspace, accounts, posts, settings, library, extension, draft, team, admin) + ข้อมูลตัวอย่าง
 │   ├── i18n/        # พจนานุกรม TH/EN (สร้างจากดีไซน์), I18nService, ตัวจัดรูปแบบวันที่/เงิน
-│   ├── auth/        # route guards
-│   ├── http/        # interceptor + type ของ API (สำหรับเฟสต่อ backend)
+│   ├── auth/        # route guards, token, auth interceptor
+│   ├── http/        # ApiService, error interceptor, type ของ API (api-schema.ts)
 │   └── services/    # ThemeService, NotificationService (toast)
 ├── shared/components/  # ชิ้นส่วนของ design system: modal, input, select, checkbox, empty state, plan cards
 ├── layouts/         # public-layout (header หน้าสาธารณะ), app-layout (sidebar + top bar + แถบออฟไลน์)

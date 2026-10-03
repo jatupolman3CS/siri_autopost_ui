@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { AccountsStore } from '../../core/data/accounts.store';
 import { Draft, DraftStore } from '../../core/data/draft.store';
 import { LibraryStore } from '../../core/data/library.store';
-import { PlatformKey, PostItem } from '../../core/data/models';
+import { PlatformKey, SocialAccount } from '../../core/data/models';
 import { PostsStore } from '../../core/data/posts.store';
 import { SEED } from '../../core/data/seed.data';
 import { SettingsStore } from '../../core/data/settings.store';
@@ -15,26 +16,38 @@ import { SelectFieldComponent } from '../../shared/components/select-field/selec
 interface Task {
   a: string;
   p: PlatformKey;
-  t: readonly [string, string];
+  t: string;
 }
 
 /** One task per selected account; accounts that post to groups get one per selected group. */
-function taskList(d: Draft): Task[] {
+function taskList(d: Draft, accounts: SocialAccount[]): Task[] {
   const out: Task[] = [];
-  for (const a of SEED.accounts) {
-    if (!d.targets[a.id]) continue;
-    if (a.hasGroups) d.groups.forEach((g) => out.push({ a: a.id, p: a.platform, t: [g, g] }));
-    else {
-      const tg = SEED.targets.find((x) => x.a === a.id);
-      out.push({ a: a.id, p: a.platform, t: tg ? tg.t : ['', ''] });
-    }
+  for (const a of accounts) {
+    if (!d.targets[a.id] || a.health === 'relogin') continue;
+    if (a.groups.length)
+      d.groups
+        .filter((g) => a.groups.includes(g))
+        .forEach((g) => out.push({ a: a.id, p: a.platform, t: g }));
+    else out.push({ a: a.id, p: a.platform, t: a.defaultTarget });
   }
   return out;
 }
 
+/** Local wall-clock time with its UTC offset, so the server repeats on the user's weekdays. */
+export function localIso(d: Date): string {
+  const pad = (n: number) => String(Math.abs(n)).padStart(2, '0');
+  const off = -d.getTimezoneOffset();
+  const sign = off >= 0 ? '+' : '-';
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:00` +
+    `${sign}${pad(Math.trunc(off / 60))}:${pad(off % 60)}`
+  );
+}
+
 @Component({
   selector: 'app-composer-page',
-  imports: [CheckboxComponent, InputFieldComponent, SelectFieldComponent],
+  imports: [RouterLink, CheckboxComponent, InputFieldComponent, SelectFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './composer-page.component.html',
   styleUrl: './composer-page.component.scss',
@@ -43,46 +56,49 @@ export class ComposerPageComponent {
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   private readonly posts = inject(PostsStore);
+  private readonly accounts = inject(AccountsStore);
   private readonly library = inject(LibraryStore);
   private readonly settings = inject(SettingsStore);
   private readonly i18n = inject(I18nService);
   protected readonly store = inject(DraftStore);
   protected readonly t = this.i18n.t;
   protected readonly d = this.store.draft;
-  protected readonly groups = SEED.groups;
+  protected readonly groups = this.accounts.allGroups;
+  protected readonly busy = signal(false);
 
   protected readonly snippetOptions = computed(() =>
-    this.library.snippets().map((s) => ({ value: s.id, label: s.title[this.i18n.li()] })),
+    this.library.snippets().map((s) => ({ value: s.id, label: s.title })),
   );
 
   protected readonly mediaPick = computed(() =>
     this.library.media().map((m) => ({
       id: m.id,
-      label: m.label[this.i18n.li()],
+      label: m.name,
+      src: this.library.thumbs()[m.id] ?? null,
       icon: m.kind === 'video' ? 'ph-video' : 'ph-image',
       selected: this.d().media.includes(m.id),
     })),
   );
 
   protected readonly targetRows = computed(() => {
-    const li = this.i18n.li();
     const d = this.d();
-    return SEED.accounts.map((a) => {
-      const checked = !!d.targets[a.id];
-      const disabled = this.posts.health(a.id) === 'relogin';
+    return this.accounts.list().map((a) => {
+      const disabled = a.health === 'relogin';
+      const checked = !!d.targets[a.id] && !disabled;
       return {
         id: a.id,
         icon: SEED.platforms[a.platform].icon,
-        label: `${a.name} · ${a.handle[li]}`,
+        label: `${a.name} · ${a.handle}`,
         checked,
         disabled,
-        showGroups: !!a.hasGroups && checked,
+        groups: a.groups,
+        showGroups: a.groups.length > 0 && checked,
         needsLogin: disabled,
       };
     });
   });
   protected readonly groupsSel = computed(() =>
-    fmt(this.t().cmp.groupsSel, { n: this.d().groups.length, m: SEED.groups.length }),
+    fmt(this.t().cmp.groupsSel, { n: this.d().groups.length, m: this.groups().length }),
   );
 
   protected readonly repeatOptions = computed(() => {
@@ -102,7 +118,7 @@ export class ComposerPageComponent {
   /** "Creates N tasks across P platforms between HH:MM–HH:MM". */
   protected readonly summary = computed(() => {
     const d = this.d();
-    const tasks = taskList(d);
+    const tasks = taskList(d, this.accounts.list());
     if (!tasks.length) return this.t().cmp.summaryEmpty;
     const ab = this.settings.ab();
     const [h, m] = (d.time || '00:00').split(':').map(Number);
@@ -122,7 +138,7 @@ export class ComposerPageComponent {
 
   protected insertSnippet(id: string): void {
     const s = this.library.snippets().find((x) => x.id === id);
-    if (s) this.store.appendText(s.text[this.i18n.li()]);
+    if (s) this.store.appendText(s.text);
   }
 
   protected toggleMedia(id: string): void {
@@ -133,22 +149,27 @@ export class ComposerPageComponent {
   }
 
   protected setTarget(id: string, on: boolean): void {
-    this.store.patch({ targets: { ...this.d().targets, [id]: on }, errTargets: '' });
+    this.store.patch({
+      targets: { ...this.d().targets, [id]: on },
+      autoTargets: false,
+      errTargets: '',
+    });
   }
 
   protected toggleGroup(g: string): void {
     const groups = this.d().groups;
     this.store.patch({
       groups: groups.includes(g) ? groups.filter((x) => x !== g) : [...groups, g],
+      autoTargets: false,
     });
   }
 
   protected selectAllGroups(): void {
-    this.store.patch({ groups: [...SEED.groups] });
+    this.store.patch({ groups: [...this.groups()], autoTargets: false });
   }
 
   protected clearGroups(): void {
-    this.store.patch({ groups: [] });
+    this.store.patch({ groups: [], autoTargets: false });
   }
 
   protected setRepeat(v: string): void {
@@ -159,40 +180,45 @@ export class ComposerPageComponent {
     this.notify.info(this.t().cmp.toastDraft);
   }
 
-  /** Validates, then queues one task per target, spaced by the workspace smart delay. */
-  protected submit(): void {
+  /** Validates, then asks the server to queue one task per target, spaced by the smart delay. */
+  protected async submit(): Promise<void> {
+    if (this.busy()) return;
     const t = this.t().cmp;
     const d = this.d();
     const [y, mo, da] = d.date.split('-').map(Number);
     const [hh, mm] = (d.time || '00:00').split(':').map(Number);
     const start = new Date(y, mo - 1, da, hh, mm);
-    const tasks = taskList(d);
+    const tasks = taskList(d, this.accounts.list());
     const errs = {
       errText: d.text.trim() ? '' : t.errText,
       errTargets: tasks.length ? '' : t.errTargets,
-      errTime: isNaN(start.getTime()) || start <= this.posts.now ? t.errTime : '',
+      errTime: isNaN(start.getTime()) || start <= new Date() ? t.errTime : '',
     };
     if (errs.errText || errs.errTargets || errs.errTime) {
       this.store.patch(errs);
       return;
     }
-    const ab = this.settings.ab();
-    let cur = start.getTime();
-    const add: PostItem[] = tasks.map((tk, i) => {
-      if (i > 0 && d.useDelay) cur += (ab.min + Math.random() * (ab.max - ab.min)) * 60000;
-      return {
-        id: `n${Date.now()}-${i}`,
-        dt: new Date(cur),
-        accountId: tk.a,
-        platform: tk.p,
-        target: tk.t,
-        text: d.text.trim(),
-        status: 'queued',
-      };
-    });
-    this.posts.add(add);
-    this.store.reset();
-    this.notify.success(fmt(t.toastDone, { n: add.length }));
-    void this.router.navigate(['/app/calendar'], { queryParams: { day: d.date } });
+    const byAccount = new Map<string, string[]>();
+    for (const tk of tasks) byAccount.set(tk.a, [...(byAccount.get(tk.a) ?? []), tk.t]);
+    this.busy.set(true);
+    try {
+      const created = await this.posts.schedule({
+        content: d.text.trim(),
+        mediaIds: d.media,
+        startAt: localIso(start),
+        useDelay: d.useDelay,
+        repeat: d.repeat,
+        targets: [...byAccount.keys()].map((accountId) => {
+          const a = this.accounts.byId(accountId);
+          return { accountId, groups: a?.groups.length ? byAccount.get(accountId)! : null };
+        }),
+      });
+      if (d.replaces) await this.posts.remove(d.replaces).catch(() => undefined);
+      this.store.reset();
+      this.notify.success(fmt(t.toastDone, { n: created }));
+      void this.router.navigate(['/app/calendar'], { queryParams: { day: d.date } });
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

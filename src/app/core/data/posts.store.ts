@@ -1,11 +1,10 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { dkey, hm } from '../i18n/format';
 import { Dict } from '../i18n/i18n.service';
-import { CLOCK, seedDate } from './clock';
-import { ErrorItem, Health, L10n, PostItem, PostStatus, STATUS_DOT } from './models';
+import { ApiPost, ApiScheduleRequest, ApiService } from '../http/api.service';
+import { ErrorItem, PostItem, STATUS_DOT } from './models';
 import { SEED } from './seed.data';
-
-export const CONTENTS: L10n[] = SEED.posts.map((p) => p.text);
+import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
 /** What a queue/list row shows for one post. */
 export interface PostRow {
@@ -25,49 +24,77 @@ export interface QueueItem extends PostItem {
   time: string;
 }
 
-// Posting tasks (queue, history) and failed tasks. In-memory for now, seeded from the
-// design handoff; the shape mirrors what the posting API will return.
+export function toItem(p: ApiPost): PostItem {
+  return {
+    id: p.id,
+    dt: new Date(p.scheduledAt),
+    accountId: p.accountId,
+    platform: p.platform,
+    target: p.target,
+    text: p.content,
+    mediaIds: p.mediaIds,
+    status: p.status,
+    code: p.failureCode ?? null,
+  };
+}
+
+export function withDay(p: PostItem): QueueItem {
+  return { ...p, key: dkey(p.dt), time: hm(p.dt) };
+}
+
+export function postRow(p: PostItem, t: Dict): PostRow {
+  const platform = SEED.platforms[p.platform];
+  return {
+    id: p.id,
+    time: hm(p.dt),
+    icon: platform.icon,
+    platformName: platform.name,
+    text: p.text,
+    target: p.target,
+    dot: STATUS_DOT[p.status],
+    statusLabel: t.status[p.status],
+  };
+}
+
+/** Posts grouped by local day key, each day sorted by time. */
+export function groupByDay(items: QueueItem[]): Map<string, QueueItem[]> {
+  const map = new Map<string, QueueItem[]>();
+  for (const p of items) {
+    const list = map.get(p.key) ?? [];
+    list.push(p);
+    map.set(p.key, list);
+  }
+  for (const list of map.values()) list.sort((a, b) => a.dt.getTime() - b.dt.getTime());
+  return map;
+}
+
+const monthKey = (y: number, m: number) => `${y}-${m}`;
+
+// Posting tasks (queue and history) and open error reports of the current workspace.
+// Posts load a calendar month at a time: the months around today first, then whichever
+// month the calendar shows (ensureMonth). Every change re-reads the loaded months.
 @Injectable({ providedIn: 'root' })
 export class PostsStore {
-  readonly now = CLOCK.now;
-  readonly todayKey = dkey(CLOCK.now);
+  private readonly api = inject(ApiService);
+  private readonly ws = inject(WorkspaceStore);
 
-  private readonly _posts = signal<PostItem[]>(generatePosts());
-  private readonly _errors = signal<ErrorItem[]>(
-    SEED.failed.map((f) => ({ ...f, dt: seedDate(f.dt), status: 'failed' as PostStatus })),
-  );
-  private readonly _accHealth = signal<Record<string, Health>>({});
+  /** The current minute; ticks so "next post in N min" and today's queue stay fresh. */
+  readonly now = signal(minuteNow());
+  readonly todayKey = computed(() => dkey(this.now()));
+
+  private readonly _posts = signal<PostItem[]>([]);
+  private readonly _errors = signal<ErrorItem[]>([]);
+  private loaded = new Set<string>();
 
   readonly posts = this._posts.asReadonly();
+  /** Open error reports (failed, or held for group approval), newest first. */
   readonly errors = this._errors.asReadonly();
+  /** Errors that need action (approval-pending posts are only waiting on admins). */
   readonly openErrors = computed(() => this._errors().filter((e) => e.code !== 'pending_approval'));
 
-  /** Posts and error reports together, each with its day key and HH:MM. */
-  readonly items = computed<QueueItem[]>(() =>
-    this._posts()
-      .map((p) => ({ ...p, key: dkey(p.dt), time: hm(p.dt) }))
-      .concat(
-        this._errors().map((e) => ({
-          ...e,
-          status: (e.code === 'pending_approval' ? 'pending' : 'failed') as PostStatus,
-          key: dkey(e.dt),
-          time: hm(e.dt),
-        })),
-      ),
-  );
-
-  readonly byDay = computed(() => {
-    const map = new Map<string, QueueItem[]>();
-    for (const p of this.items()) {
-      const list = map.get(p.key) ?? [];
-      list.push(p);
-      map.set(p.key, list);
-    }
-    for (const list of map.values()) list.sort((a, b) => a.dt.getTime() - b.dt.getTime());
-    return map;
-  });
-
-  readonly today = computed(() => this.byDay().get(this.todayKey) ?? []);
+  readonly items = computed<QueueItem[]>(() => this._posts().map(withDay));
+  readonly byDay = computed(() => groupByDay(this.items()));
+  readonly today = computed(() => this.byDay().get(this.todayKey()) ?? []);
   readonly waiting = computed(() =>
     this._posts()
       .filter((p) => p.status === 'waiting')
@@ -75,120 +102,101 @@ export class PostsStore {
   );
   /** Next queued post after now. */
   readonly next = computed(() =>
-    this.today().find((p) => p.status === 'queued' && p.dt > this.now),
+    this.today().find((p) => p.status === 'queued' && p.dt > this.now()),
   );
 
-  text(p: PostItem, li: number): string {
-    return p.text !== undefined ? p.text : CONTENTS[p.cidx ?? 0][li];
+  constructor() {
+    if (typeof window !== 'undefined') setInterval(() => this.now.set(minuteNow()), 30_000);
+    whenWorkspaceChanges((id) => {
+      this.loaded = new Set();
+      this._posts.set([]);
+      this._errors.set([]);
+      if (!id) return;
+      const n = this.now();
+      for (const d of [-1, 0, 1]) void this.ensureMonth(n.getFullYear(), n.getMonth() + d);
+      void this.loadErrors();
+    });
   }
 
-  row(p: PostItem, li: number, t: Dict): PostRow {
-    const platform = SEED.platforms[p.platform];
-    return {
-      id: p.id,
-      time: hm(p.dt),
-      icon: platform.icon,
-      platformName: platform.name,
-      text: this.text(p, li),
-      target: p.target[li],
-      dot: STATUS_DOT[p.status],
-      statusLabel: t.status[p.status],
-    };
+  row(p: PostItem, t: Dict): PostRow {
+    return postRow(p, t);
   }
 
-  health(accountId: string): Health {
-    return (
-      this._accHealth()[accountId] ?? SEED.accounts.find((a) => a.id === accountId)?.health ?? 'ok'
-    );
+  /** Loads one calendar month (m may be out of 0..11; it is normalized). */
+  async ensureMonth(y: number, m: number, force = false): Promise<void> {
+    const wsId = this.ws.id();
+    const from = new Date(y, m, 1);
+    const key = monthKey(from.getFullYear(), from.getMonth());
+    if (!wsId || (!force && this.loaded.has(key))) return;
+    this.loaded.add(key);
+    const to = new Date(from.getFullYear(), from.getMonth() + 1, 1);
+    try {
+      const list = (await this.api.posts(wsId, from, to)).map(toItem);
+      if (this.ws.id() !== wsId) return;
+      this._posts.update((ps) =>
+        ps
+          .filter((p) => p.dt < from || p.dt >= to)
+          .concat(list)
+          .sort((a, b) => a.dt.getTime() - b.dt.getTime()),
+      );
+    } catch (e) {
+      this.loaded.delete(key);
+      throw e;
+    }
   }
 
-  add(list: PostItem[]): void {
-    this._posts.update((ps) => sortByDate([...ps, ...list]));
+  /** Re-reads every loaded month and the error reports. */
+  async refresh(): Promise<void> {
+    const months = [...this.loaded].map((k) => k.split('-').map(Number));
+    await Promise.all([...months.map(([y, m]) => this.ensureMonth(y, m, true)), this.loadErrors()]);
   }
 
-  remove(id: string): void {
+  async schedule(body: ApiScheduleRequest): Promise<number> {
+    const wsId = this.requireWs();
+    const r = await this.api.schedule(wsId, body);
+    await this.refresh();
+    return r.created;
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.api.deletePost(this.requireWs(), id);
     this._posts.update((ps) => ps.filter((p) => p.id !== id));
   }
 
-  setStatuses(fn: (p: PostItem) => PostStatus): void {
-    this._posts.update((ps) => ps.map((p) => ({ ...p, status: fn(p) })));
-  }
-
   /** Puts a failed post back in the queue, 15 minutes from now. */
-  retryError(id: string): void {
-    const e = this._errors().find((x) => x.id === id);
-    if (!e) return;
-    const dt = new Date(this.now.getTime() + 15 * 60000);
-    this._errors.update((es) => es.filter((x) => x.id !== id));
-    this.add([
-      {
-        id: 'r' + id,
-        dt,
-        accountId: e.accountId,
-        platform: e.platform,
-        target: e.target,
-        cidx: e.cidx,
-        status: 'queued',
-      },
-    ]);
+  async retryError(id: string): Promise<void> {
+    await this.api.retry(this.requireWs(), id);
+    await this.refresh();
   }
 
-  skipError(id: string): void {
-    this._errors.update((es) => es.filter((x) => x.id !== id));
+  /** Closes an error report (a failed post becomes skipped). */
+  async skipError(id: string): Promise<void> {
+    await this.api.dismiss(this.requireWs(), id);
+    await this.refresh();
   }
 
-  markHealthy(accountId: string): void {
-    this._accHealth.update((h) => ({ ...h, [accountId]: 'ok' }));
+  private async loadErrors(): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    const list = await this.api.errors(wsId);
+    if (this.ws.id() !== wsId) return;
+    this._errors.set(
+      list.map((p) => {
+        const item = toItem(p);
+        return { ...item, code: item.code ?? 'network' };
+      }),
+    );
+  }
+
+  private requireWs(): string {
+    const id = this.ws.id();
+    if (!id) throw new Error('No workspace selected');
+    return id;
   }
 }
 
-function sortByDate<T extends { dt: Date }>(list: T[]): T[] {
-  return list.sort((a, b) => a.dt.getTime() - b.dt.getTime());
-}
-
-// Same deterministic generator as the design prototype: ~4-8 posts a day from 19 days ago
-// to 5 weeks ahead, 16 today, and one post going out right now.
-function generatePosts(): PostItem[] {
-  let seed = 20261003;
-  const rnd = () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
-  const now = CLOCK.now;
-  const todayKey = dkey(now);
-  const posts: PostItem[] = [];
-  let id = 1;
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 19);
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 35);
-  for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const isToday = dkey(d) === todayKey;
-    const n = isToday ? 16 : d.getDay() === 0 ? 2 : 4 + Math.floor(rnd() * 5);
-    const span = 13 * 60;
-    for (let i = 0; i < n; i++) {
-      const m = 8 * 60 + Math.floor((span * (i + 0.2 + rnd() * 0.6)) / n);
-      const dt = new Date(d.getFullYear(), d.getMonth(), d.getDate(), Math.floor(m / 60), m % 60);
-      const tg = SEED.targets[Math.floor(rnd() * SEED.targets.length)];
-      const diff = (dt.getTime() - now.getTime()) / 60000;
-      const status: PostStatus = diff < -3 ? (rnd() < 0.04 ? 'skipped' : 'success') : 'queued';
-      posts.push({
-        id: 'p' + id++,
-        dt,
-        accountId: tg.a,
-        platform: tg.p,
-        target: tg.t,
-        cidx: Math.floor(rnd() * CONTENTS.length),
-        status,
-      });
-    }
-  }
-  posts.push({
-    id: 'p' + id++,
-    dt: new Date(now.getTime() - 3 * 60000),
-    accountId: 'a1',
-    platform: 'fb',
-    target: ['ขายของบ้านและสวน', 'ขายของบ้านและสวน'],
-    cidx: 0,
-    status: 'posting',
-  });
-  return sortByDate(posts);
+function minuteNow(): Date {
+  const d = new Date();
+  d.setSeconds(0, 0);
+  return d;
 }

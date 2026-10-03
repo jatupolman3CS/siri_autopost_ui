@@ -1,5 +1,8 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { AP_I18N } from './i18n.data';
+import { AP_I18N_EXTRA } from './i18n.extra';
+
+const SOURCE = { ...AP_I18N, api: AP_I18N_EXTRA };
 
 export type Lang = 'th' | 'en';
 
@@ -10,7 +13,7 @@ type Picked<T> = T extends readonly [string, string]
     ? readonly Picked<U>[]
     : { readonly [K in keyof T]: Picked<T[K]> };
 
-export type Dict = Picked<typeof AP_I18N>;
+export type Dict = Picked<typeof SOURCE>;
 
 const STORAGE_KEY = 'ap-lang';
 
@@ -49,7 +52,7 @@ export class I18nService {
   private dict(lang: Lang): Dict {
     let d = this.cache.get(lang);
     if (!d) {
-      d = pick(AP_I18N, lang === 'th' ? 0 : 1) as Dict;
+      d = pick(SOURCE, lang === 'th' ? 0 : 1) as Dict;
       this.cache.set(lang, d);
     }
     return d;

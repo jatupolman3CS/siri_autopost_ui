@@ -4,6 +4,7 @@ import { AdminStore } from '../../core/data/admin.store';
 import { MemberRole } from '../../core/data/models';
 import { SessionStore } from '../../core/data/session.store';
 import { TeamStore } from '../../core/data/team.store';
+import { WorkspaceStore } from '../../core/data/workspace.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
@@ -24,6 +25,7 @@ export class TeamPageComponent {
   private readonly session = inject(SessionStore);
   private readonly admin = inject(AdminStore);
   protected readonly team = inject(TeamStore);
+  private readonly workspaces = inject(WorkspaceStore);
   protected readonly t = inject(I18nService).t;
 
   protected readonly modal = signal<'invite' | 'ws' | 'revoke' | null>(null);
@@ -44,15 +46,19 @@ export class TeamPageComponent {
       editor: t.rEditor,
       viewer: t.rViewer,
     };
-    return this.team.members().map((m) => ({
-      id: m.id,
-      initial: m.name.charAt(0).toUpperCase(),
-      name: m.name,
-      you: m.you ? t.you : '',
-      email: m.email,
-      role: roles[m.role] ?? m.role,
-      active: (t as Record<string, string>)[m.active] ?? m.active,
-    }));
+    // Members are sample data (no team API yet); the "you" row is the signed-in user.
+    return this.team.members().map((m) => {
+      const name = m.you ? this.session.name() : m.name;
+      return {
+        id: m.id,
+        initial: name.charAt(0).toUpperCase(),
+        name,
+        you: m.you ? t.you : '',
+        email: m.you ? this.session.email() : m.email,
+        role: roles[m.role] ?? m.role,
+        active: (t as Record<string, string>)[m.active] ?? m.active,
+      };
+    });
   });
 
   protected readonly devicesBody = computed(() => {
@@ -65,10 +71,10 @@ export class TeamPageComponent {
       .map((d) => ({ ...d, seenLabel: (this.t().team as Record<string, string>)[d.seen] ?? '' })),
   );
   protected readonly wsRows = computed(() =>
-    this.team.workspaces().map((w) => ({
+    this.workspaces.list().map((w) => ({
       ...w,
       meta: `${this.t().team.posts7}: ${w.posts7} · ${fmt(this.t().team.membersN, { n: w.members })}`,
-      isCurrent: w.id === this.team.wsId(),
+      isCurrent: w.id === this.workspaces.id(),
     })),
   );
   protected readonly roleOptions = computed(() => {
@@ -108,13 +114,13 @@ export class TeamPageComponent {
     this.notify.success(fmt(this.t().team.invited, { e: email }));
   }
 
-  protected confirmWs(): void {
+  protected async confirmWs(): Promise<void> {
     const name = this.formWs().trim();
     if (!name) {
       this.formErr.set(this.t().team.errWs);
       return;
     }
-    this.team.createWorkspace(name);
+    await this.workspaces.create(name);
     this.close();
     this.notify.success(fmt(this.t().team.wsCreated, { ws: name }));
   }
@@ -127,7 +133,7 @@ export class TeamPageComponent {
   }
 
   protected switchTo(id: string): void {
-    const ws = this.team.switchTo(id);
+    const ws = this.workspaces.switchTo(id);
     if (ws) this.notify.info(fmt(this.t().team.switched, { ws: ws.name }));
   }
 }

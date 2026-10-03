@@ -27,7 +27,21 @@ export interface Workspace {
   members: number;
 }
 
+/** A connected social account (from the API). */
 export interface SocialAccount {
+  id: string;
+  platform: PlatformKey;
+  name: string;
+  handle: string;
+  /** Where posts go when the account has no groups (page, timeline, feed...). */
+  defaultTarget: string;
+  health: Health;
+  /** Facebook groups this account posts to; empty for every other kind of account. */
+  groups: string[];
+}
+
+/** Sample account in the design data (landing preview, admin mock). */
+export interface SeedAccount {
   id: string;
   platform: PlatformKey;
   name: string;
@@ -44,13 +58,29 @@ export interface Target {
 
 export interface MediaItem {
   id: string;
-  label: L10n;
+  name: string;
+  /** "image/png · 900 KB" */
   meta: string;
   kind: 'image' | 'video';
   used: number;
 }
 
 export interface Snippet {
+  id: string;
+  title: string;
+  text: string;
+  used: number;
+}
+
+export interface SeedMedia {
+  id: string;
+  label: L10n;
+  meta: string;
+  kind: 'image' | 'video';
+  used: number;
+}
+
+export interface SeedSnippet {
   id: string;
   title: L10n;
   text: L10n;
@@ -160,12 +190,12 @@ export interface SeedData {
   collections: unknown[];
   targetSets: unknown[];
   schedules: unknown[];
-  accounts: SocialAccount[];
+  accounts: SeedAccount[];
   targets: Target[];
   posts: { id: string; col: string; media: string[]; text: L10n }[];
   failed: SeedFailure[];
-  media: MediaItem[];
-  snippets: Snippet[];
+  media: SeedMedia[];
+  snippets: SeedSnippet[];
   limits: Record<PlatformKey, number>;
   usedToday: Record<PlatformKey, number>;
   members: Member[];
@@ -193,11 +223,12 @@ export interface PostItem {
   dt: Date;
   accountId: string;
   platform: PlatformKey;
-  target: L10n;
+  target: string;
+  text: string;
+  mediaIds: string[];
   status: PostStatus;
-  /** Index into the seed contents; ignored when text is set. */
-  cidx?: number;
-  text?: string;
+  /** Why a failed or pending post did not go out. */
+  code: ErrorCode | null;
 }
 
 export interface ErrorItem extends PostItem {

@@ -3,6 +3,7 @@ import { AdminStore } from '../../core/data/admin.store';
 import { seedMonth } from '../../core/data/clock';
 import { PLAN_ORDER, PlanKey } from '../../core/data/models';
 import { perMonth, tierViews } from '../../core/data/plans';
+import { AccountsStore } from '../../core/data/accounts.store';
 import { PostsStore } from '../../core/data/posts.store';
 import { SEED } from '../../core/data/seed.data';
 import { SessionStore } from '../../core/data/session.store';
@@ -40,6 +41,7 @@ export class BillingPageComponent {
   private readonly team = inject(TeamStore);
   private readonly i18n = inject(I18nService);
   protected readonly session = inject(SessionStore);
+  private readonly accounts = inject(AccountsStore);
   protected readonly settings = inject(SettingsStore);
   protected readonly t = this.i18n.t;
   protected readonly bill = this.settings.bill;
@@ -71,7 +73,7 @@ export class BillingPageComponent {
       .today()
       .filter((p) => p.status === 'success' || p.status === 'posting').length;
     const usage: [string, number, number | null][] = [
-      [t.common.accounts, SEED.accounts.length, lim.accounts],
+      [t.common.accounts, this.accounts.list().length, lim.accounts],
       [t.common.postsToday, postsUsed, lim.posts],
       [t.common.devices, this.team.devices().length, lim.devices],
     ];
@@ -132,10 +134,11 @@ export class BillingPageComponent {
     this.settings.patchBill(patch);
   }
 
-  protected confirmPlan(): void {
+  /** Changes the plan on the server; payment collection is not part of the API yet. */
+  protected async confirmPlan(): Promise<void> {
     const k = this.planModal();
     if (!k) return;
-    this.session.setPlan(k);
+    await this.session.setPlan(k);
     this.planModal.set(null);
     this.notify.success(fmt(this.t().bill.switched, { plan: this.t().plans[k].name }));
   }

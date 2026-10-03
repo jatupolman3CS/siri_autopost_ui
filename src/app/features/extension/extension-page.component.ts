@@ -9,6 +9,7 @@ import { SEED } from '../../core/data/seed.data';
 import { SessionStore } from '../../core/data/session.store';
 import { SettingsStore } from '../../core/data/settings.store';
 import { TeamStore } from '../../core/data/team.store';
+import { WorkspaceStore } from '../../core/data/workspace.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 
 // Preview of what the browser extension's popup shows (the extension itself lives in
@@ -28,6 +29,7 @@ export class ExtensionPageComponent {
   private readonly stats = inject(DashboardStatsService);
   protected readonly session = inject(SessionStore);
   protected readonly team = inject(TeamStore);
+  protected readonly workspaces = inject(WorkspaceStore);
   protected readonly ext = inject(ExtensionStore);
   protected readonly t = this.i18n.t;
 
@@ -54,7 +56,6 @@ export class ExtensionPageComponent {
 
   protected readonly next = computed(() => {
     const p = this.posts.next();
-    const li = this.i18n.li();
     const m = this.stats.nextInMin();
     if (!p) return { inMin: '', icon: 'ph-clock', time: '--:--', target: '', text: '' };
     const platform = SEED.platforms[p.platform];
@@ -62,14 +63,14 @@ export class ExtensionPageComponent {
       inMin: fmt(this.t().ext.inMin, { m: m ?? 0 }),
       icon: platform.icon,
       time: p.time,
-      target: `${platform.name} · ${p.target[li]}`,
-      text: this.posts.text(p, li),
+      target: `${platform.name} · ${p.target}`,
+      text: p.text,
     };
   });
 
   protected readonly quota = computed(() => {
     const limits = this.settings.ab().limits;
-    const used = this.settings.usedToday;
+    const used = this.settings.usedToday();
     return (['fb', 'ig', 'x'] as PlatformKey[]).map((k) => ({
       icon: SEED.platforms[k].icon,
       name: SEED.platforms[k].name,
@@ -94,7 +95,7 @@ export class ExtensionPageComponent {
   protected readonly bound = computed(() => {
     const max = this.admin.plans()[this.session.plan()].devices;
     return fmt(this.t().ext.bound, {
-      e: this.session.user.email,
+      e: this.session.email(),
       n: this.team.devices().length,
       max: max ?? '∞',
     });

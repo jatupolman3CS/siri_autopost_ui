@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { STATUS_DOT } from '../../core/data/models';
-import { CONTENTS, PostsStore } from '../../core/data/posts.store';
+import { AccountsStore } from '../../core/data/accounts.store';
+import { PostsStore } from '../../core/data/posts.store';
 import { SEED } from '../../core/data/seed.data';
 import { dkey, fmtDate, hm } from '../../core/i18n/format';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -133,6 +134,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 export class ErrorsPageComponent {
   private readonly notify = inject(NotificationService);
   private readonly i18n = inject(I18nService);
+  private readonly accounts = inject(AccountsStore);
   protected readonly posts = inject(PostsStore);
   protected readonly t = this.i18n.t;
   protected readonly filter = signal<'all' | 'today'>('all');
@@ -141,7 +143,7 @@ export class ErrorsPageComponent {
     [...this.posts.errors()].sort((a, b) => b.dt.getTime() - a.dt.getTime()),
   );
   protected readonly todayList = computed(() =>
-    this.sorted().filter((e) => dkey(e.dt) === this.posts.todayKey),
+    this.sorted().filter((e) => dkey(e.dt) === this.posts.todayKey()),
   );
 
   protected readonly rows = computed(() => {
@@ -159,8 +161,8 @@ export class ErrorsPageComponent {
         title: r.title,
         body: r.body,
         fix: r.fix,
-        text: CONTENTS[e.cidx ?? 0][li],
-        meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${platform.name} · ${e.target[li]}`,
+        text: e.text,
+        meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${platform.name} · ${e.target}`,
         dot: pending ? STATUS_DOT.pending : STATUS_DOT.failed,
         statusLabel: pending ? t.status.pending : t.status.failed,
         canRetry: !pending,
@@ -170,18 +172,18 @@ export class ErrorsPageComponent {
     });
   });
 
-  protected retry(id: string): void {
-    this.posts.retryError(id);
+  protected async retry(id: string): Promise<void> {
+    await this.posts.retryError(id);
     this.notify.success(this.t().err.retried);
   }
 
-  protected skip(id: string): void {
-    this.posts.skipError(id);
+  protected async skip(id: string): Promise<void> {
+    await this.posts.skipError(id);
     this.notify.info(this.t().err.skipped);
   }
 
-  protected signin(accountId: string): void {
-    this.posts.markHealthy(accountId);
+  protected async signin(accountId: string): Promise<void> {
+    await this.accounts.reconnect(accountId);
     this.notify.success(this.t().err.signedIn);
   }
 }

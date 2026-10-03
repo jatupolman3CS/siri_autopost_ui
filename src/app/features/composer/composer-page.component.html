@@ -44,13 +44,19 @@
               [attr.aria-pressed]="m.selected"
             >
               <span class="thumb">
-                <i class="ph" [class]="m.icon"></i>
+                @if (m.src) {
+                  <img [src]="m.src" alt="" />
+                } @else {
+                  <i class="ph" [class]="m.icon"></i>
+                }
                 @if (m.selected) {
                   <i class="ph-fill ph-check-circle tick"></i>
                 }
               </span>
               <span class="small ellipsis">{{ m.label }}</span>
             </button>
+          } @empty {
+            <a class="small" routerLink="/app/library">{{ t().api.noMedia }}</a>
           }
         </div>
       </div>
@@ -84,7 +90,7 @@
                   </button>
                 </div>
                 <div class="pills">
-                  @for (g of groups; track g) {
+                  @for (g of a.groups; track g) {
                     <button
                       type="button"
                       class="pill"
@@ -144,7 +150,12 @@
       <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="saveDraft()">
         {{ t().cmp.draft }}
       </button>
-      <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="submit()">
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        [disabled]="busy()"
+        (click)="submit()"
+      >
         {{ t().cmp.submit }}<i class="ph ph-arrow-right"></i>
       </button>
     </div>
