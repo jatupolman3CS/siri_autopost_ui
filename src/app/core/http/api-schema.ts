@@ -4,6 +4,696 @@
  */
 
 export interface paths {
+  '/api/admin/summary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AdminSummaryDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CustomerDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/jobs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          customerId?: string;
+          take?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AdminJobDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers/{id}/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['StatusRequest'];
+          'text/json': components['schemas']['StatusRequest'];
+          'application/*+json': components['schemas']['StatusRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CustomerDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers/{id}/pause': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['PausedRequest'];
+          'text/json': components['schemas']['PausedRequest'];
+          'application/*+json': components['schemas']['PausedRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CustomerDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers/{id}/plan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['PlanRequest'];
+          'text/json': components['schemas']['PlanRequest'];
+          'application/*+json': components['schemas']['PlanRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CustomerDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers/{id}/limits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['LimitsRequest'];
+          'text/json': components['schemas']['LimitsRequest'];
+          'application/*+json': components['schemas']['LimitsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CustomerDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers/{id}/note': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NoteRequest'];
+          'text/json': components['schemas']['NoteRequest'];
+          'application/*+json': components['schemas']['NoteRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CustomerDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers/{id}/devices/{deviceId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+          deviceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CustomerDto'];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers/{id}/retry-failed': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': number;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/customers/{id}/refund': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['TransactionDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/transactions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['TransactionDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/transactions/{id}/refund': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['TransactionDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/transactions/{id}/paid': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['TransactionDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/plans/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          key: components['schemas']['PlanKey'];
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['PlanSettingsRequest'];
+          'text/json': components['schemas']['PlanSettingsRequest'];
+          'application/*+json': components['schemas']['PlanSettingsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PlanDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/promos': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PromoDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['PromoRequest'];
+          'text/json': components['schemas']['PromoRequest'];
+          'application/*+json': components['schemas']['PromoRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PromoDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/admin/promos/{code}/active': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          code: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ActiveRequest'];
+          'text/json': components['schemas']['ActiveRequest'];
+          'application/*+json': components['schemas']['ActiveRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PromoDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/auth/signup': {
     parameters: {
       query?: never;
@@ -182,6 +872,76 @@ export interface paths {
         };
       };
     };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/plans': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PlanDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/invoices': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['TransactionDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
     post?: never;
     delete?: never;
     options?: never;
@@ -1162,6 +1922,136 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/members': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MemberDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['InviteRequest'];
+          'text/json': components['schemas']['InviteRequest'];
+          'application/*+json': components['schemas']['InviteRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MemberDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/members/{memberId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          memberId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['RoleRequest'];
+          'text/json': components['schemas']['RoleRequest'];
+          'application/*+json': components['schemas']['RoleRequest'];
+        };
+      };
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          memberId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces': {
     parameters: {
       query?: never;
@@ -1314,6 +2204,32 @@ export interface components {
     };
     /** @enum {unknown} */
     AccountHealth: 'ok' | 'warn' | 'relogin';
+    ActiveRequest: {
+      active: boolean;
+    };
+    AdminJobDto: {
+      /** Format: uuid */
+      postId: string;
+      /** Format: uuid */
+      customerId: string;
+      customer: string;
+      platform: components['schemas']['Platform'];
+      target: string;
+      content: string;
+      /** Format: date-time */
+      scheduledAt: string;
+      status: components['schemas']['PostStatus'];
+      failureCode: null | components['schemas']['FailureCode'];
+    };
+    AdminSummaryDto: {
+      /** Format: int32 */
+      basic: number;
+      /** Format: int32 */
+      pro: number;
+      /** Format: int32 */
+      agency: number;
+      revenue: components['schemas']['RevenueMonthDto'][];
+    };
     AntiBanDto: {
       /** Format: int32 */
       min: number;
@@ -1332,8 +2248,12 @@ export interface components {
       expiresAt: string;
       user: components['schemas']['UserDto'];
     };
+    /** @enum {unknown} */
+    BillingCycle: 'month' | 'year';
     ChangePlanRequest: {
       plan: components['schemas']['PlanKey'];
+      cycle: null | components['schemas']['BillingCycle'];
+      promoCode: null | string;
     };
     CreateSnippetRequest: {
       title: string;
@@ -1342,6 +2262,52 @@ export interface components {
     CreateWorkspaceRequest: {
       name: string;
     };
+    CustomerDeviceDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      browser: string;
+      /** Format: date-time */
+      lastSeenAt: null | string;
+      online: boolean;
+    };
+    CustomerDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      email: string;
+      plan: components['schemas']['PlanKey'];
+      status: components['schemas']['CustomerStatus'];
+      /** Format: date-time */
+      since: string;
+      cycle: components['schemas']['BillingCycle'];
+      /** Format: int32 */
+      accounts: number;
+      /** Format: int32 */
+      seats: number;
+      ext: string;
+      /** Format: date-time */
+      lastActiveAt: null | string;
+      paused: boolean;
+      jobs: components['schemas']['CustomerJobsDto'];
+      devices: components['schemas']['CustomerDeviceDto'][];
+      note: null | string;
+      /** Format: int32 */
+      workspaces: number;
+      limits: components['schemas']['LimitOverridesDto'];
+    };
+    CustomerJobsDto: {
+      /** Format: int32 */
+      ok: number;
+      /** Format: int32 */
+      failed: number;
+      /** Format: int32 */
+      queued: number;
+      /** Format: int32 */
+      running: number;
+    };
+    /** @enum {unknown} */
+    CustomerStatus: 'active' | 'trial' | 'past_due' | 'suspended' | 'banned';
     DeviceDto: {
       /** Format: uuid */
       id: string;
@@ -1409,6 +2375,10 @@ export interface components {
     };
     /** Format: binary */
     IFormFile: string;
+    InviteRequest: {
+      email: string;
+      role: components['schemas']['WorkspaceRole'];
+    };
     JobDto: {
       /** Format: uuid */
       postId: string;
@@ -1423,6 +2393,26 @@ export interface components {
       id: string;
       name: string;
       contentType: string;
+    };
+    LimitOverridesDto: {
+      /** Format: int32 */
+      accounts: null | number;
+      /** Format: int32 */
+      posts: null | number;
+      /** Format: int32 */
+      devices: null | number;
+      /** Format: int32 */
+      seats: null | number;
+    };
+    LimitsRequest: {
+      /** Format: int32 */
+      accounts: null | number;
+      /** Format: int32 */
+      posts: null | number;
+      /** Format: int32 */
+      devices: null | number;
+      /** Format: int32 */
+      seats: null | number;
     };
     LogInCommand: {
       email: string;
@@ -1443,6 +2433,22 @@ export interface components {
     };
     /** @enum {unknown} */
     MediaKind: 'image' | 'video';
+    MemberDto: {
+      /** Format: uuid */
+      id: null | string;
+      /** Format: uuid */
+      userId: null | string;
+      email: string;
+      name: string;
+      role: components['schemas']['WorkspaceRole'];
+      active: boolean;
+      /** Format: date-time */
+      lastSeenAt: null | string;
+      you: boolean;
+    };
+    NoteRequest: {
+      note: null | string;
+    };
     OfflineDto: {
       policy: components['schemas']['OfflinePolicy'];
       window: string;
@@ -1476,8 +2482,39 @@ export interface components {
       /** Format: uuid */
       accountId: string;
     };
+    PausedRequest: {
+      paused: boolean;
+    };
+    PlanDto: {
+      key: components['schemas']['PlanKey'];
+      /** Format: int32 */
+      price: number;
+      /** Format: int32 */
+      accounts: null | number;
+      /** Format: int32 */
+      posts: null | number;
+      /** Format: int32 */
+      devices: null | number;
+      /** Format: int32 */
+      seats: null | number;
+    };
     /** @enum {unknown} */
     PlanKey: 'free' | 'basic' | 'pro' | 'agency';
+    PlanRequest: {
+      plan: components['schemas']['PlanKey'];
+    };
+    PlanSettingsRequest: {
+      /** Format: int32 */
+      price: number;
+      /** Format: int32 */
+      accounts: null | number;
+      /** Format: int32 */
+      posts: null | number;
+      /** Format: int32 */
+      devices: null | number;
+      /** Format: int32 */
+      seats: null | number;
+    };
     /** @enum {unknown} */
     Platform: 'fb' | 'x' | 'ig' | 'tt' | 'line' | 'th';
     PlatformLimitsDto: {
@@ -1521,12 +2558,38 @@ export interface components {
       detail?: null | string;
       instance?: null | string;
     };
+    PromoDto: {
+      code: string;
+      discount: string;
+      /** Format: int32 */
+      uses: number;
+      /** Format: date-time */
+      expiresAt: string;
+      active: boolean;
+    };
+    PromoRequest: {
+      code: string;
+      discount: string;
+      /** Format: date-time */
+      expiresAt: null | string;
+    };
     ResultRequest: {
       ok: boolean;
       awaitingApproval: boolean;
       needsLogin: boolean;
       blocked: boolean;
       error: null | string;
+    };
+    RevenueMonthDto: {
+      /** Format: int32 */
+      year: number;
+      /** Format: int32 */
+      month: number;
+      /** Format: int32 */
+      amount: number;
+    };
+    RoleRequest: {
+      role: components['schemas']['WorkspaceRole'];
     };
     ScheduleRequest: {
       content: string;
@@ -1559,11 +2622,30 @@ export interface components {
       /** Format: int32 */
       usedCount: number;
     };
+    StatusRequest: {
+      status: components['schemas']['CustomerStatus'];
+    };
     TargetSelection: {
       /** Format: uuid */
       accountId: string;
       groups: null | string[];
     };
+    TransactionDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      userId: string;
+      type: components['schemas']['TransactionType'];
+      /** Format: int32 */
+      amount: number;
+      plan: components['schemas']['PlanKey'];
+      cycle: components['schemas']['BillingCycle'];
+      promoCode: null | string;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    /** @enum {unknown} */
+    TransactionType: 'charge' | 'refund' | 'failed';
     UserDto: {
       /** Format: uuid */
       id: string;
@@ -1571,6 +2653,8 @@ export interface components {
       name: string;
       role: components['schemas']['UserRole'];
       plan: components['schemas']['PlanKey'];
+      cycle: components['schemas']['BillingCycle'];
+      status: components['schemas']['CustomerStatus'];
     };
     /** @enum {unknown} */
     UserRole: 'user' | 'admin';
@@ -1593,7 +2677,10 @@ export interface components {
       posts7: number;
       /** Format: int32 */
       members: number;
+      role: components['schemas']['WorkspaceRole'];
     };
+    /** @enum {unknown} */
+    WorkspaceRole: 'viewer' | 'editor' | 'admin' | 'owner';
   };
   responses: never;
   parameters: never;

@@ -159,23 +159,18 @@ export class JobsPageComponent {
       running: c.paused ? 0 : c.jobs.running,
       queued: c.jobs.queued,
       failed: c.jobs.failed,
-      last: a.ago[c.active] ?? '',
+      last: this.view.ago(c.lastActive),
       pauseLabel: c.paused ? a.resumeJobs : a.pauseJobs,
     }));
   });
 
-  protected readonly globalJobs = computed(() =>
-    this.live()
-      .filter((c) => !c.paused)
-      .flatMap((c) => this.view.jobs(c, 3))
-      .sort((a, b) => (a.time < b.time ? 1 : -1))
-      .slice(0, 10),
-  );
+  /** Newest posts across the platform (accounts connected through the extension). */
+  protected readonly globalJobs = computed(() => this.view.jobRows(this.admin.jobs().slice(0, 10)));
 
-  protected toggle(id: string): void {
+  protected async toggle(id: string): Promise<void> {
     const c = this.admin.customer(id);
     if (!c) return;
-    this.admin.togglePaused(id);
+    await this.admin.togglePaused(id);
     const a = this.t().adm;
     this.notify.show(
       c.paused ? 'success' : 'info',
@@ -183,8 +178,8 @@ export class JobsPageComponent {
     );
   }
 
-  protected retry(id: string): void {
-    const n = this.admin.retryFailed(id);
+  protected async retry(id: string): Promise<void> {
+    const n = await this.admin.retryFailed(id);
     if (n) this.notify.success(fmt(this.t().adm.retried, { n }));
   }
 }

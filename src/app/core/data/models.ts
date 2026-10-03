@@ -25,6 +25,8 @@ export interface Workspace {
   name: string;
   posts7: number;
   members: number;
+  /** The signed-in user's role in it. */
+  role: MemberRole;
 }
 
 /** A connected social account (from the API). */
@@ -118,6 +120,17 @@ export interface PlanLimits {
 }
 
 export interface CustomerDevice {
+  id: string;
+  n: string;
+  b: string;
+  /** Last call from the extension. */
+  seen: Date | null;
+  online: boolean;
+  i: string;
+}
+
+/** Sample customer device in the design data. */
+export interface SeedCustomerDevice {
   n: string;
   b: string;
   s: AgoKey;
@@ -145,12 +158,20 @@ export interface Customer {
   accounts: number;
   seats: number;
   ext: string;
-  active: AgoKey;
+  /** Last sign-in or extension call. */
+  lastActive: Date | null;
   paused: boolean;
   jobs: CustomerJobs;
   devices: CustomerDevice[];
   note?: string;
   limits?: Partial<Record<LimitKey, number>>;
+  workspaces?: number;
+}
+
+/** Sample customer in the design data. */
+export interface SeedCustomer extends Omit<Customer, 'lastActive' | 'devices'> {
+  active: AgoKey;
+  devices: SeedCustomerDevice[];
 }
 
 export interface Transaction {
@@ -184,7 +205,7 @@ export interface SeedFailure {
 
 export interface SeedData {
   user: { name: L10n; email: string; initials: string };
-  workspaces: Workspace[];
+  workspaces: Omit<Workspace, 'role'>[];
   platforms: Record<PlatformKey, Platform>;
   groups: string[];
   // Collections, target sets and schedules come from a later design iteration
@@ -204,7 +225,7 @@ export interface SeedData {
   devices: Device[];
   planLimits: Record<PlanKey, PlanLimits>;
   invoices: number[][];
-  customers: Customer[];
+  customers: SeedCustomer[];
   subs: Record<'basic' | 'pro' | 'agency', number>;
   transactions: Transaction[];
   /** [year, month0, amount] */

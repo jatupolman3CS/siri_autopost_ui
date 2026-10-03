@@ -67,4 +67,31 @@ export const AP_I18N_EXTRA = {
     'บัญชีตัวอย่าง: โพสต์ที่ตั้งให้บัญชีนี้จะไม่ถูกส่งจริง เชื่อมบัญชีจริงด้วย “เพิ่มอุปกรณ์” ในหน้าทีมและเวิร์กสเปซ',
     'Sample account: posts for it are never sent. Connect a real one with “Add device” in Team & workspaces.',
   ],
+
+  // Platform admin, billing and team (Phase 4)
+  never: ['ยังไม่เคยใช้งาน', 'never'],
+  minutesAgo: ['{n} นาทีที่แล้ว', '{n} min ago'],
+  hoursAgo: ['{n} ชม. ที่แล้ว', '{n} h ago'],
+  daysAgo: ['{n} วันที่แล้ว', '{n} days ago'],
+  blocked: [
+    'บัญชีนี้ถูกระงับการใช้งาน ติดต่อผู้ดูแลแพลตฟอร์ม',
+    'This account is suspended. Contact the platform admin.',
+  ],
+  promoCode: ['โค้ดส่วนลด (ถ้ามี)', 'Promo code (optional)'],
+  recordedCharge: [
+    'ระบบบันทึกยอด {amt} ไว้ในใบแจ้งหนี้ (ยังไม่ได้เชื่อมระบบตัดบัตร)',
+    '{amt} recorded on your invoices (card payments are not connected yet)',
+  ],
+  noInvoices: ['ยังไม่มีใบแจ้งหนี้', 'No invoices yet'],
+  inviteRole: ['บทบาท', 'Role'],
+  removeMember: ['นำออกจากทีม', 'Remove'],
+  leaveTeam: ['ออกจากทีม', 'Leave'],
+  removed: ['นำ {e} ออกจากทีมแล้ว', 'Removed {e}'],
+  invitePending: ['รอสมัครสมาชิก', 'Invitation pending'],
+  roleHere: ['สิทธิ์ของคุณ: {r}', 'Your role: {r}'],
+  noJobs: ['ยังไม่มีงานโพสต์จากส่วนขยาย', 'No posts from the extension yet'],
+  impersonateNote: [
+    'ยังเข้าสู่ระบบแทนลูกค้าไม่ได้ ระบบบันทึกเฉพาะหมายเหตุ',
+    'Signing in as the customer is not available; only the note is saved.',
+  ],
 } as const;

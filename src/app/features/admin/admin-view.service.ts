@@ -1,18 +1,10 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { AdminStore } from '../../core/data/admin.store';
-import { CLOCK } from '../../core/data/clock';
-import {
-  Customer,
-  CustomerStatus,
-  LimitKey,
-  PostStatus,
-  STATUS_DOT,
-  TxType,
-} from '../../core/data/models';
-import { CONTENTS } from '../../core/data/sample';
+import { Customer, CustomerStatus, LimitKey, STATUS_DOT, TxType } from '../../core/data/models';
 import { SEED } from '../../core/data/seed.data';
 import { baht, displayYear, fmtDate, hm, monthName } from '../../core/i18n/format';
-import { I18nService } from '../../core/i18n/i18n.service';
+import { I18nService, ago } from '../../core/i18n/i18n.service';
+import { ApiAdminJob } from '../../core/http/api.service';
 
 export const CUSTOMER_STATUS: Record<
   CustomerStatus,
@@ -28,6 +20,7 @@ export const CUSTOMER_STATUS: Record<
 export interface JobRow {
   time: string;
   customer: string;
+  customerId?: string;
   icon: string;
   platformName: string;
   target: string;
@@ -45,14 +38,15 @@ export class AdminViewService {
   /** MRR per paid plan from subscriber counts and current prices. */
   readonly mrr = computed(() => {
     const plans = this.admin.plans();
+    const subs = this.admin.subs();
     const t = this.i18n.t();
     const rows = (['basic', 'pro', 'agency'] as const).map((k) => ({
       k,
-      amt: (plans[k].price || 0) * this.admin.subs[k],
-      subs: this.admin.subs[k],
+      amt: (plans[k].price || 0) * subs[k],
+      subs: subs[k],
     }));
     const total = rows.reduce((n, x) => n + x.amt, 0);
-    const max = Math.max(...rows.map((x) => x.amt));
+    const max = Math.max(1, ...rows.map((x) => x.amt));
     return {
       total,
       rows: rows.map((x) => ({
@@ -117,46 +111,34 @@ export class AdminViewService {
     return this.admin.plans()[c.plan].price || 0;
   }
 
-  /** Recent jobs of a customer: deterministic sample around now, like the design prototype. */
-  jobs(c: Customer, n: number): JobRow[] {
-    const li = this.i18n.li();
+  /** Admin jobs (newest first) as list rows. */
+  jobRows(list: ApiAdminJob[]): JobRow[] {
     const t = this.i18n.t();
-    let seed = 7;
-    for (const ch of c.id) seed = (seed * 31 + ch.charCodeAt(0)) & 0x7fffffff;
-    const rnd = () => {
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      return seed / 0x7fffffff;
-    };
-    const now = CLOCK.now.getTime();
-    let tm = now + 20 * 60000;
-    const out: (JobRow & { ts: number })[] = [];
-    for (let i = 0; i < n; i++) {
-      tm -= (7 + Math.floor(rnd() * 34)) * 60000;
-      const tg = SEED.targets[Math.floor(rnd() * SEED.targets.length)];
-      const r = rnd();
-      const status: PostStatus = c.paused
-        ? 'skipped'
-        : tm > now
-          ? 'queued'
-          : i === 1 && c.jobs.running
-            ? 'posting'
-            : r < 0.1
-              ? 'failed'
-              : 'success';
-      const platform = SEED.platforms[tg.p];
-      out.push({
-        ts: tm,
-        time: hm(new Date(tm)),
-        customer: c.name,
+    return list.map((j) => {
+      const platform = SEED.platforms[j.platform];
+      const at = new Date(j.scheduledAt);
+      return {
+        time: `${fmtDate(at, this.i18n.li())} ${hm(at)}`,
+        customer: j.customer,
+        customerId: j.customerId,
         icon: platform.icon,
         platformName: platform.name,
-        target: tg.t[li],
-        text: CONTENTS[Math.floor(rnd() * CONTENTS.length)][li],
-        dot: STATUS_DOT[status],
-        statusLabel: t.status[status],
-      });
-    }
-    return out;
+        target: j.target,
+        text: j.content,
+        dot: STATUS_DOT[j.status],
+        statusLabel: t.status[j.status],
+      };
+    });
+  }
+
+  /** A customer's newest jobs (loaded on demand by the detail page). */
+  jobs(c: Customer, n: number): JobRow[] {
+    return this.jobRows((this.admin.customerJobs()[c.id] ?? []).slice(0, n));
+  }
+
+  /** "now", "12 นาทีที่แล้ว", "3 วันที่แล้ว"... for last-seen times. */
+  ago(d: Date | null): string {
+    return ago(this.i18n.t(), d);
   }
 }
 

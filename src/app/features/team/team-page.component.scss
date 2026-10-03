@@ -32,9 +32,15 @@
   min-width: 160px;
 }
 .members {
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
   .td {
     padding: 10px 0;
+  }
+  .end {
+    justify-content: flex-end;
+  }
+  .pending {
+    color: var(--color-warning);
   }
 }
 .who {
@@ -66,4 +72,9 @@
   border-radius: 50%;
   margin-right: 4px;
   vertical-align: middle;
+}
+.role-sel {
+  height: 32px;
+  padding: 0 8px;
+  max-width: 100%;
 }

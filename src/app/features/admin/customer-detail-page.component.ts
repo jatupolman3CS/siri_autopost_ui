@@ -1,14 +1,39 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AdminAction, AdminStore } from '../../core/data/admin.store';
-import { CLOCK } from '../../core/data/clock';
-import { LimitKey, PLAN_ORDER, PlanKey } from '../../core/data/models';
+import { Customer, LimitKey, PLAN_ORDER, PlanKey } from '../../core/data/models';
 import { baht, fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 import { AdminActionModalComponent, AdminActionRequest } from './admin-action-modal.component';
 import { AdminViewService } from './admin-view.service';
+
+const BLANK: Customer = {
+  id: '',
+  name: '…',
+  email: '',
+  plan: 'free',
+  status: 'active',
+  since: [new Date().getFullYear(), new Date().getMonth()],
+  cycle: 'month',
+  accounts: 0,
+  seats: 1,
+  ext: '',
+  lastActive: null,
+  paused: false,
+  jobs: { ok: 0, failed: 0, queued: 0, running: 0 },
+  devices: [],
+};
 
 @Component({
   selector: 'app-customer-detail-page',
@@ -28,9 +53,15 @@ export class CustomerDetailPageComponent {
   protected readonly t = this.i18n.t;
   protected readonly request = signal<AdminActionRequest | null>(null);
 
-  protected readonly c = computed(
-    () => this.admin.customer(this.id()) ?? this.admin.customers()[0],
-  );
+  /** A blank row while the admin data loads (or for an unknown id). */
+  protected readonly c = computed(() => this.admin.customer(this.id()) ?? BLANK);
+
+  constructor() {
+    effect(() => {
+      const id = this.id();
+      if (id) untracked(() => void this.admin.loadCustomerJobs(id));
+    });
+  }
 
   protected readonly head = computed(() => {
     const c = this.c();
@@ -63,11 +94,19 @@ export class CustomerDetailPageComponent {
     const c = this.c();
     const a = this.t().adm;
     const li = this.i18n.li();
-    const now = CLOCK.now;
+    const now = new Date();
     const months = Math.max(
       1,
       (now.getFullYear() - c.since[0]) * 12 + (now.getMonth() - c.since[1]) + 1,
     );
+    // Charges minus refunds recorded for this customer.
+    const paid = this.admin
+      .transactions()
+      .filter((x) => x.cust === c.id)
+      .reduce(
+        (n, x) => n + (x.type === 'charge' ? x.amount : x.type === 'refund' ? -x.amount : 0),
+        0,
+      );
     const active = ['active', 'pastdue', 'trial'].includes(c.status);
     const billable = active && c.plan !== 'free';
     const price = this.view.priceOf(c);
@@ -78,11 +117,11 @@ export class CustomerDetailPageComponent {
         value: billable ? baht(Math.round(price * (c.cycle === 'year' ? 12 * 0.8 : 1))) : '—',
         note: billable ? `${c.cycle === 'year' ? a.cycleY : a.cycleM} · ${nextDate}` : '',
       },
-      { label: a.lifetime, value: baht(price * months), note: `${months} ${a.months}` },
+      { label: a.lifetime, value: baht(paid), note: `${months} ${a.months}` },
       {
         label: a.paymentStatus,
         value: c.status === 'pastdue' ? a.paymentFail : a.paymentOk,
-        note: c.status === 'pastdue' ? a.nPastDue : 'Visa •••• 4242',
+        note: c.status === 'pastdue' ? a.nPastDue : '',
       },
     ];
   });
@@ -124,7 +163,7 @@ export class CustomerDetailPageComponent {
     this.c().devices.map((d) => ({
       name: d.n,
       browser: d.b,
-      seen: this.t().adm.ago[d.s] ?? '',
+      seen: d.online ? this.t().api.deviceOnline : this.view.ago(d.seen),
       icon: d.i,
     })),
   );
@@ -133,30 +172,30 @@ export class CustomerDetailPageComponent {
     this.request.set({ id: this.c().id, action, tx });
   }
 
-  protected setPlan(v: string): void {
+  protected async setPlan(v: string): Promise<void> {
     const c = this.c();
-    this.admin.setPlan(c.id, v as PlanKey);
+    await this.admin.setPlan(c.id, v as PlanKey);
     this.notify.success(
       fmt(this.t().adm.planChanged, { c: c.name, p: this.t().plans[v as PlanKey].name }),
     );
   }
 
   protected setLimit(k: LimitKey, v: string): void {
-    this.admin.setLimit(this.c().id, k, parseInt(v, 10));
+    void this.admin.setLimit(this.c().id, k, parseInt(v, 10));
   }
 
   protected saveLimits(): void {
     this.notify.success(fmt(this.t().adm.limitsSaved, { c: this.c().name }));
   }
 
-  protected revoke(i: number): void {
-    this.admin.revokeDevice(this.c().id, i);
+  protected async revoke(i: number): Promise<void> {
+    await this.admin.revokeDevice(this.c().id, i);
     this.notify.info(this.t().adm.revokeDone);
   }
 
-  protected toggleJobs(): void {
+  protected async toggleJobs(): Promise<void> {
     const c = this.c();
-    this.admin.togglePaused(c.id);
+    await this.admin.togglePaused(c.id);
     const a = this.t().adm;
     this.notify.show(
       c.paused ? 'success' : 'info',
@@ -164,13 +203,13 @@ export class CustomerDetailPageComponent {
     );
   }
 
-  protected retryFailed(): void {
-    const n = this.admin.retryFailed(this.c().id);
+  protected async retryFailed(): Promise<void> {
+    const n = await this.admin.retryFailed(this.c().id);
     if (n) this.notify.success(fmt(this.t().adm.retried, { n }));
   }
 
-  protected retryCharge(txId: string): void {
-    const c = this.admin.retryCharge(txId);
+  protected async retryCharge(txId: string): Promise<void> {
+    const c = await this.admin.retryCharge(txId);
     this.notify.success(fmt(this.t().adm.chargeRetried, { c: c?.name ?? '' }));
   }
 }

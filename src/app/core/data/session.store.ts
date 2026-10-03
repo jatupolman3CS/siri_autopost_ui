@@ -43,8 +43,9 @@ export class SessionStore {
     this._user.set(null);
   }
 
-  async setPlan(plan: PlanKey): Promise<void> {
-    this._user.set(await this.api.changePlan(plan));
+  /** A paid plan records a charge (yearly = 12 months at 80%); see /api/billing/invoices. */
+  async setPlan(plan: PlanKey, cycle?: 'month' | 'year', promoCode?: string): Promise<void> {
+    this._user.set(await this.api.changePlan(plan, cycle, promoCode));
   }
 
   private accept(r: ApiAuthResult): ApiUser {

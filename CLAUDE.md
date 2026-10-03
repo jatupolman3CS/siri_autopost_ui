@@ -22,7 +22,10 @@ npm run build             # production build -> dist/siri-autopost-ui/browser
 npm run format            # prettier (the only formatter; no ESLint)
 npm run import:design -- <autopost-data.js>   # regenerate i18n.data.ts + seed.data.ts from a design handoff
 npm run gen:api           # openapi.snapshot.json -> src/app/core/http/api-schema.ts
+docker build -t siriautopost-web .   # nginx image: dist + /api proxy to http://api:8080 (nginx.conf)
 ```
+
+The whole stack (PostgreSQL + API + this app) runs with `docker-compose.saas.yml` in `siri_autopost_backend`, which builds this repo from `UI_PATH` (default `../siri_autopost_ui`).
 
 Angular CLI 22 needs Node ≥ 22.22.3 (or ≥ 24.15).
 
@@ -39,9 +42,12 @@ Angular CLI 22 needs Node ≥ 22.22.3 (or ≥ 24.15).
   - `DevicesStore` lists the browsers paired to the workspace, creates pairing codes and unbinds devices. `features/team/PairDeviceModalComponent` shows the code and this site's origin (the extension calls `<origin>/api/device/*`), polls the device list every 3 s and closes when a new device appears.
   - `LibraryStore` lists and uploads media and creates snippets. Image thumbnails are fetched as blobs with the token and shown through object URLs (an `<img src>` cannot send the header).
   - `DraftStore` holds the composer draft. Until the user picks targets (`autoTargets`), the targets are a connected group account with three of its groups or, without one, the design default (the first group-posting account with three groups, plus Instagram). Editing a queued post sets `replaces`, and the old post is deleted once the new one is scheduled.
-  - **Still sample data:** `TeamStore` (members), `AdminStore` and the admin pages, billing invoices/card, the extension popup log. There is no API for them yet. `core/data/sample.ts` (the design's post generator and texts) feeds the landing-page preview and the admin mock; `clock.ts` shifts their seed dates to today.
-  - Plan limits live in `AdminStore.plans` and are shared by billing, team, the extension popup and admin.
-- **Derived views.** `DashboardStatsService` builds the KPIs, today's queue, the trend, accounts and recent errors for the overview; its pure helpers `kpisOf`/`queueRowsOf` also build the landing preview from sample posts. `core/data/plans.ts` builds the plan cards. `features/admin/AdminViewService` is provided in `admin.routes.ts` and holds the MRR, transaction rows, effective limits and sample jobs.
+  - `TeamStore` lists the current workspace's people (`/members`: the owner row has `id` null, pending invitations have `active` false), invites, changes roles and removes or leaves. `role`/`canManage` come from the workspace's `role` in `WorkspaceStore`. The team page disables inviting while the owner's plan has one seat; the server enforces seats and roles (403 for too low a role).
+  - `AdminStore` holds the platform-admin data from `/api/admin/*` (customers, transactions, promo codes, subscription counts, 12 months of revenue, jobs) and the plans from the public `/api/plans`. `loadPlans()` runs in the app initializer; `load()` runs whenever the admin area is entered (`provideEnvironmentInitializer` in `admin.routes.ts`). Plan limits in `AdminStore.plans` are shared by billing, team, the extension popup, the landing page and admin.
+  - Billing: `SessionStore.setPlan(plan, cycle, promoCode)` records the charge on the server; invoices come from `/api/billing/invoices`. No payment provider is connected, so nothing is charged and the card form is still local.
+  - **Still sample data:** billing card and notification preferences, the admin overview's system-health panel and its churn/active-extension/success-rate KPIs, the extension popup log. "Assist" on a customer only keeps the note (no impersonation). `core/data/sample.ts` (the design's post generator and texts) feeds the landing-page preview; `clock.ts` shifts seed dates to today.
+- **Errors.** `core/http/problem-details.ts` `problemOf(e)?.title` is the API's Thai message; forms that send `QUIET` requests (invite, pairing) show it inline. A 403 on login means a suspended or banned account (`t().api.blocked`). `ago(t, date)` in `i18n.service.ts` formats last-seen times.
+- **Derived views.** `DashboardStatsService` builds the KPIs, today's queue, the trend, accounts and recent errors for the overview; its pure helpers `kpisOf`/`queueRowsOf` also build the landing preview from sample posts. `core/data/plans.ts` builds the plan cards. `features/admin/AdminViewService` is provided in `admin.routes.ts` and holds the MRR, transaction rows, effective limits and job rows.
 - **i18n.** `core/i18n/i18n.data.ts` is generated. Every leaf is a `[th, en]` pair, and `I18nService.t()` is a computed, typed dictionary for the current language. Templates read `t().section.key` and fill `{placeholders}` with `fmt()`. Data that carries both languages (`L10n` pairs in the seed) is picked with `i18n.li()`. Use `format.ts` for dates (`fmtDate` uses the Buddhist year in Thai) and baht amounts.
 - **Routing (`app.routes.ts`).**
   - `/`, `/login` and `/signup?plan=` sit under `PublicLayoutComponent`, guarded by `guestGuard`.

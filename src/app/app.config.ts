@@ -8,6 +8,7 @@ import {
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
+import { AdminStore } from './core/data/admin.store';
 import { SessionStore } from './core/data/session.store';
 import { errorInterceptor } from './core/http/error.interceptor';
 
@@ -23,6 +24,10 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
     // The guards need to know who is signed in before the first navigation.
-    provideAppInitializer(() => inject(SessionStore).restore()),
+    provideAppInitializer(() => {
+      // Plan prices and limits from the server; the pages show the design's values until then.
+      void inject(AdminStore).loadPlans();
+      return inject(SessionStore).restore();
+    }),
   ],
 };

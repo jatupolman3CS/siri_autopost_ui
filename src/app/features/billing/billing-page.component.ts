@@ -1,14 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AdminStore } from '../../core/data/admin.store';
-import { seedMonth } from '../../core/data/clock';
 import { PLAN_ORDER, PlanKey } from '../../core/data/models';
 import { perMonth, tierViews } from '../../core/data/plans';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { PostsStore } from '../../core/data/posts.store';
-import { SEED } from '../../core/data/seed.data';
 import { SessionStore } from '../../core/data/session.store';
 import { BillingSettings, SettingsStore } from '../../core/data/settings.store';
 import { DevicesStore } from '../../core/data/devices.store';
+import { ApiService, ApiTransaction } from '../../core/http/api.service';
 import { baht, fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -37,6 +36,7 @@ import {
 export class BillingPageComponent {
   private readonly notify = inject(NotificationService);
   private readonly admin = inject(AdminStore);
+  private readonly api = inject(ApiService);
   private readonly posts = inject(PostsStore);
   private readonly devices = inject(DevicesStore);
   private readonly i18n = inject(I18nService);
@@ -112,14 +112,37 @@ export class BillingPageComponent {
     });
   });
 
+  private readonly txs = signal<ApiTransaction[]>([]);
+  protected readonly promo = signal('');
+
+  /** Charges and refunds recorded for this account (no payment provider is connected yet). */
   protected readonly invoices = computed(() => {
     const li = this.i18n.li();
-    const amount = baht(this.admin.plans()[this.session.plan()].price || 0);
-    return SEED.invoices.map((parts) => {
-      const [y, m] = seedMonth(parts);
-      return { date: fmtDate(new Date(y, m, 1), li, true), amount };
-    });
+    const t = this.t();
+    return this.txs().map((x) => ({
+      id: x.id,
+      date: fmtDate(new Date(x.createdAt), li, true),
+      amount: (x.type === 'refund' ? '−' : '') + baht(x.amount),
+      label:
+        x.type === 'charge' ? t.bill.paid : x.type === 'refund' ? t.adm.tyRefund : t.adm.tyFailed,
+      dot:
+        x.type === 'charge'
+          ? 'var(--color-success)'
+          : x.type === 'refund'
+            ? 'var(--color-warning)'
+            : 'var(--color-danger)',
+    }));
   });
+
+  constructor() {
+    const cycle = this.session.user()?.cycle;
+    if (cycle) this.settings.patchBill({ cycle });
+    void this.loadInvoices();
+  }
+
+  private async loadInvoices(): Promise<void> {
+    this.txs.set(await this.api.invoices());
+  }
 
   protected readonly planTitle = computed(() => {
     const k = this.planModal();
@@ -138,9 +161,14 @@ export class BillingPageComponent {
   protected async confirmPlan(): Promise<void> {
     const k = this.planModal();
     if (!k) return;
-    await this.session.setPlan(k);
+    const before = this.txs().length;
+    await this.session.setPlan(k, this.bill().cycle, this.promo().trim() || undefined);
     this.planModal.set(null);
+    this.promo.set('');
     this.notify.success(fmt(this.t().bill.switched, { plan: this.t().plans[k].name }));
+    await this.loadInvoices();
+    const charge = this.txs().length > before ? this.txs()[0] : null;
+    if (charge) this.notify.info(fmt(this.t().api.recordedCharge, { amt: baht(charge.amount) }));
   }
 
   protected openCard(): void {
@@ -166,4 +194,9 @@ export class BillingPageComponent {
   protected download(): void {
     this.notify.info(this.t().bill.download + ' (PDF)');
   }
+
+  protected readonly paidPlan = computed(() => {
+    const k = this.planModal();
+    return !!k && (this.admin.plans()[k].price || 0) > 0;
+  });
 }

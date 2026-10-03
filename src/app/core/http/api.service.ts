@@ -20,6 +20,16 @@ export type ApiExtensionState = S['ExtensionStateDto'];
 export type ApiPlan = S['PlanKey'];
 export type ApiDevice = S['DeviceDto'];
 export type ApiPairingCode = S['PairingCodeDto'];
+export type ApiPlanSetting = S['PlanDto'];
+export type ApiTransaction = S['TransactionDto'];
+export type ApiMember = S['MemberDto'];
+export type ApiRole = S['WorkspaceRole'];
+export type ApiCustomer = S['CustomerDto'];
+export type ApiAdminSummary = S['AdminSummaryDto'];
+export type ApiAdminJob = S['AdminJobDto'];
+export type ApiPromo = S['PromoDto'];
+export type ApiCycle = S['BillingCycle'];
+export type ApiCustomerStatus = S['CustomerStatus'];
 
 /** Set on a request whose errors the caller shows itself (no toast from errorInterceptor). */
 export const QUIET = new HttpContextToken<boolean>(() => false);
@@ -41,8 +51,23 @@ export class ApiService {
   me() {
     return run(this.http.get<ApiUser>('/api/auth/me', quiet));
   }
-  changePlan(plan: ApiPlan) {
-    return run(this.http.put<ApiUser>('/api/auth/me/plan', { plan }));
+  /** Records a charge for a paid plan (no payment provider yet). */
+  changePlan(plan: ApiPlan, cycle?: ApiCycle, promoCode?: string) {
+    return run(
+      this.http.put<ApiUser>('/api/auth/me/plan', {
+        plan,
+        cycle: cycle ?? null,
+        promoCode: promoCode || null,
+      }),
+    );
+  }
+
+  /** Public: prices and limits of every plan. */
+  plans() {
+    return run(this.http.get<ApiPlanSetting[]>('/api/plans', quiet));
+  }
+  invoices() {
+    return run(this.http.get<ApiTransaction[]>('/api/billing/invoices'));
   }
 
   workspaces() {
@@ -128,6 +153,80 @@ export class ApiService {
   revokeDevice(ws: string, id: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/devices/${id}`));
   }
+  members(ws: string) {
+    return run(this.http.get<ApiMember[]>(`/api/workspaces/${ws}/members`));
+  }
+  inviteMember(ws: string, email: string, role: ApiRole) {
+    // Quiet: the invite form shows a refusal (team full, already a member) itself.
+    return run(this.http.post<ApiMember>(`/api/workspaces/${ws}/members`, { email, role }, quiet));
+  }
+  changeMemberRole(ws: string, id: string, role: ApiRole) {
+    return run(this.http.put<void>(`/api/workspaces/${ws}/members/${id}`, { role }));
+  }
+  removeMember(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/members/${id}`));
+  }
+
+  // ---------- platform admin ----------
+  adminCustomers() {
+    return run(this.http.get<ApiCustomer[]>('/api/admin/customers'));
+  }
+  adminSummary() {
+    return run(this.http.get<ApiAdminSummary>('/api/admin/summary'));
+  }
+  adminJobs(customerId?: string, take = 30) {
+    let params = new HttpParams().set('take', take);
+    if (customerId) params = params.set('customerId', customerId);
+    return run(this.http.get<ApiAdminJob[]>('/api/admin/jobs', { params }));
+  }
+  adminSetStatus(id: string, status: ApiCustomerStatus) {
+    return run(this.http.post<ApiCustomer>(`/api/admin/customers/${id}/status`, { status }));
+  }
+  adminSetPaused(id: string, paused: boolean) {
+    return run(this.http.post<ApiCustomer>(`/api/admin/customers/${id}/pause`, { paused }));
+  }
+  adminSetPlan(id: string, plan: ApiPlan) {
+    return run(this.http.put<ApiCustomer>(`/api/admin/customers/${id}/plan`, { plan }));
+  }
+  adminSetLimits(id: string, limits: S['LimitOverridesDto']) {
+    return run(this.http.put<ApiCustomer>(`/api/admin/customers/${id}/limits`, limits));
+  }
+  adminSetNote(id: string, note: string | null) {
+    return run(this.http.put<ApiCustomer>(`/api/admin/customers/${id}/note`, { note }));
+  }
+  adminRevokeDevice(id: string, deviceId: string) {
+    return run(this.http.delete<ApiCustomer>(`/api/admin/customers/${id}/devices/${deviceId}`));
+  }
+  adminRetryFailed(id: string) {
+    return run(this.http.post<number>(`/api/admin/customers/${id}/retry-failed`, {}));
+  }
+  adminRefundLatest(id: string) {
+    return run(this.http.post<ApiTransaction>(`/api/admin/customers/${id}/refund`, {}));
+  }
+  adminTransactions() {
+    return run(this.http.get<ApiTransaction[]>('/api/admin/transactions'));
+  }
+  adminRefund(txId: string) {
+    return run(this.http.post<ApiTransaction>(`/api/admin/transactions/${txId}/refund`, {}));
+  }
+  adminRecordPayment(txId: string) {
+    return run(this.http.post<ApiTransaction>(`/api/admin/transactions/${txId}/paid`, {}));
+  }
+  adminUpdatePlan(key: ApiPlan, body: Omit<ApiPlanSetting, 'key'>) {
+    return run(this.http.put<ApiPlanSetting>(`/api/admin/plans/${key}`, body));
+  }
+  adminPromos() {
+    return run(this.http.get<ApiPromo[]>('/api/admin/promos'));
+  }
+  adminCreatePromo(code: string, discount: string) {
+    return run(this.http.post<ApiPromo>('/api/admin/promos', { code, discount, expiresAt: null }));
+  }
+  adminSetPromoActive(code: string, active: boolean) {
+    return run(
+      this.http.put<ApiPromo>(`/api/admin/promos/${encodeURIComponent(code)}/active`, { active }),
+    );
+  }
+
   skipWaiting(ws: string) {
     return run(this.http.post<ApiExtensionState>(`/api/workspaces/${ws}/engine/waiting/skip`, {}));
   }

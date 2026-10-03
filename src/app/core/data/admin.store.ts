@@ -1,125 +1,252 @@
-import { Injectable, signal } from '@angular/core';
-import { CLOCK, dateParts, seedDate, seedMonth } from './clock';
+import { Injectable, inject, signal } from '@angular/core';
 import {
-  Customer,
-  CustomerStatus,
-  DiscountKey,
-  LimitKey,
-  PlanKey,
-  PlanLimits,
-  Promo,
-  Transaction,
-} from './models';
+  ApiAdminJob,
+  ApiCustomer,
+  ApiCustomerStatus,
+  ApiPlanSetting,
+  ApiPromo,
+  ApiService,
+  ApiTransaction,
+} from '../http/api.service';
+import { Customer, DiscountKey, LimitKey, PlanKey, PlanLimits, Promo, Transaction } from './models';
 import { SEED } from './seed.data';
 
 export type AdminAction = 'suspend' | 'ban' | 'refund' | 'assist' | 'restore';
 
-// Platform-owner data: customers, payments, plan prices and promo codes.
-// Plan limits are also what the customer-facing billing page reads.
+const LIMIT_KEYS: LimitKey[] = ['accounts', 'posts', 'devices', 'seats'];
+
+const dateParts = (iso: string): number[] => {
+  const d = new Date(iso);
+  return [d.getFullYear(), d.getMonth(), d.getDate()];
+};
+
+export function toCustomer(c: ApiCustomer): Customer {
+  const since = new Date(c.since);
+  const limits: Partial<Record<LimitKey, number>> = {};
+  for (const k of LIMIT_KEYS) if (c.limits[k] != null) limits[k] = c.limits[k]!;
+  return {
+    id: c.id,
+    name: c.name,
+    email: c.email,
+    plan: c.plan,
+    status: c.status === 'past_due' ? 'pastdue' : c.status,
+    since: [since.getFullYear(), since.getMonth()],
+    cycle: c.cycle,
+    accounts: c.accounts,
+    seats: c.seats,
+    ext: c.ext,
+    lastActive: c.lastActiveAt ? new Date(c.lastActiveAt) : null,
+    paused: c.paused,
+    jobs: { ok: c.jobs.ok, failed: c.jobs.failed, queued: c.jobs.queued, running: c.jobs.running },
+    devices: c.devices.map((d) => ({
+      id: d.id,
+      n: d.name,
+      b: d.browser,
+      seen: d.lastSeenAt ? new Date(d.lastSeenAt) : null,
+      online: d.online,
+      i: 'ph-desktop',
+    })),
+    note: c.note ?? undefined,
+    limits,
+    workspaces: c.workspaces,
+  };
+}
+
+const toTx = (t: ApiTransaction): Transaction => ({
+  id: t.id,
+  date: dateParts(t.createdAt),
+  cust: t.userId,
+  type: t.type,
+  amount: t.amount,
+});
+
+const toPromo = (p: ApiPromo): Promo => ({
+  code: p.code,
+  discount: p.discount as DiscountKey,
+  uses: p.uses,
+  expires: dateParts(p.expiresAt),
+  active: p.active,
+});
+
+function toPlans(list: ApiPlanSetting[]): Record<PlanKey, PlanLimits> {
+  const out = structuredClone(SEED.planLimits);
+  for (const p of list)
+    out[p.key] = {
+      price: p.price,
+      accounts: p.accounts,
+      posts: p.posts,
+      devices: p.devices,
+      seats: p.seats,
+    };
+  return out;
+}
+
+// Platform-owner data from /api/admin (customers, payments, promo codes, revenue) and the
+// plans from the public /api/plans, which the customer-facing pages read too. Without a
+// payment provider, charges are recorded (plan changes), not collected.
 @Injectable({ providedIn: 'root' })
 export class AdminStore {
-  readonly customers = signal<Customer[]>(
-    SEED.customers.map((c) => ({
-      ...c,
-      since: seedMonth(c.since),
-      devices: c.devices.map((d) => ({ ...d })),
-      jobs: { ...c.jobs },
-      limits: {},
-    })),
-  );
-  readonly transactions = signal<Transaction[]>(
-    SEED.transactions.map((x) => ({ ...x, date: dateParts(seedDate(x.date)) })),
-  );
-  readonly promos = signal<Promo[]>(
-    SEED.promos.map((p) => ({ ...p, expires: dateParts(seedDate(p.expires)) })),
-  );
+  private readonly api = inject(ApiService);
+
+  readonly customers = signal<Customer[]>([]);
+  readonly transactions = signal<Transaction[]>([]);
+  readonly promos = signal<Promo[]>([]);
+  /** The design's values until /api/plans answers. */
   readonly plans = signal<Record<PlanKey, PlanLimits>>(structuredClone(SEED.planLimits));
-  readonly subs = SEED.subs;
-  readonly revenue = SEED.revenue.map((r) => [...seedMonth(r), r[2]]);
+  readonly subs = signal<Record<'basic' | 'pro' | 'agency', number>>({
+    basic: 0,
+    pro: 0,
+    agency: 0,
+  });
+  /** [year, month0, net baht] for the last 12 months. */
+  readonly revenue = signal<number[][]>([]);
+  /** Newest posts across the platform (jobs page) and per customer (detail page). */
+  readonly jobs = signal<ApiAdminJob[]>([]);
+  readonly customerJobs = signal<Record<string, ApiAdminJob[]>>({});
+  readonly loaded = signal(false);
+
+  async loadPlans(): Promise<void> {
+    try {
+      this.plans.set(toPlans(await this.api.plans()));
+    } catch {
+      // Keep the design's values; the server refuses changes that do not fit its own.
+    }
+  }
+
+  /** Everything the admin pages show. */
+  async load(): Promise<void> {
+    const [customers, tx, promos, summary, jobs] = await Promise.all([
+      this.api.adminCustomers(),
+      this.api.adminTransactions(),
+      this.api.adminPromos(),
+      this.api.adminSummary(),
+      this.api.adminJobs(undefined, 40),
+      this.loadPlans(),
+    ]);
+    this.customers.set(customers.map(toCustomer));
+    this.transactions.set(tx.map(toTx));
+    this.promos.set(promos.map(toPromo));
+    this.subs.set({ basic: summary.basic, pro: summary.pro, agency: summary.agency });
+    this.revenue.set(summary.revenue.map((r) => [r.year, r.month - 1, r.amount]));
+    this.jobs.set(jobs);
+    this.loaded.set(true);
+  }
+
+  async loadCustomerJobs(id: string): Promise<void> {
+    const list = await this.api.adminJobs(id, 8);
+    this.customerJobs.update((m) => ({ ...m, [id]: list }));
+  }
 
   customer(id: string): Customer | undefined {
     return this.customers().find((c) => c.id === id);
   }
 
-  private update(id: string, fn: (c: Customer) => Partial<Customer>): void {
-    this.customers.update((list) => list.map((c) => (c.id === id ? { ...c, ...fn(c) } : c)));
+  private replace(c: ApiCustomer): void {
+    const next = toCustomer(c);
+    this.customers.update((list) => list.map((x) => (x.id === next.id ? next : x)));
   }
 
-  /** Runs an admin action; a refund adds a refund transaction (of txId, or the plan price). */
-  apply(id: string, action: AdminAction, txId?: string): void {
+  private async reloadMoney(): Promise<void> {
+    const [tx, summary] = await Promise.all([
+      this.api.adminTransactions(),
+      this.api.adminSummary(),
+    ]);
+    this.transactions.set(tx.map(toTx));
+    this.subs.set({ basic: summary.basic, pro: summary.pro, agency: summary.agency });
+    this.revenue.set(summary.revenue.map((r) => [r.year, r.month - 1, r.amount]));
+  }
+
+  /**
+   * Runs an admin action. A refund refunds txId, or the customer's latest charge. "assist" only
+   * keeps the note: signing in as the customer is not available. The note is saved with every action.
+   */
+  async apply(id: string, action: AdminAction, txId?: string, note?: string): Promise<void> {
+    if (note?.trim()) this.replace(await this.api.adminSetNote(id, note.trim()));
+    const status: Partial<Record<AdminAction, ApiCustomerStatus>> = {
+      suspend: 'suspended',
+      ban: 'banned',
+      restore: 'active',
+    };
+    if (status[action]) this.replace(await this.api.adminSetStatus(id, status[action]!));
+    if (action === 'refund') {
+      await (txId ? this.api.adminRefund(txId) : this.api.adminRefundLatest(id));
+      await this.reloadMoney();
+    }
+  }
+
+  async setPlan(id: string, plan: PlanKey): Promise<void> {
+    this.replace(await this.api.adminSetPlan(id, plan));
+    await this.reloadMoney();
+  }
+
+  /** 0 = unlimited; the other limits keep their overrides. */
+  async setLimit(id: string, key: LimitKey, value: number): Promise<void> {
     const c = this.customer(id);
     if (!c) return;
-    const status: CustomerStatus =
-      action === 'suspend'
-        ? 'suspended'
-        : action === 'ban'
-          ? 'banned'
-          : action === 'restore'
-            ? 'active'
-            : c.status;
-    const paused =
-      action === 'suspend' || action === 'ban' ? true : action === 'restore' ? false : c.paused;
-    if (action === 'refund') {
-      const src = txId ? this.transactions().find((x) => x.id === txId) : undefined;
-      const amount = src ? src.amount : this.plans()[c.plan].price || 0;
-      this.transactions.update((list) => [
-        { id: 'tx' + Date.now(), date: dateParts(CLOCK.now), cust: c.id, type: 'refund', amount },
-        ...list,
-      ]);
-    }
-    this.update(id, () => ({ status, paused }));
+    const limits = {
+      accounts: null,
+      posts: null,
+      devices: null,
+      seats: null,
+      ...(c.limits ?? {}),
+    } as Record<LimitKey, number | null>;
+    limits[key] = Math.max(0, value || 0);
+    this.replace(await this.api.adminSetLimits(id, limits));
   }
 
-  setPlan(id: string, plan: PlanKey): void {
-    this.update(id, () => ({ plan, limits: {} }));
+  async revokeDevice(id: string, index: number): Promise<void> {
+    const d = this.customer(id)?.devices[index];
+    if (d) this.replace(await this.api.adminRevokeDevice(id, d.id));
   }
 
-  setLimit(id: string, key: LimitKey, value: number): void {
-    this.update(id, (c) => ({ limits: { ...(c.limits ?? {}), [key]: Math.max(0, value || 0) } }));
+  async togglePaused(id: string): Promise<void> {
+    const c = this.customer(id);
+    if (c) this.replace(await this.api.adminSetPaused(id, !c.paused));
   }
 
-  revokeDevice(id: string, index: number): void {
-    this.update(id, (c) => ({ devices: c.devices.filter((_, j) => j !== index) }));
-  }
-
-  togglePaused(id: string): void {
-    this.update(id, (c) => ({ paused: !c.paused }));
-  }
-
-  /** Moves failed jobs back to the queue; returns how many. */
-  retryFailed(id: string): number {
-    const n = this.customer(id)?.jobs.failed ?? 0;
-    if (n) this.update(id, (c) => ({ jobs: { ...c.jobs, failed: 0, queued: c.jobs.queued + n } }));
+  /** Moves failed posts back to the queue; returns how many. */
+  async retryFailed(id: string): Promise<number> {
+    const n = await this.api.adminRetryFailed(id);
+    const [customers, jobs] = await Promise.all([
+      this.api.adminCustomers(),
+      this.api.adminJobs(undefined, 40),
+    ]);
+    this.customers.set(customers.map(toCustomer));
+    this.jobs.set(jobs);
+    if (this.customerJobs()[id]) await this.loadCustomerJobs(id);
     return n;
   }
 
-  retryCharge(txId: string): Customer | undefined {
-    const x = this.transactions().find((y) => y.id === txId);
-    if (!x) return undefined;
-    this.transactions.update((list) =>
-      list.map((y) => (y.id === txId ? { ...y, type: 'charge', date: dateParts(CLOCK.now) } : y)),
-    );
-    this.customers.update((list) =>
-      list.map((z) =>
-        z.id === x.cust && z.status === 'pastdue' ? { ...z, status: 'active', note: undefined } : z,
-      ),
-    );
-    return this.customer(x.cust);
+  /** Records that a failed charge was paid (no payment provider is connected). */
+  async retryCharge(txId: string): Promise<Customer | undefined> {
+    const tx = await this.api.adminRecordPayment(txId);
+    await this.reloadMoney();
+    this.customers.set((await this.api.adminCustomers()).map(toCustomer));
+    return this.customer(tx.userId);
   }
 
-  setPlanField(plan: PlanKey, field: keyof PlanLimits, value: number): void {
+  async setPlanField(plan: PlanKey, field: keyof PlanLimits, value: number): Promise<void> {
     const n = Math.max(0, value || 0);
-    this.plans.update((p) => ({
-      ...p,
-      [plan]: { ...p[plan], [field]: field === 'price' ? n : n || null },
-    }));
+    const cur = { ...this.plans()[plan], [field]: field === 'price' ? n : n || null };
+    const saved = await this.api.adminUpdatePlan(plan, {
+      price: cur.price,
+      accounts: cur.accounts,
+      posts: cur.posts,
+      devices: cur.devices,
+      seats: cur.seats,
+    });
+    this.plans.update((p) =>
+      toPlans([...Object.entries(p).map(([key, v]) => ({ key, ...v }) as ApiPlanSetting), saved]),
+    );
   }
 
-  addPromo(code: string, discount: DiscountKey): void {
-    const end = new Date(CLOCK.now.getFullYear(), 11, 31);
-    this.promos.update((list) => [
-      { code, discount, uses: 0, expires: dateParts(end), active: true },
-      ...list,
-    ]);
+  async addPromo(code: string, discount: DiscountKey): Promise<void> {
+    const p = await this.api.adminCreatePromo(code, discount);
+    this.promos.update((list) => [toPromo(p), ...list]);
+  }
+
+  async setPromoActive(code: string, active: boolean): Promise<void> {
+    const p = await this.api.adminSetPromoActive(code, active);
+    this.promos.update((list) => list.map((x) => (x.code === p.code ? toPromo(p) : x)));
   }
 }

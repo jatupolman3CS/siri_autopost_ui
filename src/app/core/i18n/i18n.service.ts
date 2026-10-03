@@ -71,3 +71,13 @@ function readStored(): Lang {
     return 'th';
   }
 }
+
+/** "5 min ago" style text for a last-seen time; null = never. */
+export function ago(t: Dict, d: Date | null, now = Date.now()): string {
+  if (!d) return t.api.never;
+  const min = Math.max(0, Math.round((now - d.getTime()) / 60000));
+  if (min < 5) return t.adm.ago.now;
+  if (min < 60) return fmt(t.api.minutesAgo, { n: min });
+  if (min < 48 * 60) return fmt(t.api.hoursAgo, { n: Math.round(min / 60) });
+  return fmt(t.api.daysAgo, { n: Math.round(min / 1440) });
+}

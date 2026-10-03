@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AdminStore } from '../../core/data/admin.store';
-import { CLOCK } from '../../core/data/clock';
 import { baht, monthName } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -146,8 +145,9 @@ export class FinancePageComponent {
   protected readonly kpis = computed(() => {
     const a = this.t().adm;
     const total = this.view.mrr().total;
-    const y = CLOCK.now.getFullYear();
-    const m = CLOCK.now.getMonth();
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
     const thisMonth = this.admin.transactions().filter((x) => x.date[0] === y && x.date[1] === m);
     const charges = thisMonth.filter((x) => x.type === 'charge');
     const failed = thisMonth.filter((x) => x.type === 'failed');
@@ -171,16 +171,17 @@ export class FinancePageComponent {
 
   protected readonly revBars = computed(() => {
     const li = this.i18n.li();
-    const max = Math.max(...this.admin.revenue.map((r) => r[2]));
-    return this.admin.revenue.map((r) => ({
+    const rev = this.admin.revenue();
+    const max = Math.max(1, ...rev.map((r) => r[2]));
+    return rev.map((r) => ({
       label: monthName(r[1], li),
       amount: baht(Math.round(r[2] / 1000)) + 'k',
       h: Math.max(6, Math.round((r[2] / max) * 100)),
     }));
   });
 
-  protected retry(txId: string): void {
-    const c = this.admin.retryCharge(txId);
+  protected async retry(txId: string): Promise<void> {
+    const c = await this.admin.retryCharge(txId);
     this.notify.success(fmt(this.t().adm.chargeRetried, { c: c?.name ?? '' }));
   }
 }

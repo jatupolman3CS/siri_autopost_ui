@@ -3,13 +3,14 @@ import { RouterLink } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { AdminStore } from '../../core/data/admin.store';
 import { DevicesStore } from '../../core/data/devices.store';
-import { MemberRole } from '../../core/data/models';
 import { SessionStore } from '../../core/data/session.store';
 import { SettingsStore } from '../../core/data/settings.store';
 import { TeamStore } from '../../core/data/team.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { fmtDate, hm } from '../../core/i18n/format';
-import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import { ApiMember, ApiRole } from '../../core/http/api.service';
+import { problemOf } from '../../core/http/problem-details';
+import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
@@ -43,38 +44,58 @@ export class TeamPageComponent {
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
 
-  protected readonly modal = signal<'invite' | 'ws' | 'revoke' | 'pair' | null>(null);
+  protected readonly modal = signal<'invite' | 'ws' | 'revoke' | 'pair' | 'remove' | null>(null);
   protected readonly revokeId = signal<string | null>(null);
+  protected readonly removing = signal<ApiMember | null>(null);
   protected readonly formEmail = signal('');
   protected readonly formRole = signal<string>('editor');
   protected readonly formWs = signal('');
   protected readonly formErr = signal('');
 
-  /** Team management is an Agency feature. */
-  protected readonly gated = computed(() => this.session.plan() !== 'agency');
+  /** Seats (owner included) come from the owner's plan; one seat leaves no room to invite. */
+  protected readonly gated = computed(
+    () => this.team.role() === 'owner' && this.admin.plans()[this.session.plan()].seats === 1,
+  );
+  protected readonly canInvite = computed(() => this.team.canManage() && !this.gated());
+  protected readonly roleNote = computed(() =>
+    this.team.role() === 'owner'
+      ? ''
+      : fmt(this.t().api.roleHere, { r: this.roleNames()[this.team.role()] }),
+  );
+
+  private readonly roleNames = computed<Record<ApiRole, string>>(() => {
+    const t = this.t().team;
+    return { owner: t.rOwner, admin: t.rAdmin, editor: t.rEditor, viewer: t.rViewer };
+  });
 
   protected readonly memberRows = computed(() => {
-    const t = this.t().team;
-    const roles: Record<MemberRole, string> = {
-      owner: t.rOwner,
-      admin: t.rAdmin,
-      editor: t.rEditor,
-      viewer: t.rViewer,
-    };
-    // Members are sample data (no team API yet); the "you" row is the signed-in user.
+    const t = this.t();
+    const roles = this.roleNames();
+    const manage = this.team.canManage();
     return this.team.members().map((m) => {
-      const name = m.you ? this.session.name() : m.name;
+      const owner = m.role === 'owner';
       return {
-        id: m.id,
-        initial: name.charAt(0).toUpperCase(),
-        name,
-        you: m.you ? t.you : '',
-        email: m.you ? this.session.email() : m.email,
-        role: roles[m.role] ?? m.role,
-        active: (t as Record<string, string>)[m.active] ?? m.active,
+        m,
+        key: m.id ?? 'owner',
+        initial: (m.name || m.email).charAt(0).toUpperCase(),
+        name: m.name || m.email.split('@')[0],
+        you: m.you ? t.team.you : '',
+        email: m.email,
+        role: roles[m.role],
+        /** Owners and admins change the others' roles; nobody changes the owner's. */
+        editRole: manage && !owner && !m.you,
+        active: m.active
+          ? ago(t, m.lastSeenAt ? new Date(m.lastSeenAt) : null)
+          : t.api.invitePending,
+        pending: !m.active,
+        remove: owner ? '' : m.you ? t.api.leaveTeam : manage ? t.api.removeMember : '',
       };
     });
   });
+
+  protected readonly removeTitle = computed(() =>
+    this.removing()?.you ? this.t().api.leaveTeam : this.t().api.removeMember,
+  );
 
   protected readonly devicesBody = computed(() => {
     const max = this.admin.plans()[this.session.plan()].devices;
@@ -130,15 +151,38 @@ export class TeamPageComponent {
     this.modal.set(null);
   }
 
-  protected confirmInvite(): void {
+  protected async confirmInvite(): Promise<void> {
     const email = this.formEmail().trim();
     if (!EMAIL_RE.test(email)) {
       this.formErr.set(this.t().team.errEmail);
       return;
     }
-    this.team.invite(email, this.formRole() as MemberRole);
+    try {
+      await this.team.invite(email, this.formRole() as ApiRole);
+    } catch (e) {
+      this.formErr.set(problemOf(e)?.title ?? this.t().api.serverDown);
+      return;
+    }
     this.close();
     this.notify.success(fmt(this.t().team.invited, { e: email }));
+  }
+
+  protected async setRole(m: ApiMember, role: string): Promise<void> {
+    await this.team.changeRole(m.id!, role as ApiRole);
+    this.notify.success(this.t().api.saved);
+  }
+
+  protected askRemove(m: ApiMember): void {
+    this.removing.set(m);
+    this.modal.set('remove');
+  }
+
+  protected async confirmRemove(): Promise<void> {
+    const m = this.removing();
+    this.close();
+    if (!m) return;
+    await this.team.remove(m);
+    this.notify.info(fmt(this.t().api.removed, { e: m.email }));
   }
 
   protected async confirmWs(): Promise<void> {

@@ -183,11 +183,13 @@ export class AuthPageComponent {
       const [field, msg]: ['email' | 'pass', string] =
         status === 401
           ? ['pass', a.authInvalid]
-          : status === 409
-            ? ['email', a.emailTaken]
-            : status === 400
-              ? ['pass', a.passwordMin]
-              : ['pass', a.serverDown];
+          : status === 403
+            ? ['email', a.blocked]
+            : status === 409
+              ? ['email', a.emailTaken]
+              : status === 400
+                ? ['pass', a.passwordMin]
+                : ['pass', a.serverDown];
       this.serverErr.set({ field, msg, email: this.email(), pass: this.pass() });
     } finally {
       this.busy.set(false);

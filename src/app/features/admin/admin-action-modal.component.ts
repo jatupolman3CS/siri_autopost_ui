@@ -82,13 +82,14 @@ export class AdminActionModalComponent {
     ['ban', 'suspend'].includes(this.request()?.action ?? ''),
   );
 
-  protected confirm(): void {
+  protected async confirm(): Promise<void> {
     const r = this.request();
     const c = r ? this.admin.customer(r.id) : undefined;
     if (!r || !c) return;
-    this.admin.apply(r.id, r.action, r.tx);
+    await this.admin.apply(r.id, r.action, r.tx, this.note());
     this.note.set('');
     this.closed.emit();
     this.notify.success(fmt(this.t().adm.done, { c: c.name, a: this.t().adm[r.action] }));
+    if (r.action === 'assist') this.notify.info(this.t().api.impersonateNote);
   }
 }

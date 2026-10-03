@@ -15,6 +15,8 @@ export const USER: ApiUser = {
   name: 'owner',
   role: 'user',
   plan: 'pro',
+  cycle: 'month',
+  status: 'active',
 };
 
 export const ACCOUNTS: ApiAccount[] = [
@@ -95,7 +97,9 @@ export async function signIn(
   http.expectOne('/api/auth/login').flush({ token: 't0k', expiresAt: '2099-01-01', user: USER });
   await login;
   await settle();
-  http.expectOne('/api/workspaces').flush([{ id: WS, name: 'Shop', posts7: 0, members: 1 }]);
+  http
+    .expectOne('/api/workspaces')
+    .flush([{ id: WS, name: 'Shop', posts7: 0, members: 1, role: 'owner' }]);
   await settle();
   answerWorkspaceLoads(http, data);
   await settle();

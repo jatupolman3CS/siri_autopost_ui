@@ -1,4 +1,6 @@
+import { inject, provideEnvironmentInitializer } from '@angular/core';
 import { Routes } from '@angular/router';
+import { AdminStore } from '../../core/data/admin.store';
 import { AdminViewService } from './admin-view.service';
 
 const page = (title: string) => `${title} · AutoPost`;
@@ -6,7 +8,11 @@ const page = (title: string) => `${title} · AutoPost`;
 export const ADMIN_ROUTES: Routes = [
   {
     path: '',
-    providers: [AdminViewService],
+    providers: [
+      AdminViewService,
+      // Entering the admin area (any page) loads its data.
+      provideEnvironmentInitializer(() => void inject(AdminStore).load()),
+    ],
     children: [
       {
         path: '',

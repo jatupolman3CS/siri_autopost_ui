@@ -3,6 +3,9 @@
     <div>
       <h1>{{ t().team.title }}</h1>
       <p>{{ t().team.sub }}</p>
+      @if (roleNote()) {
+        <p class="small muted">{{ roleNote() }}</p>
+      }
     </div>
     <div class="actions">
       <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="open('ws')">
@@ -11,7 +14,7 @@
       <button
         type="button"
         class="su-btn su-btn-sm su-btn-primary"
-        [disabled]="gated()"
+        [disabled]="!canInvite()"
         (click)="open('invite')"
       >
         <i class="ph ph-user-plus"></i>{{ t().team.invite }}
@@ -40,16 +43,44 @@
           <div class="th">{{ t().common.name }}</div>
           <div class="th">{{ t().team.role }}</div>
           <div class="th">{{ t().team.lastActive }}</div>
-          @for (m of memberRows(); track m.id) {
+          <div class="th"></div>
+          @for (r of memberRows(); track r.key) {
             <div class="td who">
-              <span class="pico initial">{{ m.initial }}</span>
+              <span class="pico initial">{{ r.initial }}</span>
               <div class="min0">
-                <div class="fw5 ellipsis">{{ m.name }} {{ m.you }}</div>
-                <div class="small muted ellipsis">{{ m.email }}</div>
+                <div class="fw5 ellipsis">{{ r.name }} {{ r.you }}</div>
+                <div class="small muted ellipsis">{{ r.email }}</div>
               </div>
             </div>
-            <div class="td">{{ m.role }}</div>
-            <div class="td muted">{{ m.active }}</div>
+            <div class="td">
+              @if (r.editRole) {
+                <select
+                  class="su-select role-sel"
+                  [attr.aria-label]="t().team.role"
+                  (change)="setRole(r.m, $any($event.target).value)"
+                >
+                  @for (o of roleOptions(); track o.value) {
+                    <option [value]="o.value" [selected]="o.value === r.m.role">
+                      {{ o.label }}
+                    </option>
+                  }
+                </select>
+              } @else {
+                {{ r.role }}
+              }
+            </div>
+            <div class="td muted" [class.pending]="r.pending">{{ r.active }}</div>
+            <div class="td end">
+              @if (r.remove) {
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  (click)="askRemove(r.m)"
+                >
+                  {{ r.remove }}
+                </button>
+              }
+            </div>
           }
         </div>
       </section>
@@ -153,6 +184,18 @@
     </button>
     <button type="button" class="su-btn su-btn-sm su-btn-danger" (click)="confirmRevoke()">
       {{ t().common.revoke }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [open]="modal() === 'remove'" [title]="removeTitle()" (closed)="close()">
+  <p class="fs14 flush">{{ removing()?.email }}</p>
+  <div modal-footer>
+    <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="close()">
+      {{ t().common.cancel }}
+    </button>
+    <button type="button" class="su-btn su-btn-sm su-btn-danger" (click)="confirmRemove()">
+      {{ removeTitle() }}
     </button>
   </div>
 </app-modal>

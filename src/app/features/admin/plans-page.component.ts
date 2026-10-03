@@ -202,7 +202,7 @@ export class PlansPageComponent {
   });
 
   protected setField(plan: PlanKey, field: keyof PlanLimits, v: string): void {
-    this.admin.setPlanField(plan, field, parseInt(v, 10));
+    void this.admin.setPlanField(plan, field, parseInt(v, 10));
   }
 
   protected savePrices(): void {
@@ -216,13 +216,13 @@ export class PlansPageComponent {
     this.modal.set(true);
   }
 
-  protected confirmPromo(): void {
+  protected async confirmPromo(): Promise<void> {
     const code = this.formCode().trim().toUpperCase();
     if (code.length < 4 || code.length > 12) {
       this.formErr.set(this.t().adm.errCode);
       return;
     }
-    this.admin.addPromo(code, this.formDiscount() as DiscountKey);
+    await this.admin.addPromo(code, this.formDiscount() as DiscountKey);
     this.modal.set(false);
     this.notify.success(fmt(this.t().adm.promoCreated, { c: code }));
   }

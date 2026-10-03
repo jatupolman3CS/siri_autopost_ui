@@ -1,17 +1,60 @@
-import { Injectable, signal } from '@angular/core';
-import { Member, MemberRole } from './models';
-import { SEED } from './seed.data';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { ApiMember, ApiRole, ApiService } from '../http/api.service';
+import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
-// Team members. Sample data: there is no team API yet (workspaces are in WorkspaceStore,
-// paired devices in DevicesStore).
+// The current workspace's people: the owner, members and pending invitations
+// (/api/workspaces/{ws}/members). Paired browsers are in DevicesStore.
 @Injectable({ providedIn: 'root' })
 export class TeamStore {
-  readonly members = signal<Member[]>(SEED.members.map((m) => ({ ...m })));
+  private readonly api = inject(ApiService);
+  private readonly workspaces = inject(WorkspaceStore);
+  private wsId: string | null = null;
 
-  invite(email: string, role: MemberRole): void {
-    this.members.update((list) => [
-      ...list,
-      { id: 'u' + Date.now(), name: email.split('@')[0], email, role, active: 'aInvited' },
-    ]);
+  readonly members = signal<ApiMember[]>([]);
+  readonly loaded = signal(false);
+  /** The signed-in user's role in the current workspace. */
+  readonly role = computed<ApiRole>(() => this.workspaces.current()?.role ?? 'viewer');
+  /** Owners and admins invite, change roles and remove people. */
+  readonly canManage = computed(() => this.role() === 'owner' || this.role() === 'admin');
+
+  constructor() {
+    whenWorkspaceChanges((id) => {
+      this.wsId = id;
+      this.members.set([]);
+      this.loaded.set(false);
+      if (id) void this.load();
+    });
+  }
+
+  async load(): Promise<void> {
+    const ws = this.wsId;
+    if (!ws) return;
+    const list = await this.api.members(ws);
+    if (ws !== this.wsId) return;
+    this.members.set(list);
+    this.loaded.set(true);
+  }
+
+  /** Throws the server's refusal (team full, already a member) for the form to show. */
+  async invite(email: string, role: ApiRole): Promise<void> {
+    await this.api.inviteMember(this.wsId!, email, role);
+    await this.afterChange();
+  }
+
+  async changeRole(id: string, role: ApiRole): Promise<void> {
+    await this.api.changeMemberRole(this.wsId!, id, role);
+    await this.load();
+  }
+
+  /** Removes a member, or leaves the workspace when it is the signed-in user's own row. */
+  async remove(m: ApiMember): Promise<void> {
+    await this.api.removeMember(this.wsId!, m.id!);
+    if (m.you) await this.workspaces.load();
+    else await this.afterChange();
+  }
+
+  /** The member count on the workspace list changes too. */
+  private async afterChange(): Promise<void> {
+    await Promise.all([this.load(), this.workspaces.load()]);
   }
 }
