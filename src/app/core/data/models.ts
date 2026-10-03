@@ -13,7 +13,6 @@ export type CustomerStatus = 'active' | 'trial' | 'pastdue' | 'suspended' | 'ban
 export type TxType = 'charge' | 'refund' | 'failed';
 export type DiscountKey = 'd10' | 'd20' | 'd30' | 'dFree';
 export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
-export type AgoKey = 'now' | 'h2' | 'yesterday' | 'd3' | 'd12';
 
 export interface Platform {
   name: string;
@@ -44,16 +43,6 @@ export interface SocialAccount {
   connected: boolean;
 }
 
-/** Sample account in the design data (landing preview, admin mock). */
-export interface SeedAccount {
-  id: string;
-  platform: PlatformKey;
-  name: string;
-  handle: L10n;
-  health: Health;
-  hasGroups?: boolean;
-}
-
 export interface Target {
   a: string;
   p: PlatformKey;
@@ -76,41 +65,6 @@ export interface Snippet {
   used: number;
 }
 
-export interface SeedMedia {
-  id: string;
-  label: L10n;
-  meta: string;
-  kind: 'image' | 'video';
-  used: number;
-}
-
-export interface SeedSnippet {
-  id: string;
-  title: L10n;
-  text: L10n;
-  used: number;
-}
-
-export interface Member {
-  id: string;
-  name: string;
-  email: string;
-  role: MemberRole;
-  /** Key into t.team (aNow, a2h, aYesterday, aInvited). */
-  active: string;
-  you?: boolean;
-}
-
-export interface Device {
-  id: string;
-  name: string;
-  browser: string;
-  /** Key into t.team (seenNow, seenYesterday). */
-  seen: string;
-  isThis: boolean;
-  icon: string;
-}
-
 export interface PlanLimits {
   accounts: number | null;
   posts: number | null;
@@ -126,14 +80,6 @@ export interface CustomerDevice {
   /** Last call from the extension. */
   seen: Date | null;
   online: boolean;
-  i: string;
-}
-
-/** Sample customer device in the design data. */
-export interface SeedCustomerDevice {
-  n: string;
-  b: string;
-  s: AgoKey;
   i: string;
 }
 
@@ -168,12 +114,6 @@ export interface Customer {
   workspaces?: number;
 }
 
-/** Sample customer in the design data. */
-export interface SeedCustomer extends Omit<Customer, 'lastActive' | 'devices'> {
-  active: AgoKey;
-  devices: SeedCustomerDevice[];
-}
-
 export interface Transaction {
   id: string;
   /** [year, month0, day] */
@@ -190,54 +130,6 @@ export interface Promo {
   /** [year, month0, day] */
   expires: number[];
   active: boolean;
-}
-
-export interface SeedFailure {
-  id: string;
-  /** [year, month0, day, hour, minute] */
-  dt: number[];
-  accountId: string;
-  platform: PlatformKey;
-  target: L10n;
-  cidx: number;
-  code: ErrorCode;
-}
-
-export interface SeedData {
-  user: { name: L10n; email: string; initials: string };
-  workspaces: Omit<Workspace, 'role'>[];
-  platforms: Record<PlatformKey, Platform>;
-  groups: string[];
-  // Collections, target sets and schedules come from a later design iteration
-  // that has no screens yet; they are kept for the next phase.
-  collections: unknown[];
-  targetSets: unknown[];
-  schedules: unknown[];
-  accounts: SeedAccount[];
-  targets: Target[];
-  posts: { id: string; col: string; media: string[]; text: L10n }[];
-  failed: SeedFailure[];
-  media: SeedMedia[];
-  snippets: SeedSnippet[];
-  limits: Record<PlatformKey, number>;
-  usedToday: Record<PlatformKey, number>;
-  members: Member[];
-  devices: Device[];
-  planLimits: Record<PlanKey, PlanLimits>;
-  invoices: number[][];
-  customers: SeedCustomer[];
-  subs: Record<'basic' | 'pro' | 'agency', number>;
-  transactions: Transaction[];
-  /** [year, month0, amount] */
-  revenue: number[][];
-  promos: Promo[];
-  health: { label: L10n; value: string; status: 'ok' | 'warn' }[];
-  thMonths: string[];
-  thMonthsFull: string[];
-  enMonths: string[];
-  enMonthsFull: string[];
-  thDays: string[];
-  enDays: string[];
 }
 
 /** One scheduled or finished posting task (a queue item or an error report). */

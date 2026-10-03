@@ -17,6 +17,8 @@ describe('ExtensionStore', () => {
     http = provideApiTesting();
     ext = TestBed.inject(ExtensionStore);
     await signIn(http);
+    // The store follows the paired browsers (pausing is the device's jobsPaused); none yet.
+    for (const r of http.match(`/api/workspaces/${WS}/devices`)) r.flush([]);
   });
 
   afterEach(() => http.verify());

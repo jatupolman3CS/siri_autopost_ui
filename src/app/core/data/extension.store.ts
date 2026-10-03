@@ -2,6 +2,8 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../http/api.service';
 import { I18nService, fmt } from '../i18n/i18n.service';
 import { NotificationService } from '../services/notification.service';
+import { DeviceLiveStore } from './device-live.store';
+import { DevicesStore } from './devices.store';
 import { PostsStore } from './posts.store';
 import { SettingsStore } from './settings.store';
 import { WorkspaceStore } from './workspace.store';
@@ -18,14 +20,16 @@ export class ExtensionStore {
   private readonly settings = inject(SettingsStore);
   private readonly notify = inject(NotificationService);
   private readonly i18n = inject(I18nService);
+  private readonly devices = inject(DevicesStore);
+  private readonly liveDevice = inject(DeviceLiveStore);
 
   readonly online = this.settings.extensionOnline.asReadonly();
   /** Offline because of "simulate offline" (the banner then offers to reconnect). */
   readonly simulated = this.settings.simulatedOffline.asReadonly();
-  /** No browser is paired yet: the dashboard runs on its sample accounts. */
+  /** No browser is paired yet: nothing can post until one is (Team and workspaces, "Add device"). */
   readonly unpaired = computed(() => this.settings.devices() === 0);
-  /** Pausing lives in the extension popup preview only. */
-  readonly paused = signal(false);
+  /** The shown browser takes no posts from the web (its `jobsPaused`, set here or on the Team page). */
+  readonly paused = computed(() => this.liveDevice.device()?.jobsPaused ?? false);
   readonly busy = signal(false);
   /** When this session saw the extension go offline (unknown after a reload). */
   readonly offlineSince = signal<Date | null>(null);
@@ -50,24 +54,27 @@ export class ExtensionStore {
     }
   }
 
-  async bannerAction(kind: 'skip' | 'queue' | 'notify'): Promise<void> {
-    const t = this.i18n.t();
+  /** Drops the posts held while the extension was offline (the only banner action the API has). */
+  async skipWaiting(): Promise<void> {
     const wsId = this.ws.id();
-    if (kind === 'skip' && wsId) {
-      const r = await this.api.skipWaiting(wsId);
-      await this.posts.refresh();
-      this.notify.info(fmt(t.off.toastSkipped, { n: r.affected }));
-    } else if (kind === 'queue') {
-      this.notify.info(fmt(t.off.toastQueued, { n: this.posts.waiting().length }));
-    } else {
-      this.notify.success(t.off.toastNotified);
-    }
+    if (!wsId) return;
+    const r = await this.api.skipWaiting(wsId);
+    await this.posts.refresh();
+    this.notify.info(fmt(this.i18n.t().off.toastSkipped, { n: r.affected }));
   }
 
-  togglePause(): void {
-    const p = !this.paused();
-    this.paused.set(p);
-    const t = this.i18n.t();
-    this.notify.info(p ? t.ext.pausedToast : t.ext.resumedToast);
+  /** Stops (or resumes) the shown browser taking posts from the web; the device sees it on its next sync. */
+  async togglePause(): Promise<void> {
+    const d = this.liveDevice.device();
+    if (!d || this.busy()) return;
+    const pause = !d.jobsPaused;
+    this.busy.set(true);
+    try {
+      await this.devices.update(d.id, { jobsPaused: pause });
+      const t = this.i18n.t();
+      this.notify.info(pause ? t.api.extPausedToast : t.ext.resumedToast);
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

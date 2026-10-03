@@ -38,44 +38,60 @@
     <div class="stack">
       <section class="panel col12">
         <h2 class="h2">{{ t().bill.payment }}</h2>
-        <div class="card-row">
-          <i class="ph ph-credit-card card-ico"></i>
-          <div class="grow120">
-            <div class="fs14 fw5">Visa •••• {{ bill().card.last4 }}</div>
-            <div class="small muted">{{ t().bill.expires }} {{ bill().card.exp }}</div>
+        @if (cardView(); as card) {
+          <div class="card-row">
+            <i class="ph ph-credit-card card-ico"></i>
+            <div class="grow120">
+              <div class="fs14 fw5">{{ card.title }}</div>
+              <div class="small muted">{{ t().bill.expires }} {{ card.expiry }}</div>
+            </div>
+            <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="openCard()">
+              {{ t().bill.updateCard }}
+            </button>
+            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="removeCard()">
+              {{ t().api.removeCard }}
+            </button>
           </div>
-          <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="openCard()">
-            {{ t().bill.updateCard }}
-          </button>
-        </div>
-        @if (cardWarn()) {
-          <div class="callout warn">
-            <i class="ph ph-warning-circle" style="color: var(--color-warning)"></i>
-            <span>{{ t().bill.cardExp }}</span>
+          @if (card.state === 'ok') {
+            <div class="ok fs14 muted">
+              <i class="ph ph-check-circle" style="color: var(--color-success)"></i>
+              <span>{{ t().bill.cardOk }}</span>
+            </div>
+          } @else {
+            <div class="callout warn">
+              <i class="ph ph-warning-circle" style="color: var(--color-warning)"></i>
+              <span>{{ card.state === 'expired' ? t().api.cardExpired : t().api.cardSoon }}</span>
+            </div>
+          }
+        } @else if (billing.loaded()) {
+          <div class="card-row">
+            <i class="ph ph-credit-card card-ico"></i>
+            <div class="grow120 fs14 muted">{{ t().api.noCard }}</div>
+            <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="openCard()">
+              {{ t().api.addCard }}
+            </button>
           </div>
-        } @else {
-          <div class="ok fs14 muted">
-            <i class="ph ph-check-circle" style="color: var(--color-success)"></i>
-            <span>{{ t().bill.cardOk }}</span>
-          </div>
+        }
+        @if (!billing.paymentsConnected()) {
+          <p class="small muted flush">{{ t().api.cardNote }}</p>
         }
       </section>
       <section class="panel">
         <h2 class="h2">{{ t().bill.notif }}</h2>
         <app-checkbox
           [label]="t().bill.nFail"
-          [checked]="bill().nFail"
-          (checkedChange)="setBill({ nFail: $event })"
+          [checked]="billing.profile()?.notifyFailed ?? false"
+          (checkedChange)="setNotifications({ notifyFailed: $event })"
         />
         <app-checkbox
           [label]="t().bill.nExpire"
-          [checked]="bill().nExpire"
-          (checkedChange)="setBill({ nExpire: $event })"
+          [checked]="billing.profile()?.notifyExpiring ?? false"
+          (checkedChange)="setNotifications({ notifyExpiring: $event })"
         />
         <app-checkbox
           [label]="t().bill.nRenew"
-          [checked]="bill().nRenew"
-          (checkedChange)="setBill({ nRenew: $event })"
+          [checked]="billing.profile()?.notifyRenewal ?? false"
+          (checkedChange)="setNotifications({ notifyRenewal: $event })"
         />
       </section>
     </div>
@@ -98,8 +114,8 @@
         <span class="status"
           ><span class="dot" [style.background]="inv.dot"></span>{{ inv.label }}</span
         >
-        <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="download()">
-          <i class="ph ph-download-simple"></i>{{ t().bill.download }}
+        <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="statement(inv.id)">
+          <i class="ph ph-file-text"></i>{{ t().api.statement }}
         </button>
       </div>
     } @empty {

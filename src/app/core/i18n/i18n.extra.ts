@@ -675,4 +675,58 @@ export const AP_I18N_EXTRA = {
     clear: ['ล้าง', 'Clear'],
     noLogs: ['ยังไม่มีบันทึก', 'Nothing yet'],
   },
+
+  // Billing profile, statements, landing figures and the popup (mock data replaced by the API)
+  cardGeneric: ['บัตร', 'Card'],
+  noCard: ['ยังไม่ได้บันทึกบัตร', 'No card on file'],
+  addCard: ['เพิ่มบัตร', 'Add card'],
+  removeCard: ['ลบบัตร', 'Remove card'],
+  cardRemoved: ['ลบบัตรแล้ว', 'Card removed'],
+  cardSoon: [
+    'บัตรจะหมดอายุภายในเดือนนี้หรือเดือนหน้า ควรอัปเดตก่อนครบกำหนด',
+    'Your card expires within a month. Update it before it does.',
+  ],
+  cardExpired: ['บัตรนี้หมดอายุแล้ว กรุณาอัปเดตบัตร', 'This card has expired. Please update it.'],
+  cardNote: [
+    'ระบบเก็บเฉพาะยี่ห้อ เลข 4 ตัวท้าย และวันหมดอายุ ไม่เก็บเลขบัตรเต็มหรือ CVC และยังไม่ได้เชื่อมระบบตัดบัตร จึงยังไม่มีการเรียกเก็บเงินจริง',
+    'Only the brand, last four digits and expiry are kept (never the full number or CVC). No payment provider is connected yet, so nothing is charged.',
+  ],
+  statement: ['ใบแสดงรายการ', 'Statement'],
+  statementFailed: ['เปิดใบแสดงรายการไม่ได้', 'Could not open the statement'],
+  landTitle: ['ตัวเลขจริงของแพลตฟอร์ม', 'Live platform figures'],
+  landSent: ['โพสต์ที่ส่งแล้ว', 'Posts sent'],
+  landRate: ['อัตราสำเร็จ', 'Success rate'],
+  landDevices: ['เครื่องที่ออนไลน์', 'Browsers active'],
+  last24h: ['24 ชม.ล่าสุด', 'Last 24 h'],
+  landLoading: ['กำลังโหลดตัวเลข…', 'Loading figures…'],
+  landUnavailable: ['ยังโหลดตัวเลขไม่ได้ในตอนนี้', 'Figures are not available right now'],
+  popupNoDevice: [
+    'ยังไม่มีเครื่องที่จับคู่ไว้ จึงยังไม่มีบันทึกการทำงาน',
+    'No paired browser yet, so there is no activity to show.',
+  ],
+  popupNoLog: ['ยังไม่มีบันทึกการทำงาน', 'No activity yet'],
+  popupNoNext: ['ไม่มีโพสต์ที่รอส่ง', 'No post waiting'],
+  pauseFailed: ['สั่งหยุด/เดินต่อไม่สำเร็จ', 'Could not pause or resume'],
+  extStatusNav: ['สถานะส่วนขยาย', 'Extension status'],
+  extStatusTitle: ['สถานะส่วนขยาย', 'Extension status'],
+  extStatusSub: [
+    'สถานะ โพสต์ถัดไป โควต้าวันนี้ และบันทึกการทำงานล่าสุดของเบราว์เซอร์ที่จับคู่ไว้ ข้อมูลจริงที่ส่วนขยายรายงานขึ้นมา',
+    'Status, the next post, today’s quota and the latest activity of the paired browser: what the extension really reports.',
+  ],
+  extBrowser: ['เบราว์เซอร์', 'Browser'],
+  extPause: ['หยุดรับงานจากเว็บ', 'Stop taking posts'],
+  extPausedToast: [
+    'หยุดรับงานจากเว็บแล้ว กดทำงานต่อเมื่อพร้อม',
+    'Stopped taking posts from the web. Resume when you are ready.',
+  ],
+  extPaused: ['หยุดรับงานจากเว็บอยู่', 'Not taking posts'],
+  noAccounts: [
+    'ยังไม่มีบัญชีที่เชื่อมต่อ จับคู่เบราว์เซอร์ที่ล็อกอิน Facebook ไว้เพื่อเพิ่มบัญชีและกลุ่ม',
+    'No accounts connected yet. Pair a browser that is signed in to Facebook to add its account and groups.',
+  ],
+  noQueueToday: ['ยังไม่มีโพสต์ในคิววันนี้', 'No posts in today’s queue'],
+  noTargets: [
+    'ยังไม่มีบัญชีให้เลือกโพสต์ จับคู่เบราว์เซอร์ก่อน แล้วบัญชีและกลุ่ม Facebook จะขึ้นที่นี่',
+    'No account to post to yet. Pair a browser first and its Facebook account and groups appear here.',
+  ],
 } as const;

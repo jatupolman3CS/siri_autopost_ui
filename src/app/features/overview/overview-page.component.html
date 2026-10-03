@@ -38,6 +38,8 @@
               ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
             >
           </div>
+        } @empty {
+          <p class="muted fs14 none">{{ t().api.noQueueToday }}</p>
         }
         <div class="mt8">
           <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/calendar"
@@ -82,6 +84,11 @@
               ><span class="dot" [style.background]="a.dot"></span>{{ a.healthLabel }}</span
             >
           </div>
+        } @empty {
+          <p class="muted fs14 none">{{ t().api.noAccounts }}</p>
+          <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/team"
+            ><i class="ph ph-plus"></i>{{ t().api.addDevice }}</a
+          >
         }
       </section>
 

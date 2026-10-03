@@ -24,10 +24,9 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, errorInterceptor])),
     // The guards need to know who is signed in before the first navigation.
-    provideAppInitializer(() => {
-      // Plan prices and limits from the server; the pages show the design's values until then.
-      void inject(AdminStore).loadPlans();
-      return inject(SessionStore).restore();
+    provideAppInitializer(async () => {
+      // Plan prices and limits come from the server: nothing renders with placeholder values.
+      await Promise.all([inject(AdminStore).loadPlans(), inject(SessionStore).restore()]);
     }),
   ],
 };

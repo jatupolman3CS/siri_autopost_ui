@@ -110,6 +110,11 @@
               <div class="relogin small">{{ t().cmp.relogin }}</div>
             }
           </div>
+        } @empty {
+          <p class="muted fs14 flush">{{ t().api.noTargets }}</p>
+          <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/team"
+            ><i class="ph ph-plus"></i>{{ t().api.addDevice }}</a
+          >
         }
       </section>
 

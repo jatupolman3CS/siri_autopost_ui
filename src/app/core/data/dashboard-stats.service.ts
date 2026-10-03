@@ -4,7 +4,7 @@ import { Dict, I18nService } from '../i18n/i18n.service';
 import { AccountsStore } from './accounts.store';
 import { HEALTH_DOT } from './models';
 import { PostsStore, QueueItem, postRow } from './posts.store';
-import { SEED } from './seed.data';
+import { PLATFORMS } from './reference';
 
 const DAY_MS = 864e5;
 
@@ -21,12 +21,13 @@ export function kpisOf(items: QueueItem[], today: QueueItem[], now: Date, t: Dic
   const in7 = items.filter((p) => p.dt.getTime() >= from && p.dt.getTime() <= to);
   const ok = in7.filter((p) => p.status === 'success').length;
   const fail = in7.filter((p) => p.status === 'failed').length;
-  const rate = ok + fail ? Math.round((ok / (ok + fail)) * 1000) / 10 : 100;
+  // No finished post yet: no rate (100% would claim a record nobody has).
+  const rate = ok + fail ? `${Math.round((ok / (ok + fail)) * 1000) / 10}%` : '—';
   const queued = today.filter((p) => p.status === 'queued' || p.status === 'waiting').length;
   return [
     { label: t.ov.kSuccess, value: ok, note: t.ov.last7 },
     { label: t.ov.kFailed, value: fail, note: t.ov.last7 },
-    { label: t.ov.kRate, value: rate + '%', note: t.ov.target },
+    { label: t.ov.kRate, value: rate, note: t.ov.target },
     { label: t.ov.kQueued, value: queued, note: t.ov.remaining },
   ];
 }
@@ -83,7 +84,7 @@ export class DashboardStatsService {
   readonly accountRows = computed(() => {
     const t = this.i18n.t();
     return this.accounts.list().map((a) => ({
-      icon: SEED.platforms[a.platform].icon,
+      icon: PLATFORMS[a.platform].icon,
       name: a.name,
       handle: a.handle,
       demo: !a.connected,
@@ -99,7 +100,7 @@ export class DashboardStatsService {
       .slice(0, 2)
       .map((e) => ({
         title: t.reasons[e.code].title,
-        meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${SEED.platforms[e.platform].name} · ${e.target}`,
+        meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${PLATFORMS[e.platform].name} · ${e.target}`,
       }));
   });
 }

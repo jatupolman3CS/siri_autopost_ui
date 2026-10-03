@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { AntiBanSettings, SettingsStore } from '../../core/data/settings.store';
 import { PlatformKey } from '../../core/data/models';
 import { PostsStore } from '../../core/data/posts.store';
-import { SEED } from '../../core/data/seed.data';
+import { PLATFORMS } from '../../core/data/reference';
 import { SessionStore } from '../../core/data/session.store';
 import { hm } from '../../core/i18n/format';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -62,7 +62,7 @@ export class AntibanPageComponent {
       .map((p, i) => {
         const wait = Math.round(ab.min + (ab.max - ab.min) * fr[i]);
         cur += wait * 60000;
-        const platform = SEED.platforms[p.platform];
+        const platform = PLATFORMS[p.platform];
         return {
           time: hm(new Date(cur)),
           icon: platform.icon,
@@ -75,12 +75,12 @@ export class AntibanPageComponent {
   protected readonly limitRows = computed(() => {
     const ab = this.ab();
     const used = this.settings.usedToday();
-    return (Object.keys(SEED.platforms) as PlatformKey[]).map((k) => {
+    return (Object.keys(PLATFORMS) as PlatformKey[]).map((k) => {
       const r = used[k] / ab.limits[k];
       return {
         k,
-        icon: SEED.platforms[k].icon,
-        name: SEED.platforms[k].name,
+        icon: PLATFORMS[k].icon,
+        name: PLATFORMS[k].name,
         limit: ab.limits[k],
         usedLabel: `${this.t().ab.usedToday} ${used[k]}/${ab.limits[k]}`,
         pct: Math.min(100, Math.round(r * 100)),
