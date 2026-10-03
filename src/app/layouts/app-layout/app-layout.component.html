@@ -123,23 +123,9 @@
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-secondary"
-              (click)="ext.bannerAction('skip')"
+              (click)="ext.skipWaiting()"
             >
               {{ t().top.bannerSkip }}
-            </button>
-            <button
-              type="button"
-              class="su-btn su-btn-sm su-btn-secondary"
-              (click)="ext.bannerAction('queue')"
-            >
-              {{ t().top.bannerQueue }}
-            </button>
-            <button
-              type="button"
-              class="su-btn su-btn-sm su-btn-secondary"
-              (click)="ext.bannerAction('notify')"
-            >
-              {{ t().top.bannerNotify }}
             </button>
             <button
               type="button"

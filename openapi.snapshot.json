@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5107/"
+      "url": "http://localhost:5100/"
     }
   ],
   "paths": {
@@ -1040,6 +1040,147 @@
                   "items": {
                     "$ref": "#/components/schemas/TransactionDto"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/invoices/{id}/statement": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { },
+              "text/html": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/profile": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/profile/notifications": {
+      "put": {
+        "tags": [
+          "Billing"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/profile/payment-method": {
+      "put": {
+        "tags": [
+          "Billing"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingProfileDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Billing"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingProfileDto"
                 }
               }
             }
@@ -2778,6 +2919,25 @@
         }
       }
     },
+    "/api/public/stats": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicStatsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/members": {
       "get": {
         "tags": [
@@ -3380,6 +3540,40 @@
           "month",
           "year"
         ]
+      },
+      "BillingProfileDto": {
+        "required": [
+          "notifyFailed",
+          "notifyExpiring",
+          "notifyRenewal",
+          "card",
+          "paymentsConnected"
+        ],
+        "type": "object",
+        "properties": {
+          "notifyFailed": {
+            "type": "boolean"
+          },
+          "notifyExpiring": {
+            "type": "boolean"
+          },
+          "notifyRenewal": {
+            "type": "boolean"
+          },
+          "card": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PaymentMethodDto"
+              }
+            ]
+          },
+          "paymentsConnected": {
+            "type": "boolean"
+          }
+        }
       },
       "ChangePlanRequest": {
         "required": [
@@ -4548,6 +4742,25 @@
           }
         }
       },
+      "NotificationsRequest": {
+        "required": [
+          "notifyFailed",
+          "notifyExpiring",
+          "notifyRenewal"
+        ],
+        "type": "object",
+        "properties": {
+          "notifyFailed": {
+            "type": "boolean"
+          },
+          "notifyExpiring": {
+            "type": "boolean"
+          },
+          "notifyRenewal": {
+            "type": "boolean"
+          }
+        }
+      },
       "OfflineDto": {
         "required": [
           "policy",
@@ -4677,6 +4890,67 @@
         "properties": {
           "paused": {
             "type": "boolean"
+          }
+        }
+      },
+      "PaymentMethodDto": {
+        "required": [
+          "brand",
+          "last4",
+          "expMonth",
+          "expYear",
+          "expired",
+          "expiresSoon"
+        ],
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "last4": {
+            "type": "string"
+          },
+          "expMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expYear": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expired": {
+            "type": "boolean"
+          },
+          "expiresSoon": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PaymentMethodRequest": {
+        "required": [
+          "brand",
+          "last4",
+          "expMonth",
+          "expYear"
+        ],
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "last4": {
+            "type": "string"
+          },
+          "expMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expYear": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -5131,6 +5405,64 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "PublicDayDto": {
+        "required": [
+          "date",
+          "sent",
+          "failed"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PublicStatsDto": {
+        "required": [
+          "postsSent7d",
+          "postsFailed7d",
+          "successRate7d",
+          "devicesActive24h",
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "postsSent7d": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "postsFailed7d": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "successRate7d": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "devicesActive24h": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicDayDto"
+            }
           }
         }
       },
@@ -5645,6 +5977,9 @@
     },
     {
       "name": "Posts"
+    },
+    {
+      "name": "Public"
     },
     {
       "name": "Team"

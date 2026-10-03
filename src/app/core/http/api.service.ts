@@ -34,6 +34,8 @@ export type ApiCustomerStatus = S['CustomerStatus'];
 export type ApiHealth = S['PlatformHealthDto'];
 export type ApiAuditEntry = S['AuditEntryDto'];
 export type ApiAuditAction = S['AuditAction'];
+export type ApiBillingProfile = S['BillingProfileDto'];
+export type ApiPublicStats = S['PublicStatsDto'];
 export type ApiExtensionConfig = S['ExtensionConfigDto'];
 export type ApiConfigSaved = S['ConfigSavedDto'];
 export type ApiDeviceLive = S['DeviceLiveDto'];
@@ -85,6 +87,38 @@ export class ApiService {
   }
   invoices() {
     return run(this.http.get<ApiTransaction[]>('/api/billing/invoices'));
+  }
+  /** The printable statement of one charge or refund (an HTML page). */
+  invoiceStatement(id: string) {
+    return run(this.http.get(`/api/billing/invoices/${id}/statement`, { responseType: 'blob' }));
+  }
+  billingProfile() {
+    return run(this.http.get<ApiBillingProfile>('/api/billing/profile'));
+  }
+  saveBillingNotifications(n: {
+    notifyFailed: boolean;
+    notifyExpiring: boolean;
+    notifyRenewal: boolean;
+  }) {
+    return run(this.http.put<ApiBillingProfile>('/api/billing/profile/notifications', n));
+  }
+  /** Only what a payment provider returns for a card: brand, last four digits and expiry. */
+  savePaymentMethod(card: {
+    brand: string | null;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+  }) {
+    return run(
+      this.http.put<ApiBillingProfile>('/api/billing/profile/payment-method', card, quiet),
+    );
+  }
+  removePaymentMethod() {
+    return run(this.http.delete<ApiBillingProfile>('/api/billing/profile/payment-method'));
+  }
+  /** Public: platform-wide counts of the last 7 days for the landing page. */
+  publicStats() {
+    return run(this.http.get<ApiPublicStats>('/api/public/stats', quiet));
   }
 
   workspaces() {

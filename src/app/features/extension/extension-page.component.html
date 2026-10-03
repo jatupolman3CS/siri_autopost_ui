@@ -1,8 +1,8 @@
 <div class="page">
   <div class="page-head">
     <div class="w760">
-      <h1>{{ t().ext.title }}</h1>
-      <p>{{ t().ext.sub }}</p>
+      <h1>{{ t().api.extStatusTitle }}</h1>
+      <p>{{ t().api.extStatusSub }}</p>
     </div>
   </div>
 
@@ -36,17 +36,24 @@
             <div class="small muted">{{ session.email() }}</div>
           </div>
           <div class="next">
-            <div class="next-head small muted">
-              <span>{{ t().ext.nextPost }}</span
-              ><span>{{ next().inMin }}</span>
-            </div>
-            <div class="next-row">
-              <span class="pico s28"><i class="ph" [class]="next().icon"></i></span>
-              <div class="min0">
-                <div class="fw5">{{ next().time }} · {{ next().target }}</div>
-                <div class="small muted ellipsis">{{ next().text }}</div>
+            @if (next(); as n) {
+              <div class="next-head small muted">
+                <span>{{ t().ext.nextPost }}</span
+                ><span>{{ n.inMin }}</span>
               </div>
-            </div>
+              <div class="next-row">
+                <span class="pico s28"><i class="ph" [class]="n.icon"></i></span>
+                <div class="min0">
+                  <div class="fw5">{{ n.time }} · {{ n.target }}</div>
+                  <div class="small muted ellipsis">{{ n.text }}</div>
+                </div>
+              </div>
+            } @else {
+              <div class="next-head small muted">
+                <span>{{ t().ext.nextPost }}</span>
+              </div>
+              <div class="small muted">{{ t().api.popupNoNext }}</div>
+            }
           </div>
           <div>
             <div class="small muted mb4">{{ t().ext.quota }}</div>
@@ -65,10 +72,11 @@
               class="su-btn su-btn-sm su-btn-full"
               [class.su-btn-primary]="ext.paused()"
               [class.su-btn-secondary]="!ext.paused()"
+              [disabled]="!live.device() || ext.busy()"
               (click)="ext.togglePause()"
             >
               <i class="ph" [class.ph-play]="ext.paused()" [class.ph-pause]="!ext.paused()"></i>
-              {{ ext.paused() ? t().ext.resume : t().ext.pause }}
+              {{ ext.paused() ? t().ext.resume : t().api.extPause }}
             </button>
             <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/overview">{{
               t().ext.openDash
@@ -81,12 +89,16 @@
                 <span class="muted lt">{{ l.time }}</span
                 ><span [style.color]="l.color">{{ l.text }}</span>
               </div>
+            } @empty {
+              <div class="small muted">
+                {{ live.device() ? t().api.popupNoLog : t().api.popupNoDevice }}
+              </div>
             }
           </div>
         </div>
         <div class="pop-foot small muted">
           <span>{{ bound() }}</span>
-          <span>{{ t().ext.version }}</span>
+          <span>{{ browser() }}</span>
         </div>
       </div>
     </div>

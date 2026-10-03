@@ -112,7 +112,7 @@ export const routes: Routes = [
       },
       {
         path: 'extension',
-        title: page('Extension popup'),
+        title: page('Extension status'),
         loadComponent: () =>
           import('./features/extension/extension-page.component').then(
             (m) => m.ExtensionPageComponent,

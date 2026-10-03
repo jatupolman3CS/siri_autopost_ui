@@ -76,6 +76,7 @@ export class AppLayoutComponent {
           item('antiban', 'antiban', 'ph-shield-check'),
           item('offline', 'offline', 'ph-wifi-slash'),
           item('errors', 'errors', 'ph-warning-circle', this.posts.openErrors().length),
+          item('extension', 'extension', 'ph-puzzle-piece'),
         ],
       },
       {
@@ -98,7 +99,6 @@ export class AppLayoutComponent {
         ],
       });
     }
-    groups.push({ label: t.gPreview, items: [item('extension', 'extension', 'ph-puzzle-piece')] });
     return groups;
   });
 
@@ -116,6 +116,7 @@ export class AppLayoutComponent {
 
   protected label(key: string): string {
     if (key === EXT_CAMPAIGNS) return this.t().api.ext.nav;
+    if (key === 'extension') return this.t().api.extStatusNav;
     return (this.t().nav as Record<string, string>)[key];
   }
 

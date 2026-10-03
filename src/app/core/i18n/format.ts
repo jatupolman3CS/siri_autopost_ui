@@ -1,4 +1,11 @@
-import { SEED } from '../data/seed.data';
+import {
+  EN_DAYS,
+  EN_MONTHS,
+  EN_MONTHS_FULL,
+  TH_DAYS,
+  TH_MONTHS,
+  TH_MONTHS_FULL,
+} from '../data/reference';
 
 // Date and money formatting shared by every screen (Thai dates use the Buddhist year).
 
@@ -15,8 +22,8 @@ export function hm(d: Date): string {
 /** "3 ต.ค." / "3 Oct", with the year when asked ("3 ต.ค. 2569"). */
 export function fmtDate(d: Date, li: number, year = false): string {
   return li === 0
-    ? `${d.getDate()} ${SEED.thMonths[d.getMonth()]}${year ? ' ' + (d.getFullYear() + 543) : ''}`
-    : `${d.getDate()} ${SEED.enMonths[d.getMonth()]}${year ? ' ' + d.getFullYear() : ''}`;
+    ? `${d.getDate()} ${TH_MONTHS[d.getMonth()]}${year ? ' ' + (d.getFullYear() + 543) : ''}`
+    : `${d.getDate()} ${EN_MONTHS[d.getMonth()]}${year ? ' ' + d.getFullYear() : ''}`;
 }
 
 /** ฿1,990 */
@@ -25,12 +32,12 @@ export function baht(n: number): string {
 }
 
 export function monthName(m: number, li: number, full = false): string {
-  if (full) return (li ? SEED.enMonthsFull : SEED.thMonthsFull)[m];
-  return (li ? SEED.enMonths : SEED.thMonths)[m];
+  if (full) return (li ? EN_MONTHS_FULL : TH_MONTHS_FULL)[m];
+  return (li ? EN_MONTHS : TH_MONTHS)[m];
 }
 
 export function dayNames(li: number): string[] {
-  return li ? SEED.enDays : SEED.thDays;
+  return li ? EN_DAYS : TH_DAYS;
 }
 
 /** Calendar year as shown: Buddhist era in Thai. */

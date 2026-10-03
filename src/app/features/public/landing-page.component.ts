@@ -1,13 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminStore } from '../../core/data/admin.store';
-import { kpisOf, queueRowsOf } from '../../core/data/dashboard-stats.service';
-import { groupByDay, withDay } from '../../core/data/posts.store';
-import { samplePosts } from '../../core/data/sample';
-import { dkey } from '../../core/i18n/format';
+import { PublicStatsStore } from '../../core/data/public-stats.store';
+import { dayNames } from '../../core/i18n/format';
 import { PlanKey } from '../../core/data/models';
 import { tierViews } from '../../core/data/plans';
-import { SEED } from '../../core/data/seed.data';
+import { PLATFORMS } from '../../core/data/reference';
 import { SettingsStore } from '../../core/data/settings.store';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { CycleSwitchComponent } from '../../shared/components/cycle-switch.component';
@@ -30,17 +28,32 @@ export class LandingPageComponent {
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
 
-  protected readonly platforms = Object.values(SEED.platforms);
-  // The product preview runs on the design's sample posts (guests have no workspace).
-  private readonly now = new Date();
-  private readonly sample = computed(() => samplePosts(this.now, this.i18n.li()).map(withDay));
-  private readonly sampleToday = computed(
-    () => groupByDay(this.sample()).get(dkey(this.now)) ?? [],
+  protected readonly platforms = Object.values(PLATFORMS);
+  // The product preview shows the platform's real figures (guests have no workspace of their own).
+  private readonly publicStats = inject(PublicStatsStore);
+  protected readonly stats = this.publicStats.state;
+  protected readonly kpis = computed(() => {
+    const a = this.t().api;
+    const s = this.publicStats.stats();
+    return [
+      { label: a.landSent, value: s ? s.postsSent7d.toLocaleString() : '—' },
+      {
+        label: a.landRate,
+        value: s?.successRate7d == null ? '—' : `${s.successRate7d.toFixed(1)}%`,
+      },
+      { label: a.landDevices, value: s ? s.devicesActive24h.toLocaleString() : '—' },
+    ];
+  });
+  protected readonly bars = computed(() =>
+    this.publicStats.bars().map((b) => ({
+      ...b,
+      label: dayNames(this.i18n.li())[b.date.getDay()],
+    })),
   );
-  protected readonly kpis = computed(() =>
-    kpisOf(this.sample(), this.sampleToday(), this.now, this.t()).slice(0, 3),
-  );
-  protected readonly queue = computed(() => queueRowsOf(this.sampleToday(), this.t()).slice(0, 4));
+
+  constructor() {
+    void this.publicStats.load();
+  }
 
   protected readonly steps = computed(() => {
     const l = this.t().land;
