@@ -4,7 +4,8 @@
 //
 // Same conventions as the SIRISTUDIOPHOTO jobs: docker + kubectl on the Jenkins host, registry localhost:5000.
 // nginx.conf proxies /api to http://api:8080, so SIRIAUTOPOST-BACKEND must have deployed Service `api` first
-// (it also owns the Ingress). No Jenkins credential is needed.
+// Service `ui` is NodePort 30907; the Cloudflare tunnel `siri-monitor` routes the public host to
+// http://172.17.0.1:30907. No Jenkins credential is needed.
 
 pipeline {
     agent any
@@ -65,7 +66,8 @@ pipeline {
 
         stage('Smoke test') {
             steps {
-                // The public URL needs the Cloudflare DNS record; report UNSTABLE instead of FAILED if it is not there yet.
+                // NodePort first (what the tunnel points at), then the public host, which needs the tunnel route.
+                sh 'curl -fsS -o /dev/null --retry 6 --retry-delay 5 --retry-all-errors http://172.17.0.1:30907/'
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     sh 'curl -fsS -o /dev/null --retry 12 --retry-delay 10 --retry-all-errors "$PUBLIC_URL/"'
                 }

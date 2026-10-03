@@ -40,7 +40,9 @@ spec:
             limits:
               memory: 128Mi
 ---
-# Referenced by the Ingress in siri_autopost_backend (deploy/k8s/overlays/prd/ingress.yaml) as service `ui`, port 80.
+# Public entry point. The Cloudflare tunnel `siri-monitor` (locally managed, cloudflared on the host) routes
+# siriautopost.siristudiophoto.com -> http://172.17.0.1:30907, like the other apps on this host.
+# nginx in this pod serves the dashboard and proxies /api to Service `api` (siri_autopost_backend).
 apiVersion: v1
 kind: Service
 metadata:
@@ -49,9 +51,11 @@ metadata:
     app.kubernetes.io/name: ui
     app.kubernetes.io/part-of: siriautopost
 spec:
+  type: NodePort
   selector:
     app.kubernetes.io/name: ui
   ports:
     - name: http
       port: 80
       targetPort: http
+      nodePort: 30907

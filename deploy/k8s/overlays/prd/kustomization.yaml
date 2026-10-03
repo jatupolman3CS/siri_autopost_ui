@@ -3,7 +3,7 @@ kind: Kustomization
 
 # PRD: https://siriautopost.siristudiophoto.com
 # Applied by the Jenkinsfile at the repo root (Jenkins job SIRIAUTOPOST-WEB).
-# The Ingress for this host lives in siri_autopost_backend (deploy/k8s/overlays/prd).
+# Exposed on NodePort 30907; the Cloudflare tunnel routes the public host there (see deploy/k8s/base/ui.yaml).
 namespace: siriautopost
 
 resources:
