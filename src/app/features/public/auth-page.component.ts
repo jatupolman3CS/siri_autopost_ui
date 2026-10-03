@@ -21,7 +21,11 @@ import { InputFieldComponent } from '../../shared/components/input-field/input-f
 
 // Google Identity Services, loaded on demand when the server has a client id.
 interface GoogleId {
-  initialize(o: { client_id: string; callback: (r: { credential: string }) => void }): void;
+  initialize(o: {
+    client_id: string;
+    callback: (r: { credential: string }) => void;
+    use_fedcm_for_button?: boolean;
+  }): void;
   renderButton(el: HTMLElement, o: Record<string, unknown>): void;
 }
 declare global {
@@ -106,12 +110,15 @@ export class AuthPageComponent {
           gsi.initialize({
             client_id: clientId,
             callback: (r) => void this.googleSignIn(r.credential),
+            use_fedcm_for_button: true, // personalized "Continue as <name>" button for the Chrome-signed-in account
           });
           host.replaceChildren();
           gsi.renderButton(host, {
             type: 'standard',
             theme: 'outline',
             size: 'large',
+            shape: 'pill',
+            logo_alignment: 'right',
             text: this.isLogin() ? 'signin_with' : 'signup_with',
             width: 320,
           });
