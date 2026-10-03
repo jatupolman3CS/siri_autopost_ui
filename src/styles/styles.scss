@@ -1,3 +1,5 @@
-// Global styles. Component styles stay in each component's own .scss file.
+// Global styles. Component styles stay in each component's own file.
 @use 'tokens';
 @use 'base';
+@use 'ds';
+@use 'app';

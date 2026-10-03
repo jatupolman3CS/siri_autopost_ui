@@ -1,5 +1,6 @@
-// Design tokens (SIRI design system, AutoPost Dashboard palette from the Claude Design handoff).
-// Components use only these CSS variables, never raw colors.
+// Design tokens: SIRI design system values with the AutoPost Dashboard overrides
+// (trust-blue primary, slate neutrals) from the Claude Design handoff.
+// Components use only these variables, never raw colors.
 :root,
 :root[data-theme='light'] {
   --color-bg: #ffffff;
@@ -12,6 +13,8 @@
   --color-primary: #1e6ce2;
   --color-primary-hover: #1757b8;
   --color-primary-foreground: #ffffff;
+  --color-accent: #b45309;
+  --color-accent-foreground: #ffffff;
   --color-success: #16a34a;
   --color-warning: #d97706;
   --color-danger: #dc2626;
@@ -19,12 +22,6 @@
 
   --font-sans:
     'IBM Plex Sans Thai', system-ui, -apple-system, 'Noto Sans Thai', 'Leelawadee UI', sans-serif;
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
 
   --space-xs: 4px;
   --space-sm: 8px;
@@ -32,6 +29,7 @@
   --space-lg: 24px;
   --space-xl: 32px;
   --space-2xl: 48px;
+  --space-3xl: 64px;
 
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
@@ -52,9 +50,11 @@
   --color-text-inverse: #0f172a;
   --color-primary-hover: #60a5fa;
   --color-focus-ring: #60a5fa;
+  --color-accent: #fbbf24;
+  --color-accent-foreground: #1c1917;
 }
 
-// Dark mode follows the OS unless ThemeService forces <html data-theme="light|dark">.
+// Dark follows the OS unless ThemeService forces <html data-theme="light|dark">.
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     @include dark-palette;

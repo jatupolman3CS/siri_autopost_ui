@@ -1,0 +1,128 @@
+<main class="rise">
+  <section class="wrap hero">
+    <div class="min0">
+      <h1>{{ t().land.heroTitle }}</h1>
+      <p class="lead">{{ t().land.heroBody }}</p>
+      <div class="ctas">
+        <button type="button" class="su-btn su-btn-lg su-btn-primary" (click)="startTrial()">
+          {{ t().land.trial }}<i class="ph ph-arrow-right"></i>
+        </button>
+        <button
+          type="button"
+          class="su-btn su-btn-lg su-btn-secondary"
+          (click)="scrollTo('ap-pricing')"
+        >
+          {{ t().land.seePricing }}
+        </button>
+      </div>
+      <p class="note">{{ t().land.heroNote }}</p>
+      <div class="platforms">
+        <span class="small muted">{{ t().land.platforms }}</span>
+        @for (p of platforms; track p.name) {
+          <span class="pico s36" [title]="p.name"><i class="ph" [class]="p.icon"></i></span>
+        }
+      </div>
+    </div>
+    <div class="preview">
+      <div class="preview-head">
+        <span class="small fw5 muted">{{ t().land.previewTitle }}</span>
+        <span class="status muted"
+          ><span class="dot" style="background: var(--color-success)"></span
+          >{{ t().top.extOnline }}</span
+        >
+      </div>
+      <div class="preview-kpis">
+        @for (k of kpis(); track k.label) {
+          <div class="tile">
+            <div class="label ellipsis">{{ k.label }}</div>
+            <div class="value">{{ k.value }}</div>
+          </div>
+        }
+      </div>
+      <div class="preview-queue">
+        @for (p of queue(); track p.id) {
+          <div class="q-row">
+            <span class="q-time">{{ p.time }}</span>
+            <span class="pico s28"><i class="ph" [class]="p.icon"></i></span>
+            <span class="grow ellipsis">{{ p.text }}</span>
+            <span class="status"
+              ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
+            >
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap pad">
+      <h2>{{ t().land.howTitle }}</h2>
+      <div class="grid g240">
+        @for (s of steps(); track $index) {
+          <div class="step">
+            <span class="num">{{ $index + 1 }}</span>
+            <div class="fw6">{{ s[0] }}</div>
+            <p>{{ s[1] }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section id="ap-features" class="wrap pad">
+    <h2>{{ t().land.featTitle }}</h2>
+    <div class="grid g260">
+      @for (f of features(); track f[0]) {
+        <div class="panel panel-hover card">
+          <i class="ph" [class]="f[0]"></i>
+          <div class="fw6">{{ f[1] }}</div>
+          <p>{{ f[2] }}</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap pad">
+      <h2>{{ t().land.whoTitle }}</h2>
+      <div class="grid g240">
+        @for (p of personas(); track p[0]) {
+          <div class="panel card on-bg">
+            <i class="ph" [class]="p[0]"></i>
+            <div class="fw6">{{ p[1] }}</div>
+            <p>{{ p[2] }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section id="ap-pricing" class="wrap pad pricing">
+    <div class="pricing-head">
+      <div>
+        <h2 class="flush">{{ t().land.pricingTitle }}</h2>
+        <p class="sub">{{ t().land.pricingSub }}</p>
+      </div>
+      <app-cycle-switch />
+    </div>
+    <app-plan-cards [cards]="tiers()" (choose)="startTrial($event)" />
+  </section>
+
+  <section class="wrap cta-wrap">
+    <div class="panel cta">
+      <h2 class="flush">{{ t().land.ctaTitle }}</h2>
+      <p>{{ t().land.ctaBody }}</p>
+      <button type="button" class="su-btn su-btn-lg su-btn-primary" (click)="startTrial()">
+        {{ t().land.trial }}<i class="ph ph-arrow-right"></i>
+      </button>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span class="brand">AutoPost</span>
+      <p>{{ t().land.footer }}</p>
+      <p class="small">{{ t().land.copyright }}</p>
+    </div>
+  </footer>
+</main>

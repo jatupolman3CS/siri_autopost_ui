@@ -1,16 +1,34 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { NotificationService } from '../../../core/services/notification.service';
+import { NotificationService, ToastType } from '../../../core/services/notification.service';
+
+const ICONS: Record<ToastType, [string, string]> = {
+  success: ['ph-check-circle', 'var(--color-success)'],
+  error: ['ph-x-circle', 'var(--color-danger)'],
+  warning: ['ph-warning-circle', 'var(--color-warning)'],
+  info: ['ph-info', 'var(--color-primary)'],
+};
 
 @Component({
   selector: 'app-toast-outlet',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="toasts" aria-live="polite">
+    <div class="toasts">
       @for (t of notify.toasts(); track t.id) {
-        <div class="toast" [class]="t.kind" role="status">
-          <span>{{ t.text }}</span>
-          <button type="button" class="close" (click)="notify.dismiss(t.id)" aria-label="ปิด">
-            ×
+        <div class="su-toast" [attr.role]="t.type === 'error' ? 'alert' : 'status'">
+          <i
+            class="ph su-toast-icon"
+            [class]="icons[t.type][0]"
+            [style.color]="icons[t.type][1]"
+            aria-hidden="true"
+          ></i>
+          <p class="su-toast-msg">{{ t.message }}</p>
+          <button
+            type="button"
+            class="su-x"
+            (click)="notify.dismiss(t.id)"
+            aria-label="ปิดการแจ้งเตือนนี้"
+          >
+            <i class="ph ph-x" aria-hidden="true"></i>
           </button>
         </div>
       }
@@ -18,41 +36,24 @@ import { NotificationService } from '../../../core/services/notification.service
   `,
   styles: `
     .toasts {
+      pointer-events: none;
       position: fixed;
-      right: var(--space-md);
-      bottom: var(--space-md);
-      z-index: 100;
-      display: grid;
-      gap: var(--space-sm);
-      max-width: min(420px, calc(100vw - 2 * var(--space-md)));
-    }
-    .toast {
+      top: 0;
+      right: 0;
+      z-index: 70;
       display: flex;
-      align-items: center;
-      gap: var(--space-sm);
-      padding: var(--space-sm) var(--space-md);
-      border: 1px solid var(--color-border);
-      border-left: 4px solid var(--color-primary);
-      border-radius: var(--radius-md);
-      background: var(--color-bg);
-      box-shadow: var(--shadow-lg);
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      padding: 24px;
+      max-width: 100vw;
     }
-    .toast.success {
-      border-left-color: var(--color-success);
-    }
-    .toast.error {
-      border-left-color: var(--color-danger);
-    }
-    .close {
-      margin-left: auto;
-      border: 0;
-      background: none;
-      color: var(--color-text-muted);
-      font-size: var(--text-lg);
-      cursor: pointer;
+    .su-toast {
+      animation: ap-rise 0.2s ease-out;
     }
   `,
 })
 export class ToastOutletComponent {
   protected readonly notify = inject(NotificationService);
+  protected readonly icons = ICONS;
 }

@@ -1,0 +1,136 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ t().cal.title }}</h1>
+      <p>{{ t().cal.sub }}</p>
+    </div>
+    <div class="actions">
+      <button type="button" class="nav-btn" (click)="nav(-1)" aria-label="previous month">
+        <i class="ph ph-caret-left"></i>
+      </button>
+      <span class="cal-title">{{ title() }}</span>
+      <button type="button" class="nav-btn" (click)="nav(1)" aria-label="next month">
+        <i class="ph ph-caret-right"></i>
+      </button>
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="today()">
+        {{ t().common.today }}
+      </button>
+      <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/composer"
+        ><i class="ph ph-plus"></i>{{ t().ov.newPost }}</a
+      >
+    </div>
+  </div>
+
+  <div class="cal-grid">
+    <div class="min0">
+      <div class="month">
+        @for (dn of dayNames(); track dn) {
+          <div class="dn">{{ dn }}</div>
+        }
+        @for (c of cells(); track c.key) {
+          <button
+            type="button"
+            class="cell"
+            [class.out]="!c.inMonth"
+            [class.sel]="c.isSel"
+            (click)="pick(c)"
+          >
+            <span class="num" [class.today]="c.isToday">{{ c.day }}</span>
+            @for (ch of c.chips; track $index) {
+              <span class="chip">
+                <span class="cdot" [style.background]="ch.dot"></span>
+                <span class="muted ctime">{{ ch.time }}</span>
+                <span class="ctext ellipsis">{{ ch.text }}</span>
+              </span>
+            }
+            @if (c.more) {
+              <span class="small muted">{{ c.more }}</span>
+            }
+          </button>
+        }
+      </div>
+      <div class="legend">
+        <span
+          ><span class="dot" style="background: var(--color-success)"></span
+          >{{ t().cal.lSuccess }}</span
+        >
+        <span
+          ><span class="dot" style="background: var(--color-danger)"></span
+          >{{ t().cal.lFailed }}</span
+        >
+        <span
+          ><span class="dot" style="background: var(--color-text-muted)"></span
+          >{{ t().cal.lQueued }}</span
+        >
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head day-head">
+        <h2 class="h2">{{ selTitle() }}</h2>
+        <span class="muted fs14">{{ selList().length }} {{ t().common.posts }}</span>
+      </div>
+      @for (p of selRows(); track p.id) {
+        <div class="day-row">
+          <div class="day-meta">
+            <span class="fw5 fs14">{{ p.time }}</span>
+            <span class="pico s24"><i class="ph" [class]="p.icon"></i></span>
+            <span class="small muted grow ellipsis">{{ p.platformName }} · {{ p.target }}</span>
+            <span class="status"
+              ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
+            >
+          </div>
+          <div class="fs14">{{ p.text }}</div>
+          @if (p.editable) {
+            <div class="btns">
+              <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="edit(p.item)">
+                {{ t().common.edit }}
+              </button>
+              <button
+                type="button"
+                class="su-btn su-btn-sm su-btn-ghost"
+                (click)="deleteId.set(p.id)"
+              >
+                {{ t().common.remove }}
+              </button>
+            </div>
+          }
+          @if (p.isFailed) {
+            <div>
+              <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/errors">{{
+                t().common.fix
+              }}</a>
+            </div>
+          }
+        </div>
+      } @empty {
+        <app-empty-state [heading]="t().cal.empty" />
+      }
+      <div class="add">
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-secondary su-btn-full"
+          (click)="addOnDay()"
+        >
+          <i class="ph ph-plus"></i>{{ t().cal.add }}
+        </button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<app-modal
+  [open]="deleteId() !== null"
+  [title]="t().common.deleteTitle"
+  (closed)="deleteId.set(null)"
+>
+  <p class="modal-p">{{ t().common.deleteBody }}</p>
+  <div modal-footer>
+    <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="deleteId.set(null)">
+      {{ t().common.cancel }}
+    </button>
+    <button type="button" class="su-btn su-btn-sm su-btn-danger" (click)="confirmDelete()">
+      {{ t().common.remove }}
+    </button>
+  </div>
+</app-modal>

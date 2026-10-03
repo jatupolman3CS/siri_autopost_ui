@@ -1,0 +1,192 @@
+<div class="page">
+  <div>
+    <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/admin/customers"
+      ><i class="ph ph-caret-left"></i>{{ t().adm.backToCustomers }}</a
+    >
+  </div>
+
+  <div class="head">
+    <span class="avatar">{{ head().initial }}</span>
+    <div class="grow220">
+      <div class="title-row">
+        <h1>{{ c().name }}</h1>
+        <span class="status"
+          ><span class="dot" [style.background]="head().dot"></span>{{ head().statusLabel }}</span
+        >
+      </div>
+      <div class="fs14 muted">
+        {{ c().email }} · {{ head().planName }} · {{ t().adm.since }} {{ head().since }}
+      </div>
+    </div>
+    <div class="btns">
+      @for (ac of actions(); track ac.a) {
+        <button
+          type="button"
+          class="su-btn su-btn-sm"
+          [class.su-btn-primary]="ac.primary"
+          [class.su-btn-secondary]="!ac.primary"
+          (click)="run(ac.a)"
+        >
+          {{ ac.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="stack">
+      <section class="panel stack">
+        <h2 class="h2">{{ t().adm.secPlan }}</h2>
+        <div class="plan-grid">
+          <app-select-field
+            [label]="t().adm.changePlan"
+            [options]="planOptions()"
+            [value]="c().plan"
+            (valueChange)="setPlan($event)"
+          />
+          @for (k of tiles(); track k.label) {
+            <div class="tile">
+              <div class="label">{{ k.label }}</div>
+              <div class="tval ellipsis">{{ k.value }}</div>
+              <div class="small muted ellipsis">{{ k.note }}</div>
+            </div>
+          }
+        </div>
+        <div>
+          <div class="fs14 fw5 mb4">{{ t().adm.invoices }}</div>
+          @for (x of tx(); track x.id) {
+            <div class="row txr">
+              <span class="w72 muted">{{ x.date }}</span>
+              <span class="status"
+                ><span class="dot" [style.background]="x.dot"></span>{{ x.type }}</span
+              >
+              <span class="grow fw5 right">{{ x.amount }}</span>
+              @if (x.canRefund) {
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  (click)="run('refund', x.id)"
+                >
+                  {{ t().adm.refund }}
+                </button>
+              }
+              @if (x.canRetry) {
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  (click)="retryCharge(x.id)"
+                >
+                  {{ t().adm.retryCharge }}
+                </button>
+              }
+            </div>
+          } @empty {
+            <p class="fs14 muted flush">{{ t().adm.noTx }}</p>
+          }
+        </div>
+      </section>
+
+      <section class="panel stack">
+        <div class="panel-head">
+          <h2 class="h2">{{ t().adm.secJobs }}</h2>
+          <div class="actions">
+            <button
+              type="button"
+              class="su-btn su-btn-sm"
+              [class.su-btn-primary]="c().paused"
+              [class.su-btn-secondary]="!c().paused"
+              (click)="toggleJobs()"
+            >
+              <i class="ph" [class.ph-play]="c().paused" [class.ph-pause]="!c().paused"></i>
+              {{ c().paused ? t().adm.resumeJobs : t().adm.pauseJobs }}
+            </button>
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-secondary"
+              [disabled]="c().jobs.failed === 0"
+              (click)="retryFailed()"
+            >
+              <i class="ph ph-arrow-counter-clockwise"></i>{{ t().adm.retryFailed }}
+            </button>
+          </div>
+        </div>
+        <div class="stats">
+          @for (j of jobStats(); track j.label) {
+            <div class="tile">
+              <div class="label">{{ j.label }}</div>
+              <div class="value">{{ j.value }}</div>
+            </div>
+          }
+        </div>
+        <div>
+          <div class="fs14 fw5 mb4">{{ t().adm.recentJobs }}</div>
+          @for (p of jobs(); track $index) {
+            <div class="row jr">
+              <span class="time">{{ p.time }}</span>
+              <span class="pico s28"><i class="ph" [class]="p.icon"></i></span>
+              <div class="grow">
+                <div class="ellipsis">{{ p.text }}</div>
+                <div class="small muted">{{ p.platformName }} · {{ p.target }}</div>
+              </div>
+              <span class="status"
+                ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
+              >
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+    <section class="panel access">
+      <div>
+        <h2 class="h2">{{ t().adm.secAccess }}</h2>
+        <p class="sub">{{ t().adm.accessBody }}</p>
+      </div>
+      @for (r of limitRows(); track r.k) {
+        <div class="row lr">
+          <div class="grow">
+            <div class="fs14 fw5">{{ r.label }}</div>
+            <div class="small muted">{{ r.usedLabel }}</div>
+          </div>
+          <input
+            type="number"
+            min="0"
+            class="num-input"
+            [value]="r.value"
+            (change)="setLimit(r.k, $any($event.target).value)"
+            [attr.aria-label]="r.label"
+          />
+        </div>
+      }
+      <div class="save-row">
+        <span class="small muted">{{ t().adm.unlimitedHint }}</span>
+        <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="saveLimits()">
+          {{ t().adm.saveLimits }}
+        </button>
+      </div>
+      <div class="devices">
+        <div class="fs14 fw5 mb4">{{ t().adm.boundDevices }} ({{ c().devices.length }})</div>
+        @for (d of devices(); track $index) {
+          <div class="dev">
+            <i class="ph" [class]="d.icon"></i>
+            <div class="grow140">
+              <div class="fs14 fw5">{{ d.name }}</div>
+              <div class="small muted">{{ d.browser }} · {{ d.seen }}</div>
+            </div>
+            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="revoke($index)">
+              {{ t().common.revoke }}
+            </button>
+          </div>
+        } @empty {
+          <p class="fs14 muted flush">{{ t().adm.noDevices }}</p>
+        }
+      </div>
+      <div class="ver fs14">
+        <span class="muted">{{ t().adm.extVersion }}</span
+        ><span class="fw5">{{ c().ext }}</span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<app-admin-action-modal [request]="request()" (closed)="request.set(null)" />

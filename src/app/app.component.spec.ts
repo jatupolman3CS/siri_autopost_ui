@@ -3,14 +3,11 @@ import { provideRouter } from '@angular/router';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
-  beforeEach(async () => {
+  it('renders the router outlet and toast outlet', async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [provideRouter([])],
     }).compileComponents();
-  });
-
-  it('renders the router outlet and toast outlet', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('router-outlet')).not.toBeNull();

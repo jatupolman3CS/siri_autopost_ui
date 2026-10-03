@@ -1,0 +1,160 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ t().bill.title }}</h1>
+      <p>{{ t().bill.sub }}</p>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <section class="panel stack">
+      <div class="cur">
+        <div>
+          <div class="fs14 muted">{{ t().common.currentPlan }}</div>
+          <div class="big">{{ planName() }}</div>
+          <div class="fs14 muted">{{ t().bill.renews }}</div>
+        </div>
+        <div class="right">
+          <div class="big">{{ priceLabel() }}</div>
+          <div class="small muted">{{ cycleLabel() }}</div>
+        </div>
+      </div>
+      <div>
+        <div class="fs14 fw5">{{ t().bill.usage }}</div>
+        @for (u of usageRows(); track u.label) {
+          <div class="usage">
+            <div class="usage-head">
+              <span>{{ u.label }}</span
+              ><span class="muted">{{ u.value }}</span>
+            </div>
+            <div class="bar">
+              <span [style.width.%]="u.pct" [style.background]="u.color"></span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <div class="stack">
+      <section class="panel col12">
+        <h2 class="h2">{{ t().bill.payment }}</h2>
+        <div class="card-row">
+          <i class="ph ph-credit-card card-ico"></i>
+          <div class="grow120">
+            <div class="fs14 fw5">Visa •••• {{ bill().card.last4 }}</div>
+            <div class="small muted">{{ t().bill.expires }} {{ bill().card.exp }}</div>
+          </div>
+          <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="openCard()">
+            {{ t().bill.updateCard }}
+          </button>
+        </div>
+        @if (cardWarn()) {
+          <div class="callout warn">
+            <i class="ph ph-warning-circle" style="color: var(--color-warning)"></i>
+            <span>{{ t().bill.cardExp }}</span>
+          </div>
+        } @else {
+          <div class="ok fs14 muted">
+            <i class="ph ph-check-circle" style="color: var(--color-success)"></i>
+            <span>{{ t().bill.cardOk }}</span>
+          </div>
+        }
+      </section>
+      <section class="panel">
+        <h2 class="h2">{{ t().bill.notif }}</h2>
+        <app-checkbox
+          [label]="t().bill.nFail"
+          [checked]="bill().nFail"
+          (checkedChange)="setBill({ nFail: $event })"
+        />
+        <app-checkbox
+          [label]="t().bill.nExpire"
+          [checked]="bill().nExpire"
+          (checkedChange)="setBill({ nExpire: $event })"
+        />
+        <app-checkbox
+          [label]="t().bill.nRenew"
+          [checked]="bill().nRenew"
+          (checkedChange)="setBill({ nRenew: $event })"
+        />
+      </section>
+    </div>
+  </div>
+
+  <section class="compare">
+    <div class="panel-head">
+      <h2 class="h20">{{ t().bill.compare }}</h2>
+      <app-cycle-switch />
+    </div>
+    <app-plan-cards [cards]="tiers()" (choose)="planModal.set($event)" />
+  </section>
+
+  <section class="panel">
+    <h2 class="h2 mb4">{{ t().bill.invoices }}</h2>
+    @for (inv of invoices(); track inv.date) {
+      <div class="row inv">
+        <span class="grow120">{{ inv.date }}</span>
+        <span class="fw5">{{ inv.amount }}</span>
+        <span class="status"
+          ><span class="dot" style="background: var(--color-success)"></span
+          >{{ t().bill.paid }}</span
+        >
+        <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="download()">
+          <i class="ph ph-download-simple"></i>{{ t().bill.download }}
+        </button>
+      </div>
+    }
+  </section>
+</div>
+
+<app-modal [open]="planModal() !== null" [title]="planTitle()" (closed)="planModal.set(null)">
+  <p class="fs14 mp">{{ t().bill.confirmBody }}</p>
+  @if (isDowngrade()) {
+    <div class="callout warn">
+      <i class="ph ph-warning-circle" style="color: var(--color-warning)"></i>
+      <span>{{ t().bill.downgradeNote }}</span>
+    </div>
+  }
+  <div modal-footer>
+    <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="planModal.set(null)">
+      {{ t().common.cancel }}
+    </button>
+    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="confirmPlan()">
+      {{ t().common.confirm }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [open]="cardModal()" [title]="t().bill.updateCard" (closed)="cardModal.set(false)">
+  <div class="form">
+    <app-input-field
+      [label]="t().bill.cardNumber"
+      placeholder="4242 4242 4242 4242"
+      autocomplete="cc-number"
+      [(value)]="formNum"
+    />
+    <div class="two">
+      <app-input-field
+        [label]="t().bill.cardExpiry"
+        placeholder="12/28"
+        autocomplete="cc-exp"
+        [(value)]="formExp"
+      />
+      <app-input-field
+        [label]="t().bill.cardCvc"
+        placeholder="123"
+        autocomplete="cc-csc"
+        [(value)]="formCvc"
+      />
+    </div>
+    <span class="fs14 err">{{ formErr() }}</span>
+  </div>
+  <div modal-footer>
+    <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="cardModal.set(false)">
+      {{ t().common.cancel }}
+    </button>
+    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="confirmCard()">
+      {{ t().common.save }}
+    </button>
+  </div>
+</app-modal>

@@ -1,0 +1,125 @@
+<div class="page">
+  <div class="page-head">
+    <div class="w720">
+      <h1>{{ t().ab.title }}</h1>
+      <p>{{ t().ab.sub }}</p>
+    </div>
+    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="save()">
+      {{ t().common.save }}
+    </button>
+  </div>
+
+  <div class="panel risk">
+    <i class="ph ph-shield-check" [style.color]="risk().color"></i>
+    <div class="grow160">
+      <div class="fs14 muted">{{ t().ab.risk }}</div>
+      <div class="risk-label">{{ risk().label }}</div>
+    </div>
+    <span class="small muted note">{{ t().ab.riskNote }}</span>
+  </div>
+
+  <div class="grid-2eq">
+    <section class="panel stack">
+      <div>
+        <h2 class="h2">{{ t().ab.delayTitle }}</h2>
+        <p class="sub">{{ t().ab.delayBody }}</p>
+      </div>
+      <div>
+        <div class="range-head">
+          <span>{{ t().ab.delayMin }}</span
+          ><span class="fw6">{{ ab().min }} {{ t().common.min }}</span>
+        </div>
+        <input
+          type="range"
+          min="1"
+          max="30"
+          [value]="ab().min"
+          (input)="setMin($any($event.target).value)"
+          [attr.aria-label]="t().ab.delayMin"
+        />
+        <div class="range-head">
+          <span>{{ t().ab.delayMax }}</span
+          ><span class="fw6">{{ ab().max }} {{ t().common.min }}</span>
+        </div>
+        <input
+          type="range"
+          min="2"
+          max="60"
+          [value]="ab().max"
+          (input)="setMax($any($event.target).value)"
+          [attr.aria-label]="t().ab.delayMax"
+        />
+      </div>
+      <div>
+        <div class="fs14 fw5 mb4">{{ t().ab.delayPreview }}</div>
+        @for (d of dispatch(); track $index) {
+          <div class="row tight">
+            <span class="w48 fw5">{{ d.time }}</span>
+            <span class="pico s24"><i class="ph" [class]="d.icon"></i></span>
+            <span class="grow ellipsis">{{ d.target }}</span>
+            <span class="small muted nowrap">{{ d.wait }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="panel limits">
+      <div>
+        <h2 class="h2">{{ t().ab.limitsTitle }}</h2>
+        <p class="sub">{{ t().ab.limitsBody }}</p>
+      </div>
+      @for (r of limitRows(); track r.k) {
+        <div class="row">
+          <span class="pico"><i class="ph" [class]="r.icon"></i></span>
+          <div class="grow">
+            <div class="limit-head">
+              <span class="fw5">{{ r.name }}</span
+              ><span class="muted nowrap">{{ r.usedLabel }}</span>
+            </div>
+            <div class="bar">
+              <span [style.width.%]="r.pct" [style.background]="r.color"></span>
+            </div>
+          </div>
+          <input
+            type="number"
+            min="1"
+            max="200"
+            class="num-input w76"
+            [value]="r.limit"
+            (change)="setLimit(r.k, $any($event.target).value)"
+            [attr.aria-label]="r.name"
+          />
+          <span class="small muted w48">{{ t().common.perDay }}</span>
+        </div>
+      }
+    </section>
+  </div>
+
+  <section class="panel">
+    <div class="human-head">
+      <div>
+        <h2 class="h2">{{ t().ab.humanTitle }}</h2>
+        <p class="sub">{{ t().ab.humanBody }}</p>
+      </div>
+      @if (locked()) {
+        <div class="lock">
+          <i class="ph ph-lock-simple muted"></i>
+          <span>{{ t().ab.locked }}</span>
+          <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/billing">{{
+            t().common.upgrade
+          }}</a>
+        </div>
+      }
+    </div>
+    <div class="human">
+      @for (h of humanRows(); track h.k) {
+        <app-checkbox
+          [label]="h.label"
+          [checked]="h.on"
+          [disabled]="locked()"
+          (checkedChange)="setHuman(h.k, $event)"
+        />
+      }
+    </div>
+  </section>
+</div>

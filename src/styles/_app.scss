@@ -1,0 +1,398 @@
+// Layout patterns repeated across the dashboard screens.
+
+$narrow: 1023px;
+
+@keyframes ap-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: ap-rise 0.25s ease-out;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+  }
+  p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  min-width: 0;
+}
+.panel-hover {
+  transition: box-shadow 0.2s ease-out;
+  &:hover {
+    box-shadow: var(--shadow-md);
+  }
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+.panel.stack {
+  gap: 16px;
+}
+
+.h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sub {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  .label {
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+  .value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .note {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+}
+
+// Small boxed figure inside a panel.
+.tile {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  min-width: 0;
+  .label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+  .value {
+    font-size: 22px;
+    font-weight: 700;
+  }
+}
+
+.grid-2,
+.grid-2eq {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+}
+.grid-2 {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+.grid-2eq {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: $narrow) {
+  .grid-2,
+  .grid-2eq {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// Divided list row.
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 14px;
+}
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.muted {
+  color: var(--color-text-muted);
+}
+.small {
+  font-size: 12px;
+}
+.fw5 {
+  font-weight: 500;
+}
+.fw6 {
+  font-weight: 600;
+}
+.time {
+  width: 44px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+// Status: colored dot + label.
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+// Round platform/initial badge.
+.pico {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  &.s24 {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+  &.s28 {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  &.s36 {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+  &.s40 {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  &.initial {
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 14px;
+  }
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
+  padding: 0 10px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  white-space: nowrap;
+}
+
+// Two-button segmented switch (monthly/annual, all/today).
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  button {
+    height: 44px;
+    padding: 0 16px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--color-bg);
+    color: var(--color-text);
+    & + button {
+      border-left: 1px solid var(--color-border);
+    }
+    &.on {
+      background: var(--color-primary);
+      color: #fff;
+    }
+  }
+}
+
+// Progress bar: <div class="bar"><span [style.width.%]="pct"></span></div>
+.bar {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  margin-top: 6px;
+  overflow: hidden;
+  &.thick {
+    height: 8px;
+  }
+  > span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+  }
+}
+
+// CSS-grid table: header cells .th, body cells .td.
+.tbl-wrap {
+  overflow-x: auto;
+}
+.tbl {
+  display: grid;
+  gap: 0 12px;
+  font-size: 14px;
+}
+.th {
+  padding: 6px 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+.td {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+  min-width: 0;
+  &.col {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  &.tight {
+    padding: 4px 0;
+    gap: 2px;
+  }
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.num-input {
+  width: 96px;
+  height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+// Bordered call-out box inside a panel.
+.callout {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  > .ph {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  &.warn {
+    border-color: var(--color-warning);
+  }
+}
+
+// Vertical bar chart.
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  .col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    height: 100%;
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+}
+
+// Card grid of plans (billing + landing).
+.tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}

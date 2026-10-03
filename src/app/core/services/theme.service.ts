@@ -1,42 +1,36 @@
-import { DOCUMENT, Injectable, effect, inject, signal } from '@angular/core';
+import { DOCUMENT, Injectable, inject, signal } from '@angular/core';
 
-export type ThemeMode = 'system' | 'light' | 'dark';
+export type Theme = 'light' | 'dark';
 
-const STORAGE_KEY = 'siri-autopost.theme';
+const STORAGE_KEY = 'ap-theme';
 
-// Light/dark theme. 'system' follows the OS; the others set <html data-theme> (see styles/_tokens.scss).
+// Light/dark switch from the top bar. Sets <html data-theme>, which styles/_tokens.scss reads.
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private readonly document = inject(DOCUMENT);
-  readonly mode = signal<ThemeMode>(readStored());
+  readonly theme = signal<Theme>('light');
 
   constructor() {
-    effect(() => {
-      const mode = this.mode();
-      const root = this.document.documentElement;
-      if (mode === 'system') root.removeAttribute('data-theme');
-      else root.setAttribute('data-theme', mode);
-      try {
-        localStorage.setItem(STORAGE_KEY, mode);
-      } catch {
-        // Storage can be blocked (private mode); the theme still applies for this visit.
-      }
-    });
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === 'light' || stored === 'dark') this.apply(stored);
+    } catch {
+      // Storage blocked: start in light mode.
+    }
   }
 
   toggle(): void {
-    const dark =
-      this.mode() === 'dark' ||
-      (this.mode() === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-    this.mode.set(dark ? 'light' : 'dark');
+    const next: Theme = this.theme() === 'dark' ? 'light' : 'dark';
+    this.apply(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // The theme still applies for this visit.
+    }
   }
-}
 
-function readStored(): ThemeMode {
-  try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    return v === 'light' || v === 'dark' ? v : 'system';
-  } catch {
-    return 'system';
+  private apply(theme: Theme): void {
+    this.document.documentElement.dataset['theme'] = theme;
+    this.theme.set(theme);
   }
 }

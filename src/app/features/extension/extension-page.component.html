@@ -1,0 +1,94 @@
+<div class="page">
+  <div class="page-head">
+    <div class="w760">
+      <h1>{{ t().ext.title }}</h1>
+      <p>{{ t().ext.sub }}</p>
+    </div>
+  </div>
+
+  <div class="grid-2eq">
+    <section class="panel why">
+      <h2 class="h2">{{ t().ext.why }}</h2>
+      <ul>
+        @for (w of why(); track w[0]) {
+          <li>
+            <i class="ph" [class]="w[0]"></i><span>{{ w[1] }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <div class="stage">
+      <div class="popup">
+        <div class="pop-head">
+          <i class="ph-fill ph-paper-plane-tilt"></i>
+          <span class="brand">AutoPost</span>
+          <span
+            class="dot"
+            [style.background]="ext.online() ? 'var(--color-success)' : 'var(--color-danger)'"
+          ></span>
+          <span class="small muted">{{ short() }}</span>
+        </div>
+        <div class="pop-body">
+          <div>
+            <div class="small muted">{{ t().ext.connectedTo }}</div>
+            <div class="fw6">{{ team.current().name }}</div>
+            <div class="small muted">{{ session.user.email }}</div>
+          </div>
+          <div class="next">
+            <div class="next-head small muted">
+              <span>{{ t().ext.nextPost }}</span
+              ><span>{{ next().inMin }}</span>
+            </div>
+            <div class="next-row">
+              <span class="pico s28"><i class="ph" [class]="next().icon"></i></span>
+              <div class="min0">
+                <div class="fw5">{{ next().time }} · {{ next().target }}</div>
+                <div class="small muted ellipsis">{{ next().text }}</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="small muted mb4">{{ t().ext.quota }}</div>
+            @for (q of quota(); track q.name) {
+              <div class="q">
+                <i class="ph" [class]="q.icon"></i>
+                <span class="qname small">{{ q.name }}</span>
+                <div class="bar qbar"><span [style.width.%]="q.pct"></span></div>
+                <span class="small muted qlabel">{{ q.label }}</span>
+              </div>
+            }
+          </div>
+          <div class="pop-actions">
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-full"
+              [class.su-btn-primary]="ext.paused()"
+              [class.su-btn-secondary]="!ext.paused()"
+              (click)="ext.togglePause()"
+            >
+              <i class="ph" [class.ph-play]="ext.paused()" [class.ph-pause]="!ext.paused()"></i>
+              {{ ext.paused() ? t().ext.resume : t().ext.pause }}
+            </button>
+            <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/overview">{{
+              t().ext.openDash
+            }}</a>
+          </div>
+          <div>
+            <div class="small muted mb4">{{ t().ext.activity }}</div>
+            @for (l of log(); track $index) {
+              <div class="log small">
+                <span class="muted lt">{{ l.time }}</span
+                ><span [style.color]="l.color">{{ l.text }}</span>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="pop-foot small muted">
+          <span>{{ bound() }}</span>
+          <span>{{ t().ext.version }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

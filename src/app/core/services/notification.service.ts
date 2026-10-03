@@ -1,32 +1,36 @@
 import { Injectable, signal } from '@angular/core';
 
-export type ToastKind = 'info' | 'success' | 'error';
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 export interface Toast {
   id: number;
-  kind: ToastKind;
-  text: string;
+  type: ToastType;
+  message: string;
 }
 
-// App-wide toast queue, rendered by <app-toast-outlet> in the root component.
+// App-wide toast queue, rendered top-right by <app-toast-outlet>.
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
   private nextId = 1;
   private readonly _toasts = signal<Toast[]>([]);
   readonly toasts = this._toasts.asReadonly();
 
-  show(kind: ToastKind, text: string, durationMs = 5000): void {
-    const toast: Toast = { id: this.nextId++, kind, text };
+  show(type: ToastType, message: string, durationMs = 4500): void {
+    const toast: Toast = { id: this.nextId++, type, message };
     this._toasts.update((list) => [...list, toast]);
     setTimeout(() => this.dismiss(toast.id), durationMs);
   }
 
-  success(text: string): void {
-    this.show('success', text);
+  success(message: string): void {
+    this.show('success', message);
   }
 
-  error(text: string): void {
-    this.show('error', text, 8000);
+  info(message: string): void {
+    this.show('info', message);
+  }
+
+  error(message: string): void {
+    this.show('error', message);
   }
 
   dismiss(id: number): void {

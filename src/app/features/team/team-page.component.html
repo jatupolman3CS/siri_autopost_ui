@@ -1,0 +1,145 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ t().team.title }}</h1>
+      <p>{{ t().team.sub }}</p>
+    </div>
+    <div class="actions">
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="open('ws')">
+        <i class="ph ph-plus"></i>{{ t().team.newWs }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        [disabled]="gated()"
+        (click)="open('invite')"
+      >
+        <i class="ph ph-user-plus"></i>{{ t().team.invite }}
+      </button>
+    </div>
+  </div>
+
+  @if (gated()) {
+    <div class="panel gate">
+      <i class="ph ph-lock-simple"></i>
+      <div class="grow200">
+        <div class="fw6">{{ t().team.gate }}</div>
+        <div class="fs14 muted">{{ t().team.gateBody }}</div>
+      </div>
+      <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/billing">{{
+        t().common.upgrade
+      }}</a>
+    </div>
+  }
+
+  <div class="grid-2">
+    <div class="stack">
+      <section class="panel">
+        <h2 class="h2 mb8">{{ t().team.members }}</h2>
+        <div class="tbl members">
+          <div class="th">{{ t().common.name }}</div>
+          <div class="th">{{ t().team.role }}</div>
+          <div class="th">{{ t().team.lastActive }}</div>
+          @for (m of memberRows(); track m.id) {
+            <div class="td who">
+              <span class="pico initial">{{ m.initial }}</span>
+              <div class="min0">
+                <div class="fw5 ellipsis">{{ m.name }} {{ m.you }}</div>
+                <div class="small muted ellipsis">{{ m.email }}</div>
+              </div>
+            </div>
+            <div class="td">{{ m.role }}</div>
+            <div class="td muted">{{ m.active }}</div>
+          }
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="h2">{{ t().team.devices }}</h2>
+        <p class="sub mb8">{{ devicesBody() }}</p>
+        @for (d of deviceRows(); track d.id) {
+          <div class="row dev">
+            <i class="ph dev-ico" [class]="d.icon"></i>
+            <div class="grow160">
+              <div class="fs14 fw5">{{ d.name }}</div>
+              <div class="small muted">
+                {{ d.browser }} · {{ t().team.lastSeen }} {{ d.seenLabel }}
+              </div>
+            </div>
+            @if (d.isThis) {
+              <span class="badge">{{ t().common.thisDevice }}</span>
+            } @else {
+              <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="askRevoke(d.id)">
+                {{ t().common.revoke }}
+              </button>
+            }
+          </div>
+        }
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2 class="h2 mb4">{{ t().team.workspaces }}</h2>
+      @for (w of wsRows(); track w.id) {
+        <div class="row">
+          <div class="grow">
+            <div class="fs14 fw5 ellipsis">{{ w.name }}</div>
+            <div class="small muted">{{ w.meta }}</div>
+          </div>
+          @if (w.isCurrent) {
+            <span class="badge">{{ t().team.current }}</span>
+          } @else {
+            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="switchTo(w.id)">
+              {{ t().team.switchTo }}
+            </button>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</div>
+
+<app-modal [open]="modal() === 'invite'" [title]="t().team.invite" (closed)="close()">
+  <div class="form">
+    <app-input-field
+      type="email"
+      [label]="t().team.email"
+      placeholder="name@company.co"
+      [(value)]="formEmail"
+      [error]="formErr()"
+    />
+    <app-select-field [label]="t().team.role" [options]="roleOptions()" [(value)]="formRole" />
+  </div>
+  <div modal-footer>
+    <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="close()">
+      {{ t().common.cancel }}
+    </button>
+    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="confirmInvite()">
+      {{ t().team.invite }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [open]="modal() === 'ws'" [title]="t().team.newWs" (closed)="close()">
+  <app-input-field [label]="t().team.wsName" [(value)]="formWs" [error]="formErr()" />
+  <div modal-footer>
+    <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="close()">
+      {{ t().common.cancel }}
+    </button>
+    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="confirmWs()">
+      {{ t().team.newWs }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [open]="modal() === 'revoke'" [title]="t().team.revokeTitle" (closed)="close()">
+  <p class="fs14 flush">{{ t().team.revokeBody }}</p>
+  <div modal-footer>
+    <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="close()">
+      {{ t().common.cancel }}
+    </button>
+    <button type="button" class="su-btn su-btn-sm su-btn-danger" (click)="confirmRevoke()">
+      {{ t().common.revoke }}
+    </button>
+  </div>
+</app-modal>

@@ -1,62 +1,54 @@
-# SIRI.AUTOPOST UI (Angular)
+# AutoPost UI (Angular)
 
-Frontend ของระบบ SIRI.AUTOPOST เขียนด้วย **Angular 22** (standalone components, zoneless, signals) ใช้คู่กับ `SIRIAUTOPOST.Api` ใน repo `siri_autopost_backend`
+Frontend ของ **AutoPost** สร้างตามดีไซน์ "AutoPost Dashboard" จาก Claude Design handoff ด้วย **Angular 22** (standalone, zoneless, signals) รองรับภาษาไทย/อังกฤษ และโหมดสว่าง/มืด
 
-> หน้าเว็บเดิม (Vite + ไฟล์ dashboard ของส่วนขยาย) ย้ายไปอยู่ที่ [`legacy/`](legacy/README.md) และยังรันได้เหมือนเดิม
+> หน้าเว็บเดิม (Vite + ไฟล์ dashboard ของส่วนขยาย) อยู่ที่ [`legacy/`](legacy/README.md) และยังรันได้เหมือนเดิม
 
----
+## หน้าจอที่มี
+
+| กลุ่ม | หน้า |
+|---|---|
+| สาธารณะ | หน้าแรก (landing + ราคา), เข้าสู่ระบบ, สมัครทดลองใช้ |
+| เวิร์กสเปซ | ภาพรวม, ปฏิทินโพสต์, เขียนโพสต์, คลังสื่อและข้อความ |
+| ระบบโพสต์อัตโนมัติ | ความปลอดภัยบัญชี (anti-ban), เมื่อออฟไลน์, รายงานข้อผิดพลาด |
+| บัญชีผู้ใช้ | แผนและการชำระเงิน, ทีมและเวิร์กสเปซ |
+| เจ้าของแพลตฟอร์ม (admin) | ภาพรวมแพลตฟอร์ม, ลูกค้า + รายละเอียดลูกค้า, การเงิน, แผนและโค้ดส่วนลด, งานที่กำลังรัน |
+| ตัวอย่าง | หน้าต่างส่วนขยาย (popup) |
+
+**สถานะข้อมูล:** ตอนนี้ทุกหน้าใช้ข้อมูลตัวอย่างจากดีไซน์ (เก็บในหน่วยความจำของเบราว์เซอร์ รีเฟรชแล้วรีเซ็ต) ยกเว้นการเข้าสู่ระบบ/แผน ภาษา และธีมที่จำไว้ใน localStorage
+การเข้าสู่ระบบยังไม่ต่อ backend: ใส่อีเมลใดก็ได้ แล้วเลือก "ผู้ใช้งาน (ร้านค้า)" หรือ "ผู้ดูแลแพลตฟอร์ม" (เหมือนต้นแบบในดีไซน์)
+
+## เริ่มพัฒนา
+
+ต้องใช้ Node.js **22.22.3+** หรือ **24.15+**
+
+```bash
+npm install
+npm start          # http://localhost:4200
+npm test           # unit test (Vitest)
+npm run build      # -> dist/siri-autopost-ui/browser
+```
 
 ## โครงสร้าง
 
 ```text
-siri_autopost_ui/
-├── src/
-│   ├── app/
-│   │   ├── core/          # ใช้ทั้งแอป (ห้าม import จาก features)
-│   │   │   ├── auth/      # AuthStore (signals), authGuard, TokenStorageService
-│   │   │   ├── http/      # interceptors (แนบ token, แจ้ง error), ProblemDetails, api-schema.ts (generated)
-│   │   │   └── services/  # ThemeService, NotificationService
-│   │   ├── shared/        # components / directives / pipes ที่ใช้ซ้ำ (dumb)
-│   │   ├── layouts/       # main-layout (sidebar + header), auth-layout (หน้า login)
-│   │   ├── features/      # ฟีเจอร์หลัก โหลดแบบ lazy ผ่าน *.routes.ts
-│   │   │   ├── auto-post/ # ตัวอย่างครบชุด: components, pages, services, state, models
-│   │   │   ├── settings/
-│   │   │   └── auth/      # หน้า login
-│   │   ├── app.component.ts
-│   │   ├── app.config.ts
-│   │   └── app.routes.ts
-│   ├── assets/
-│   ├── styles/            # design tokens (CSS variables) + base styles
-│   └── environments/
-├── openapi.snapshot.json  # สัญญา API จาก backend ใช้สร้าง src/app/core/http/api-schema.ts
-├── proxy.conf.json        # ng serve ส่ง /api ไปที่ backend (http://localhost:5100)
-├── angular.json
-├── package.json
-└── legacy/                # หน้าเว็บเดิม (Vite)
+src/app/
+├── core/
+│   ├── data/        # store ของแต่ละโดเมน (posts, settings, library, team, admin, extension, session, draft) + ข้อมูลตัวอย่าง
+│   ├── i18n/        # พจนานุกรม TH/EN (สร้างจากดีไซน์), I18nService, ตัวจัดรูปแบบวันที่/เงิน
+│   ├── auth/        # route guards
+│   ├── http/        # interceptor + type ของ API (สำหรับเฟสต่อ backend)
+│   └── services/    # ThemeService, NotificationService (toast)
+├── shared/components/  # ชิ้นส่วนของ design system: modal, input, select, checkbox, empty state, plan cards
+├── layouts/         # public-layout (header หน้าสาธารณะ), app-layout (sidebar + top bar + แถบออฟไลน์)
+└── features/        # หนึ่งโฟลเดอร์ต่อหน้าจอ (public, overview, calendar, composer, ..., admin)
+src/styles/          # tokens (สี/ระยะ/เงา), CSS ของ design system, layout utilities
 ```
 
-## เริ่มพัฒนา
-
-ต้องใช้ Node.js **22.22.3+** หรือ **24.15+** (ตามที่ Angular CLI 22 กำหนด)
+## อัปเดตข้อความหรือข้อมูลตัวอย่างจากดีไซน์ใหม่
 
 ```bash
-npm install
-npm start               # http://localhost:4200 (ต้องรัน SIRIAUTOPOST.Api ที่พอร์ต 5100 ด้วย)
-npm test                # unit test (Vitest)
-npm run build           # -> dist/siri-autopost-ui/browser
+npm run import:design -- path/to/autopost-data.js
 ```
 
-## อัปเดต type ของ API
-
-เมื่อ backend เปลี่ยน API:
-
-```bash
-curl http://localhost:5100/openapi/v1.json -o openapi.snapshot.json
-npm run gen:api         # สร้าง src/app/core/http/api-schema.ts ใหม่
-```
-
-model ของแต่ละฟีเจอร์ (เช่น `features/auto-post/models/post.model.ts`) อ้างอิง type จากไฟล์นี้ จึงเห็น error ตอน build ทันทีถ้าสัญญา API เปลี่ยน
-
-## การเข้าสู่ระบบ
-
-`core/auth` มีครบทั้ง AuthStore, guard และ interceptor แล้ว แต่ `SIRIAUTOPOST.Api` ยังไม่มี endpoint `/api/auth/login` จึงปิดไว้ด้วย `authEnabled: false` ใน `src/environments/` เมื่อ backend มี auth แล้วให้เปลี่ยนเป็น `true`
+สร้าง `src/app/core/i18n/i18n.data.ts` และ `src/app/core/data/seed.data.ts` ใหม่จากไฟล์ของ handoff

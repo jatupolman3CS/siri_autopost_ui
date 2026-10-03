@@ -1,0 +1,54 @@
+.fs14 {
+  font-size: 14px;
+}
+.mb4 {
+  margin-bottom: 4px;
+}
+.mb8 {
+  margin-bottom: 8px;
+}
+.flush {
+  margin: 0;
+}
+.min0 {
+  min-width: 0;
+}
+.gate {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  > .ph {
+    font-size: 28px;
+    color: var(--color-primary);
+  }
+}
+.grow200 {
+  flex: 1;
+  min-width: 200px;
+}
+.grow160 {
+  flex: 1;
+  min-width: 160px;
+}
+.members {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  .td {
+    padding: 10px 0;
+  }
+}
+.who {
+  gap: 10px;
+}
+.dev {
+  flex-wrap: wrap;
+}
+.dev-ico {
+  font-size: 24px;
+  color: var(--color-text-muted);
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

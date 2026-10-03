@@ -4,122 +4,34 @@
   box-sizing: border-box;
 }
 
-html,
-body {
-  margin: 0;
-  min-height: 100%;
+html {
+  scroll-padding-top: 4rem;
 }
 
 body {
+  margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: var(--text-base);
+  font-size: 16px;
   line-height: 1.5;
 }
 
 a {
   color: var(--color-primary);
-
   &:hover {
     color: var(--color-primary-hover);
   }
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-}
-
-// Shared form + button primitives used across features.
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  min-height: 44px;
-  padding: 0 var(--space-md);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 200ms ease-out,
-    color 200ms ease-out;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
-
-  &:hover:not(:disabled) {
-    background: var(--color-primary-hover);
-  }
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--color-text);
-  border-color: var(--color-border);
-
-  &:hover:not(:disabled) {
-    background: var(--color-surface-muted);
-  }
-}
-
-.btn-danger {
-  background: transparent;
-  color: var(--color-danger);
-
-  &:hover:not(:disabled) {
-    background: var(--color-surface-muted);
-  }
-}
-
-.field {
-  display: grid;
-  gap: var(--space-xs);
-
-  label {
-    font-size: var(--text-sm);
-    font-weight: 500;
-  }
-
-  input,
-  textarea,
-  select {
-    width: 100%;
-    min-height: 44px;
-    padding: var(--space-sm) var(--space-md);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg);
-    color: var(--color-text);
-    font: inherit;
-  }
-
-  .error {
-    color: var(--color-danger);
-    font-size: var(--text-sm);
-  }
-}
-
-.card {
-  padding: var(--space-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
+h1,
+h2,
+h3 {
+  text-wrap: pretty;
 }
 
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
-    transition: none !important;
   }
 }

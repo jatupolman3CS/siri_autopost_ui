@@ -1,0 +1,86 @@
+.fs14 {
+  font-size: 14px;
+}
+.mb4 {
+  margin-bottom: 4px;
+}
+.mp {
+  margin: 0 0 8px;
+}
+.err {
+  color: var(--color-danger);
+}
+.cur {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.big {
+  font-size: 24px;
+  font-weight: 700;
+}
+.right {
+  text-align: right;
+}
+.usage {
+  padding: 8px 0;
+}
+.usage-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+.col12 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.card-ico {
+  font-size: 28px;
+}
+.grow120 {
+  flex: 1;
+  min-width: 120px;
+}
+.ok {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  > .ph {
+    font-size: 18px;
+  }
+}
+.compare {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.h20 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+.row.inv {
+  gap: 16px;
+  padding: 8px 0;
+  flex-wrap: wrap;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}

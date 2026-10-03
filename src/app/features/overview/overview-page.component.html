@@ -1,0 +1,102 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ t().ov.hello }}, {{ userName() }}</h1>
+      <p>{{ sub() }}</p>
+    </div>
+    <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/composer"
+      ><i class="ph ph-plus"></i>{{ t().ov.newPost }}</a
+    >
+  </div>
+
+  <div class="kpis">
+    @for (k of stats.kpis(); track k.label) {
+      <div class="panel kpi">
+        <span class="label">{{ k.label }}</span>
+        <span class="value">{{ k.value }}</span>
+        <span class="note">{{ k.note }}</span>
+      </div>
+    }
+  </div>
+
+  <div class="grid-2">
+    <div class="stack">
+      <section class="panel">
+        <div class="panel-head mb8">
+          <h2 class="h2">{{ t().ov.queueTitle }}</h2>
+          <span class="muted fs14">{{ nextIn() }}</span>
+        </div>
+        @for (p of stats.queueRows(); track p.id) {
+          <div class="row">
+            <span class="time">{{ p.time }}</span>
+            <span class="pico"><i class="ph" [class]="p.icon"></i></span>
+            <div class="grow">
+              <div class="ellipsis">{{ p.text }}</div>
+              <div class="small muted">{{ p.platformName }} · {{ p.target }}</div>
+            </div>
+            <span class="status"
+              ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
+            >
+          </div>
+        }
+        <div class="mt8">
+          <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/calendar"
+            >{{ t().ov.openCalendar }}<i class="ph ph-arrow-right"></i
+          ></a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="h2 mb12">{{ t().ov.trend }}</h2>
+        <div class="bars trend">
+          @for (d of stats.trend(); track $index) {
+            <div class="col">
+              <span>{{ d.total }}</span>
+              <div class="stack-bar" [style.height.%]="d.h">
+                <div class="fail" [style.height.%]="d.failPct"></div>
+                <div class="ok" [style.border-radius]="d.okRadius"></div>
+              </div>
+              <span>{{ d.label }}</span>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+    <div class="stack">
+      <section class="panel">
+        <h2 class="h2 mb4">{{ t().ov.accountsTitle }}</h2>
+        @for (a of stats.accountRows(); track $index) {
+          <div class="row tight">
+            <span class="pico"><i class="ph" [class]="a.icon"></i></span>
+            <div class="grow">
+              <div class="fw5 ellipsis">{{ a.name }}</div>
+              <div class="small muted">{{ a.handle }}</div>
+            </div>
+            <span class="status"
+              ><span class="dot" [style.background]="a.dot"></span>{{ a.healthLabel }}</span
+            >
+          </div>
+        }
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="h2">{{ t().ov.errorsTitle }}</h2>
+          <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/errors">{{ t().ov.fixAll }}</a>
+        </div>
+        @for (e of stats.recentErrors(); track $index) {
+          <a class="err" routerLink="/app/errors">
+            <i class="ph ph-x-circle"></i>
+            <div class="min0">
+              <div class="fw5 fs14">{{ e.title }}</div>
+              <div class="small muted">{{ e.meta }}</div>
+            </div>
+          </a>
+        } @empty {
+          <p class="muted fs14 none">{{ t().ov.noErrors }}</p>
+        }
+      </section>
+    </div>
+  </div>
+</div>

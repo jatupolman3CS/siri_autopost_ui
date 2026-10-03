@@ -1,0 +1,93 @@
+.w720 {
+  max-width: 720px;
+}
+.fs14 {
+  font-size: 14px;
+}
+.mb4 {
+  margin-bottom: 4px;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.w48 {
+  width: 48px;
+  flex-shrink: 0;
+}
+.w76 {
+  width: 76px;
+}
+.risk {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  > .ph {
+    font-size: 32px;
+  }
+}
+.grow160 {
+  flex: 1;
+  min-width: 160px;
+}
+.risk-label {
+  font-size: 20px;
+  font-weight: 700;
+}
+.note {
+  max-width: 300px;
+}
+.range-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--color-primary);
+  height: 44px;
+  margin: 0;
+  display: block;
+}
+.row.tight {
+  padding: 8px 0;
+}
+.limits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.limit-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+.human-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.lock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  flex-wrap: wrap;
+  > .ph {
+    font-size: 18px;
+  }
+}
+.human {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0 24px;
+}
+@media (max-width: 400px) {
+  .human {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,152 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ t().cmp.title }}</h1>
+      <p>{{ t().cmp.sub }}</p>
+    </div>
+  </div>
+
+  <div class="cmp-grid">
+    <section class="panel stack">
+      <div>
+        <label class="su-field-label" for="cmp-text">{{ t().cmp.content }}</label>
+        <textarea
+          id="cmp-text"
+          class="su-textarea"
+          rows="6"
+          [class.su-input-error]="!!d().errText"
+          [placeholder]="t().cmp.placeholder"
+          [value]="d().text"
+          (input)="setText($any($event.target).value)"
+        ></textarea>
+        <div class="counter">
+          <span class="err">{{ d().errText }}</span>
+          <span class="muted">{{ d().text.length }} {{ t().cmp.chars }}</span>
+        </div>
+      </div>
+      <app-select-field
+        [label]="t().cmp.template"
+        [placeholder]="t().cmp.templatePh"
+        [options]="snippetOptions()"
+        [resetAfterChange]="true"
+        (valueChange)="insertSnippet($event)"
+      />
+      <div>
+        <div class="fw5 fs14 mb8">{{ t().cmp.media }}</div>
+        <div class="media">
+          @for (m of mediaPick(); track m.id) {
+            <button
+              type="button"
+              class="m"
+              [class.on]="m.selected"
+              [title]="m.label"
+              (click)="toggleMedia(m.id)"
+              [attr.aria-pressed]="m.selected"
+            >
+              <span class="thumb">
+                <i class="ph" [class]="m.icon"></i>
+                @if (m.selected) {
+                  <i class="ph-fill ph-check-circle tick"></i>
+                }
+              </span>
+              <span class="small ellipsis">{{ m.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    </section>
+
+    <div class="stack">
+      <section class="panel">
+        <h2 class="h2">{{ t().cmp.targets }}</h2>
+        <p class="err tgt-err">{{ d().errTargets }}</p>
+        @for (a of targetRows(); track a.id) {
+          <div class="tgt">
+            <div class="tgt-row">
+              <app-checkbox
+                class="grow"
+                [label]="a.label"
+                [checked]="a.checked"
+                [disabled]="a.disabled"
+                (checkedChange)="setTarget(a.id, $event)"
+              />
+              <span class="pico s28"><i class="ph" [class]="a.icon"></i></span>
+            </div>
+            @if (a.showGroups) {
+              <div class="groups">
+                <div class="small muted grp-head">
+                  <span>{{ groupsSel() }}</span>
+                  <button type="button" class="link-btn small" (click)="selectAllGroups()">
+                    {{ t().cmp.selectAll }}
+                  </button>
+                  <button type="button" class="link-btn small" (click)="clearGroups()">
+                    {{ t().cmp.clear }}
+                  </button>
+                </div>
+                <div class="pills">
+                  @for (g of groups; track g) {
+                    <button
+                      type="button"
+                      class="pill"
+                      [class.on]="d().groups.includes(g)"
+                      (click)="toggleGroup(g)"
+                    >
+                      {{ g }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+            @if (a.needsLogin) {
+              <div class="relogin small">{{ t().cmp.relogin }}</div>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="panel stack">
+        <h2 class="h2">{{ t().cmp.schedule }}</h2>
+        <div class="when">
+          <app-input-field
+            type="date"
+            [label]="t().cmp.date"
+            [value]="d().date"
+            (valueChange)="store.patch({ date: $event, errTime: '' })"
+          />
+          <app-input-field
+            type="time"
+            [label]="t().cmp.timeStart"
+            [value]="d().time"
+            [error]="d().errTime"
+            (valueChange)="store.patch({ time: $event, errTime: '' })"
+          />
+        </div>
+        <app-select-field
+          [label]="t().cmp.repeat"
+          [options]="repeatOptions()"
+          [value]="d().repeat"
+          (valueChange)="setRepeat($event)"
+        />
+        <app-checkbox
+          [label]="useDelayLabel()"
+          [checked]="d().useDelay"
+          (checkedChange)="store.patch({ useDelay: $event })"
+        />
+      </section>
+    </div>
+  </div>
+
+  <div class="panel bottom">
+    <div class="sum">
+      <i class="ph ph-timer"></i><span>{{ summary() }}</span>
+    </div>
+    <div class="actions gap12">
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="saveDraft()">
+        {{ t().cmp.draft }}
+      </button>
+      <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="submit()">
+        {{ t().cmp.submit }}<i class="ph ph-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+</div>

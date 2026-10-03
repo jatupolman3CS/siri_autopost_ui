@@ -1,0 +1,387 @@
+// SIRI design-system components (ported from the handoff's _ds_bundle.js, class names kept).
+
+// Button: <button class="su-btn su-btn-sm su-btn-primary">
+.su-btn {
+  display: inline-flex;
+  user-select: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-family: var(--font-sans);
+  transition:
+    background-color 0.2s ease-out,
+    color 0.2s ease-out;
+  cursor: pointer;
+  border: none;
+  background: none;
+  white-space: nowrap;
+  text-decoration: none;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--color-bg),
+      0 0 0 4px var(--color-focus-ring);
+  }
+
+  .ph {
+    font-size: 18px;
+  }
+}
+.su-btn-sm {
+  height: 44px;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+.su-btn-md {
+  height: 48px;
+  gap: 8px;
+  padding: 0 16px;
+  font-size: 16px;
+}
+.su-btn-lg {
+  height: 56px;
+  gap: 10px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+.su-btn-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  &:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+}
+.su-btn-secondary {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  &:hover:not(:disabled) {
+    background: var(--color-surface-muted);
+  }
+}
+.su-btn-danger {
+  background: var(--color-danger);
+  color: var(--color-primary-foreground);
+  &:hover:not(:disabled) {
+    filter: brightness(0.9);
+  }
+}
+.su-btn-ghost {
+  background: transparent;
+  color: var(--color-primary);
+  &:hover:not(:disabled) {
+    background: var(--color-surface-muted);
+  }
+}
+.su-btn-full {
+  width: 100%;
+}
+
+// Input / Select fields
+.su-field-label {
+  margin-bottom: 6px;
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+.su-input,
+.su-select,
+.su-textarea {
+  display: block;
+  height: 48px;
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  padding: 0 14px;
+  font-size: 16px;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  transition: border-color 0.2s ease-out;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+  &:disabled {
+    cursor: not-allowed;
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+  }
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+}
+.su-textarea {
+  height: auto;
+  min-height: 160px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.su-input-error {
+  border-color: var(--color-danger);
+}
+.su-field-help,
+.su-field-err {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+.su-field-err {
+  color: var(--color-danger);
+}
+.su-select {
+  appearance: none;
+  padding-right: 40px;
+}
+.su-select-wrap {
+  position: relative;
+}
+.su-select-caret {
+  pointer-events: none;
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+}
+
+// Checkbox
+.su-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.su-check-hit {
+  position: relative;
+  display: flex;
+  height: 44px;
+  width: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+.su-check-input {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  cursor: pointer;
+  appearance: none;
+  margin: 0;
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+.su-check-box {
+  pointer-events: none;
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+  transition:
+    background-color 0.2s ease-out,
+    border-color 0.2s ease-out;
+}
+.su-check-on .su-check-box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.su-check-dis .su-check-box {
+  opacity: 0.6;
+}
+.su-check-glyph {
+  pointer-events: none;
+  position: absolute;
+  color: var(--color-primary-foreground);
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.su-check-on .su-check-glyph {
+  opacity: 1;
+}
+.su-check-focus {
+  pointer-events: none;
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  border-radius: var(--radius-sm);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-focus-ring);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.su-check-input:focus-visible ~ .su-check-focus {
+  opacity: 1;
+}
+.su-check-label {
+  min-height: 44px;
+  cursor: pointer;
+  user-select: none;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--color-text);
+}
+.su-check-dis .su-check-label {
+  cursor: not-allowed;
+}
+
+// Modal
+@keyframes su-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@keyframes su-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+.su-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(15 23 42 / 0.6);
+  padding: 16px;
+  animation: su-overlay-in 0.2s ease-out;
+}
+.su-modal-panel {
+  width: 100%;
+  max-width: 32rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  animation: su-modal-in 0.2s ease-out;
+}
+.su-modal-head {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.su-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.su-modal-body {
+  font-size: 16px;
+}
+.su-modal-foot {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  &:empty {
+    margin-top: 0;
+  }
+}
+
+// Toast
+.su-toast {
+  pointer-events: auto;
+  display: flex;
+  width: 320px;
+  max-width: 24rem;
+  align-items: flex-start;
+  gap: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  padding: 16px;
+  box-shadow: var(--shadow-lg);
+}
+.su-toast-icon {
+  margin-top: 2px;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.su-toast-msg {
+  min-width: 0;
+  flex: 1;
+  padding: 6px 0;
+  margin: 0;
+  font-size: 14px;
+}
+
+// Square 44px icon button used by modals, toasts and the top bar.
+.su-x,
+.icon-btn {
+  display: inline-flex;
+  height: 44px;
+  width: 44px;
+  flex-shrink: 0;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  transition:
+    background-color 0.2s ease-out,
+    color 0.2s ease-out;
+
+  &:hover {
+    background: var(--color-surface-muted);
+    color: var(--color-text);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+}
+
+// Empty state
+.su-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+}
+.su-empty-icon {
+  display: flex;
+  height: 64px;
+  width: 64px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  font-size: 32px;
+}
+.su-empty-h {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.su-empty-d {
+  margin: 0;
+  max-width: 24rem;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}

@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "gen:api": "npx -y openapi-typescript@7 openapi.snapshot.json -o src/app/core/http/api-schema.ts && prettier --write src/app/core/http/api-schema.ts",
-    "format": "prettier --write \"src/**/*.{ts,html,scss}\""
+    "format": "prettier --write \"src/**/*.{ts,html,scss}\"",
+    "import:design": "node tools/import-design-data.mjs"
   },
   "private": true,
   "packageManager": "npm@10.9.4",
@@ -19,6 +20,7 @@
     "@angular/forms": "^22.2.0",
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
+    "@phosphor-icons/web": "^2.1.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
