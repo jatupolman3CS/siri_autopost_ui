@@ -44,6 +44,16 @@ export function connectUrl(origin: string, code: string, name: string, workspace
         <li>{{ t().api.pairStep2 }}</li>
         <li>{{ t().api.pairStep3 }}</li>
       </ol>
+      <div class="field">
+        <a
+          class="su-btn su-btn-sm su-btn-secondary dl"
+          data-testid="pair-download"
+          href="/api/extension/download"
+          download
+          ><i class="ph ph-download-simple"></i>{{ t().api.extDownload }}</a
+        >
+        <div class="small muted">{{ t().api.extInstallHelp }}</div>
+      </div>
       <label class="field">
         <span class="small muted">{{ t().api.pairName }}</span>
         <input
@@ -119,6 +129,9 @@ export function connectUrl(origin: string, code: string, name: string, workspace
       border-radius: var(--radius-sm);
       padding: 2px 6px;
       letter-spacing: 0.08em;
+    }
+    .dl {
+      align-self: flex-start;
     }
     .err {
       color: var(--color-danger);

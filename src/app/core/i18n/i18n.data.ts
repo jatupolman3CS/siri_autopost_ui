@@ -117,6 +117,8 @@ export const AP_I18N = {
     errPass: ['กรุณาใส่รหัสผ่าน', 'Please enter your password'],
     welcomeUser: ['เข้าสู่ระบบแล้ว', 'Signed in'],
     welcomeAdmin: ['เข้าสู่ระบบในฐานะผู้ดูแลแพลตฟอร์ม', 'Signed in as platform admin'],
+    or: ['หรือ', 'or'],
+    googleFailed: ['เข้าสู่ระบบด้วย Google ไม่สำเร็จ', 'Google sign-in failed'],
     loggedOut: ['ออกจากระบบแล้ว', 'Signed out'],
     logout: ['ออกจากระบบ', 'Log out'],
     adminBadge: ['ผู้ดูแลแพลตฟอร์ม', 'Platform admin'],

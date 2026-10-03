@@ -22,7 +22,15 @@ const WAIT_MS = 4000;
           <i class="ph ph-puzzle-piece big warn"></i>
           <h1>{{ t().api.connectMissing }}</h1>
           <p class="muted">{{ t().api.connectHelp }}</p>
+          <p class="muted">{{ t().api.extInstallHelp }}</p>
           <div class="actions">
+            <a
+              class="su-btn su-btn-sm su-btn-secondary"
+              href="/api/extension/download"
+              download
+              data-testid="connect-download"
+              ><i class="ph ph-download-simple"></i>{{ t().api.extDownload }}</a
+            >
             <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/team">{{
               t().api.addDevice
             }}</a>

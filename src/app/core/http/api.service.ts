@@ -1,6 +1,7 @@
 import { HttpClient, HttpContext, HttpContextToken, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
+import { PlanKey } from '../data/models';
 import { components } from './api-schema';
 
 type S = components['schemas'];
@@ -55,6 +56,14 @@ export class ApiService {
   }
   logIn(body: S['LogInCommand']) {
     return run(this.http.post<ApiAuthResult>('/api/auth/login', body, quiet));
+  }
+  /** Public sign-in settings; googleClientId is null while Google sign-in is off. */
+  authConfig() {
+    return run(this.http.get<{ googleClientId: string | null }>('/api/auth/config', quiet));
+  }
+  /** Signs in (or signs up) with the ID token from Google Identity Services. */
+  googleLogIn(idToken: string, plan: PlanKey | null) {
+    return run(this.http.post<ApiAuthResult>('/api/auth/google', { idToken, plan }, quiet));
   }
   me() {
     return run(this.http.get<ApiUser>('/api/auth/me', quiet));

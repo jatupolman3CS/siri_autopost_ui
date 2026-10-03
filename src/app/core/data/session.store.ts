@@ -42,6 +42,10 @@ export class SessionStore {
     return this.accept(await this.api.signUp({ email, password, name: null, plan }));
   }
 
+  async googleLogIn(idToken: string, plan: PlanKey | null): Promise<ApiUser> {
+    return this.accept(await this.api.googleLogIn(idToken, plan));
+  }
+
   /** Forgets the token; the workspace stores empty themselves when the user goes away. */
   signOut(): void {
     tokenStorage.set(null);

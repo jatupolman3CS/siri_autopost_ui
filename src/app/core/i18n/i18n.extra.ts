@@ -60,6 +60,11 @@ export const AP_I18N_EXTRA = {
     'Install or update the extension, then go back to Team & workspaces > Add device and connect again.',
   ],
   connectClose: ['ปิดหน้านี้', 'Close this page'],
+  extDownload: ['ดาวน์โหลดส่วนขยาย (.zip)', 'Download the extension (.zip)'],
+  extInstallHelp: [
+    'แตกไฟล์ zip แล้วเปิด chrome://extensions เปิด “โหมดนักพัฒนาซอฟต์แวร์” กด “โหลดส่วนขยายที่แตกไฟล์แล้ว” และเลือกโฟลเดอร์ autopost-extension',
+    'Unzip it, open chrome://extensions, turn on Developer mode, click “Load unpacked” and pick the autopost-extension folder',
+  ],
   rename: ['เปลี่ยนชื่อ', 'Rename'],
   renamePrompt: ['ชื่อเครื่องใหม่', 'New device name'],
   renamed: ['เปลี่ยนชื่อเป็น “{d}” แล้ว', 'Renamed to “{d}”'],
