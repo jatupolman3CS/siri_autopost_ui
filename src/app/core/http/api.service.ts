@@ -18,6 +18,8 @@ export type ApiOffline = S['OfflineDto'];
 export type ApiEngine = S['EngineSettingsDto'];
 export type ApiExtensionState = S['ExtensionStateDto'];
 export type ApiPlan = S['PlanKey'];
+export type ApiDevice = S['DeviceDto'];
+export type ApiPairingCode = S['PairingCodeDto'];
 
 /** Set on a request whose errors the caller shows itself (no toast from errorInterceptor). */
 export const QUIET = new HttpContextToken<boolean>(() => false);
@@ -101,8 +103,9 @@ export class ApiService {
     return run(this.http.post<ApiSnippet>(`/api/workspaces/${ws}/snippets`, { title, text }));
   }
 
-  engine(ws: string) {
-    return run(this.http.get<ApiEngine>(`/api/workspaces/${ws}/engine`));
+  /** background: periodic refreshes do not toast when the server is unreachable. */
+  engine(ws: string, background = false) {
+    return run(this.http.get<ApiEngine>(`/api/workspaces/${ws}/engine`, background ? quiet : {}));
   }
   saveAntiBan(ws: string, body: ApiAntiBan) {
     return run(this.http.put<ApiEngine>(`/api/workspaces/${ws}/engine/anti-ban`, body));
@@ -114,6 +117,16 @@ export class ApiService {
     return run(
       this.http.post<ApiExtensionState>(`/api/workspaces/${ws}/engine/extension`, { online }),
     );
+  }
+  devices(ws: string) {
+    return run(this.http.get<ApiDevice[]>(`/api/workspaces/${ws}/devices`));
+  }
+  createPairingCode(ws: string) {
+    // Quiet: the pairing dialog shows a refusal (plan limit) itself.
+    return run(this.http.post<ApiPairingCode>(`/api/workspaces/${ws}/devices/pairing`, {}, quiet));
+  }
+  revokeDevice(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/devices/${id}`));
   }
   skipWaiting(ws: string) {
     return run(this.http.post<ApiExtensionState>(`/api/workspaces/${ws}/engine/waiting/skip`, {}));

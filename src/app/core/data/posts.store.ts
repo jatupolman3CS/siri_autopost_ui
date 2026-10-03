@@ -35,6 +35,7 @@ export function toItem(p: ApiPost): PostItem {
     mediaIds: p.mediaIds,
     status: p.status,
     code: p.failureCode ?? null,
+    detail: p.failureDetail,
   };
 }
 

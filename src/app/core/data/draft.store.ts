@@ -47,10 +47,15 @@ export function blankDraft(): Draft {
   };
 }
 
-/** As in the design: the first group-posting account with three of its groups, plus Instagram. */
+/**
+ * A connected (paired) group account with three of its groups; without one, the design's
+ * default: the first group-posting sample account with three groups, plus Instagram.
+ */
 export function defaultTargets(list: SocialAccount[]): Pick<Draft, 'targets' | 'groups'> {
-  const page = list.find((a) => a.groups.length && a.health !== 'relogin');
-  const ig = list.find((a) => a.platform === 'ig' && a.health !== 'relogin');
+  const usable = list.filter((a) => a.health !== 'relogin');
+  const connected = usable.find((a) => a.connected && a.groups.length);
+  const page = connected ?? usable.find((a) => a.groups.length);
+  const ig = connected ? undefined : usable.find((a) => a.platform === 'ig');
   const targets: Record<string, boolean> = {};
   if (page) targets[page.id] = true;
   if (ig) targets[ig.id] = true;

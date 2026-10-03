@@ -1,21 +1,32 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AccountsStore } from '../../core/data/accounts.store';
 import { AdminStore } from '../../core/data/admin.store';
+import { DevicesStore } from '../../core/data/devices.store';
 import { MemberRole } from '../../core/data/models';
 import { SessionStore } from '../../core/data/session.store';
+import { SettingsStore } from '../../core/data/settings.store';
 import { TeamStore } from '../../core/data/team.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
+import { fmtDate, hm } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
+import { PairDeviceModalComponent } from './pair-device-modal.component';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-team-page',
-  imports: [RouterLink, InputFieldComponent, ModalComponent, SelectFieldComponent],
+  imports: [
+    RouterLink,
+    InputFieldComponent,
+    ModalComponent,
+    SelectFieldComponent,
+    PairDeviceModalComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './team-page.component.html',
   styleUrl: './team-page.component.scss',
@@ -25,10 +36,14 @@ export class TeamPageComponent {
   private readonly session = inject(SessionStore);
   private readonly admin = inject(AdminStore);
   protected readonly team = inject(TeamStore);
+  protected readonly devices = inject(DevicesStore);
+  private readonly accounts = inject(AccountsStore);
+  private readonly settings = inject(SettingsStore);
   private readonly workspaces = inject(WorkspaceStore);
-  protected readonly t = inject(I18nService).t;
+  private readonly i18n = inject(I18nService);
+  protected readonly t = this.i18n.t;
 
-  protected readonly modal = signal<'invite' | 'ws' | 'revoke' | null>(null);
+  protected readonly modal = signal<'invite' | 'ws' | 'revoke' | 'pair' | null>(null);
   protected readonly revokeId = signal<string | null>(null);
   protected readonly formEmail = signal('');
   protected readonly formRole = signal<string>('editor');
@@ -65,11 +80,23 @@ export class TeamPageComponent {
     const max = this.admin.plans()[this.session.plan()].devices;
     return max ? fmt(this.t().team.devicesBody, { n: max }) : this.t().team.devicesUnl;
   });
-  protected readonly deviceRows = computed(() =>
-    this.team
-      .devices()
-      .map((d) => ({ ...d, seenLabel: (this.t().team as Record<string, string>)[d.seen] ?? '' })),
-  );
+  protected readonly deviceRows = computed(() => {
+    const { t, li } = { t: this.t(), li: this.i18n.li() };
+    return this.devices.list().map((d) => {
+      const seen = d.lastSeenAt ? new Date(d.lastSeenAt) : null;
+      const status = d.online
+        ? t.api.deviceOnline
+        : seen
+          ? `${t.team.lastSeen} ${fmtDate(seen, li)} ${hm(seen)}`
+          : t.api.deviceNever;
+      return {
+        id: d.id,
+        name: d.name,
+        online: d.online,
+        meta: [d.browser, d.version && 'v' + d.version, status].filter(Boolean).join(' · '),
+      };
+    });
+  });
   protected readonly wsRows = computed(() =>
     this.workspaces.list().map((w) => ({
       ...w,
@@ -125,11 +152,18 @@ export class TeamPageComponent {
     this.notify.success(fmt(this.t().team.wsCreated, { ws: name }));
   }
 
-  protected confirmRevoke(): void {
+  /** The new device brings its Facebook account and puts the extension online. */
+  protected onPaired(): void {
+    void Promise.all([this.settings.refreshPresence(), this.accounts.load()]);
+  }
+
+  protected async confirmRevoke(): Promise<void> {
     const id = this.revokeId();
-    if (id) this.team.revokeDevice(id);
     this.close();
+    if (!id) return;
+    await this.devices.revoke(id);
     this.notify.info(this.t().team.revoked);
+    void Promise.all([this.settings.refreshPresence(), this.accounts.load()]);
   }
 
   protected switchTo(id: string): void {

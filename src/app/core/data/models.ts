@@ -38,6 +38,8 @@ export interface SocialAccount {
   health: Health;
   /** Facebook groups this account posts to; empty for every other kind of account. */
   groups: string[];
+  /** Posts through a paired browser; false for the sample accounts of a new workspace. */
+  connected: boolean;
 }
 
 /** Sample account in the design data (landing preview, admin mock). */
@@ -229,6 +231,8 @@ export interface PostItem {
   status: PostStatus;
   /** Why a failed or pending post did not go out. */
   code: ErrorCode | null;
+  /** What the extension reported, when it did. */
+  detail?: string | null;
 }
 
 export interface ErrorItem extends PostItem {

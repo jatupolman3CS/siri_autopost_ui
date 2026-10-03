@@ -28,8 +28,10 @@ describe('ExtensionStore', () => {
     expect(req.request.body).toEqual({ online: false });
     req.flush({ online: false, affected: 4 });
     await settle();
-    answerWorkspaceLoads(http);
+    answerWorkspaceLoads(http, { simulatedOffline: true });
     await done;
     expect(ext.online()).toBe(false);
+    expect(ext.simulated()).toBe(true);
+    expect(ext.unpaired()).toBe(true);
   });
 });

@@ -8,7 +8,7 @@ import { PostsStore } from '../../core/data/posts.store';
 import { SEED } from '../../core/data/seed.data';
 import { SessionStore } from '../../core/data/session.store';
 import { SettingsStore } from '../../core/data/settings.store';
-import { TeamStore } from '../../core/data/team.store';
+import { DevicesStore } from '../../core/data/devices.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 
@@ -28,7 +28,7 @@ export class ExtensionPageComponent {
   private readonly admin = inject(AdminStore);
   private readonly stats = inject(DashboardStatsService);
   protected readonly session = inject(SessionStore);
-  protected readonly team = inject(TeamStore);
+  private readonly devices = inject(DevicesStore);
   protected readonly workspaces = inject(WorkspaceStore);
   protected readonly ext = inject(ExtensionStore);
   protected readonly t = this.i18n.t;
@@ -96,7 +96,7 @@ export class ExtensionPageComponent {
     const max = this.admin.plans()[this.session.plan()].devices;
     return fmt(this.t().ext.bound, {
       e: this.session.email(),
-      n: this.team.devices().length,
+      n: this.devices.list().length,
       max: max ?? '∞',
     });
   });

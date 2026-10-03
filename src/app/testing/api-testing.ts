@@ -26,6 +26,7 @@ export const ACCOUNTS: ApiAccount[] = [
     defaultTarget: 'เพจ',
     health: 'ok',
     groups: ['G1', 'G2', 'G3', 'G4'],
+    connected: false,
   },
   {
     id: 'acc-ig',
@@ -35,6 +36,7 @@ export const ACCOUNTS: ApiAccount[] = [
     defaultTarget: 'ฟีด',
     health: 'ok',
     groups: [],
+    connected: false,
   },
   {
     id: 'acc-tt',
@@ -44,6 +46,7 @@ export const ACCOUNTS: ApiAccount[] = [
     defaultTarget: 'โปรไฟล์',
     health: 'relogin',
     groups: [],
+    connected: false,
   },
 ];
 
@@ -56,6 +59,7 @@ export function apiPost(over: Partial<ApiPost> & { id: string; scheduledAt: stri
     mediaIds: [],
     status: 'queued',
     failureCode: null,
+    failureDetail: null,
     publishedAt: null,
     ...over,
   };
@@ -99,7 +103,7 @@ export async function signIn(
 
 export function answerWorkspaceLoads(
   http: HttpTestingController,
-  data: { posts?: ApiPost[]; errors?: ApiPost[] } = {},
+  data: { posts?: ApiPost[]; errors?: ApiPost[]; simulatedOffline?: boolean } = {},
 ): void {
   const base = `/api/workspaces/${WS}`;
   for (const r of http.match((req) => req.url === `${base}/posts`)) {
@@ -129,6 +133,9 @@ export function answerWorkspaceLoads(
         warmup: false,
       },
       offline: { policy: 'queue', window: '2h', line: true, email: true, push: false },
-      extensionOnline: true,
+      extensionOnline: !data.simulatedOffline,
+      simulatedOffline: !!data.simulatedOffline,
+      devices: 0,
+      devicesOnline: 0,
     });
 }

@@ -64,13 +64,20 @@
           </div>
         }
       </div>
-      <div class="ext-status">
-        <span
-          class="dot"
-          [style.background]="ext.online() ? 'var(--color-success)' : 'var(--color-danger)'"
-        ></span>
-        <span class="label">{{ ext.online() ? t().top.extOnline : t().top.extOffline }}</span>
-      </div>
+      @if (ext.unpaired()) {
+        <a class="ext-status" routerLink="/app/team" [title]="t().api.noDevices">
+          <span class="dot" style="background: var(--color-text-muted)"></span>
+          <span class="label">{{ t().api.extUnpaired }}</span>
+        </a>
+      } @else {
+        <div class="ext-status">
+          <span
+            class="dot"
+            [style.background]="ext.online() ? 'var(--color-success)' : 'var(--color-danger)'"
+          ></span>
+          <span class="label">{{ ext.online() ? t().top.extOnline : t().top.extOffline }}</span>
+        </div>
+      }
       <div class="grow"></div>
       <app-lang-theme-switch />
       @if (session.isAdmin()) {
@@ -96,37 +103,43 @@
         <i class="ph ph-wifi-slash"></i>
         <div class="banner-text">
           <div class="fw6">{{ bannerTitle() }}</div>
-          <div class="muted">{{ bannerBody() }}</div>
+          <div class="muted">{{ ext.simulated() ? bannerBody() : t().api.realOffline }}</div>
         </div>
         <div class="actions">
-          <button
-            type="button"
-            class="su-btn su-btn-sm su-btn-secondary"
-            (click)="ext.bannerAction('skip')"
-          >
-            {{ t().top.bannerSkip }}
-          </button>
-          <button
-            type="button"
-            class="su-btn su-btn-sm su-btn-secondary"
-            (click)="ext.bannerAction('queue')"
-          >
-            {{ t().top.bannerQueue }}
-          </button>
-          <button
-            type="button"
-            class="su-btn su-btn-sm su-btn-secondary"
-            (click)="ext.bannerAction('notify')"
-          >
-            {{ t().top.bannerNotify }}
-          </button>
-          <button
-            type="button"
-            class="su-btn su-btn-sm su-btn-primary"
-            (click)="ext.toggleOnline()"
-          >
-            {{ t().top.goOnline }}
-          </button>
+          @if (ext.simulated()) {
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-secondary"
+              (click)="ext.bannerAction('skip')"
+            >
+              {{ t().top.bannerSkip }}
+            </button>
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-secondary"
+              (click)="ext.bannerAction('queue')"
+            >
+              {{ t().top.bannerQueue }}
+            </button>
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-secondary"
+              (click)="ext.bannerAction('notify')"
+            >
+              {{ t().top.bannerNotify }}
+            </button>
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-primary"
+              (click)="ext.toggleOnline()"
+            >
+              {{ t().top.goOnline }}
+            </button>
+          } @else {
+            <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/team">{{
+              t().nav.team
+            }}</a>
+          }
         </div>
       </div>
     }

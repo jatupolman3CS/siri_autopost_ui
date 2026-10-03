@@ -25,4 +25,46 @@ export const AP_I18N_EXTRA = {
   offlineSince: ['ส่วนขยายออฟไลน์ตั้งแต่ {t}', 'Extension offline since {t}'],
   noMedia: ['ยังไม่มีสื่อ อัปโหลดได้ที่หน้าคลังสื่อ', 'No media yet. Upload some in the library.'],
   noWorkspace: ['ยังไม่มีเวิร์กสเปซ', 'No workspace yet'],
+
+  // Devices and pairing (Phase 3)
+  addDevice: ['เพิ่มอุปกรณ์', 'Add device'],
+  pairTitle: ['จับคู่ส่วนขยายกับเวิร์กสเปซนี้', 'Pair the extension with this workspace'],
+  pairStep1: [
+    'ติดตั้งส่วนขยาย AutoPost ใน Chrome ที่ล็อกอิน Facebook ไว้',
+    'Install the AutoPost extension in the Chrome that is logged in to Facebook',
+  ],
+  pairStep2: [
+    'เปิดหน้าตั้งค่าส่วนขยาย ไปที่การ์ด “เชื่อมต่อเว็บ AutoPost”',
+    'Open the extension settings, card “Connect to AutoPost web”',
+  ],
+  pairStep3: [
+    'ใส่ URL และรหัสด้านล่าง แล้วกด “จับคู่”',
+    'Enter the URL and the code below, then press “Pair”',
+  ],
+  pairUrl: ['URL', 'URL'],
+  pairCode: ['รหัสจับคู่', 'Pairing code'],
+  pairExpires: ['ใช้ได้ครั้งเดียว ถึง {t} น.', 'Single use, valid until {t}'],
+  pairWaiting: ['รอส่วนขยายจับคู่…', 'Waiting for the extension…'],
+  pairExpired: ['รหัสหมดอายุแล้ว สร้างรหัสใหม่ได้', 'The code expired. Create a new one.'],
+  pairNew: ['สร้างรหัสใหม่', 'New code'],
+  paired: ['จับคู่ “{d}” แล้ว', 'Paired “{d}”'],
+  copy: ['คัดลอก', 'Copy'],
+  copied: ['คัดลอกแล้ว', 'Copied'],
+  done: ['เสร็จ', 'Done'],
+  noDevices: [
+    'ยังไม่มีอุปกรณ์ที่ผูกไว้ กด “เพิ่มอุปกรณ์” เพื่อให้ส่วนขยายโพสต์ตามเวลาที่ตั้งไว้',
+    'No paired devices yet. Press “Add device” so the extension posts on schedule.',
+  ],
+  deviceOnline: ['ออนไลน์อยู่', 'Online'],
+  deviceNever: ['ยังไม่เคยเชื่อมต่อ', 'Never connected'],
+  extUnpaired: ['ยังไม่ได้เชื่อมส่วนขยาย', 'Extension not paired'],
+  realOffline: [
+    'ไม่มีเครื่องที่ผูกไว้ออนไลน์ เปิด Chrome ที่ติดตั้งส่วนขยายไว้ แล้วโพสต์จะเดินต่อ',
+    'No paired device is online. Open the Chrome with the extension and posting resumes.',
+  ],
+  demoAccount: ['ตัวอย่าง', 'Sample'],
+  demoHint: [
+    'บัญชีตัวอย่าง: โพสต์ที่ตั้งให้บัญชีนี้จะไม่ถูกส่งจริง เชื่อมบัญชีจริงด้วย “เพิ่มอุปกรณ์” ในหน้าทีมและเวิร์กสเปซ',
+    'Sample account: posts for it are never sent. Connect a real one with “Add device” in Team & workspaces.',
+  ],
 } as const;

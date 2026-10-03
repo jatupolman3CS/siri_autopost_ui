@@ -211,6 +211,14 @@
   font-size: 14px;
   white-space: nowrap;
 }
+a.ext-status {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  &:hover {
+    background: var(--color-surface-muted);
+  }
+}
 .avatar {
   width: 36px;
   height: 36px;

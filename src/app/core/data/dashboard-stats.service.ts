@@ -86,6 +86,7 @@ export class DashboardStatsService {
       icon: SEED.platforms[a.platform].icon,
       name: a.name,
       handle: a.handle,
+      demo: !a.connected,
       dot: HEALTH_DOT[a.health],
       healthLabel: t.health[a.health],
     }));

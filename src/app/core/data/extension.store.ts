@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../http/api.service';
 import { I18nService, fmt } from '../i18n/i18n.service';
 import { NotificationService } from '../services/notification.service';
@@ -20,6 +20,10 @@ export class ExtensionStore {
   private readonly i18n = inject(I18nService);
 
   readonly online = this.settings.extensionOnline.asReadonly();
+  /** Offline because of "simulate offline" (the banner then offers to reconnect). */
+  readonly simulated = this.settings.simulatedOffline.asReadonly();
+  /** No browser is paired yet: the dashboard runs on its sample accounts. */
+  readonly unpaired = computed(() => this.settings.devices() === 0);
   /** Pausing lives in the extension popup preview only. */
   readonly paused = signal(false);
   readonly busy = signal(false);
@@ -34,9 +38,8 @@ export class ExtensionStore {
     this.busy.set(true);
     try {
       const r = await this.api.setExtensionOnline(wsId, goOnline);
-      this.settings.extensionOnline.set(r.online);
       this.offlineSince.set(r.online ? null : new Date());
-      await this.posts.refresh();
+      await Promise.all([this.settings.refreshPresence(), this.posts.refresh()]);
       if (!goOnline) this.notify.error(t.off.toastOffline);
       else
         this.notify.success(

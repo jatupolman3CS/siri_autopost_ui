@@ -76,6 +76,9 @@
                 [disabled]="a.disabled"
                 (checkedChange)="setTarget(a.id, $event)"
               />
+              @if (a.demo) {
+                <span class="badge" [title]="t().api.demoHint">{{ t().api.demoAccount }}</span>
+              }
               <span class="pico s28"><i class="ph" [class]="a.icon"></i></span>
             </div>
             @if (a.showGroups) {

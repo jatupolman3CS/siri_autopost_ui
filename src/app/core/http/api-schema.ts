@@ -189,6 +189,366 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/device/pair': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['PairDeviceCommand'];
+          'text/json': components['schemas']['PairDeviceCommand'];
+          'application/*+json': components['schemas']['PairDeviceCommand'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PairResultDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/heartbeat': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['HeartbeatRequest'];
+          'text/json': components['schemas']['HeartbeatRequest'];
+          'application/*+json': components['schemas']['HeartbeatRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['DeviceStatusDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/groups': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['GroupsRequest'];
+          'text/json': components['schemas']['GroupsRequest'];
+          'application/*+json': components['schemas']['GroupsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': number;
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/jobs/claim': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['JobDto'];
+          };
+        };
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/jobs/{postId}/result': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          postId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ResultRequest'];
+          'text/json': components['schemas']['ResultRequest'];
+          'application/*+json': components['schemas']['ResultRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PostDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/media/{mediaId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          mediaId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+            'application/octet-stream': unknown;
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/devices': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['DeviceDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/devices/pairing': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PairingCodeDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/devices/{deviceId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          deviceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/engine': {
     parameters: {
       query?: never;
@@ -950,6 +1310,7 @@ export interface components {
       defaultTarget: string;
       health: components['schemas']['AccountHealth'];
       groups: string[];
+      connected: boolean;
     };
     /** @enum {unknown} */
     AccountHealth: 'ok' | 'warn' | 'relogin';
@@ -981,10 +1342,43 @@ export interface components {
     CreateWorkspaceRequest: {
       name: string;
     };
+    DeviceDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      browser: string;
+      version: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      lastSeenAt: null | string;
+      online: boolean;
+      /** Format: uuid */
+      accountId: null | string;
+    };
+    DeviceStatusDto: {
+      /** Format: uuid */
+      deviceId: string;
+      deviceName: string;
+      /** Format: uuid */
+      workspaceId: string;
+      workspaceName: string;
+      /** Format: uuid */
+      accountId: null | string;
+      /** Format: int32 */
+      groups: number;
+      online: boolean;
+      antiBan: components['schemas']['AntiBanDto'];
+    };
     EngineSettingsDto: {
       antiBan: components['schemas']['AntiBanDto'];
       offline: components['schemas']['OfflineDto'];
       extensionOnline: boolean;
+      simulatedOffline: boolean;
+      /** Format: int32 */
+      devices: number;
+      /** Format: int32 */
+      devicesOnline: number;
     };
     ExtensionStateDto: {
       online: boolean;
@@ -1003,8 +1397,33 @@ export interface components {
       | 'media_too_large'
       | 'quota'
       | null;
+    GroupLinkDto: {
+      name: string;
+      url: string;
+    };
+    GroupsRequest: {
+      groups: components['schemas']['GroupLinkDto'][];
+    };
+    HeartbeatRequest: {
+      version: null | string;
+    };
     /** Format: binary */
     IFormFile: string;
+    JobDto: {
+      /** Format: uuid */
+      postId: string;
+      groupName: string;
+      groupUrl: string;
+      content: string;
+      media: components['schemas']['JobMediaDto'][];
+      antiBan: components['schemas']['AntiBanDto'];
+    };
+    JobMediaDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      contentType: string;
+    };
     LogInCommand: {
       email: string;
       password: string;
@@ -1033,6 +1452,30 @@ export interface components {
     };
     /** @enum {unknown} */
     OfflinePolicy: 'skip' | 'queue' | 'notify';
+    PairDeviceCommand: {
+      code: string;
+      name: string;
+      browser: null | string;
+      version: null | string;
+    };
+    PairingCodeDto: {
+      code: string;
+      /** Format: date-time */
+      expiresAt: string;
+      /** Format: int32 */
+      maxDevices: null | number;
+    };
+    PairResultDto: {
+      deviceKey: string;
+      /** Format: uuid */
+      deviceId: string;
+      deviceName: string;
+      /** Format: uuid */
+      workspaceId: string;
+      workspaceName: string;
+      /** Format: uuid */
+      accountId: string;
+    };
     /** @enum {unknown} */
     PlanKey: 'free' | 'basic' | 'pro' | 'agency';
     /** @enum {unknown} */
@@ -1064,6 +1507,7 @@ export interface components {
       scheduledAt: string;
       status: components['schemas']['PostStatus'];
       failureCode: null | components['schemas']['FailureCode'];
+      failureDetail: null | string;
       /** Format: date-time */
       publishedAt: null | string;
     };
@@ -1076,6 +1520,13 @@ export interface components {
       status?: null | number;
       detail?: null | string;
       instance?: null | string;
+    };
+    ResultRequest: {
+      ok: boolean;
+      awaitingApproval: boolean;
+      needsLogin: boolean;
+      blocked: boolean;
+      error: null | string;
     };
     ScheduleRequest: {
       content: string;

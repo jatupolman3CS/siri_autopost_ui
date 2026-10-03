@@ -47,6 +47,9 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
                 ><span class="fw5">{{ t().err.whatToDo }}: </span>{{ e.fix }}</span
               >
             </div>
+            @if (e.detail) {
+              <div class="small muted">{{ e.detail }}</div>
+            }
             <div class="fs14 muted">“{{ e.text }}”</div>
           </div>
           <div class="btns">
@@ -162,6 +165,7 @@ export class ErrorsPageComponent {
         body: r.body,
         fix: r.fix,
         text: e.text,
+        detail: e.detail ?? '',
         meta: `${fmtDate(e.dt, li)} ${hm(e.dt)} · ${platform.name} · ${e.target}`,
         dot: pending ? STATUS_DOT.pending : STATUS_DOT.failed,
         statusLabel: pending ? t.status.pending : t.status.failed,

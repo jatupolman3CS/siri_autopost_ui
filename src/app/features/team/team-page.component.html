@@ -55,25 +55,38 @@
       </section>
 
       <section class="panel">
-        <h2 class="h2">{{ t().team.devices }}</h2>
+        <div class="head-row">
+          <h2 class="h2">{{ t().team.devices }}</h2>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-secondary"
+            (click)="modal.set('pair')"
+          >
+            <i class="ph ph-plus"></i>{{ t().api.addDevice }}
+          </button>
+        </div>
         <p class="sub mb8">{{ devicesBody() }}</p>
         @for (d of deviceRows(); track d.id) {
           <div class="row dev">
-            <i class="ph dev-ico" [class]="d.icon"></i>
+            <i class="ph dev-ico ph-desktop"></i>
             <div class="grow160">
-              <div class="fs14 fw5">{{ d.name }}</div>
-              <div class="small muted">
-                {{ d.browser }} · {{ t().team.lastSeen }} {{ d.seenLabel }}
+              <div class="fs14 fw5">
+                <span
+                  class="dot"
+                  [style.background]="d.online ? 'var(--color-success)' : 'var(--color-border)'"
+                ></span>
+                {{ d.name }}
               </div>
+              <div class="small muted">{{ d.meta }}</div>
             </div>
-            @if (d.isThis) {
-              <span class="badge">{{ t().common.thisDevice }}</span>
-            } @else {
-              <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="askRevoke(d.id)">
-                {{ t().common.revoke }}
-              </button>
-            }
+            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="askRevoke(d.id)">
+              {{ t().common.revoke }}
+            </button>
           </div>
+        } @empty {
+          @if (devices.loaded()) {
+            <p class="small muted flush">{{ t().api.noDevices }}</p>
+          }
         }
       </section>
     </div>
@@ -143,3 +156,5 @@
     </button>
   </div>
 </app-modal>
+
+<app-pair-device-modal [open]="modal() === 'pair'" (closed)="close()" (paired)="onPaired()" />

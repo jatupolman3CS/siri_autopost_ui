@@ -34,6 +34,7 @@ export interface BillingSettings {
 }
 
 const PLATFORMS: PlatformKey[] = ['fb', 'x', 'ig', 'tt', 'line', 'th'];
+const PRESENCE_POLL_MS = 60_000;
 
 /** The server's defaults, shown until the workspace's own settings arrive. */
 export function defaultAntiBan(): AntiBanSettings {
@@ -73,8 +74,12 @@ export class SettingsStore {
     nRenew: false,
     card: { last4: '4242', exp: '11/26' },
   });
-  /** Whether the workspace's extension is connected (the offline simulation flips it). */
+  /** Whether the workspace's extension is connected (a paired device called in, and no simulated outage). */
   readonly extensionOnline = signal(true);
+  /** "Simulate offline" is on (as opposed to every paired device being offline). */
+  readonly simulatedOffline = signal(false);
+  readonly devices = signal(0);
+  readonly devicesOnline = signal(0);
 
   /** Posts sent today per platform, for the daily-limit bars. */
   readonly usedToday = computed(() => {
@@ -87,10 +92,23 @@ export class SettingsStore {
     whenWorkspaceChanges((id) => {
       if (id) void this.load(id);
     });
+    // Devices call in every 30 s and post in the background: every minute, refresh the connection
+    // state (not the settings being edited) and, when a device is paired, the posts.
+    if (typeof window !== 'undefined')
+      setInterval(() => {
+        this.refreshPresence(true)
+          .then(() => (this.devices() > 0 ? this.posts.refresh() : undefined))
+          .catch(() => undefined);
+      }, PRESENCE_POLL_MS);
   }
 
   async load(wsId = this.ws.id()): Promise<void> {
     if (wsId) this.apply(await this.api.engine(wsId));
+  }
+
+  async refreshPresence(quiet = false): Promise<void> {
+    const wsId = this.ws.id();
+    if (wsId) this.applyPresence(await this.api.engine(wsId, quiet));
   }
 
   patchAb(patch: Partial<AntiBanSettings>): void {
@@ -121,6 +139,13 @@ export class SettingsStore {
     const { autoPause, ...rest } = e.antiBan;
     this.ab.set({ ...rest, autopause: autoPause });
     this.off.set({ ...e.offline, window: e.offline.window as OfflineSettings['window'] });
+    this.applyPresence(e);
+  }
+
+  private applyPresence(e: ApiEngine): void {
     this.extensionOnline.set(e.extensionOnline);
+    this.simulatedOffline.set(e.simulatedOffline);
+    this.devices.set(e.devices);
+    this.devicesOnline.set(e.devicesOnline);
   }
 }

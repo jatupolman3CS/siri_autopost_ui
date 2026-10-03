@@ -92,6 +92,7 @@ export class ComposerPageComponent {
         checked,
         disabled,
         groups: a.groups,
+        demo: !a.connected,
         showGroups: a.groups.length > 0 && checked,
         needsLogin: disabled,
       };

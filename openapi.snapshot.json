@@ -176,6 +176,324 @@
         }
       }
     },
+    "/api/device/pair": {
+      "post": {
+        "tags": [
+          "DeviceApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairDeviceCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairDeviceCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairDeviceCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/heartbeat": {
+      "post": {
+        "tags": [
+          "DeviceApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeartbeatRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeartbeatRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeartbeatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/groups": {
+      "put": {
+        "tags": [
+          "DeviceApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/jobs/claim": {
+      "post": {
+        "tags": [
+          "DeviceApi"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobDto"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/jobs/{postId}/result": {
+      "post": {
+        "tags": [
+          "DeviceApi"
+        ],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/device/media/{mediaId}": {
+      "get": {
+        "tags": [
+          "DeviceApi"
+        ],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { },
+              "application/octet-stream": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/devices": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/devices/pairing": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingCodeDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/devices/{deviceId}": {
+      "delete": {
+        "tags": [
+          "Devices"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/engine": {
       "get": {
         "tags": [
@@ -976,7 +1294,8 @@
           "handle",
           "defaultTarget",
           "health",
-          "groups"
+          "groups",
+          "connected"
         ],
         "type": "object",
         "properties": {
@@ -1004,6 +1323,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "connected": {
+            "type": "boolean"
           }
         }
       },
@@ -1112,11 +1434,109 @@
           }
         }
       },
+      "DeviceDto": {
+        "required": [
+          "id",
+          "name",
+          "browser",
+          "version",
+          "createdAt",
+          "lastSeenAt",
+          "online",
+          "accountId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "browser": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastSeenAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "accountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "DeviceStatusDto": {
+        "required": [
+          "deviceId",
+          "deviceName",
+          "workspaceId",
+          "workspaceName",
+          "accountId",
+          "groups",
+          "online",
+          "antiBan"
+        ],
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceName": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspaceName": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "groups": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "antiBan": {
+            "$ref": "#/components/schemas/AntiBanDto"
+          }
+        }
+      },
       "EngineSettingsDto": {
         "required": [
           "antiBan",
           "offline",
-          "extensionOnline"
+          "extensionOnline",
+          "simulatedOffline",
+          "devices",
+          "devicesOnline"
         ],
         "type": "object",
         "properties": {
@@ -1128,6 +1548,17 @@
           },
           "extensionOnline": {
             "type": "boolean"
+          },
+          "simulatedOffline": {
+            "type": "boolean"
+          },
+          "devices": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "devicesOnline": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -1169,9 +1600,107 @@
           null
         ]
       },
+      "GroupLinkDto": {
+        "required": [
+          "name",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "GroupsRequest": {
+        "required": [
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupLinkDto"
+            }
+          }
+        }
+      },
+      "HeartbeatRequest": {
+        "required": [
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "IFormFile": {
         "type": "string",
         "format": "binary"
+      },
+      "JobDto": {
+        "required": [
+          "postId",
+          "groupName",
+          "groupUrl",
+          "content",
+          "media",
+          "antiBan"
+        ],
+        "type": "object",
+        "properties": {
+          "postId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "groupName": {
+            "type": "string"
+          },
+          "groupUrl": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobMediaDto"
+            }
+          },
+          "antiBan": {
+            "$ref": "#/components/schemas/AntiBanDto"
+          }
+        }
+      },
+      "JobMediaDto": {
+        "required": [
+          "id",
+          "name",
+          "contentType"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          }
+        }
       },
       "LogInCommand": {
         "required": [
@@ -1267,6 +1796,93 @@
           "notify"
         ]
       },
+      "PairDeviceCommand": {
+        "required": [
+          "code",
+          "name",
+          "browser",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "browser": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PairingCodeDto": {
+        "required": [
+          "code",
+          "expiresAt",
+          "maxDevices"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "maxDevices": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "PairResultDto": {
+        "required": [
+          "deviceKey",
+          "deviceId",
+          "deviceName",
+          "workspaceId",
+          "workspaceName",
+          "accountId"
+        ],
+        "type": "object",
+        "properties": {
+          "deviceKey": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceName": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspaceName": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "PlanKey": {
         "enum": [
           "free",
@@ -1333,6 +1949,7 @@
           "scheduledAt",
           "status",
           "failureCode",
+          "failureDetail",
           "publishedAt"
         ],
         "type": "object",
@@ -1376,6 +1993,12 @@
               {
                 "$ref": "#/components/schemas/FailureCode"
               }
+            ]
+          },
+          "failureDetail": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "publishedAt": {
@@ -1427,6 +2050,36 @@
             ]
           },
           "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ResultRequest": {
+        "required": [
+          "ok",
+          "awaitingApproval",
+          "needsLogin",
+          "blocked",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "awaitingApproval": {
+            "type": "boolean"
+          },
+          "needsLogin": {
+            "type": "boolean"
+          },
+          "blocked": {
+            "type": "boolean"
+          },
+          "error": {
             "type": [
               "null",
               "string"
@@ -1688,6 +2341,12 @@
   "tags": [
     {
       "name": "Auth"
+    },
+    {
+      "name": "DeviceApi"
+    },
+    {
+      "name": "Devices"
     },
     {
       "name": "Engine"

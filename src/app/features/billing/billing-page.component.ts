@@ -8,7 +8,7 @@ import { PostsStore } from '../../core/data/posts.store';
 import { SEED } from '../../core/data/seed.data';
 import { SessionStore } from '../../core/data/session.store';
 import { BillingSettings, SettingsStore } from '../../core/data/settings.store';
-import { TeamStore } from '../../core/data/team.store';
+import { DevicesStore } from '../../core/data/devices.store';
 import { baht, fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -38,7 +38,7 @@ export class BillingPageComponent {
   private readonly notify = inject(NotificationService);
   private readonly admin = inject(AdminStore);
   private readonly posts = inject(PostsStore);
-  private readonly team = inject(TeamStore);
+  private readonly devices = inject(DevicesStore);
   private readonly i18n = inject(I18nService);
   protected readonly session = inject(SessionStore);
   private readonly accounts = inject(AccountsStore);
@@ -75,7 +75,7 @@ export class BillingPageComponent {
     const usage: [string, number, number | null][] = [
       [t.common.accounts, this.accounts.list().length, lim.accounts],
       [t.common.postsToday, postsUsed, lim.posts],
-      [t.common.devices, this.team.devices().length, lim.devices],
+      [t.common.devices, this.devices.list().length, lim.devices],
     ];
     return usage.map(([label, used, max]) => {
       const r = max ? used / max : 0;
