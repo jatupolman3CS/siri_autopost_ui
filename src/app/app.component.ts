@@ -7,10 +7,8 @@ import { ToastOutletComponent } from './shared/components/toast-outlet/toast-out
   selector: 'app-root',
   imports: [RouterOutlet, ToastOutletComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <router-outlet />
-    <app-toast-outlet />
-  `,
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss',
 })
 export class AppComponent {
   constructor() {

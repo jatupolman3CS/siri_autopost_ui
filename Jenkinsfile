@@ -3,7 +3,7 @@
 // into namespace siriautopost, served at https://siriautopost.siristudiophoto.com.
 //
 // Same conventions as the SIRISTUDIOPHOTO jobs: docker + kubectl on the Jenkins host, registry localhost:5000.
-// nginx.conf proxies /api to http://api:8080, so SIRIAUTOPOST-BACKEND must have deployed Service `api` first
+// nginx.conf proxies /api to http://api:8080, so SIRIAUTOPOST-API must have deployed Service `api` first
 // Service `ui` is NodePort 30907; the Cloudflare tunnel `siri-monitor` routes the public host to
 // http://172.17.0.1:30907. No Jenkins credential is needed.
 
@@ -53,7 +53,7 @@ pipeline {
                     # Jenkins runs as ci:jenkins-deployer, which cannot create namespaces: the namespace and its
                     # RoleBinding are created once by a cluster admin (deploy/README.md in siri_autopost_backend).
                     if ! $K get service api >/dev/null 2>&1; then
-                        echo "Service api not found in $K8S_NAMESPACE: run SIRIAUTOPOST-BACKEND first (nginx proxies /api to it)" >&2
+                        echo "Service api not found in $K8S_NAMESPACE: run SIRIAUTOPOST-API first (nginx proxies /api to it)" >&2
                         exit 1
                     fi
 

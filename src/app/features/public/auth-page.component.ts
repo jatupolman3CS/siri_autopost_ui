@@ -37,7 +37,8 @@ function loadGsi(): Promise<GoogleId> {
     const s = document.createElement('script');
     s.src = GSI_SRC;
     s.async = true;
-    s.onload = () => (window.google ? resolve(window.google.accounts.id) : reject(new Error('gsi')));
+    s.onload = () =>
+      window.google ? resolve(window.google.accounts.id) : reject(new Error('gsi'));
     s.onerror = () => reject(new Error('gsi'));
     document.head.appendChild(s);
   });
@@ -51,128 +52,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   selector: 'app-auth-page',
   imports: [RouterLink, InputFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <main class="auth">
-      <form class="card" (submit)="$event.preventDefault(); submit()" novalidate>
-        <div>
-          <h1>{{ isLogin() ? t().auth.title : t().auth.signupTitle }}</h1>
-          <p class="sub">{{ isLogin() ? t().auth.sub : t().auth.signupSub }}</p>
-        </div>
-        @if (pendingPlan(); as p) {
-          <div class="callout">
-            <i class="ph ph-tag" style="color: var(--color-primary)"></i>
-            <span
-              >{{ t().auth.selectedPlan }}: <span class="fw6">{{ t().plans[p].name }}</span></span
-            >
-          </div>
-        }
-        <app-input-field
-          type="email"
-          [label]="t().auth.email"
-          placeholder="name@shop.co"
-          autocomplete="email"
-          [(value)]="email"
-          [error]="errEmail()"
-        />
-        <app-input-field
-          type="password"
-          [label]="t().auth.password"
-          placeholder="••••••••"
-          [autocomplete]="isLogin() ? 'current-password' : 'new-password'"
-          [(value)]="pass"
-          [error]="errPass()"
-        />
-        <button
-          type="submit"
-          class="su-btn su-btn-md su-btn-primary su-btn-full"
-          [disabled]="busy()"
-          [attr.aria-busy]="busy()"
-        >
-          @if (busy()) {
-            {{ t().api.loading }}
-          } @else {
-            {{ isLogin() ? t().auth.submit : t().auth.create }}<i class="ph ph-arrow-right"></i>
-          }
-        </button>
-        @if (googleReady()) {
-          <div class="or"><span>{{ t().auth.or }}</span></div>
-          <div #google class="google"></div>
-        }
-        <div class="switch">
-          <span>{{ isLogin() ? t().auth.noAccount : t().auth.haveAccount }}</span>
-          @if (isLogin()) {
-            <a routerLink="/signup" [queryParams]="{ plan: 'free' }">{{ t().auth.signup }}</a>
-          } @else {
-            <a routerLink="/login">{{ t().auth.title }}</a>
-          }
-        </div>
-      </form>
-    </main>
-  `,
-  styles: `
-    .auth {
-      min-height: calc(100vh - 64px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 16px;
-      animation: ap-rise 0.25s ease-out;
-    }
-    .card {
-      width: 100%;
-      max-width: 28rem;
-      background: var(--color-bg);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      padding: 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      box-shadow: var(--shadow-md);
-    }
-    h1 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 700;
-    }
-    .or {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 13px;
-      color: var(--color-text-muted);
-      &::before,
-      &::after {
-        content: '';
-        flex: 1;
-        border-top: 1px solid var(--color-border);
-      }
-    }
-    .google {
-      display: flex;
-      justify-content: center;
-      min-height: 44px;
-    }
-    .callout {
-      background: var(--color-surface);
-    }
-    .switch {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      font-size: 14px;
-      color: var(--color-text-muted);
-      flex-wrap: wrap;
-      a {
-        min-height: 44px;
-        display: inline-flex;
-        align-items: center;
-        font-weight: 500;
-        text-decoration: none;
-      }
-    }
-  `,
+  templateUrl: './auth-page.component.html',
+  styleUrl: './auth-page.component.scss',
 })
 export class AuthPageComponent {
   /** From the route data. */
@@ -222,7 +103,10 @@ export class AuthPageComponent {
       this.googleDrawn = clientId + this.mode();
       loadGsi()
         .then((gsi) => {
-          gsi.initialize({ client_id: clientId, callback: (r) => void this.googleSignIn(r.credential) });
+          gsi.initialize({
+            client_id: clientId,
+            callback: (r) => void this.googleSignIn(r.credential),
+          });
           host.replaceChildren();
           gsi.renderButton(host, {
             type: 'standard',
@@ -234,6 +118,11 @@ export class AuthPageComponent {
         })
         .catch(() => (this.googleDrawn = null));
     });
+  }
+
+  /** The server has no Google client id (or could not be reached): say so instead of hiding the button. */
+  protected googleOff(): void {
+    this.notify.error(this.t().auth.googleOff);
   }
 
   private async googleSignIn(idToken: string): Promise<void> {

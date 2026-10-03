@@ -1,0 +1,50 @@
+.fs14 {
+  font-size: 14px;
+}
+
+.steps {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  letter-spacing: 0.08em;
+}
+
+.dl {
+  align-self: flex-start;
+}
+
+.err {
+  color: var(--color-danger);
+}
+
+.wait {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

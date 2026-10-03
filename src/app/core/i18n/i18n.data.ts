@@ -117,6 +117,12 @@ export const AP_I18N = {
     errPass: ['กรุณาใส่รหัสผ่าน', 'Please enter your password'],
     welcomeUser: ['เข้าสู่ระบบแล้ว', 'Signed in'],
     welcomeAdmin: ['เข้าสู่ระบบในฐานะผู้ดูแลแพลตฟอร์ม', 'Signed in as platform admin'],
+    googleLogin: ['เข้าสู่ระบบด้วย Google', 'Sign in with Google'],
+    googleSignup: ['สมัครด้วย Google', 'Sign up with Google'],
+    googleOff: [
+      'ยังไม่ได้ตั้งค่า Google (ผู้ดูแลต้องตั้ง Google__ClientId ที่ API)',
+      'Google sign-in is not set up yet (the admin must set Google__ClientId on the API)',
+    ],
     or: ['หรือ', 'or'],
     googleFailed: ['เข้าสู่ระบบด้วย Google ไม่สำเร็จ', 'Google sign-in failed'],
     loggedOut: ['ออกจากระบบแล้ว', 'Signed out'],

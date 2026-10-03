@@ -15,39 +15,8 @@ import { I18nService } from '../../core/i18n/i18n.service';
 @Component({
   selector: 'app-media-strip',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="ext-media">
-      @for (m of items(); track m.id; let i = $index) {
-        <div class="ext-thumb">
-          @if (m.src) {
-            @if (m.video) {
-              <video [src]="m.src" muted preload="metadata"></video>
-              <span class="vid">{{ x().video }}</span>
-            } @else {
-              <img [src]="m.src" alt="" loading="lazy" />
-            }
-          }
-          @if (editable()) {
-            <button
-              type="button"
-              class="del"
-              [title]="x().removeMedia"
-              (click)="removed.emit(m.id)"
-            >
-              ×
-            </button>
-            @if (movable() && i > 0) {
-              <button type="button" class="left" [title]="x().moveEarlier" (click)="moved.emit(i)">
-                ◀
-              </button>
-            }
-          }
-        </div>
-      } @empty {
-        <span class="small muted">{{ x().noMedia }}</span>
-      }
-    </div>
-  `,
+  templateUrl: './media-strip.component.html',
+  styleUrl: './media-strip.component.scss',
 })
 export class MediaStripComponent {
   private readonly store = inject(CampaignsStore);

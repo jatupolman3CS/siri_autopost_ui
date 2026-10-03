@@ -144,6 +144,10 @@ export const AP_I18N_EXTRA = {
   noData: ['ยังไม่มีข้อมูล', 'No data yet'],
   hApi: ['API latency (p95, {n} คำขอล่าสุด)', 'API latency (p95, last {n} requests)'],
   hDb: ['ฐานข้อมูลตอบสนอง', 'Database round trip'],
+  hLive: [
+    'สตรีมสด: หน้าเว็บที่เปิดอยู่ · เครื่องที่รอคำสั่ง',
+    'Live streams: pages open · devices waiting for commands',
+  ],
   hQueue: ['คิวที่ถึงเวลาแล้ว · 24 ชม. ข้างหน้า', 'Queue due now · next 24 h'],
   hExt: ['ส่วนขยายเวอร์ชันล่าสุด ({v})', 'Extensions on latest ({v})'],
   hErr: ['อัตราข้อผิดพลาด 24 ชม.', 'Task error rate, 24 h'],

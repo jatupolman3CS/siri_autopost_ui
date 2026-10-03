@@ -1,0 +1,29 @@
+:host {
+  display: contents;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.m0 {
+  margin: 0;
+}
+
+.chat {
+  display: flex;
+  gap: 8px;
+}
+
+.steps {
+  padding-left: 20px;
+}

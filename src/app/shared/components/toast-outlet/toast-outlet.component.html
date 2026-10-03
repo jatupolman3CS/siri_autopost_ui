@@ -1,0 +1,21 @@
+<div class="toasts">
+  @for (t of notify.toasts(); track t.id) {
+    <div class="su-toast" [attr.role]="t.type === 'error' ? 'alert' : 'status'">
+      <i
+        class="ph su-toast-icon"
+        [class]="icons[t.type][0]"
+        [style.color]="icons[t.type][1]"
+        aria-hidden="true"
+      ></i>
+      <p class="su-toast-msg">{{ t.message }}</p>
+      <button
+        type="button"
+        class="su-x"
+        (click)="notify.dismiss(t.id)"
+        aria-label="ปิดการแจ้งเตือนนี้"
+      >
+        <i class="ph ph-x" aria-hidden="true"></i>
+      </button>
+    </div>
+  }
+</div>

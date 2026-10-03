@@ -11,34 +11,8 @@ let nextId = 0;
 @Component({
   selector: 'app-select-field',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <label class="su-field-label" [attr.for]="id">{{ label() }}</label>
-    <div class="su-select-wrap">
-      <select
-        class="su-select"
-        [class.su-input-error]="!!error()"
-        [id]="id"
-        [disabled]="disabled()"
-        (change)="onChange($any($event.target))"
-      >
-        @if (placeholder()) {
-          <option value="" disabled [selected]="!value()">{{ placeholder() }}</option>
-        }
-        @for (o of options(); track o.value) {
-          <option [value]="o.value" [selected]="o.value === value()">{{ o.label }}</option>
-        }
-      </select>
-      <i class="ph ph-caret-down su-select-caret" aria-hidden="true"></i>
-    </div>
-    @if (error()) {
-      <p class="su-field-err" role="alert">{{ error() }}</p>
-    }
-  `,
-  styles: `
-    :host {
-      display: block;
-    }
-  `,
+  templateUrl: './select-field.component.html',
+  styleUrl: './select-field.component.scss',
 })
 export class SelectFieldComponent {
   readonly label = input('');

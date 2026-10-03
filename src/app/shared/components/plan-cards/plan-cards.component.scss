@@ -1,0 +1,54 @@
+.tier {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+
+  &.hl {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
+  }
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.price {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.per {
+  font-size: 14px;
+}
+
+.billed {
+  min-height: 18px;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+li {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+
+  i {
+    color: var(--color-primary);
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+}

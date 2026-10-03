@@ -4,6 +4,7 @@ import { ApiDevice, ApiDeviceLive, ApiExtensionConfig } from '../http/api.servic
 import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { migrateSettings } from '../ext/lib/shared.js';
 import { CampaignsStore } from './campaigns.store';
+import { DeviceEventsService } from './device-events.service';
 
 const DEVICE: ApiDevice = {
   id: 'dev-1',
@@ -169,11 +170,11 @@ describe('CampaignsStore', () => {
     const post = http.expectOne(`${BASE}/commands`);
     expect(post.request.body).toEqual({ cmd: 'runNow', args: { campaignId: 'c1' } });
     post.flush({ id: 'k1', cmd: 'runNow', status: 'pending', result: null, createdAt: '' });
-    await vi.advanceTimersByTimeAsync(2000);
+    await vi.advanceTimersByTimeAsync(5000);
     http
       .expectOne(`${BASE}/commands/k1`)
       .flush({ id: 'k1', cmd: 'runNow', status: 'sent', result: null, createdAt: '' });
-    await vi.advanceTimersByTimeAsync(2000);
+    await vi.advanceTimersByTimeAsync(5000);
     http.expectOne(`${BASE}/commands/k1`).flush({
       id: 'k1',
       cmd: 'runNow',
@@ -193,11 +194,56 @@ describe('CampaignsStore', () => {
     http
       .expectOne(`${BASE}/commands`)
       .flush({ id: 'k2', cmd: 'start', status: 'pending', result: null, createdAt: '' });
-    await vi.advanceTimersByTimeAsync(2000);
+    await vi.advanceTimersByTimeAsync(5000);
     http
       .expectOne(`${BASE}/commands/k2`)
       .flush({ id: 'k2', cmd: 'start', status: 'expired', result: null, createdAt: '' });
     expect(await done).toEqual({ ok: false, error: 'expired' });
+  });
+
+  it('answers a command from the event stream without polling, and applies live events', async () => {
+    vi.useFakeTimers();
+    const events = TestBed.inject(DeviceEventsService);
+    const emit = (type: string, payload: object): void =>
+      (events as unknown as { dispatch(block: string): void }).dispatch(
+        `id: 9\nevent: ${type}\ndata: ${JSON.stringify({ seq: ++seq, deviceId: DEVICE.id, type, payload, at: '2026-10-03T01:00:00Z' })}`,
+      );
+    let seq = 100;
+    const stop = store.watch();
+    http.expectOne(`${BASE}/live`).flush(live(3));
+    await settle();
+
+    const done = store.command('stop');
+    await settle();
+    http
+      .expectOne(`${BASE}/commands`)
+      .flush({ id: 'k3', cmd: 'stop', status: 'pending', result: null, createdAt: '' });
+    await settle();
+    emit('device.command', { id: 'k3', cmd: 'stop', status: 'sent', result: null });
+    emit('device.command', { id: 'k3', cmd: 'stop', status: 'done', result: { ok: true } });
+    await settle();
+    http.expectOne(`${BASE}/live`).flush(live(3));
+    expect(await done).toEqual({ ok: true });
+    http.expectNone(`${BASE}/commands/k3`);
+
+    // State, log lines and a cleared log arrive as events; a newer revision reloads the settings.
+    emit('device.state', { state: { running: true }, at: '2026-10-03T01:00:01Z' });
+    expect(store.running()).toBe(true);
+    emit('device.log', { lines: [{ t: 2, level: 'warn', msg: 'ช้าหน่อย' }], truncated: false });
+    expect(store.logs().map((l) => l.msg)).toEqual(['เริ่มทำงาน', 'ช้าหน่อย']);
+    emit('device.log_cleared', {});
+    expect(store.logs()).toEqual([]);
+    emit('device.config', { revision: 4, byDevice: true });
+    await settle();
+    http.expectOne(`${BASE}/config`).flush(config(4, 'แก้ในเครื่อง'));
+    await settle();
+    expect(store.revision()).toBe(4);
+    // Another device's events are ignored.
+    (events as unknown as { dispatch(block: string): void }).dispatch(
+      `event: device.state\ndata: ${JSON.stringify({ seq: ++seq, deviceId: 'other', type: 'device.state', payload: { state: { running: false } }, at: '' })}`,
+    );
+    expect(store.running()).toBe(true);
+    stop();
   });
 
   it('imports a backup as new campaigns: media uploaded under new ids, then saved', async () => {

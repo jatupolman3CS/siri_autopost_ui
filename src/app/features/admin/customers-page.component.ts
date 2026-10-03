@@ -10,70 +10,8 @@ import { AdminViewService } from './admin-view.service';
   selector: 'app-customers-page',
   imports: [RouterLink, InputFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="page">
-      <div class="page-head end">
-        <div>
-          <h1>{{ t().nav.adminCustomers }}</h1>
-          <p>{{ t().adm.custSub }}</p>
-        </div>
-        <app-input-field
-          class="search"
-          [label]="t().adm.search"
-          [placeholder]="t().adm.search"
-          [(value)]="q"
-        />
-      </div>
-      <section class="panel">
-        <div class="tbl-wrap">
-          <div class="tbl cust">
-            <div class="th">{{ t().adm.customer }}</div>
-            <div class="th">{{ t().adm.plan }}</div>
-            <div class="th">{{ t().common.status }}</div>
-            <div class="th">MRR</div>
-            <div class="th">{{ t().adm.devicesCol }}</div>
-            <div class="th">{{ t().adm.jobsCol }}</div>
-            <div class="th">{{ t().common.actions }}</div>
-            @for (c of rows(); track c.id) {
-              <div class="td col">
-                <a class="link-btn" [routerLink]="c.link">{{ c.name }}</a>
-                <span class="small muted">{{ c.email }}</span>
-              </div>
-              <div class="td">{{ c.planName }}</div>
-              <div class="td">
-                <span class="status"
-                  ><span class="dot" [style.background]="c.dot"></span>{{ c.statusLabel }}</span
-                >
-              </div>
-              <div class="td">{{ c.mrr }}</div>
-              <div class="td">{{ c.devices }}</div>
-              <div class="td">{{ c.jobs }}</div>
-              <div class="td tight">
-                <a class="su-btn su-btn-sm su-btn-secondary" [routerLink]="c.link">{{
-                  t().adm.manage
-                }}</a>
-              </div>
-            }
-          </div>
-        </div>
-      </section>
-    </div>
-  `,
-  styles: `
-    .end {
-      align-items: flex-end;
-    }
-    .search {
-      width: 320px;
-      max-width: 100%;
-    }
-    .cust {
-      grid-template-columns:
-        minmax(220px, 2fr) minmax(80px, 1fr) minmax(110px, 1fr) minmax(80px, 1fr) minmax(90px, 1fr)
-        minmax(150px, 1.2fr) max-content;
-      min-width: 900px;
-    }
-  `,
+  templateUrl: './customers-page.component.html',
+  styleUrl: './customers-page.component.scss',
 })
 export class CustomersPageComponent {
   private readonly admin = inject(AdminStore);

@@ -1,0 +1,26 @@
+<header class="header">
+  <div class="inner">
+    <a class="brand" routerLink="/">
+      <i class="ph-fill ph-paper-plane-tilt"></i><span>AutoPost</span>
+    </a>
+    <nav>
+      @if (isLanding()) {
+        <button type="button" class="navlink" (click)="scrollTo('ap-features')">
+          {{ t().land.navFeatures }}
+        </button>
+        <button type="button" class="navlink" (click)="scrollTo('ap-pricing')">
+          {{ t().land.navPricing }}
+        </button>
+      }
+      <div class="switch"><app-lang-theme-switch /></div>
+      <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/login">{{ t().land.login }}</a>
+      <a
+        class="su-btn su-btn-sm su-btn-primary"
+        routerLink="/signup"
+        [queryParams]="{ plan: 'free' }"
+        >{{ t().land.trial }}</a
+      >
+    </nav>
+  </div>
+</header>
+<router-outlet />

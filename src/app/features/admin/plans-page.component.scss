@@ -1,0 +1,54 @@
+.plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ph-head {
+  margin-bottom: 4px;
+}
+
+.pname {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.hint {
+  margin-top: 4px;
+}
+
+.promos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.promo-tbl {
+  grid-template-columns:
+    minmax(120px, 1.4fr) minmax(90px, 1fr) minmax(60px, 0.7fr) minmax(110px, 1.2fr)
+    minmax(100px, 1fr);
+  gap: 0 8px;
+  min-width: 520px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

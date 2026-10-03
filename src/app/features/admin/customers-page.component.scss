@@ -1,0 +1,15 @@
+.end {
+  align-items: flex-end;
+}
+
+.search {
+  width: 320px;
+  max-width: 100%;
+}
+
+.cust {
+  grid-template-columns:
+    minmax(220px, 2fr) minmax(80px, 1fr) minmax(110px, 1fr) minmax(80px, 1fr) minmax(90px, 1fr)
+    minmax(150px, 1.2fr) max-content;
+  min-width: 900px;
+}

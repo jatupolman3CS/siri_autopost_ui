@@ -1,0 +1,106 @@
+<section class="panel stack ext-num">
+  <h2 class="h2"><span class="n">3</span>{{ x().timingTitle }}</h2>
+  <div class="ext-grid">
+    @for (f of timing(); track f.key) {
+      <label>
+        {{ f.label }}
+        <input
+          type="number"
+          class="su-input ext-in"
+          [min]="f.min"
+          [attr.max]="f.max ?? null"
+          [step]="f.step"
+          [value]="cfg()[f.key]"
+          (input)="setNum(f, $any($event.target).value)"
+        />
+      </label>
+    }
+  </div>
+  <p class="ext-hint">{{ x().cooldownHint }}</p>
+  <p class="ext-hint">{{ x().timingHint }}</p>
+  <div class="hours">
+    <label class="ext-check">
+      <input
+        type="checkbox"
+        [checked]="cfg().activeHoursEnabled"
+        (change)="setBool('activeHoursEnabled', $any($event.target).checked)"
+      />
+      {{ x().activeHours }}
+    </label>
+    <input
+      type="time"
+      class="su-input ext-in time"
+      [attr.aria-label]="x().activeStart"
+      [value]="cfg().activeStart"
+      (input)="set('activeStart', $any($event.target).value)"
+    />
+    {{ x().to }}
+    <input
+      type="time"
+      class="su-input ext-in time"
+      [attr.aria-label]="x().activeEnd"
+      [value]="cfg().activeEnd"
+      (input)="set('activeEnd', $any($event.target).value)"
+    />
+  </div>
+</section>
+
+<section class="panel stack ext-num">
+  <h2 class="h2"><span class="n">4</span>{{ x().humanTitle }}</h2>
+  <div class="ext-checks">
+    @for (b of checks(); track b.key) {
+      <label class="ext-check">
+        <input
+          type="checkbox"
+          [checked]="cfg()[b.key]"
+          (change)="setBool(b.key, $any($event.target).checked)"
+        />
+        {{ b.label }}
+      </label>
+    }
+  </div>
+  <div class="ext-grid">
+    @for (f of rotation(); track f.key) {
+      <label>
+        {{ f.label }}
+        <input
+          type="number"
+          class="su-input ext-in"
+          [min]="f.min"
+          [attr.max]="f.max ?? null"
+          [step]="f.step"
+          [value]="cfg()[f.key]"
+          (input)="setNum(f, $any($event.target).value)"
+        />
+      </label>
+    }
+  </div>
+  <p class="ext-hint">{{ x().rotationHint }}</p>
+  <div class="ext-grid">
+    <label>
+      {{ x().typingSpeed }}
+      <span class="su-select-wrap">
+        <select class="su-select ext-in" (change)="setSpeed($any($event.target).value)">
+          @for (s of speeds(); track s.v) {
+            <option [value]="s.v" [selected]="cfg().typingSpeed === s.v">{{ s.label }}</option>
+          }
+        </select>
+        <i class="ph ph-caret-down su-select-caret"></i>
+      </span>
+    </label>
+    @for (f of behaviour(); track f.key) {
+      <label>
+        {{ f.label }}
+        <input
+          type="number"
+          class="su-input ext-in"
+          [min]="f.min"
+          [attr.max]="f.max ?? null"
+          [step]="f.step"
+          [value]="cfg()[f.key]"
+          (input)="setNum(f, $any($event.target).value)"
+        />
+      </label>
+    }
+  </div>
+</section>

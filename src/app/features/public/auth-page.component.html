@@ -1,0 +1,63 @@
+<main class="auth">
+  <form class="card" (submit)="$event.preventDefault(); submit()" novalidate>
+    <div>
+      <h1>{{ isLogin() ? t().auth.title : t().auth.signupTitle }}</h1>
+      <p class="sub">{{ isLogin() ? t().auth.sub : t().auth.signupSub }}</p>
+    </div>
+    @if (pendingPlan(); as p) {
+      <div class="callout">
+        <i class="ph ph-tag" style="color: var(--color-primary)"></i>
+        <span
+          >{{ t().auth.selectedPlan }}: <span class="fw6">{{ t().plans[p].name }}</span></span
+        >
+      </div>
+    }
+    <app-input-field
+      type="email"
+      [label]="t().auth.email"
+      placeholder="name@shop.co"
+      autocomplete="email"
+      [(value)]="email"
+      [error]="errEmail()"
+    />
+    <app-input-field
+      type="password"
+      [label]="t().auth.password"
+      placeholder="••••••••"
+      [autocomplete]="isLogin() ? 'current-password' : 'new-password'"
+      [(value)]="pass"
+      [error]="errPass()"
+    />
+    <button
+      type="submit"
+      class="su-btn su-btn-md su-btn-primary su-btn-full"
+      [disabled]="busy()"
+      [attr.aria-busy]="busy()"
+    >
+      @if (busy()) {
+        {{ t().api.loading }}
+      } @else {
+        {{ isLogin() ? t().auth.submit : t().auth.create }}<i class="ph ph-arrow-right"></i>
+      }
+    </button>
+    <div class="or">
+      <span>{{ t().auth.or }}</span>
+    </div>
+    @if (googleReady()) {
+      <div #google class="google"></div>
+    } @else {
+      <button type="button" class="su-btn su-btn-md su-btn-full" (click)="googleOff()">
+        <i class="ph ph-google-logo"></i
+        >{{ isLogin() ? t().auth.googleLogin : t().auth.googleSignup }}
+      </button>
+    }
+    <div class="switch">
+      <span>{{ isLogin() ? t().auth.noAccount : t().auth.haveAccount }}</span>
+      @if (isLogin()) {
+        <a routerLink="/signup" [queryParams]="{ plan: 'free' }">{{ t().auth.signup }}</a>
+      } @else {
+        <a routerLink="/login">{{ t().auth.title }}</a>
+      }
+    </div>
+  </form>
+</main>

@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiEngine, ApiService } from '../http/api.service';
+import { DeviceEventsService } from './device-events.service';
 import { PlatformKey } from './models';
 import { PostsStore } from './posts.store';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
@@ -100,6 +101,14 @@ export class SettingsStore {
           .then(() => (this.devices() > 0 ? this.posts.refresh() : undefined))
           .catch(() => undefined);
       }, PRESENCE_POLL_MS);
+    // Live, between those polls: a device coming online, pairing or unpairing refreshes the presence at once,
+    // and a post that went out (or failed) refreshes the posts.
+    const events = inject(DeviceEventsService);
+    events.subscribe((e) => {
+      if (['device.online', 'device.paired', 'device.revoked'].includes(e.type))
+        this.refreshPresence(true).catch(() => undefined);
+      else if (e.type === 'post') this.posts.refresh().catch(() => undefined);
+    });
   }
 
   async load(wsId = this.ws.id()): Promise<void> {

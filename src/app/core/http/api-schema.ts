@@ -913,6 +913,91 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/auth/config': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AuthConfigDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/auth/google': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['GoogleLogInRequest'];
+          'text/json': components['schemas']['GoogleLogInRequest'];
+          'application/*+json': components['schemas']['GoogleLogInRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AuthResultDto'];
+          };
+        };
+        /** @description Unauthorized */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ProblemDetails'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/auth/me': {
     parameters: {
       query?: never;
@@ -1893,6 +1978,85 @@ export interface paths {
         };
       };
     };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/events': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          after?: number;
+          take?: number;
+        };
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['DeviceEventsPageDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/events/stream': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          after?: number;
+        };
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'text/event-stream': unknown;
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2951,6 +3115,9 @@ export interface components {
       from: null | string;
       to: null | string;
     };
+    AuthConfigDto: {
+      googleClientId: null | string;
+    };
     AuthResultDto: {
       token: string;
       /** Format: date-time */
@@ -3067,6 +3234,22 @@ export interface components {
       accountId: null | string;
       jobsPaused: boolean;
     };
+    DeviceEventDto: {
+      /** Format: int64 */
+      seq: number;
+      /** Format: uuid */
+      deviceId: string;
+      type: string;
+      payload: components['schemas']['JsonElement'];
+      /** Format: date-time */
+      at: string;
+    };
+    DeviceEventsPageDto: {
+      /** Format: int64 */
+      head: number;
+      events: components['schemas']['DeviceEventDto'][];
+      more: boolean;
+    };
     DeviceLiveDto: {
       /** Format: uuid */
       deviceId: string;
@@ -3157,6 +3340,10 @@ export interface components {
       | 'media_too_large'
       | 'quota'
       | null;
+    GoogleLogInRequest: {
+      idToken: string;
+      plan: null | components['schemas']['PlanKey'];
+    };
     GroupLinkDto: {
       name: string;
       url: string;
@@ -3356,6 +3543,14 @@ export interface components {
       /** Format: double */
       errorRate24h: null | number;
       paymentsConnected: boolean;
+      /** Format: int32 */
+      eventStreams: number;
+      /** Format: int32 */
+      deviceWaits: number;
+      /** Format: int64 */
+      eventsPublished: number;
+      /** Format: int64 */
+      eventsDropped: number;
     };
     PlatformLimitsDto: {
       /** Format: int32 */
@@ -3475,6 +3670,8 @@ export interface components {
       state: null | components['schemas']['JsonElement'];
       logs: null | components['schemas']['DeviceLogEntry'][];
       takeCommands: boolean;
+      /** @default false */
+      wait: boolean;
     };
     TargetSelection: {
       /** Format: uuid */

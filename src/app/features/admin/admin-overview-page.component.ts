@@ -9,122 +9,8 @@ import { AdminViewService } from './admin-view.service';
   selector: 'app-admin-overview-page',
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="page">
-      <div class="page-head">
-        <div>
-          <h1>{{ t().adm.title }}</h1>
-          <p>{{ t().adm.sub }}</p>
-        </div>
-      </div>
-      <div class="kpis">
-        @for (k of kpis(); track k.label) {
-          <div class="panel kpi">
-            <span class="label">{{ k.label }}</span
-            ><span class="value">{{ k.value }}</span
-            ><span class="note">{{ k.note }}</span>
-          </div>
-        }
-      </div>
-      <div class="grid-2eq">
-        <section class="panel">
-          <h2 class="h2 mb8">{{ t().adm.mrrByPlan }}</h2>
-          @for (r of view.mrr().rows; track r.name) {
-            <div class="mrr">
-              <div class="mrr-head">
-                <span class="fw5">{{ r.name }}</span
-                ><span
-                  >{{ r.amount }} <span class="muted">· {{ r.subs }} {{ t().adm.subs }}</span></span
-                >
-              </div>
-              <div class="bar thick"><span [style.width.%]="r.pct"></span></div>
-            </div>
-          }
-        </section>
-        <section class="panel">
-          <h2 class="h2 mb4">{{ t().adm.health }}</h2>
-          @for (h of health(); track h.label) {
-            <div class="row h">
-              <span class="dot" [style.background]="h.dot"></span
-              ><span class="grow">{{ h.label }}</span
-              ><span class="fw5">{{ h.value }}</span>
-            </div>
-          }
-        </section>
-      </div>
-      <div class="grid-2eq">
-        <section class="panel">
-          <h2 class="h2 mb4">{{ t().adm.attention }}</h2>
-          @for (a of attention(); track a.icon) {
-            <div class="row att">
-              <i class="ph" [class]="a.icon" [style.color]="a.color"></i>
-              <span class="grow">{{ a.text }}</span>
-              <a class="su-btn su-btn-sm su-btn-ghost" [routerLink]="a.link">{{
-                t().adm.manage
-              }}</a>
-            </div>
-          }
-        </section>
-        <section class="panel">
-          <div class="panel-head">
-            <h2 class="h2">{{ t().adm.transactions }}</h2>
-            <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/admin/finance">{{
-              t().common.viewAll
-            }}</a>
-          </div>
-          @for (x of recent(); track x.id) {
-            <div class="row tx">
-              <span class="w64 muted">{{ x.date }}</span>
-              <span class="grow ellipsis">{{ x.customer }}</span>
-              <span class="status"
-                ><span class="dot" [style.background]="x.dot"></span>{{ x.type }}</span
-              >
-              <span class="fw5 amt">{{ x.amount }}</span>
-            </div>
-          }
-        </section>
-      </div>
-    </div>
-  `,
-  styles: `
-    .mb4 {
-      margin-bottom: 4px;
-    }
-    .mb8 {
-      margin-bottom: 8px;
-    }
-    .mrr {
-      padding: 8px 0;
-    }
-    .mrr-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 14px;
-      flex-wrap: wrap;
-    }
-    .row.h {
-      padding: 9px 0;
-    }
-    .row.att {
-      padding: 6px 0;
-      > .ph {
-        font-size: 20px;
-        flex-shrink: 0;
-      }
-    }
-    .row.tx {
-      padding: 8px 0;
-    }
-    .w64 {
-      width: 64px;
-      flex-shrink: 0;
-    }
-    .amt {
-      width: 84px;
-      text-align: right;
-    }
-  `,
+  templateUrl: './admin-overview-page.component.html',
+  styleUrl: './admin-overview-page.component.scss',
 })
 export class AdminOverviewPageComponent {
   private readonly admin = inject(AdminStore);
@@ -176,6 +62,11 @@ export class AdminOverviewPageComponent {
         dot: (h.apiP95Ms ?? 0) <= 500 ? ok : warn,
       },
       { label: api.hDb, value: `${h.dbMs} ms`, dot: h.dbMs <= 100 ? ok : warn },
+      {
+        label: api.hLive,
+        value: `${h.eventStreams.toLocaleString()} · ${h.deviceWaits.toLocaleString()}`,
+        dot: h.eventsDropped === 0 ? ok : warn,
+      },
       {
         label: api.hQueue,
         value: `${h.queueDue.toLocaleString()} · ${h.queueNext24h.toLocaleString()}`,

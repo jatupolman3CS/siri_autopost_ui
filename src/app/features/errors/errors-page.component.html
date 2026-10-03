@@ -1,0 +1,77 @@
+<div class="page gap16">
+  <div class="page-head mb8">
+    <div>
+      <h1>{{ t().err.title }}</h1>
+      <p>{{ t().err.sub }}</p>
+    </div>
+    <div class="seg">
+      <button type="button" [class.on]="filter() === 'all'" (click)="filter.set('all')">
+        {{ t().err.filterAll }} ({{ sorted().length }})
+      </button>
+      <button type="button" [class.on]="filter() === 'today'" (click)="filter.set('today')">
+        {{ t().err.filterToday }} ({{ todayList().length }})
+      </button>
+    </div>
+  </div>
+
+  @for (e of rows(); track e.id) {
+    <section class="panel err">
+      <span class="pico s40"><i class="ph" [class]="e.icon"></i></span>
+      <div class="body">
+        <div class="title-row">
+          <h2 class="h2">{{ e.title }}</h2>
+          <span class="status"
+            ><span class="dot" [style.background]="e.dot"></span>{{ e.statusLabel }}</span
+          >
+        </div>
+        <div class="small muted">{{ e.meta }}</div>
+        <p class="fs14 flush">{{ e.body }}</p>
+        <div class="callout">
+          <i class="ph ph-wrench" style="color: var(--color-primary)"></i>
+          <span
+            ><span class="fw5">{{ t().err.whatToDo }}: </span>{{ e.fix }}</span
+          >
+        </div>
+        @if (e.detail) {
+          <div class="small muted">{{ e.detail }}</div>
+        }
+        <div class="fs14 muted">“{{ e.text }}”</div>
+      </div>
+      <div class="btns">
+        @if (e.canRetry) {
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-primary su-btn-full"
+            (click)="retry(e.id)"
+          >
+            <i class="ph ph-arrow-counter-clockwise"></i>{{ t().common.retryNow }}
+          </button>
+        }
+        @if (e.isSession) {
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-secondary su-btn-full"
+            (click)="signin(e.accountId)"
+          >
+            {{ t().err.signin }}
+          </button>
+        }
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost su-btn-full"
+          (click)="skip(e.id)"
+        >
+          {{ e.skipLabel }}
+        </button>
+      </div>
+    </section>
+  } @empty {
+    <div class="panel nopad">
+      <app-empty-state
+        [heading]="t().err.empty"
+        [description]="t().err.emptyBody"
+        icon="ph-check-circle"
+      />
+    </div>
+  }
+</div>

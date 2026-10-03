@@ -1,0 +1,19 @@
+<div class="langs">
+  <button type="button" [class.on]="i18n.lang() === 'th'" (click)="i18n.setLang('th')">ไทย</button>
+  <button type="button" [class.on]="i18n.lang() === 'en'" (click)="i18n.setLang('en')">
+    English
+  </button>
+</div>
+<button
+  type="button"
+  class="theme"
+  [attr.aria-label]="label()"
+  [title]="label()"
+  (click)="theme.toggle()"
+>
+  <i
+    class="ph"
+    [class.ph-sun]="theme.theme() === 'dark'"
+    [class.ph-moon]="theme.theme() !== 'dark'"
+  ></i>
+</button>

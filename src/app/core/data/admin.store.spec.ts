@@ -55,6 +55,10 @@ const HEALTH: ApiHealth = {
   onLatestExtension: 1,
   errorRate24h: null,
   paymentsConnected: false,
+  eventStreams: 0,
+  deviceWaits: 0,
+  eventsPublished: 0,
+  eventsDropped: 0,
 };
 
 describe('AdminStore', () => {

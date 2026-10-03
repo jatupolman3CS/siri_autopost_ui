@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5100/"
+      "url": "http://localhost:5107/"
     }
   ],
   "paths": {
@@ -848,6 +848,74 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/LogInCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/config": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthConfigDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleLogInRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleLogInRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleLogInRequest"
               }
             }
           },
@@ -1811,6 +1879,88 @@
                   "$ref": "#/components/schemas/ExtensionStateDto"
                 }
               }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/events": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0
+            }
+          },
+          {
+            "name": "take",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceEventsPageDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/events/stream": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/event-stream": { }
             }
           }
         }
@@ -3191,6 +3341,20 @@
           }
         }
       },
+      "AuthConfigDto": {
+        "required": [
+          "googleClientId"
+        ],
+        "type": "object",
+        "properties": {
+          "googleClientId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AuthResultDto": {
         "required": [
           "token",
@@ -3626,6 +3790,59 @@
           }
         }
       },
+      "DeviceEventDto": {
+        "required": [
+          "seq",
+          "deviceId",
+          "type",
+          "payload",
+          "at"
+        ],
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeviceEventsPageDto": {
+        "required": [
+          "head",
+          "events",
+          "more"
+        ],
+        "type": "object",
+        "properties": {
+          "head": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeviceEventDto"
+            }
+          },
+          "more": {
+            "type": "boolean"
+          }
+        }
+      },
       "DeviceLiveDto": {
         "required": [
           "deviceId",
@@ -3937,6 +4154,28 @@
           "quota",
           null
         ]
+      },
+      "GoogleLogInRequest": {
+        "required": [
+          "idToken",
+          "plan"
+        ],
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string"
+          },
+          "plan": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlanKey"
+              }
+            ]
+          }
+        }
       },
       "GroupLinkDto": {
         "required": [
@@ -4580,7 +4819,11 @@
           "latestExtension",
           "onLatestExtension",
           "errorRate24h",
-          "paymentsConnected"
+          "paymentsConnected",
+          "eventStreams",
+          "deviceWaits",
+          "eventsPublished",
+          "eventsDropped"
         ],
         "type": "object",
         "properties": {
@@ -4664,6 +4907,22 @@
           },
           "paymentsConnected": {
             "type": "boolean"
+          },
+          "eventStreams": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "deviceWaits": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "eventsPublished": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventsDropped": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -5126,6 +5385,10 @@
           },
           "takeCommands": {
             "type": "boolean"
+          },
+          "wait": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -5370,6 +5633,9 @@
     },
     {
       "name": "Engine"
+    },
+    {
+      "name": "Events"
     },
     {
       "name": "Extension"

@@ -1,0 +1,17 @@
+.toasts {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 24px;
+  max-width: 100vw;
+}
+
+.su-toast {
+  animation: ap-rise 0.2s ease-out;
+}

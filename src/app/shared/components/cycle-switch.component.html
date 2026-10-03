@@ -1,0 +1,17 @@
+<div class="seg">
+  <button
+    type="button"
+    [class.on]="cycle() === 'month'"
+    (click)="settings.patchBill({ cycle: 'month' })"
+  >
+    {{ t().common.monthly }}
+  </button>
+  <button
+    type="button"
+    [class.on]="cycle() === 'year'"
+    (click)="settings.patchBill({ cycle: 'year' })"
+  >
+    {{ t().common.annual }}
+  </button>
+</div>
+<span class="save">{{ t().bill.saveAnnual }}</span>

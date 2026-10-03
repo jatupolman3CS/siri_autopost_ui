@@ -6,32 +6,8 @@ let nextId = 0;
 @Component({
   selector: 'app-input-field',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @if (label()) {
-      <label class="su-field-label" [attr.for]="id">{{ label() }}</label>
-    }
-    <input
-      class="su-input"
-      [class.su-input-error]="!!error()"
-      [id]="id"
-      [type]="type()"
-      [placeholder]="placeholder()"
-      [disabled]="disabled()"
-      [value]="value()"
-      [attr.autocomplete]="autocomplete()"
-      [attr.aria-invalid]="error() ? true : null"
-      [attr.aria-label]="label() ? null : placeholder()"
-      (input)="value.set($any($event.target).value)"
-    />
-    @if (error()) {
-      <p class="su-field-err" role="alert">{{ error() }}</p>
-    }
-  `,
-  styles: `
-    :host {
-      display: block;
-    }
-  `,
+  templateUrl: './input-field.component.html',
+  styleUrl: './input-field.component.scss',
 })
 export class InputFieldComponent {
   readonly label = input('');

@@ -1,0 +1,46 @@
+.mb4 {
+  margin-bottom: 4px;
+}
+
+.mb8 {
+  margin-bottom: 8px;
+}
+
+.mrr {
+  padding: 8px 0;
+}
+
+.mrr-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.row.h {
+  padding: 9px 0;
+}
+
+.row.att {
+  padding: 6px 0;
+
+  > .ph {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+}
+
+.row.tx {
+  padding: 8px 0;
+}
+
+.w64 {
+  width: 64px;
+  flex-shrink: 0;
+}
+
+.amt {
+  width: 84px;
+  text-align: right;
+}

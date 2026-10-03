@@ -1,0 +1,15 @@
+:host {
+  display: contents;
+}
+
+.hours {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.time {
+  width: 120px;
+}

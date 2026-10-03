@@ -8,65 +8,8 @@ import { CampaignActions } from './campaign-actions.service';
 @Component({
   selector: 'app-camp-logs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <section class="panel stack">
-      <div class="panel-head">
-        <h2 class="h2">{{ x().logsTitle }}</h2>
-        <button
-          type="button"
-          class="su-btn su-btn-sm su-btn-ghost"
-          [disabled]="actions.readOnly() || !lines().length"
-          (click)="clear()"
-        >
-          {{ x().clear }}
-        </button>
-      </div>
-      <ol class="logs">
-        @for (l of lines(); track $index) {
-          <li [class]="l.level">
-            <time>{{ l.time }}</time>
-            <span>{{ l.msg }}</span>
-          </li>
-        } @empty {
-          <li class="muted">{{ x().noLogs }}</li>
-        }
-      </ol>
-    </section>
-  `,
-  styles: `
-    .logs {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      max-height: 420px;
-      overflow: auto;
-      font-size: 13px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    li {
-      display: flex;
-      gap: 8px;
-      padding: 3px 0;
-      border-bottom: 1px solid var(--color-border);
-      word-break: break-word;
-    }
-    time {
-      color: var(--color-text-muted);
-      flex-shrink: 0;
-      font-variant-numeric: tabular-nums;
-    }
-    .success span {
-      color: var(--color-success);
-    }
-    .warn span {
-      color: var(--color-warning);
-    }
-    .error span {
-      color: var(--color-danger);
-    }
-  `,
+  templateUrl: './camp-logs.component.html',
+  styleUrl: './camp-logs.component.scss',
 })
 export class CampLogsComponent {
   private readonly store = inject(CampaignsStore);

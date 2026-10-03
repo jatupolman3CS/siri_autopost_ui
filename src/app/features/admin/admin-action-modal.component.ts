@@ -27,32 +27,8 @@ export interface AdminActionRequest {
   selector: 'app-admin-action-modal',
   imports: [ModalComponent, InputFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <app-modal [open]="!!request()" [title]="title()" (closed)="closed.emit()">
-      <p class="body">{{ body() }}</p>
-      <app-input-field [label]="t().adm.note" [(value)]="note" />
-      <div modal-footer>
-        <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="closed.emit()">
-          {{ t().common.cancel }}
-        </button>
-        <button
-          type="button"
-          class="su-btn su-btn-sm"
-          [class.su-btn-danger]="danger()"
-          [class.su-btn-primary]="!danger()"
-          (click)="confirm()"
-        >
-          {{ t().common.confirm }}
-        </button>
-      </div>
-    </app-modal>
-  `,
-  styles: `
-    .body {
-      margin: 0 0 12px;
-      font-size: 14px;
-    }
-  `,
+  templateUrl: './admin-action-modal.component.html',
+  styleUrl: './admin-action-modal.component.scss',
 })
 export class AdminActionModalComponent {
   readonly request = input<AdminActionRequest | null>(null);

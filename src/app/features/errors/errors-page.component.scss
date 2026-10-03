@@ -1,0 +1,48 @@
+.gap16 {
+  gap: 16px;
+}
+
+.mb8 {
+  margin-bottom: 8px;
+}
+
+.fs14 {
+  font-size: 14px;
+}
+
+.flush {
+  margin: 0;
+}
+
+.err {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.body {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 170px;
+}
+
+.nopad {
+  padding: 0;
+}

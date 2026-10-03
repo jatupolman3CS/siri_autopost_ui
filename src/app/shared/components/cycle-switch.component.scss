@@ -1,0 +1,11 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.save {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-success);
+}

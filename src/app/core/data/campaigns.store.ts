@@ -12,6 +12,7 @@ import {
   uid,
 } from '../ext/lib/shared.js';
 import { dataUrlToBlob, processMedia, readAsDataURL } from '../ext/media';
+import { DeviceEvent, DeviceEventsService } from './device-events.service';
 import { DevicesStore } from './devices.store';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
@@ -51,8 +52,14 @@ export interface CommandResult {
 const DEVICE_KEY = 'ap-ext-device';
 const CAMPAIGN_KEY = 'ap-ext-campaign';
 const SAVE_DELAY_MS = 800;
-const LIVE_PERIOD_MS = 5000;
+/** The event stream carries state, log and commands live; this poll is only the safety net behind it. */
+const FALLBACK_POLL_MS = 60_000;
 const RETRY_MS = 5000;
+/** While waiting for a command's answer, ask the server this often in case the stream is down. */
+const COMMAND_POLL_MS = 5000;
+const COMMAND_TIMEOUT_MS = 120_000;
+/** Log lines kept on the page (what /live returns). */
+const LOG_LINES = 200;
 /** Error message of importParsed when the imported settings could not be saved yet. */
 export const SAVE_FAILED = 'save-failed';
 
@@ -66,6 +73,7 @@ export class CampaignsStore {
   private readonly api = inject(ApiService);
   private readonly ws = inject(WorkspaceStore);
   private readonly devices = inject(DevicesStore);
+  private readonly events = inject(DeviceEventsService);
 
   /** The browser whose campaigns are shown; null when none is paired. */
   readonly deviceId = signal<string | null>(readStored(DEVICE_KEY));
@@ -119,6 +127,13 @@ export class CampaignsStore {
   private saving: Promise<void> | null = null;
   private liveTimer: ReturnType<typeof setInterval> | null = null;
   private watchers = 0;
+  private unsubEvents: (() => void) | null = null;
+  private unsubResume: (() => void) | null = null;
+  /** Commands sent from this page, waiting for the device's answer (by command id). */
+  private readonly commandWaits = new Map<
+    string,
+    (status: string, result: CommandResult | null) => void
+  >();
 
   constructor() {
     whenWorkspaceChanges(() => this.reset());
@@ -166,19 +181,75 @@ export class CampaignsStore {
     }
   }
 
-  /** Polls the device's state and log while a page shows them; returns the stop function. */
+  /**
+   * Follows the device's state and log while a page shows them; returns the stop function. The workspace's
+   * event stream delivers changes as they happen (and a reconnect reloads everything); a slow poll stays
+   * behind it in case the stream is down.
+   */
   watch(): () => void {
     this.watchers++;
     if (!this.liveTimer) {
       void this.refreshLive();
-      this.liveTimer = setInterval(() => void this.refreshLive(), LIVE_PERIOD_MS);
+      this.liveTimer = setInterval(() => void this.refreshLive(), FALLBACK_POLL_MS);
+      this.unsubEvents = this.events.subscribe((e) => this.onEvent(e));
+      this.unsubResume = this.events.onResume(() => void this.refreshLive());
     }
     return () => {
       if (--this.watchers > 0) return;
       if (this.liveTimer) clearInterval(this.liveTimer);
       this.liveTimer = null;
+      this.unsubEvents?.();
+      this.unsubEvents = null;
+      this.unsubResume?.();
+      this.unsubResume = null;
       void this.flush();
     };
+  }
+
+  /** Applies one event of the shown device to the live view (DeviceEventType in the API for the payloads). */
+  private onEvent(e: DeviceEvent): void {
+    if (e.deviceId !== this.deviceId()) return;
+    const p = e.payload;
+    const seen = <T extends ApiDeviceLive>(l: T): T => ({ ...l, online: true, lastSeenAt: e.at });
+    switch (e.type) {
+      case 'device.state':
+        this.live.update(
+          (l) =>
+            l && {
+              ...seen(l),
+              state: p['state'] as ApiDeviceLive['state'],
+              stateAt: p['at'] as string,
+            },
+        );
+        break;
+      case 'device.log': {
+        if (p['truncated']) {
+          void this.refreshLive();
+          break;
+        }
+        const lines = (p['lines'] as ApiDeviceLog[] | undefined) ?? [];
+        this.live.update((l) => l && { ...seen(l), logs: [...l.logs, ...lines].slice(-LOG_LINES) });
+        break;
+      }
+      case 'device.log_cleared':
+        this.live.update((l) => l && { ...l, logs: [] });
+        break;
+      case 'device.online':
+        this.live.update((l) => l && seen(l));
+        break;
+      case 'device.config': {
+        const revision = p['revision'] as number;
+        this.live.update((l) => l && { ...l, revision });
+        // The device (or another page) saved newer settings: show them unless edits are on the way.
+        if (revision > this.revision() && !this.unsaved() && !this.saving) void this.load();
+        break;
+      }
+      case 'device.command': {
+        const wait = this.commandWaits.get(p['id'] as string);
+        if (wait) wait(p['status'] as string, (p['result'] as CommandResult | null) ?? null);
+        break;
+      }
+    }
   }
 
   async refreshLive(): Promise<void> {
@@ -406,8 +477,9 @@ export class CampaignsStore {
   // ---------- commands ----------
 
   /**
-   * Sends a button press to the device and waits (up to ~2 minutes) for its answer. The device takes
-   * commands on its 30-second sync; one nobody takes within 10 minutes expires.
+   * Sends a button press to the device and waits (up to ~2 minutes) for its answer. The device holds a sync
+   * open on the server, so it usually answers within seconds; the answer comes back on the event stream, with
+   * a slow poll behind it. One nobody takes within 10 minutes expires.
    */
   async command(cmd: string, args: object = {}): Promise<CommandResult> {
     const ws = this.ws.id();
@@ -415,16 +487,31 @@ export class CampaignsStore {
     if (!ws || !device) return { ok: false, error: 'no-device' };
     await this.flush();
     const sent = await this.api.sendDeviceCommand(ws, device, cmd, args);
-    for (let i = 0; i < 60; i++) {
-      await new Promise((r) => setTimeout(r, 2000));
-      const c = await this.api.deviceCommand(ws, device, sent.id).catch(() => null);
-      if (c?.status === 'done') {
-        void this.refreshLive();
-        return ((c.result as CommandResult | null) ?? { ok: true }) as CommandResult;
-      }
-      if (c?.status === 'expired') return { ok: false, error: 'expired' };
-    }
-    return { ok: false, error: 'timeout' };
+    return new Promise<CommandResult>((resolve) => {
+      let done = false;
+      const finish = (r: CommandResult): void => {
+        if (done) return;
+        done = true;
+        this.commandWaits.delete(sent.id);
+        clearInterval(poll);
+        clearTimeout(limit);
+        resolve(r);
+      };
+      const settle = (status: string, result: CommandResult | null): void => {
+        if (status === 'done') {
+          void this.refreshLive(); // the state after the command (the stream brings it too)
+          finish(result ?? { ok: true });
+        } else if (status === 'expired') finish({ ok: false, error: 'expired' });
+      };
+      this.commandWaits.set(sent.id, settle);
+      const poll = setInterval(() => {
+        void this.api
+          .deviceCommand(ws, device, sent.id)
+          .then((c) => settle(c.status, (c.result as CommandResult | null) ?? null))
+          .catch(() => undefined);
+      }, COMMAND_POLL_MS);
+      const limit = setTimeout(() => finish({ ok: false, error: 'timeout' }), COMMAND_TIMEOUT_MS);
+    });
   }
 
   async clearLogs(): Promise<void> {

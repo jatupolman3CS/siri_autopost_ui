@@ -1,0 +1,32 @@
+<div class="tiers">
+  @for (p of cards(); track p.k) {
+    <div class="tier" [class.hl]="p.highlighted">
+      <div>
+        <div class="name">{{ p.name }}</div>
+        <div class="small muted">{{ p.tag }}</div>
+      </div>
+      <div>
+        <span class="price">{{ p.price }}</span
+        ><span class="per muted">{{ p.per }}</span>
+        <div class="small muted billed">{{ p.billed }}</div>
+      </div>
+      <ul>
+        @for (f of p.features; track f) {
+          <li>
+            <i class="ph ph-check"></i><span>{{ f }}</span>
+          </li>
+        }
+      </ul>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-full"
+        [class.su-btn-primary]="p.variant === 'primary'"
+        [class.su-btn-secondary]="p.variant === 'secondary'"
+        [disabled]="p.disabled"
+        (click)="choose.emit(p.k)"
+      >
+        {{ p.cta }}
+      </button>
+    </div>
+  }
+</div>

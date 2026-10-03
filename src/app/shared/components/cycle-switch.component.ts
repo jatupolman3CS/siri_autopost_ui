@@ -6,37 +6,8 @@ import { I18nService } from '../../core/i18n/i18n.service';
 @Component({
   selector: 'app-cycle-switch',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="seg">
-      <button
-        type="button"
-        [class.on]="cycle() === 'month'"
-        (click)="settings.patchBill({ cycle: 'month' })"
-      >
-        {{ t().common.monthly }}
-      </button>
-      <button
-        type="button"
-        [class.on]="cycle() === 'year'"
-        (click)="settings.patchBill({ cycle: 'year' })"
-      >
-        {{ t().common.annual }}
-      </button>
-    </div>
-    <span class="save">{{ t().bill.saveAnnual }}</span>
-  `,
-  styles: `
-    :host {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .save {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--color-success);
-    }
-  `,
+  templateUrl: './cycle-switch.component.html',
+  styleUrl: './cycle-switch.component.scss',
 })
 export class CycleSwitchComponent {
   protected readonly settings = inject(SettingsStore);

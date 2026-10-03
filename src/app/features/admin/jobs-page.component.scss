@@ -1,0 +1,26 @@
+.mb4 {
+  margin-bottom: 4px;
+}
+
+.mb8 {
+  margin-bottom: 8px;
+}
+
+.jobs {
+  grid-template-columns:
+    minmax(200px, 2fr) minmax(110px, 1fr) minmax(70px, 0.7fr) minmax(70px, 0.7fr) minmax(
+      70px,
+      0.7fr
+    )
+    minmax(110px, 1fr) max-content;
+  min-width: 900px;
+}
+
+.row.jr {
+  padding: 8px 0;
+}
+
+.cust {
+  width: 150px;
+  flex-shrink: 0;
+}

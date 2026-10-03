@@ -1,0 +1,67 @@
+<app-modal [open]="open()" [title]="t().api.pairTitle" (closed)="closed.emit()">
+  <ol class="steps fs14">
+    <li>{{ t().api.pairStep1 }}</li>
+    <li>{{ t().api.pairStep2 }}</li>
+    <li>{{ t().api.pairStep3 }}</li>
+  </ol>
+  <div class="field">
+    <a
+      class="su-btn su-btn-sm su-btn-secondary dl"
+      data-testid="pair-download"
+      href="/api/extension/download"
+      download
+      ><i class="ph ph-download-simple"></i>{{ t().api.extDownload }}</a
+    >
+    <div class="small muted">{{ t().api.extInstallHelp }}</div>
+  </div>
+  <label class="field">
+    <span class="small muted">{{ t().api.pairName }}</span>
+    <input
+      class="su-input"
+      maxlength="80"
+      [placeholder]="t().api.pairNamePh"
+      [value]="name()"
+      (input)="name.set($any($event.target).value)"
+    />
+  </label>
+  <div class="field">
+    @if (code(); as c) {
+      <button
+        type="button"
+        class="su-btn su-btn-md su-btn-primary"
+        data-testid="pair-connect"
+        [disabled]="expired()"
+        (click)="connect(c.code)"
+      >
+        <i class="ph ph-plugs-connected"></i>{{ t().api.pairConnect }}
+      </button>
+      <div class="small" [class.muted]="!expired()" [class.err]="expired()">
+        @if (expired()) {
+          {{ t().api.pairExpired }}
+        } @else {
+          {{ t().api.pairCode }} <code data-testid="pair-code">{{ c.code }}</code> ·
+          {{ expiresLabel() }}
+        }
+      </div>
+    } @else if (error()) {
+      <div class="small err">{{ error() }}</div>
+    } @else {
+      <div class="small muted">{{ t().api.loading }}</div>
+    }
+  </div>
+  @if (opened() && code() && !expired()) {
+    <div class="wait small muted">
+      <i class="ph ph-circle-notch spin"></i>{{ t().api.pairWaiting }}
+    </div>
+  }
+  <div modal-footer>
+    @if (expired()) {
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="newCode()">
+        {{ t().api.pairNew }}
+      </button>
+    }
+    <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="closed.emit()">
+      {{ t().api.done }}
+    </button>
+  </div>
+</app-modal>
