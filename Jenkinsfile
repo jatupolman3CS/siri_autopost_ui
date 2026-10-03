@@ -50,7 +50,8 @@ pipeline {
                     set -eu
                     K="kubectl -n $K8S_NAMESPACE"
 
-                    kubectl create namespace "$K8S_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+                    # Jenkins runs as ci:jenkins-deployer, which cannot create namespaces: the namespace and its
+                    # RoleBinding are created once by a cluster admin (deploy/README.md in siri_autopost_backend).
                     if ! $K get service api >/dev/null 2>&1; then
                         echo "Service api not found in $K8S_NAMESPACE: run SIRIAUTOPOST-BACKEND first (nginx proxies /api to it)" >&2
                         exit 1
