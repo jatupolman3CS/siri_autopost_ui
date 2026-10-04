@@ -59,6 +59,11 @@
               </div>
             }
           </div>
+          @for (line of autoPauses(); track $index) {
+            <div class="auto small" role="status">
+              <i class="ph ph-pause-circle"></i><span>{{ line }}</span>
+            </div>
+          }
           <div class="pop-actions">
             <button
               type="button"

@@ -4,7 +4,7 @@ import { ApiDevice } from '../http/api.service';
 import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import { DeviceEventsService } from './device-events.service';
-import { DevicesStore } from './devices.store';
+import { DevicesStore, autoPauseOf } from './devices.store';
 
 const device = (id: string, over: Partial<ApiDevice> = {}): ApiDevice => ({
   id,
@@ -59,5 +59,70 @@ describe('DevicesStore', () => {
     events.resume();
     await settle();
     http.expectOne(URL).flush([device('d1')]);
+  });
+
+  describe('automatic pause', () => {
+    const NOW = new Date('2026-10-04T10:00:00Z');
+    const at = (min: number) => new Date(NOW.getTime() + min * 60_000).toISOString();
+
+    it('is the pause the API reports while it lasts, with its reason', () => {
+      expect(autoPauseOf(device('a'), NOW)).toBeNull();
+      expect(
+        autoPauseOf(device('a', { autoPausedUntil: null, autoPauseReason: null }), NOW),
+      ).toBeNull();
+      expect(
+        autoPauseOf(
+          device('a', { autoPausedUntil: at(30), autoPauseReason: 'Facebook เตือน' }),
+          NOW,
+        ),
+      ).toEqual({ until: new Date(at(30)), reason: 'Facebook เตือน' });
+      // Run out (or running out right now): not paused.
+      expect(
+        autoPauseOf(device('a', { autoPausedUntil: at(-1), autoPauseReason: 'x' }), NOW),
+      ).toBeNull();
+      expect(autoPauseOf(device('a', { autoPausedUntil: at(0) }), NOW)).toBeNull();
+      expect(autoPauseOf(device('a', { autoPausedUntil: at(30) }), NOW)?.reason).toBe('');
+    });
+
+    it('lists the browsers paused right now', () => {
+      store.now.set(NOW);
+      store.list.set([
+        device('d1', { autoPausedUntil: at(1), autoPauseReason: 'r1' }),
+        device('d2'),
+        device('d3', { autoPausedUntil: at(-5), autoPauseReason: 'old' }),
+      ]);
+      expect(store.autoPaused().map((p) => [p.device.id, p.reason])).toEqual([['d1', 'r1']]);
+      // A later time: the pause has run out (nothing arrives when it ends).
+      store.now.set(new Date(NOW.getTime() + 2 * 60_000));
+      expect(store.autoPaused()).toEqual([]);
+    });
+  });
+});
+
+describe('DevicesStore clock', () => {
+  it('moves the time every 30 s, so a pause the engine put on a browser runs out on screen', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
+    const NOW = new Date('2026-10-04T10:00:00Z');
+    vi.setSystemTime(NOW);
+    const http = provideApiTesting({
+      providers: [{ provide: DeviceEventsService, useClass: FakeDeviceEvents }],
+    });
+    try {
+      const store = TestBed.inject(DevicesStore);
+      await signIn(http, {
+        devices: [
+          device('d1', {
+            autoPausedUntil: new Date(NOW.getTime() + 60_000).toISOString(),
+            autoPauseReason: 'r',
+          }),
+        ],
+      });
+      expect(store.autoPaused()).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(90_000);
+      expect(store.autoPaused()).toEqual([]);
+      http.verify();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

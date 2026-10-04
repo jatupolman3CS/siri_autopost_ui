@@ -11,6 +11,8 @@ import { ApiMember, ApiRole } from '../../core/http/api.service';
 import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { problemMessage } from '../../core/http/problem-details';
 import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
+import { autoPauseLine } from '../../core/data/auto-pause-line';
+import { autoPauseOf } from '../../core/data/devices.store';
 import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
@@ -148,11 +150,14 @@ export class TeamPageComponent {
         : seen
           ? `${t.team.lastSeen} ${fmtDate(seen, li)} ${hm(seen)}`
           : t.api.deviceNever;
+      const auto = autoPauseOf(d, this.devices.now());
       return {
         id: d.id,
         name: d.name,
         online: d.online,
         paused: d.jobsPaused,
+        /** The engine paused this browser itself (a block, or posts that kept failing): until when and why. */
+        autoPause: auto ? autoPauseLine(auto, this.devices.now(), t, li) : '',
         meta: [d.browser, d.version && 'v' + d.version, status, d.jobsPaused && t.api.jobsPausedTag]
           .filter(Boolean)
           .join(' · '),

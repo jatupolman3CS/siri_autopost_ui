@@ -131,3 +131,14 @@
   flex-direction: column;
   gap: 2px;
 }
+.auto {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  > .ph {
+    font-size: 14px;
+    margin-top: 1px;
+    color: var(--color-warning);
+    flex-shrink: 0;
+  }
+}

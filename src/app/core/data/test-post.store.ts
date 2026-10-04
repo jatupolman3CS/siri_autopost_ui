@@ -199,7 +199,7 @@ export class TestPostStore {
   });
   /** Every paired browser has its jobs paused (by hand or by the engine): a test post waits for it. */
   readonly paused = computed(() => {
-    const now = this.posts.now();
+    const now = this.devices.now();
     const list = this.devices.list();
     return list.length > 0 && list.every((d) => d.jobsPaused || autoPauseOf(d, now) !== null);
   });

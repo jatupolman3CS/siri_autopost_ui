@@ -96,6 +96,7 @@ export const AP_I18N_ENGINE = {
   // Devices: the engine paused a browser by itself (a Facebook block, or posts that kept failing).
   // {t} is a time, {r} the reason the API gives (Thai text from the server).
   devAutoPaused: ['พักอัตโนมัติถึง {t}: {r}', 'Paused automatically until {t}: {r}'],
+  devAutoPausedNoReason: ['พักอัตโนมัติถึง {t}', 'Paused automatically until {t}'],
   devAutoPausedTag: ['พักอัตโนมัติ', 'Paused automatically'],
 } as const;
 

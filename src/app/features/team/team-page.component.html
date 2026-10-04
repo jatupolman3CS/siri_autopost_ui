@@ -125,6 +125,11 @@
                 {{ d.name }}
               </div>
               <div class="small muted">{{ d.meta }}</div>
+              @if (d.autoPause) {
+                <div class="small auto" role="status">
+                  <i class="ph ph-pause-circle"></i>{{ d.autoPause }}
+                </div>
+              }
             </div>
             <div class="dev-actions">
               <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/campaigns">

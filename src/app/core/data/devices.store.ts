@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { ApiDevice, ApiPairingCode, ApiService } from '../http/api.service';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
@@ -8,6 +8,8 @@ import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 const DEVICE_EVENTS = ['device.online', 'device.paired', 'device.revoked', 'device.updated'];
 /** The event stream keeps the list fresh; this poll only runs while the stream is down. */
 const FALLBACK_POLL_MS = 60_000;
+/** An automatic pause ends without any event: the clock it is compared with moves this often. */
+const CLOCK_MS = 30_000;
 
 /** The engine's own pause of a browser while it lasts (Facebook blocked it, or its posts kept failing), else null. */
 export function autoPauseOf(
@@ -27,6 +29,15 @@ export class DevicesStore {
 
   readonly list = signal<ApiDevice[]>([]);
   readonly loaded = signal(false);
+  /** The current time, moved every 30 s (a pause the engine put on a browser runs out by itself). */
+  readonly now = signal(new Date());
+  /** The browsers the engine has paused itself right now (a Facebook block, posts that kept failing). */
+  readonly autoPaused = computed(() =>
+    this.list().flatMap((device) => {
+      const pause = autoPauseOf(device, this.now());
+      return pause ? [{ device, ...pause }] : [];
+    }),
+  );
 
   constructor() {
     whenWorkspaceChanges((id) => {
@@ -44,7 +55,11 @@ export class DevicesStore {
       const timer = setInterval(() => {
         if (!events.connected()) void this.refresh();
       }, FALLBACK_POLL_MS);
-      inject(DestroyRef).onDestroy(() => clearInterval(timer));
+      const clock = setInterval(() => this.now.set(new Date()), CLOCK_MS);
+      inject(DestroyRef).onDestroy(() => {
+        clearInterval(timer);
+        clearInterval(clock);
+      });
     }
   }
 
