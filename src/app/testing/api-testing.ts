@@ -163,6 +163,29 @@ export async function signIn(
   await settle();
 }
 
+/**
+ * Logs in but leaves the workspace list unanswered, as on a reload before the list has arrived: `answer()` then
+ * sends the list and answers the loads that follow, so a spec can look at a page in between.
+ */
+export async function signInHoldingWorkspaces(
+  http: HttpTestingController,
+  data: Parameters<typeof answerWorkspaceLoads>[1] = {},
+): Promise<{ answer: (workspace?: Partial<ApiWorkspace>) => Promise<void> }> {
+  const login = TestBed.inject(SessionStore).logIn(USER.email, 'password1');
+  http.expectOne('/api/auth/login').flush({ token: 't0k', expiresAt: '2099-01-01', user: USER });
+  await login;
+  await settle();
+  const list = http.expectOne('/api/workspaces');
+  return {
+    answer: async (workspace = {}) => {
+      list.flush([{ ...WORKSPACE, ...workspace }]);
+      await settle();
+      answerWorkspaceLoads(http, data);
+      await settle();
+    },
+  };
+}
+
 export function answerWorkspaceLoads(
   http: HttpTestingController,
   data: {

@@ -12,7 +12,13 @@ import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.engine';
 import { NotificationService } from '../../core/services/notification.service';
 import { lookup } from '../../core/services/title.strategy';
-import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  WS,
+  provideApiTesting,
+  settle,
+  signIn,
+  signInHoldingWorkspaces,
+} from '../../testing/api-testing';
 import {
   COLLECTIONS_URL,
   NOTIFY_URL,
@@ -357,6 +363,32 @@ describe('NotifyPageComponent', () => {
       expect(pill(el, t().ntf.eFail).disabled).toBe(true);
       expect(button(cards(el)[0], t().ntf.sendTest)!.disabled).toBe(true);
       expect(button(cards(el)[0], t().ntf.tgFind)!.disabled).toBe(true);
+    });
+
+    it('shows no lock banner and no dimmed content before the workspaces have arrived, then locks', async () => {
+      http = provideApiTesting({
+        imports: [NotifyPageComponent],
+        providers: [
+          provideRouter([{ path: '**', children: [] }]),
+          { provide: DeviceEventsService, useClass: FakeDeviceEvents },
+        ],
+      });
+      const ws = TestBed.inject(WorkspaceStore);
+      const held = await signInHoldingWorkspaces(http);
+      const fixture = TestBed.createComponent(NotifyPageComponent);
+      fixture.detectChanges();
+      await settle();
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(ws.loaded()).toBe(false);
+      expect(el.querySelector('app-feature-lock')).toBeNull();
+      expect(el.querySelector('.locked')).toBeNull();
+      await held.answer({ notifications: false });
+      fixture.detectChanges();
+      await settle();
+      fixture.detectChanges();
+      expect(el.querySelector('app-feature-lock')).not.toBeNull();
+      expect(el.querySelector('.content')?.classList.contains('locked')).toBe(true);
     });
 
     it('offers no upgrade to someone who is not the owner (the plan is the owner’s)', async () => {

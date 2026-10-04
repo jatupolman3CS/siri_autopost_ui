@@ -39,6 +39,11 @@ export class ReportsStore {
   readonly totals = computed(() => totalsOf(this.groups()));
   /** The owner's plan includes client reports (Agency). */
   readonly canShare = computed(() => !!this.ws.current()?.clientReports);
+  /**
+   * The plan is known and does not include client reports (the card says so). Only known once the workspaces
+   * have arrived: before that nothing is locked, so the lock does not flash on a reload.
+   */
+  readonly shareLocked = computed(() => this.ws.loaded() && !this.ws.current()?.clientReports);
 
   private seq = 0;
   private loadedAt = 0;

@@ -30,7 +30,7 @@ export class ClientReportCardComponent {
   /** The owner's plan has client reports and the person is an admin. */
   protected readonly enabled = computed(() => this.store.canShare() && this.perm.canAdmin());
   protected readonly hint = computed(
-    () => this.perm.adminHint() || (this.store.canShare() ? '' : this.t().rep.clientLocked),
+    () => this.perm.adminHint() || (this.store.shareLocked() ? this.t().rep.clientLocked : ''),
   );
 
   protected readonly link = computed(() => {

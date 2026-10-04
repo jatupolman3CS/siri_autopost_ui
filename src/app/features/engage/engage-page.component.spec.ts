@@ -11,7 +11,12 @@ import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.engine';
 import { NotificationService } from '../../core/services/notification.service';
 import { lookup } from '../../core/services/title.strategy';
-import { provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  provideApiTesting,
+  settle,
+  signIn,
+  signInHoldingWorkspaces,
+} from '../../testing/api-testing';
 import {
   AUTO_REPLY_URL,
   COLLECTIONS_URL,
@@ -384,6 +389,29 @@ describe('EngagePageComponent', () => {
   });
 
   describe('permissions and plan', () => {
+    it('shows no lock banner and no dimmed content before the workspaces have arrived, then locks', async () => {
+      http = provideApiTesting({
+        imports: [EngagePageComponent],
+        providers: [provideRouter([{ path: '**', children: [] }])],
+      });
+      const ws = TestBed.inject(WorkspaceStore);
+      const held = await signInHoldingWorkspaces(http);
+      const fixture = TestBed.createComponent(EngagePageComponent);
+      fixture.detectChanges();
+      await settle();
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(ws.loaded()).toBe(false);
+      expect(el.querySelector('app-feature-lock')).toBeNull();
+      expect(el.querySelector('.locked')).toBeNull();
+      await held.answer({ autoReply: false });
+      fixture.detectChanges();
+      await settle();
+      fixture.detectChanges();
+      expect(el.querySelector('app-feature-lock')).not.toBeNull();
+      expect(el.querySelector('.grid-2')?.classList.contains('locked')).toBe(true);
+    });
+
     it('is turned off under the lock banner on a plan without auto-reply, but keeps its content', async () => {
       const { el } = await open({ plan: false });
       expect(el.querySelector('app-feature-lock')?.textContent).toContain(t().ntf.advanced);

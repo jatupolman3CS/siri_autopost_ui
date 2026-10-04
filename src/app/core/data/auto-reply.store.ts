@@ -78,8 +78,11 @@ export class AutoReplyStore {
     this.collectionsStore.collections().map((c) => ({ id: c.id, name: c.name })),
   );
 
-  /** The owner's plan does not include auto-reply. */
-  readonly locked = computed(() => !this.ws.current()?.autoReply);
+  /**
+   * The owner's plan does not include auto-reply. Only known once the workspaces have arrived: before that
+   * nothing is locked, so the lock does not flash on a reload.
+   */
+  readonly locked = computed(() => this.ws.loaded() && !this.ws.current()?.autoReply);
   readonly ruleCount = computed(() => this.rules().length);
   readonly onCount = computed(() => this.rules().filter((r) => r.on).length);
   /** No room for another rule. */

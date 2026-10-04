@@ -4,7 +4,7 @@
     <h2 class="h2">{{ t().rep.client }}</h2>
   </div>
   <p class="sub-text">{{ t().rep.clientSub }}</p>
-  @if (!store.canShare()) {
+  @if (store.shareLocked()) {
     <div class="lock">
       <i class="ph ph-lock-simple muted" aria-hidden="true"></i>
       <span>{{ t().rep.clientLocked }}</span>

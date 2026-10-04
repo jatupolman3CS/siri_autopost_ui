@@ -13,7 +13,13 @@ import '../../core/i18n/i18n.engine';
 import { NewTabService } from '../../core/services/new-tab.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { lookup } from '../../core/services/title.strategy';
-import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  WS,
+  provideApiTesting,
+  settle,
+  signIn,
+  signInHoldingWorkspaces,
+} from '../../testing/api-testing';
 import { REPORT_URL, report, reportGroup } from '../../testing/engine.fixtures';
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import { apiLink, apiLinkSet } from '../../testing/link-sets.fixtures';
@@ -367,6 +373,32 @@ describe('ReportsPageComponent', () => {
         t().common.upgrade,
       );
       expect(create(el).disabled).toBe(true);
+      expect(create(el).title).toBe(t().rep.clientLocked);
+    });
+
+    it('shows no lock before the workspaces have arrived, then says the plan has no client reports', async () => {
+      http = provideApiTesting({
+        imports: [ReportsPageComponent],
+        providers: [
+          provideRouter([{ path: '**', children: [] }]),
+          { provide: DeviceEventsService, useClass: FakeDeviceEvents },
+        ],
+      });
+      const ws = TestBed.inject(WorkspaceStore);
+      const held = await signInHoldingWorkspaces(http);
+      const fixture = TestBed.createComponent(ReportsPageComponent);
+      fixture.detectChanges();
+      await settle();
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(ws.loaded()).toBe(false);
+      expect(card(el).querySelector('.lock')).toBeNull();
+      expect(create(el).title).not.toBe(t().rep.clientLocked);
+      await held.answer({ clientReports: false });
+      days(7).flush(REPORT);
+      await settle();
+      fixture.detectChanges();
+      expect(card(el).querySelector('.lock')?.textContent).toContain(t().rep.clientLocked);
       expect(create(el).title).toBe(t().rep.clientLocked);
     });
 

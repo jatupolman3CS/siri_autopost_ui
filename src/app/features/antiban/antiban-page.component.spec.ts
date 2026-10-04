@@ -8,7 +8,13 @@ import { ApiRole } from '../../core/http/api.service';
 import '../../core/i18n/i18n.engine';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { answerWorkspaceLoads, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  answerWorkspaceLoads,
+  provideApiTesting,
+  settle,
+  signIn,
+  signInHoldingWorkspaces,
+} from '../../testing/api-testing';
 import {
   ANTI_BAN_URL,
   BACKUP,
@@ -295,6 +301,27 @@ describe('AntibanPageComponent', () => {
       const upgrade = [...el.querySelectorAll<HTMLAnchorElement>('.lock a')];
       expect(upgrade.map((a) => a.getAttribute('href'))).toEqual(['/app/billing', '/app/billing']);
       expect(upgrade[0].textContent).toContain(t().common.upgrade);
+    });
+
+    it('shows no lock and dims nothing before the workspaces have arrived, then locks', async () => {
+      http = provideApiTesting({
+        imports: [AntibanPageComponent],
+        providers: [provideRouter([{ path: '**', children: [] }])],
+      });
+      const ws = TestBed.inject(WorkspaceStore);
+      const held = await signInHoldingWorkspaces(http);
+      fixture = TestBed.createComponent(AntibanPageComponent);
+      fixture.detectChanges();
+      await settle();
+      fixture.detectChanges();
+      el = fixture.nativeElement as HTMLElement;
+      expect(ws.loaded()).toBe(false);
+      expect(el.querySelector('.lock')).toBeNull();
+      expect(adv().querySelector('.dim')).toBeNull();
+      await held.answer({ advancedAntiBan: false });
+      await rerender();
+      expect(el.querySelectorAll('.lock')).toHaveLength(2);
+      expect(adv().querySelectorAll('.dim').length).toBeGreaterThan(0);
     });
 
     it('does not offer an upgrade to a member who is not the owner', async () => {

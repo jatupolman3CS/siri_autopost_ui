@@ -1,7 +1,14 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ApiReport, ApiReportGroup, ApiWorkspace } from '../http/api.service';
-import { WORKSPACE, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  WORKSPACE,
+  WS,
+  provideApiTesting,
+  settle,
+  signIn,
+  signInHoldingWorkspaces,
+} from '../../testing/api-testing';
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import { apiLink, apiLinkSet } from '../../testing/link-sets.fixtures';
 import { REPORT_URL, report, reportGroup } from '../../testing/engine.fixtures';
@@ -42,6 +49,29 @@ describe('ReportsStore', () => {
     // The link sets store (read for "disable a group") sits on the collections store, which asks for its own list.
     for (const r of http.match((x) => x.url.endsWith('/collections'))) r.flush([]);
     http.verify();
+  });
+
+  it('knows the plan only once the workspaces have arrived: the lock never shows before that', async () => {
+    http = provideApiTesting({
+      providers: [{ provide: DeviceEventsService, useClass: FakeDeviceEvents }],
+    });
+    const ws = TestBed.inject(WorkspaceStore);
+    store = TestBed.inject(ReportsStore);
+    const held = await signInHoldingWorkspaces(http);
+    expect(ws.loaded()).toBe(false);
+    expect(store.canShare()).toBe(false);
+    expect(store.shareLocked()).toBe(false);
+    await held.answer({ clientReports: false });
+    expect(store.shareLocked()).toBe(true);
+    for (const r of http.match((x) => x.url.startsWith(`/api/workspaces/${WS}`))) r.flush([]);
+    await settle();
+    expect(store.canShare()).toBe(false);
+  });
+
+  it('is not locked on an Agency workspace', async () => {
+    await start({ workspace: { clientReports: true } });
+    expect(store.canShare()).toBe(true);
+    expect(store.shareLocked()).toBe(false);
   });
 
   it('loads the last 7 days, and the page shows "—" until it has', async () => {

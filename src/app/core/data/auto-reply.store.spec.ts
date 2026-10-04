@@ -1,7 +1,14 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ApiAutoReply, ApiWorkspace } from '../http/api.service';
-import { WORKSPACE, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  WORKSPACE,
+  WS,
+  provideApiTesting,
+  settle,
+  signIn,
+  signInHoldingWorkspaces,
+} from '../../testing/api-testing';
 import {
   AUTO_REPLY_URL,
   COLLECTIONS_URL,
@@ -79,6 +86,19 @@ describe('AutoReplyStore', () => {
   it('is locked when the owner’s plan has no auto-reply', async () => {
     await start({ workspace: { autoReply: false } });
     expect(store.locked()).toBe(true);
+  });
+
+  it('is not locked while the workspaces have not arrived (no flash of the lock on a reload)', async () => {
+    http = provideApiTesting();
+    const ws = TestBed.inject(WorkspaceStore);
+    store = TestBed.inject(AutoReplyStore);
+    const held = await signInHoldingWorkspaces(http);
+    expect(ws.loaded()).toBe(false);
+    expect(store.locked()).toBe(false);
+    await held.answer({ autoReply: false });
+    expect(ws.loaded()).toBe(true);
+    expect(store.locked()).toBe(true);
+    for (const r of http.match((x) => x.url.startsWith(`/api/workspaces/${WS}`))) r.flush([]);
   });
 
   it('empties itself with the workspace and loads the next one', async () => {

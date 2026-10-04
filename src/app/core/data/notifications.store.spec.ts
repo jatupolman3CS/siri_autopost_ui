@@ -1,7 +1,14 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ApiCollection, ApiLinkSet, ApiNotifications, ApiWorkspace } from '../http/api.service';
-import { WORKSPACE, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  WORKSPACE,
+  WS,
+  provideApiTesting,
+  settle,
+  signIn,
+  signInHoldingWorkspaces,
+} from '../../testing/api-testing';
 import {
   COLLECTIONS_URL,
   NOTIFY_URL,
@@ -78,6 +85,22 @@ describe('NotificationsStore', () => {
     it('is not locked on a plan with notifications', async () => {
       await start();
       expect(store.locked()).toBe(false);
+    });
+
+    it('is not locked while the workspaces have not arrived (no flash of the lock on a reload)', async () => {
+      http = provideApiTesting({
+        providers: [{ provide: DeviceEventsService, useClass: FakeDeviceEvents }],
+      });
+      const ws = TestBed.inject(WorkspaceStore);
+      store = TestBed.inject(NotificationsStore);
+      const held = await signInHoldingWorkspaces(http);
+      expect(ws.loaded()).toBe(false);
+      expect(store.locked()).toBe(false);
+      await held.answer({ notifications: false });
+      expect(ws.loaded()).toBe(true);
+      expect(store.locked()).toBe(true);
+      // The notifications and the link sets of the workspace asked for themselves meanwhile.
+      for (const r of http.match((x) => x.url.startsWith(`/api/workspaces/${WS}`))) r.flush([]);
     });
 
     it('takes the first post text of the collections for the sample alert', async () => {

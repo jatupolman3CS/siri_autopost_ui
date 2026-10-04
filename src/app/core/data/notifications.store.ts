@@ -155,8 +155,11 @@ export class NotificationsStore {
         ?.text.trim() ?? '',
   );
 
-  /** The owner's plan does not include notifications (the page keeps its content and turns it off). */
-  readonly locked = computed(() => !this.ws.current()?.notifications);
+  /**
+   * The owner's plan does not include notifications (the page keeps its content and turns it off). Only known
+   * once the workspaces have arrived: before that nothing is locked, so the lock does not flash on a reload.
+   */
+  readonly locked = computed(() => this.ws.loaded() && !this.ws.current()?.notifications);
   /** The workspace's link sets (the per-set rules are about these). */
   readonly sets = this.linkSets.sets;
   readonly setsLoaded = this.linkSets.loaded;
