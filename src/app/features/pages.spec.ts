@@ -196,6 +196,13 @@ describe('pages that must not claim what the system does not do', () => {
       });
       expect(el.querySelector<HTMLButtonElement>('.pop-actions button')!.disabled).toBe(true);
     });
+
+    it('links to the extension campaigns page, which has no menu item any more', async () => {
+      const { el } = await open(ExtensionPageComponent, { devices: [device()] });
+      const link = el.querySelector<HTMLAnchorElement>('a[href="/app/campaigns"]')!;
+      expect(link).not.toBeNull();
+      expect(link.textContent).toContain(TestBed.inject(I18nService).t().api.extNav);
+    });
   });
 
   describe('labels in the dictionary', () => {

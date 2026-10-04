@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { ExtensionStore } from '../../core/data/extension.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
@@ -7,27 +9,37 @@ import { SessionStore } from '../../core/data/session.store';
 import { SettingsStore } from '../../core/data/settings.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { hm } from '../../core/i18n/format';
-import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import { Dict, I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { UiPrefsService } from '../../core/services/ui-prefs.service';
 import { LangThemeSwitchComponent } from '../lang-theme-switch.component';
-
-/** The extension's campaigns page; its label is not in the design's nav dictionary. */
-const EXT_CAMPAIGNS = 'extCampaigns';
 
 interface NavItem {
   path: string;
-  key: string;
   icon: string;
+  label: string;
+  /** Active on this path only (false: also on the pages below it, like a customer's detail page). */
   exact: boolean;
+  /** Further paths (and the pages below them) on which the item also shows as the current one. */
+  also?: readonly string[];
   badge?: number;
 }
 
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+/** True when `path` is `base` or a page below it. */
+const under = (path: string, base: string) => path === base || path.startsWith(base + '/');
+
 // Signed-in shell: collapsible sidebar, top bar (workspace, extension status, language, theme,
 // account), the assist banner while a platform admin sees the app as a customer, and the offline
-// banner shown above every page while the extension is disconnected.
+// banner shown above every page while the extension is disconnected. The sidebar has two forms: the
+// full menu, and "simple mode" (default, see UiPrefsService), which keeps only the three-step flow.
 @Component({
   selector: 'app-app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LangThemeSwitchComponent],
+  imports: [RouterOutlet, RouterLink, LangThemeSwitchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app-layout.component.html',
   styleUrl: './app-layout.component.scss',
@@ -43,66 +55,119 @@ export class AppLayoutComponent {
   protected readonly perm = inject(PermissionsService);
   private readonly posts = inject(PostsStore);
   private readonly settings = inject(SettingsStore);
+  protected readonly prefs = inject(UiPrefsService);
 
   protected readonly wsMenu = signal(false);
 
-  protected readonly navGroups = computed(() => {
+  /** The page path being shown (no query or fragment), to mark the sidebar item of the current page. */
+  private readonly path = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects.split(/[?#]/)[0]),
+    ),
+    { initialValue: this.router.url.split(/[?#]/)[0] },
+  );
+
+  protected readonly navGroups = computed((): NavGroup[] => {
     const t = this.t().nav;
+    const simple = this.prefs.simple();
     const item = (
       path: string,
-      key: keyof typeof t,
+      key: keyof Dict['nav'],
       icon: string,
-      badge?: number,
-      exact = true,
+      opts: Partial<Pick<NavItem, 'label' | 'badge' | 'exact' | 'also'>> = {},
     ): NavItem => ({
       path: '/app/' + path,
-      key,
       icon,
-      exact,
-      badge,
+      label: opts.label ?? t[key],
+      exact: opts.exact ?? true,
+      also: opts.also,
+      badge: opts.badge,
     });
-    const groups = [
+    const errors = item('errors', 'errors', 'ph-warning-circle', {
+      badge: this.posts.openErrors().length,
+    });
+    const account: NavGroup = {
+      label: t.gAccount,
+      items: [item('billing', 'billing', 'ph-credit-card'), item('team', 'team', 'ph-users-three')],
+    };
+    const owner: NavGroup[] = this.session.isAdmin()
+      ? [
+          {
+            label: t.gOwner,
+            items: [
+              item('admin', 'admin', 'ph-chart-line-up'),
+              item('admin/customers', 'adminCustomers', 'ph-users', { exact: false }),
+              item('admin/finance', 'adminFinance', 'ph-coins'),
+              item('admin/plans', 'adminPlans', 'ph-tag'),
+              item('admin/jobs', 'adminJobs', 'ph-pulse'),
+            ],
+          },
+        ]
+      : [];
+    // The post editor (the composer) is not a menu item of its own: it belongs to the collections.
+    const composer = ['/app/composer'];
+    if (simple)
+      return [
+        {
+          label: t.gWorkspace,
+          items: [
+            item('overview', 'overview', 'ph-squares-four'),
+            item('collections', 'collections', 'ph-folders', {
+              label: t.postsShort,
+              also: composer,
+            }),
+            item('targets', 'targets', 'ph-users-four', { label: t.groupsShort }),
+            item('schedules', 'schedules', 'ph-calendar-check', { label: t.scheduleShort }),
+            item('calendar', 'calendar', 'ph-calendar-blank'),
+            errors,
+          ],
+        },
+        account,
+        ...owner,
+      ];
+    return [
       {
         label: t.gWorkspace,
         items: [
           item('overview', 'overview', 'ph-squares-four'),
+          item('collections', 'collections', 'ph-folders', { also: composer }),
+          item('targets', 'targets', 'ph-users-four'),
+          item('schedules', 'schedules', 'ph-calendar-check'),
           item('calendar', 'calendar', 'ph-calendar-blank'),
-          item('composer', 'composer', 'ph-pencil-simple-line'),
           item('library', 'library', 'ph-images'),
+          item('reports', 'reports', 'ph-chart-bar'),
         ],
       },
       {
         label: t.gEngine,
         items: [
-          { path: '/app/campaigns', key: EXT_CAMPAIGNS, icon: 'ph-stack', exact: true },
+          item('test', 'test', 'ph-flask'),
           item('antiban', 'antiban', 'ph-shield-check'),
+          item('notify', 'notify', 'ph-bell'),
+          item('engage', 'engage', 'ph-chats-circle'),
           item('offline', 'offline', 'ph-wifi-slash'),
-          item('errors', 'errors', 'ph-warning-circle', this.posts.openErrors().length),
+          errors,
         ],
       },
-      {
-        label: t.gAccount,
-        items: [
-          item('billing', 'billing', 'ph-credit-card'),
-          item('team', 'team', 'ph-users-three'),
-        ],
-      },
+      account,
+      ...owner,
+      { label: t.gPreview, items: [item('extension', 'extension', 'ph-puzzle-piece')] },
     ];
-    if (this.session.isAdmin()) {
-      groups.push({
-        label: t.gOwner,
-        items: [
-          item('admin', 'admin', 'ph-chart-line-up'),
-          item('admin/customers', 'adminCustomers', 'ph-users', undefined, false),
-          item('admin/finance', 'adminFinance', 'ph-coins'),
-          item('admin/plans', 'adminPlans', 'ph-tag'),
-          item('admin/jobs', 'adminJobs', 'ph-pulse'),
-        ],
-      });
-    }
-    groups.push({ label: t.gPreview, items: [item('extension', 'extension', 'ph-puzzle-piece')] });
-    return groups;
   });
+
+  protected readonly simpleLabel = computed(() =>
+    this.prefs.simple() ? this.t().nav.moreMenu : this.t().nav.lessMenu,
+  );
+
+  /** The sidebar item of the page being shown. */
+  protected isOn(it: NavItem): boolean {
+    const path = this.path();
+    return (
+      (it.exact ? path === it.path : under(path, it.path)) ||
+      (it.also ?? []).some((p) => under(path, p))
+    );
+  }
 
   protected readonly planName = computed(() => this.t().plans[this.session.plan()].name);
   protected readonly bannerTitle = computed(() => {
@@ -115,11 +180,6 @@ export class AppLayoutComponent {
       policy: this.t().off[this.settings.off().policy],
     }),
   );
-
-  protected label(key: string): string {
-    if (key === EXT_CAMPAIGNS) return this.t().api.extNav;
-    return (this.t().nav as Record<string, string>)[key];
-  }
 
   protected switchWs(id: string): void {
     const ws = this.workspaces.switchTo(id);

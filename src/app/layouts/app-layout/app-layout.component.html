@@ -10,13 +10,13 @@
         @for (it of g.items; track it.path) {
           <a
             class="nav"
+            [class.on]="isOn(it)"
+            [attr.aria-current]="isOn(it) ? 'page' : null"
             [routerLink]="it.path"
-            routerLinkActive="on"
-            [routerLinkActiveOptions]="{ exact: it.exact }"
-            [title]="label(it.key)"
+            [title]="it.label"
           >
             <i class="ph" [class]="it.icon"></i>
-            <span class="label grow ellipsis">{{ label(it.key) }}</span>
+            <span class="label grow ellipsis">{{ it.label }}</span>
             @if (it.badge) {
               <span class="count">{{ it.badge }}</span>
             }
@@ -24,6 +24,23 @@
         }
       </div>
     }
+    <div class="more">
+      <button
+        type="button"
+        class="more-btn"
+        [title]="simpleLabel()"
+        [attr.aria-label]="simpleLabel()"
+        [attr.aria-pressed]="!prefs.simple()"
+        (click)="prefs.toggleSimple()"
+      >
+        <i
+          class="ph"
+          [class.ph-sliders-horizontal]="prefs.simple()"
+          [class.ph-list-checks]="!prefs.simple()"
+        ></i>
+        <span class="label grow ellipsis">{{ simpleLabel() }}</span>
+      </button>
+    </div>
     <div class="plan">
       <div class="small muted">{{ t().nav.planLabel }}</div>
       <div class="plan-row">
