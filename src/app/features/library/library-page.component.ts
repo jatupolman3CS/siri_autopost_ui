@@ -44,8 +44,13 @@ export class LibraryPageComponent {
 
   protected readonly mediaRows = computed(() => {
     const thumbs = this.library.thumbs();
+    const videos = this.library.videos();
+    const loading = this.library.videoLoading();
     return this.library.media().map((m) => ({
       id: m.id,
+      video: m.kind === 'video',
+      videoSrc: videos[m.id] ?? null,
+      videoLoading: !!loading[m.id],
       icon: m.kind === 'video' ? 'ph-video' : 'ph-image',
       src: thumbs[m.id] ?? null,
       label: m.name,
@@ -57,6 +62,10 @@ export class LibraryPageComponent {
   protected readonly snippetRows = computed(() =>
     this.library.snippets().map((s) => ({ id: s.id, title: s.title, text: s.text })),
   );
+
+  protected playVideo(id: string): void {
+    void this.library.loadVideo(id);
+  }
 
   protected openSnippet(): void {
     if (!this.perm.canEdit()) return;

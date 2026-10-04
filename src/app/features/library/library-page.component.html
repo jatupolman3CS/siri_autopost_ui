@@ -76,7 +76,15 @@
       @for (m of mediaRows(); track m.id) {
         <div class="panel panel-hover card">
           <div class="thumb">
-            @if (m.src) {
+            @if (m.video) {
+              @if (m.videoSrc) {
+                <video [src]="m.videoSrc" controls autoplay playsinline preload="metadata"></video>
+              } @else {
+                <button type="button" class="play" [disabled]="m.videoLoading" (click)="playVideo(m.id)" [attr.aria-label]="m.label">
+                  <i class="ph" [class]="m.videoLoading ? 'ph-spinner' : 'ph-play-circle'"></i>
+                </button>
+              }
+            } @else if (m.src) {
               <img [src]="m.src" alt="" />
             } @else {
               <i class="ph" [class]="m.icon"></i>

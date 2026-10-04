@@ -37,11 +37,18 @@ export class LibraryStore {
   readonly loaded = signal(false);
   /** mediaId -> object URL of the image. */
   readonly thumbs = signal<Record<string, string>>({});
+  /** mediaId -> object URL of a video the user chose to play (fetched on demand: videos are large). */
+  readonly videos = signal<Record<string, string>>({});
+  /** Videos being fetched right now. */
+  readonly videoLoading = signal<Record<string, boolean>>({});
 
   constructor() {
     whenWorkspaceChanges((id) => {
       for (const url of Object.values(this.thumbs())) URL.revokeObjectURL(url);
+      for (const url of Object.values(this.videos())) URL.revokeObjectURL(url);
       this.thumbs.set({});
+      this.videos.set({});
+      this.videoLoading.set({});
       this.media.set([]);
       this.snippets.set([]);
       this.loaded.set(false);
@@ -90,6 +97,22 @@ export class LibraryStore {
       }
     }
     return ids;
+  }
+
+  /** Fetches a video with the bearer token (a <video src> cannot send it) so it can be played. */
+  async loadVideo(id: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId || this.videos()[id] || this.videoLoading()[id]) return;
+    this.videoLoading.update((l) => ({ ...l, [id]: true }));
+    try {
+      const blob = await this.api.mediaContent(wsId, id);
+      if (this.ws.id() !== wsId) return;
+      this.videos.update((v) => ({ ...v, [id]: URL.createObjectURL(blob) }));
+    } catch {
+      // The video stays a play button; the interceptor tells the user.
+    } finally {
+      this.videoLoading.update((l) => ({ ...l, [id]: false }));
+    }
   }
 
   private async loadThumb(wsId: string, id: string): Promise<void> {
