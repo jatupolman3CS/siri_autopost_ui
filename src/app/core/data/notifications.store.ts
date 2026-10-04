@@ -10,6 +10,7 @@ import {
 } from '../http/api.service';
 import { problemMessage } from '../http/problem-details';
 import { LinkSetsStore, isActiveLink } from './link-sets.store';
+import { CollectionsStore } from './collections.store';
 import { loadWithRetry } from './loading';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
@@ -144,7 +145,15 @@ export class NotificationsStore {
   readonly loaded = signal(false);
   readonly saving = signal(false);
   /** The start of the first post of any collection, for the sample alert (empty until known). */
-  readonly samplePost = signal('');
+  private readonly collectionsStore = inject(CollectionsStore);
+  readonly samplePost = computed(
+    () =>
+      this.collectionsStore
+        .collections()
+        .flatMap((c) => c.posts)
+        .find((p) => p.text.trim() !== '')
+        ?.text.trim() ?? '',
+  );
 
   /** The owner's plan does not include notifications (the page keeps its content and turns it off). */
   readonly locked = computed(() => !this.ws.current()?.notifications);
@@ -221,7 +230,6 @@ export class NotificationsStore {
       this.tokens.set(EMPTY_TOKENS);
       this.loaded.set(false);
       this.saving.set(false);
-      this.samplePost.set('');
       if (id) void this.load(id);
     });
   }
@@ -240,19 +248,6 @@ export class NotificationsStore {
       () => this.ws.id() === wsId,
     );
     if (ok && this.ws.id() === wsId) this.loaded.set(true);
-    void this.loadSample(wsId);
-  }
-
-  /** The first post text of the workspace's collections, for the sample alert; no answer leaves it empty. */
-  private async loadSample(wsId: string): Promise<void> {
-    try {
-      const list = await this.api.collections(wsId, true);
-      if (this.ws.id() !== wsId) return;
-      const post = list.flatMap((c) => c.posts).find((p) => p.text.trim() !== '');
-      this.samplePost.set(post ? post.text.trim() : '');
-    } catch {
-      // The sample alert shows without a post text.
-    }
   }
 
   // ---- edits -------------------------------------------------------------------------------------------------

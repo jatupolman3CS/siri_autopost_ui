@@ -110,6 +110,8 @@ describe('ReportsPageComponent', () => {
 
   afterEach(() => {
     try {
+      // The link sets store sits on the collections store, which asks for its own list.
+      for (const r of http?.match((x) => x.url.endsWith('/collections')) ?? []) r.flush([]);
       http?.verify();
     } finally {
       http = undefined!;

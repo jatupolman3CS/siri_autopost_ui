@@ -38,7 +38,11 @@ describe('ReportsStore', () => {
     await settle();
   }
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    // The link sets store (read for "disable a group") sits on the collections store, which asks for its own list.
+    for (const r of http.match((x) => x.url.endsWith('/collections'))) r.flush([]);
+    http.verify();
+  });
 
   it('loads the last 7 days, and the page shows "—" until it has', async () => {
     http = provideApiTesting({

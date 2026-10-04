@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiAutoReply, ApiAutoReplyRule, ApiService } from '../http/api.service';
+import { CollectionsStore } from './collections.store';
 import { loadWithRetry } from './loading';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
@@ -71,11 +72,11 @@ export class AutoReplyStore {
   readonly on = signal(false);
   readonly rules = signal<ApiAutoReplyRule[]>([]);
   readonly loaded = signal(false);
-  /**
-   * The collections a rule can be limited to, read straight from the API for now (a quiet read, names only).
-   * Swap for the collections store when it is merged.
-   */
-  readonly collections = signal<ScopeCollection[]>([]);
+  private readonly collectionsStore = inject(CollectionsStore);
+  /** The collections a rule can be limited to (the id and name are all the page needs). */
+  readonly collections = computed<ScopeCollection[]>(() =>
+    this.collectionsStore.collections().map((c) => ({ id: c.id, name: c.name })),
+  );
 
   /** The owner's plan does not include auto-reply. */
   readonly locked = computed(() => !this.ws.current()?.autoReply);
@@ -99,7 +100,6 @@ export class AutoReplyStore {
       this.chain = Promise.resolve();
       this.on.set(false);
       this.rules.set([]);
-      this.collections.set([]);
       this.loaded.set(false);
       if (id) void this.load(id);
     });
@@ -119,19 +119,11 @@ export class AutoReplyStore {
       () => this.ws.id() === wsId,
     );
     if (ok && this.ws.id() === wsId) this.loaded.set(true);
-    void this.loadCollections(wsId);
   }
 
   /** Reads the collection names again (the dialog asks when it opens: one may have been added meanwhile). */
-  async loadCollections(wsId = this.ws.id()): Promise<void> {
-    if (!wsId) return;
-    try {
-      const list = await this.api.collections(wsId, true);
-      if (this.ws.id() === wsId)
-        this.collections.set(list.map((c) => ({ id: c.id, name: c.name })));
-    } catch {
-      // The scope list keeps what it had; a rule for a collection shows "—" until it is known.
-    }
+  loadCollections(): Promise<void> {
+    return this.collectionsStore.refresh();
   }
 
   /** The master switch. */
