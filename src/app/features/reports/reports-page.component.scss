@@ -1,0 +1,69 @@
+.intro {
+  max-width: 720px;
+}
+.fs14 {
+  font-size: 14px;
+}
+.mb8 {
+  margin-bottom: 8px;
+}
+.status-line {
+  margin: 0;
+}
+.none {
+  margin: 0;
+}
+
+// The by-group table scrolls sideways under 640 px, like the design's.
+.groups {
+  grid-template-columns: minmax(150px, 2fr) repeat(6, minmax(56px, 1fr)) max-content;
+  gap: 0 10px;
+  min-width: 640px;
+}
+.byPost {
+  grid-template-columns: minmax(0, 3fr) minmax(70px, 1fr) minmax(70px, 1fr);
+}
+.name,
+.postcell {
+  gap: 8px;
+}
+.postcell {
+  // The "top" badge drops below the text on a narrow screen instead of squeezing it away.
+  flex-wrap: wrap;
+  .ellipsis {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+}
+.rate {
+  gap: 8px;
+}
+.ratebar {
+  width: 48px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  overflow: hidden;
+  display: inline-block;
+  flex-shrink: 0;
+  > span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-full);
+  }
+}
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  p {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+  }
+  .ph {
+    margin-top: 2px;
+  }
+}
