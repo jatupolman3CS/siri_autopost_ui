@@ -160,6 +160,31 @@ describe('TestPageComponent', () => {
       expect(el.querySelector('.alert')).toBeNull();
     });
 
+    it('says a real post is made in the real group, not a simulation, whatever the state of the page', () => {
+      const note = el.querySelector('.callout.real')!;
+      expect(note.getAttribute('role')).toBe('note');
+      expect(note.textContent).toContain(t().api.engine.testReal);
+      expect(t().api.engine.testReal).toContain('ไม่ใช่การจำลอง');
+      expect(t().test.sub).toContain('จริง');
+      TestBed.inject(I18nService).setLang('en');
+      expect(t().api.engine.testReal).toMatch(/not a simulation/);
+      expect(t().api.engine.testReal).toMatch(/real post/);
+      TestBed.inject(I18nService).setLang('th');
+    });
+
+    it('says under the text box that spintax and the group code are resolved like a schedule post', () => {
+      const hint = el.querySelector('#test-text-hint')!;
+      expect(hint.textContent).toBe(t().api.engine.testOverrideHint);
+      expect(hint.textContent).toContain('{a|b}');
+      expect(hint.textContent).toContain('{{code}}');
+      expect(el.querySelector('#test-text')!.getAttribute('aria-describedby')).toBe(hint.id);
+      TestBed.inject(I18nService).setLang('en');
+      expect(t().api.engine.testOverrideHint).toMatch(/scheduled post/);
+      expect(t().api.engine.testOverrideHint).toContain('{a|b}');
+      expect(t().api.engine.testOverrideHint).toContain('{{code}}');
+      TestBed.inject(I18nService).setLang('th');
+    });
+
     it('lists the sets, the usable groups with their codes, the collections and the posts', () => {
       const texts = (sel: HTMLSelectElement) =>
         [...sel.options].filter((o) => !o.disabled).map((o) => o.textContent!.trim());
@@ -279,7 +304,7 @@ describe('TestPageComponent', () => {
 
     it('warns that the paired browser is paused, without stopping the test', async () => {
       await open({ devices: [device({ jobsPaused: true })] });
-      expect(el.querySelector('.callout')!.textContent).toContain(t().api.engine.testPaused);
+      expect(el.querySelector('.callout.warn')!.textContent).toContain(t().api.engine.testPaused);
       expect(runBtn().disabled).toBe(false);
     });
   });

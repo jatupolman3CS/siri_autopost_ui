@@ -17,6 +17,11 @@
     </div>
   }
 
+  <div class="callout real" role="note">
+    <i class="ph ph-warning-circle" aria-hidden="true"></i
+    ><span>{{ t().api.engine.testReal }}</span>
+  </div>
+
   <div class="grid-2eq">
     <section class="panel form">
       <div class="selects">
@@ -61,8 +66,10 @@
           [placeholder]="t().test.overridePh"
           [readOnly]="!canPick()"
           [attr.maxlength]="maxText"
+          [attr.aria-describedby]="'test-text-hint'"
           (input)="onText($event)"
         ></textarea>
+        <p id="test-text-hint" class="small muted hint">{{ t().api.engine.testOverrideHint }}</p>
       </div>
 
       <div class="pv">

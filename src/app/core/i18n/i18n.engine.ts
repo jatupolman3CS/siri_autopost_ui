@@ -135,6 +135,17 @@ export const AP_I18N_ENGINE = {
     'The backup holds no tokens (Telegram, LINE): enter them again after restoring',
   ],
 
+  // Test post: it is a real post to a real group (never a simulation), and the typed text is composed like a
+  // scheduled post's ({a|b} spintax, {{code}} and the collection's footer and hashtags).
+  testReal: [
+    'นี่ไม่ใช่การจำลอง: ระบบจะโพสต์จริง 1 โพสต์ลงกลุ่ม Facebook ที่เลือกด้วยบัญชีของคุณ สมาชิกกลุ่มมองเห็นได้ และโพสต์นี้นับรวมในเพดานต่อวันของกลุ่ม',
+    'This is not a simulation: one real post is made in the Facebook group you choose, from your account. The group’s members can see it, and it counts toward the group’s daily limit',
+  ],
+  testOverrideHint: [
+    'Spintax {a|b} และ {{code}} (หรือ {{รหัส}}) ถูกแปลงเหมือนโพสต์จากตาราง: สุ่มเลือกคำ ใส่รหัสกลุ่ม และเพิ่มข้อความท้ายกับแฮชแท็กของชุดโพสต์ ตัวอย่างด้านล่างเป็นแค่ตัวอย่างหนึ่ง โพสต์จริงอาจสุ่มได้คำอื่น',
+    'Spintax {a|b} and {{code}} (or {{รหัส}}) are resolved just like in a scheduled post: a word is picked at random, the group code is filled in, and the collection’s footer and hashtags are added. The preview below is only one possible result; the real post may pick other words',
+  ],
+
   // Test post, anti-ban and devices
   // The test post's log follows the real post. testQueued/testPosting/testSuccess/testFailed are above; these
   // are the other states it can reach, and the warnings beside the run button.
