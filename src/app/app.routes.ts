@@ -65,10 +65,56 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'collections',
+        title: 'nav.collections',
+        loadComponent: () =>
+          import('./features/collections/collections-page.component').then(
+            (m) => m.CollectionsPageComponent,
+          ),
+      },
+      {
+        path: 'targets',
+        title: 'nav.targets',
+        loadComponent: () =>
+          import('./features/targets/targets-page.component').then((m) => m.TargetsPageComponent),
+      },
+      {
+        path: 'schedules',
+        title: 'nav.schedules',
+        loadComponent: () =>
+          import('./features/schedules/schedules-page.component').then(
+            (m) => m.SchedulesPageComponent,
+          ),
+      },
+      {
         path: 'library',
         title: 'nav.library',
         loadComponent: () =>
           import('./features/library/library-page.component').then((m) => m.LibraryPageComponent),
+      },
+      {
+        path: 'reports',
+        title: 'nav.reports',
+        loadComponent: () =>
+          import('./features/reports/reports-page.component').then((m) => m.ReportsPageComponent),
+      },
+      {
+        path: 'test',
+        title: 'nav.test',
+        loadComponent: () =>
+          import('./features/test/test-page.component').then((m) => m.TestPageComponent),
+      },
+      {
+        path: 'notify',
+        title: 'nav.notify',
+        loadComponent: () =>
+          import('./features/notify/notify-page.component').then((m) => m.NotifyPageComponent),
+      },
+      {
+        path: 'engage',
+        title: 'nav.engage',
+        loadComponent: () =>
+          import('./features/engage/engage-page.component').then((m) => m.EngagePageComponent),
       },
       {
         path: 'campaigns',
@@ -130,6 +176,15 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/public/connect-extension-page.component').then(
         (m) => m.ConnectExtensionPageComponent,
+      ),
+  },
+  {
+    // A client report shared by link (Agency plan): no layout and no guard, the token is the key.
+    path: 'report/:token',
+    title: 'api.reportTitle',
+    loadComponent: () =>
+      import('./features/public/shared-report-page.component').then(
+        (m) => m.SharedReportPageComponent,
       ),
   },
   { path: '**', redirectTo: '' },
