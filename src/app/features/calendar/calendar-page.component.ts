@@ -15,6 +15,7 @@ import { STATUS_DOT } from '../../core/data/models';
 import { PostsStore, QueueItem } from '../../core/data/posts.store';
 import { dayNames, displayYear, dkey, fmtDate, monthName } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
@@ -107,8 +108,18 @@ export class CalendarPageComponent {
     const t = this.t();
     return this.selList().map((p) => ({
       ...this.posts.row(p, t),
+      // What the task holds is what goes out (or went out): the text composed when it was queued, which a later
+      // edit of the collection post does not change. Only a task with no text of its own shows the post's.
+      text: p.text.trim()
+        ? p.text
+        : (this.collections.postById(p.collectionPostId)?.post.text ?? ''),
+      /** The group code the text was written with (shown as a chip). */
+      code: p.groupCode ?? '',
+      isTest: p.isTest,
       item: p,
       editable: p.status === 'queued',
+      // A test post has no place in a collection to go back to: it can be removed, not edited.
+      canEdit: p.status === 'queued' && !p.isTest,
       isFailed: p.status === 'failed' || p.status === 'pending',
     }));
   });

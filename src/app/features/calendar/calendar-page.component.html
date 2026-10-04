@@ -81,18 +81,32 @@
               ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
             >
           </div>
-          <div class="fs14">{{ p.text }}</div>
+          @if (p.code || p.isTest) {
+            <div class="tags">
+              @if (p.code) {
+                <span class="tag"><i class="ph ph-hash" aria-hidden="true"></i>{{ p.code }}</span>
+              }
+              @if (p.isTest) {
+                <span class="tag"
+                  ><i class="ph ph-flask" aria-hidden="true"></i>{{ t().api.flow.calTest }}</span
+                >
+              }
+            </div>
+          }
+          <div class="fs14 text">{{ p.text }}</div>
           @if (p.editable) {
             <div class="btns">
-              <button
-                type="button"
-                class="su-btn su-btn-sm su-btn-ghost"
-                [disabled]="!perm.canEdit()"
-                [attr.title]="perm.editHint() || null"
-                (click)="edit(p.item)"
-              >
-                {{ t().common.edit }}
-              </button>
+              @if (p.canEdit) {
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  [disabled]="!perm.canEdit()"
+                  [attr.title]="perm.editHint() || null"
+                  (click)="edit(p.item)"
+                >
+                  {{ t().common.edit }}
+                </button>
+              }
               <button
                 type="button"
                 class="su-btn su-btn-sm su-btn-ghost"
