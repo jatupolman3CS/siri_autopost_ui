@@ -1,0 +1,117 @@
+<section class="panel builder" [attr.aria-label]="t().sch.builderTitle">
+  <h2 class="h2">{{ t().sch.builderTitle }}</h2>
+
+  <div class="grid">
+    <app-input-field
+      [label]="t().sch.name"
+      [placeholder]="t().sch.namePh"
+      [maxlength]="nameMax"
+      [disabled]="perm.readOnly()"
+      [(value)]="form.name"
+    />
+    <app-select-field
+      [label]="t().sch.collection"
+      [placeholder]="t().sch.colPh"
+      [options]="collectionOptions()"
+      [disabled]="perm.readOnly()"
+      [value]="form.collectionId()"
+      (valueChange)="form.pickCollection($event)"
+    />
+    <app-select-field
+      [label]="t().sch.set"
+      [placeholder]="t().sch.setPh"
+      [options]="setOptions()"
+      [disabled]="perm.readOnly()"
+      [value]="form.linkSetId()"
+      (valueChange)="form.pickSet($event)"
+    />
+    <app-select-field
+      [label]="t().sch.mode"
+      [options]="modeOptions()"
+      [disabled]="perm.readOnly()"
+      [value]="form.mode()"
+      (valueChange)="form.pickMode($event)"
+    />
+    <app-input-field
+      [label]="startLabel()"
+      type="date"
+      [disabled]="perm.readOnly()"
+      [(value)]="form.start"
+    />
+  </div>
+
+  <div>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-ghost"
+      [attr.aria-expanded]="form.more()"
+      (click)="form.toggleMore()"
+    >
+      <i class="ph" [class.ph-caret-up]="form.more()" [class.ph-caret-down]="!form.more()"></i
+      >{{ form.more() ? t().common.less : t().common.more }}
+    </button>
+  </div>
+
+  @if (form.more()) {
+    <div class="grid">
+      <app-select-field
+        [label]="t().sch.order"
+        [options]="orderOptions()"
+        [disabled]="perm.readOnly()"
+        [value]="form.order()"
+        (valueChange)="form.order.set($event === 'rotate' ? 'rotate' : 'shuffle')"
+      />
+      <div>
+        <app-select-field
+          [label]="t().sch.bump"
+          [options]="bumpOptions()"
+          [disabled]="perm.readOnly()"
+          [value]="'' + form.bump()"
+          (valueChange)="form.bump.set(+$event)"
+        />
+        <p class="su-field-help stored">
+          <i class="ph ph-info" aria-hidden="true"></i>{{ t().api.flow.storedOnly }}
+        </p>
+      </div>
+      <div>
+        <app-select-field
+          [label]="t().sch.autoDel"
+          [options]="delOptions()"
+          [disabled]="perm.readOnly()"
+          [value]="'' + form.del()"
+          (valueChange)="form.del.set(+$event)"
+        />
+        <p class="su-field-help stored">
+          <i class="ph ph-info" aria-hidden="true"></i>{{ t().api.flow.storedOnly }}
+        </p>
+      </div>
+    </div>
+
+    <app-schedule-pattern />
+    <p class="note">{{ orderNote() }}</p>
+    <app-schedule-overrides />
+  }
+
+  <div class="foot">
+    <div class="summary">
+      <i class="ph ph-timer" aria-hidden="true"></i><span>{{ form.summary() }}</span>
+    </div>
+    <div class="btns">
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="form.close()">
+        {{ t().common.cancel }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        [disabled]="!!blocked() || form.saving()"
+        [attr.title]="blocked() || null"
+        (click)="create()"
+      >
+        {{ t().sch.create }}<i class="ph ph-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+  @if (form.error()) {
+    <span class="err" role="alert">{{ form.error() }}</span>
+  }
+</section>

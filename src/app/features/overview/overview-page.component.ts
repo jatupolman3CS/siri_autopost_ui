@@ -4,10 +4,11 @@ import { DashboardStatsService } from '../../core/data/dashboard-stats.service';
 import { SessionStore } from '../../core/data/session.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import { OverviewHubComponent } from './overview-hub.component';
 
 @Component({
   selector: 'app-overview-page',
-  imports: [RouterLink],
+  imports: [RouterLink, OverviewHubComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './overview-page.component.html',
   styleUrl: './overview-page.component.scss',

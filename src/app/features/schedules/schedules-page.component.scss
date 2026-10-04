@@ -1,0 +1,25 @@
+.intro {
+  max-width: 720px;
+}
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.need {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  > .grow {
+    min-width: 220px;
+  }
+}
+.callout {
+  align-items: center;
+  flex-wrap: wrap;
+  > .ph {
+    margin-top: 0;
+  }
+}

@@ -1,0 +1,47 @@
+<section class="panel hub" [attr.aria-label]="t().ov.startTitle">
+  <div class="head">
+    <div>
+      <h2 class="h2">{{ t().ov.startTitle }}</h2>
+      <div class="small muted">{{ t().ov.startSub }}</div>
+    </div>
+    @if (extStatus(); as ext) {
+      <div class="ext">
+        <span class="dot" [style.background]="ext.dot"></span>
+        <span>{{ ext.text }}</span>
+        @if (ext.needPair) {
+          <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/team">{{ t().ov.pair }}</a>
+        }
+      </div>
+    }
+  </div>
+  <div class="steps">
+    @for (s of steps(); track s.id) {
+      <div class="step" [class.done]="s.done">
+        <div class="top">
+          <span class="num" [class.done]="s.done">
+            @if (s.done) {
+              <i class="ph ph-check" aria-hidden="true"></i>
+            } @else {
+              {{ s.n }}
+            }
+          </span>
+          <div class="min0">
+            <div class="fw6 fs14">{{ s.title }}</div>
+            <div class="small muted">{{ s.detail }}</div>
+          </div>
+        </div>
+        <div>
+          <button
+            type="button"
+            class="su-btn su-btn-sm"
+            [class.su-btn-primary]="s.primary"
+            [class.su-btn-secondary]="!s.primary"
+            (click)="go(s.id)"
+          >
+            {{ s.action }}<i class="ph ph-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</section>

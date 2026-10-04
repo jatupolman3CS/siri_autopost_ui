@@ -1,0 +1,58 @@
+<section class="panel" [attr.aria-label]="t().sch.listTitle">
+  <h2 class="h2">{{ t().sch.listTitle }}</h2>
+  @if (!store.loaded()) {
+    <p class="muted fs14" role="status">{{ t().api.loading }}</p>
+  } @else {
+    @for (r of rows(); track r.id) {
+      <div class="item">
+        <span class="pico s40 ico" aria-hidden="true"><i class="ph" [class]="r.icon"></i></span>
+        <div class="info">
+          <div class="fw6">{{ r.name }}</div>
+          <div class="small muted">{{ r.pair }}</div>
+          <div class="small muted">{{ r.cadence }}</div>
+          @if (r.stored) {
+            <div class="small muted" [attr.title]="t().api.flow.storedOnly">{{ r.stored }}</div>
+          }
+        </div>
+        <div class="when">
+          <div>{{ r.todayLabel }}</div>
+          <div class="small muted">{{ r.nextLabel }}</div>
+        </div>
+        <span class="status"
+          ><span class="dot" [style.background]="r.dot"></span>{{ r.statusLabel }}</span
+        >
+        <div class="btns">
+          <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="viewCalendar(r)">
+            {{ t().sch.viewCal }}
+          </button>
+          @if (!r.finished) {
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-ghost"
+              [disabled]="perm.readOnly() || store.isBusy(r.id)"
+              [attr.title]="perm.editHint() || null"
+              (click)="toggle(r)"
+            >
+              {{ r.toggleLabel }}
+            </button>
+          }
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-ghost"
+            [disabled]="perm.readOnly() || store.isBusy(r.id)"
+            [attr.title]="perm.editHint() || null"
+            (click)="remove(r)"
+          >
+            {{ t().sch.remove }}
+          </button>
+        </div>
+      </div>
+    } @empty {
+      <app-empty-state
+        icon="ph-calendar-check"
+        [heading]="t().api.flow.emptySchedulesTitle"
+        [description]="t().api.flow.emptySchedulesBody"
+      />
+    }
+  }
+</section>

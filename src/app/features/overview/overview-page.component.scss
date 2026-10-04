@@ -16,6 +16,16 @@
 .min0 {
   min-width: 0;
 }
+.via {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  > .ph {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+}
 .row.tight {
   padding: 8px 0;
 }
