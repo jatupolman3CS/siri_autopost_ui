@@ -964,6 +964,84 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/auto-reply": {
+      "get": {
+        "tags": [
+          "AutoReply"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoReplyDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AutoReply"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoReplyDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoReplyDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoReplyDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoReplyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/plans": {
       "get": {
         "tags": [
@@ -3682,6 +3760,204 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettingsDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettingsDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettingsDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/notifications/test": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifyTestRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifyTestRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifyTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotifyTestResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/notifications/telegram/chats": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FindTelegramChatsRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FindTelegramChatsRequest"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FindTelegramChatsRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramChatsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/posts": {
       "get": {
         "tags": [
@@ -3930,6 +4206,124 @@
                   "items": {
                     "$ref": "#/components/schemas/PostDto"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/reports": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 7
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/reports/share": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareReportRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareReportRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportShareDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/shared/{token}": {
+      "get": {
+        "tags": [
+          "SharedReports"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedReportDto"
                 }
               }
             }
@@ -4678,6 +5072,56 @@
           },
           "user": {
             "$ref": "#/components/schemas/UserDto"
+          }
+        }
+      },
+      "AutoReplyDto": {
+        "required": [
+          "on",
+          "rules"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutoReplyRuleDto"
+            }
+          }
+        }
+      },
+      "AutoReplyRuleDto": {
+        "required": [
+          "id",
+          "keywords",
+          "reply",
+          "inbox",
+          "scope",
+          "on"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "keywords": {
+            "type": "string"
+          },
+          "reply": {
+            "type": "string"
+          },
+          "inbox": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "on": {
+            "type": "boolean"
           }
         }
       },
@@ -5893,6 +6337,20 @@
           null
         ]
       },
+      "FindTelegramChatsRequest": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "FooterPosition": {
         "enum": [
           "end",
@@ -5922,6 +6380,28 @@
           },
           "url": {
             "type": "string"
+          }
+        }
+      },
+      "GroupNotifyRuleDto": {
+        "required": [
+          "channel",
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NotifyEventsDto"
+              }
+            ]
           }
         }
       },
@@ -6214,6 +6694,32 @@
           }
         }
       },
+      "LineSettingsDto": {
+        "required": [
+          "on",
+          "token",
+          "hasToken",
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean"
+          },
+          "token": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasToken": {
+            "type": "boolean"
+          },
+          "to": {
+            "type": "string"
+          }
+        }
+      },
       "LinkHealth": {
         "enum": [
           "ok",
@@ -6397,6 +6903,121 @@
         "type": "object",
         "properties": {
           "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "NotificationSettingsDto": {
+        "required": [
+          "telegram",
+          "line",
+          "channel",
+          "events",
+          "sets",
+          "commandsOn",
+          "commandsUsers"
+        ],
+        "type": "object",
+        "properties": {
+          "telegram": {
+            "$ref": "#/components/schemas/TelegramSettingsDto"
+          },
+          "line": {
+            "$ref": "#/components/schemas/LineSettingsDto"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "$ref": "#/components/schemas/NotifyEventsDto"
+          },
+          "sets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetNotifyRuleDto"
+            }
+          },
+          "commandsOn": {
+            "type": "boolean"
+          },
+          "commandsUsers": {
+            "type": "string"
+          }
+        }
+      },
+      "NotifyChannel": {
+        "enum": [
+          "default",
+          "tg",
+          "line",
+          "both",
+          "off"
+        ]
+      },
+      "NotifyEventsDto": {
+        "required": [
+          "success",
+          "fail",
+          "shot",
+          "round",
+          "startStop",
+          "block",
+          "offline",
+          "quota"
+        ],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "fail": {
+            "type": "boolean"
+          },
+          "shot": {
+            "type": "boolean"
+          },
+          "round": {
+            "type": "boolean"
+          },
+          "startStop": {
+            "type": "boolean"
+          },
+          "block": {
+            "type": "boolean"
+          },
+          "offline": {
+            "type": "boolean"
+          },
+          "quota": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NotifyTestRequest": {
+        "required": [
+          "channel"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string"
+          }
+        }
+      },
+      "NotifyTestResultDto": {
+        "required": [
+          "ok",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "message": {
             "type": [
               "null",
               "string"
@@ -7057,6 +7678,141 @@
           }
         }
       },
+      "ReportDto": {
+        "required": [
+          "days",
+          "from",
+          "to",
+          "groups",
+          "posts"
+        ],
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportGroupDto"
+            }
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportPostDto"
+            }
+          }
+        }
+      },
+      "ReportGroupDto": {
+        "required": [
+          "linkId",
+          "name",
+          "url",
+          "platform",
+          "posted",
+          "pending",
+          "failed",
+          "rate",
+          "enabled",
+          "health"
+        ],
+        "type": "object",
+        "properties": {
+          "linkId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "platform": {
+            "$ref": "#/components/schemas/Platform"
+          },
+          "posted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pending": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "health": {
+            "$ref": "#/components/schemas/LinkHealth"
+          }
+        }
+      },
+      "ReportPostDto": {
+        "required": [
+          "collectionPostId",
+          "text",
+          "used"
+        ],
+        "type": "object",
+        "properties": {
+          "collectionPostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          },
+          "used": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ReportShareDto": {
+        "required": [
+          "token",
+          "path",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ResultRequest": {
         "required": [
           "ok",
@@ -7253,6 +8009,96 @@
           }
         }
       },
+      "SetNotifyRuleDto": {
+        "required": [
+          "linkSetId",
+          "channel",
+          "events",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "linkSetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NotifyEventsDto"
+              }
+            ]
+          },
+          "groups": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/GroupNotifyRuleDto"
+            }
+          }
+        }
+      },
+      "SharedReportDto": {
+        "required": [
+          "brand",
+          "workspaceName",
+          "logo",
+          "period",
+          "createdAt",
+          "expiresAt",
+          "report"
+        ],
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "workspaceName": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "boolean"
+          },
+          "period": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "report": {
+            "$ref": "#/components/schemas/ReportDto"
+          }
+        }
+      },
+      "ShareReportRequest": {
+        "required": [
+          "brand",
+          "period",
+          "logo"
+        ],
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "boolean"
+          }
+        }
+      },
       "SignUpCommand": {
         "required": [
           "email",
@@ -7373,6 +8219,61 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "TelegramChatDto": {
+        "required": [
+          "id",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "TelegramChatsDto": {
+        "required": [
+          "chats"
+        ],
+        "type": "object",
+        "properties": {
+          "chats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramChatDto"
+            }
+          }
+        }
+      },
+      "TelegramSettingsDto": {
+        "required": [
+          "on",
+          "token",
+          "hasToken",
+          "chatId"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean"
+          },
+          "token": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasToken": {
+            "type": "boolean"
+          },
+          "chatId": {
+            "type": "string"
           }
         }
       },
@@ -7791,6 +8692,9 @@
       "name": "Auth"
     },
     {
+      "name": "AutoReply"
+    },
+    {
       "name": "Billing"
     },
     {
@@ -7818,7 +8722,16 @@
       "name": "LinkSets"
     },
     {
+      "name": "Notifications"
+    },
+    {
       "name": "Posts"
+    },
+    {
+      "name": "Reports"
+    },
+    {
+      "name": "SharedReports"
     },
     {
       "name": "StripeWebhook"

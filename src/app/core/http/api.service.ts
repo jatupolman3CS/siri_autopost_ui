@@ -50,6 +50,17 @@ export type ApiBulkLinksResult = S['BulkLinksResultDto'];
 export type ApiCsvLinkRow = S['CsvLinkRow'];
 export type ApiCsvImportResult = S['CsvImportResultDto'];
 export type ApiGroupLink = S['GroupLinkDto'];
+export type ApiNotifications = S['NotificationSettingsDto'];
+export type ApiNotifyChannel = S['NotifyChannel'];
+export type ApiNotifyEvents = S['NotifyEventsDto'];
+export type ApiNotifyTestResult = S['NotifyTestResultDto'];
+export type ApiTelegramChat = S['TelegramChatDto'];
+export type ApiAutoReply = S['AutoReplyDto'];
+export type ApiAutoReplyRule = S['AutoReplyRuleDto'];
+export type ApiReport = S['ReportDto'];
+export type ApiReportGroup = S['ReportGroupDto'];
+export type ApiReportShare = S['ReportShareDto'];
+export type ApiSharedReport = S['SharedReportDto'];
 
 /** Set on a request whose errors the caller shows itself (no toast from errorInterceptor). */
 export const QUIET = new HttpContextToken<boolean>(() => false);
@@ -497,6 +508,60 @@ export class ApiService {
   /** The groups a connected account's browser has synced (name + address). */
   accountGroups(ws: string, account: string) {
     return run(this.http.get<ApiGroupLink[]>(`/api/workspaces/${ws}/accounts/${account}/groups`));
+  }
+  // Notifications (Telegram / LINE OA), auto-reply rules and reports.
+  notifications(ws: string, background = false) {
+    return run(
+      this.http.get<ApiNotifications>(
+        `/api/workspaces/${ws}/notifications`,
+        background ? quiet : {},
+      ),
+    );
+  }
+  /** Tokens are write-only: a null token keeps the stored one, an empty string clears it. */
+  saveNotifications(ws: string, body: ApiNotifications) {
+    return run(this.http.put<ApiNotifications>(`/api/workspaces/${ws}/notifications`, body));
+  }
+  /** Sends a short test message through one channel with the stored settings. */
+  testNotification(ws: string, channel: 'tg' | 'line') {
+    const body: S['NotifyTestRequest'] = { channel };
+    return run(
+      this.http.post<ApiNotifyTestResult>(`/api/workspaces/${ws}/notifications/test`, body, quiet),
+    );
+  }
+  /** Chats the Telegram bot has seen (the typed token, or the stored one when none is given). */
+  telegramChats(ws: string, token?: string) {
+    const body: S['FindTelegramChatsRequest'] = { token: token || null };
+    return run(
+      this.http.post<S['TelegramChatsDto']>(
+        `/api/workspaces/${ws}/notifications/telegram/chats`,
+        body,
+        quiet,
+      ),
+    );
+  }
+  autoReply(ws: string, background = false) {
+    return run(
+      this.http.get<ApiAutoReply>(`/api/workspaces/${ws}/auto-reply`, background ? quiet : {}),
+    );
+  }
+  saveAutoReply(ws: string, body: ApiAutoReply) {
+    return run(this.http.put<ApiAutoReply>(`/api/workspaces/${ws}/auto-reply`, body));
+  }
+  /** Per-group and per-post results of the last 7 or 30 days. */
+  report(ws: string, days: 7 | 30) {
+    const params = new HttpParams().set('days', String(days));
+    return run(this.http.get<ApiReport>(`/api/workspaces/${ws}/reports`, { params }));
+  }
+  /** Agency: a public read-only snapshot of the report under a branded link. */
+  shareReport(ws: string, body: S['ShareReportRequest']) {
+    return run(this.http.post<ApiReportShare>(`/api/workspaces/${ws}/reports/share`, body));
+  }
+  /** Public (no sign-in): the snapshot behind a client-report link. */
+  sharedReport(token: string) {
+    return run(
+      this.http.get<ApiSharedReport>(`/api/reports/shared/${encodeURIComponent(token)}`, quiet),
+    );
   }
 }
 

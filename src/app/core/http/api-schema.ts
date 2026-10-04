@@ -1033,6 +1033,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/auto-reply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AutoReplyDto'];
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AutoReplyDto'];
+          'text/json': components['schemas']['AutoReplyDto'];
+          'application/*+json': components['schemas']['AutoReplyDto'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AutoReplyDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/plans': {
     parameters: {
       query?: never;
@@ -3423,6 +3487,156 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/notifications': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['NotificationSettingsDto'];
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NotificationSettingsDto'];
+          'text/json': components['schemas']['NotificationSettingsDto'];
+          'application/*+json': components['schemas']['NotificationSettingsDto'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['NotificationSettingsDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/notifications/test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NotifyTestRequest'];
+          'text/json': components['schemas']['NotifyTestRequest'];
+          'application/*+json': components['schemas']['NotifyTestRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['NotifyTestResultDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/notifications/telegram/chats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          'application/json': null | components['schemas']['FindTelegramChatsRequest'];
+          'text/json': null | components['schemas']['FindTelegramChatsRequest'];
+          'application/*+json': null | components['schemas']['FindTelegramChatsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['TelegramChatsDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/posts': {
     parameters: {
       query?: never;
@@ -3654,6 +3868,125 @@ export interface paths {
           };
           content: {
             'application/json': components['schemas']['PostDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/reports': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          days?: number;
+        };
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ReportDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/reports/share': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ShareReportRequest'];
+          'text/json': components['schemas']['ShareReportRequest'];
+          'application/*+json': components['schemas']['ShareReportRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ReportShareDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/reports/shared/{token}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          token: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['SharedReportDto'];
           };
         };
       };
@@ -4104,6 +4437,19 @@ export interface components {
       expiresAt: string;
       user: components['schemas']['UserDto'];
     };
+    AutoReplyDto: {
+      on: boolean;
+      rules: components['schemas']['AutoReplyRuleDto'][];
+    };
+    AutoReplyRuleDto: {
+      /** Format: uuid */
+      id: string;
+      keywords: string;
+      reply: string;
+      inbox: string;
+      scope: string;
+      on: boolean;
+    };
     /** @enum {unknown} */
     BillingCycle: 'month' | 'year';
     BillingDto: {
@@ -4433,6 +4779,9 @@ export interface components {
       | 'media_too_large'
       | 'quota'
       | null;
+    FindTelegramChatsRequest: {
+      token: null | string;
+    };
     /** @enum {unknown} */
     FooterPosition: 'end' | 'top';
     GoogleLogInRequest: {
@@ -4441,6 +4790,10 @@ export interface components {
     GroupLinkDto: {
       name: string;
       url: string;
+    };
+    GroupNotifyRuleDto: {
+      channel: components['schemas']['NotifyChannel'];
+      events: null | components['schemas']['NotifyEventsDto'];
     };
     GroupsRequest: {
       groups: components['schemas']['GroupLinkDto'][];
@@ -4516,6 +4869,12 @@ export interface components {
       /** Format: int32 */
       seats: null | number;
     };
+    LineSettingsDto: {
+      on: boolean;
+      token: null | string;
+      hasToken: boolean;
+      to: string;
+    };
     /** @enum {unknown} */
     LinkHealth: 'ok' | 'pending' | 'off';
     LinkSetDto: {
@@ -4566,6 +4925,34 @@ export interface components {
     };
     NoteRequest: {
       note: null | string;
+    };
+    NotificationSettingsDto: {
+      telegram: components['schemas']['TelegramSettingsDto'];
+      line: components['schemas']['LineSettingsDto'];
+      channel: components['schemas']['NotifyChannel'];
+      events: components['schemas']['NotifyEventsDto'];
+      sets: components['schemas']['SetNotifyRuleDto'][];
+      commandsOn: boolean;
+      commandsUsers: string;
+    };
+    /** @enum {unknown} */
+    NotifyChannel: 'default' | 'tg' | 'line' | 'both' | 'off';
+    NotifyEventsDto: {
+      success: boolean;
+      fail: boolean;
+      shot: boolean;
+      round: boolean;
+      startStop: boolean;
+      block: boolean;
+      offline: boolean;
+      quota: boolean;
+    };
+    NotifyTestRequest: {
+      channel: string;
+    };
+    NotifyTestResultDto: {
+      ok: boolean;
+      message: null | string;
     };
     OfflineDto: {
       policy: components['schemas']['OfflinePolicy'];
@@ -4748,6 +5135,46 @@ export interface components {
       /** Format: date-time */
       expiresAt: null | string;
     };
+    ReportDto: {
+      /** Format: int32 */
+      days: number;
+      /** Format: date-time */
+      from: string;
+      /** Format: date-time */
+      to: string;
+      groups: components['schemas']['ReportGroupDto'][];
+      posts: components['schemas']['ReportPostDto'][];
+    };
+    ReportGroupDto: {
+      /** Format: uuid */
+      linkId: null | string;
+      name: string;
+      url: null | string;
+      platform: components['schemas']['Platform'];
+      /** Format: int32 */
+      posted: number;
+      /** Format: int32 */
+      pending: number;
+      /** Format: int32 */
+      failed: number;
+      /** Format: int32 */
+      rate: number;
+      enabled: boolean;
+      health: components['schemas']['LinkHealth'];
+    };
+    ReportPostDto: {
+      /** Format: uuid */
+      collectionPostId: string;
+      text: string;
+      /** Format: int32 */
+      used: number;
+    };
+    ReportShareDto: {
+      token: string;
+      path: string;
+      /** Format: date-time */
+      expiresAt: string;
+    };
     ResultRequest: {
       ok: boolean;
       awaitingApproval: boolean;
@@ -4803,6 +5230,31 @@ export interface components {
       valid: boolean;
       duplicate: boolean;
     };
+    SetNotifyRuleDto: {
+      /** Format: uuid */
+      linkSetId: string;
+      channel: components['schemas']['NotifyChannel'];
+      events: null | components['schemas']['NotifyEventsDto'];
+      groups: {
+        [key: string]: components['schemas']['GroupNotifyRuleDto'];
+      };
+    };
+    SharedReportDto: {
+      brand: string;
+      workspaceName: string;
+      logo: boolean;
+      period: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      expiresAt: string;
+      report: components['schemas']['ReportDto'];
+    };
+    ShareReportRequest: {
+      brand: string;
+      period: string;
+      logo: boolean;
+    };
     SignUpCommand: {
       email: string;
       password: string;
@@ -4831,6 +5283,19 @@ export interface components {
       /** Format: uuid */
       accountId: string;
       groups: null | string[];
+    };
+    TelegramChatDto: {
+      id: string;
+      title: string;
+    };
+    TelegramChatsDto: {
+      chats: components['schemas']['TelegramChatDto'][];
+    };
+    TelegramSettingsDto: {
+      on: boolean;
+      token: null | string;
+      hasToken: boolean;
+      chatId: string;
     };
     TransactionDto: {
       /** Format: uuid */
