@@ -1,0 +1,104 @@
+.intro {
+  max-width: 760px;
+}
+.fs14 {
+  font-size: 14px;
+}
+
+// A locked page keeps its content, turned down like the design does.
+.locked {
+  opacity: 0.6;
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rule {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+  &.off {
+    opacity: 0.6;
+  }
+}
+.body {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ctl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.none {
+  margin: 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.tryit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.try {
+  height: 48px;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 16px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  &:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+.result {
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
