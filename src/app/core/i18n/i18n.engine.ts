@@ -21,6 +21,87 @@ export const AP_I18N_ENGINE = {
   // A control of a plan the owner does not have ({plan} is the plan's name, from t().plans).
   planLocked: ['ใช้ได้ในแผน {plan} ขึ้นไป', 'Available on {plan} and above'],
 
+  // Notifications, auto-reply and reports
+  // Notifications: tokens are write-only, so the field says what is stored and how to remove it.
+  notifyRemoveToken: ['ลบโทเค็นที่บันทึกไว้', 'Remove the saved token'],
+  notifyKeepToken: ['เก็บโทเค็นที่บันทึกไว้', 'Keep the saved token'],
+  notifyTokenRemoves: [
+    'โทเค็นที่บันทึกไว้จะถูกลบเมื่อกดบันทึก',
+    'The saved token is removed when you save',
+  ],
+  notifyTokenField: ['โทเค็น {ch}', '{ch} token'],
+  notifyChatsPick: ['พบแชทเหล่านี้ เลือกแชทที่ต้องการ', 'Chats found. Pick the one to use'],
+  notifyChatsNone: [
+    'ยังไม่พบแชท ลองส่งข้อความหาบอทสักข้อความ แล้วค้นหาใหม่',
+    'No chats found yet. Message the bot once, then search again',
+  ],
+  notifyNoSets: [
+    'ยังไม่มีชุดลิงก์ เพิ่มกลุ่มในหน้า “ชุดลิงก์กลุ่ม” แล้วกลับมาตั้งการแจ้งเตือนรายชุดและรายกลุ่ม',
+    'No link sets yet. Add groups on the Link sets page, then come back to set alerts per set and per group',
+  ],
+  notifyNoGroups: ['ชุดนี้ยังไม่มีกลุ่มที่เปิดใช้', 'This set has no enabled groups'],
+  notifyNotReady: [
+    '{ch} ยังไม่พร้อม (ต้องเปิดใช้และกรอกโทเค็นกับผู้รับ) จึงยังไม่มีข้อความส่งผ่านช่องทางนี้',
+    '{ch} is not ready (it needs to be on, with a token and a recipient), so nothing is sent through it yet',
+  ],
+  notifyEventsCount: ['เหตุการณ์ที่ส่ง {n}/{m}', '{n}/{m} events sent'],
+
+  // Auto-reply
+  engageRuleCount: ['{n} กฎ · เปิดอยู่ {m}', '{n} rules · {m} on'],
+  engageNoRules: ['ยังไม่มีกฎ กด “เพิ่มกฎ” เพื่อเริ่ม', 'No rules yet. Press “New rule” to start'],
+  engageFeedEmpty: ['ยังไม่มีคอมเมนต์ที่ระบบจัดการ', 'No comments handled yet'],
+  engageFull: ['ตั้งกฎได้สูงสุด {n} กฎ', 'You can have up to {n} rules'],
+  engageTryNote: [
+    'ตรวจในหน้านี้เท่านั้น ไม่มีการตอบคอมเมนต์หรือส่งแชทจริง',
+    'This check runs on this page only; nothing is replied or sent',
+  ],
+
+  // Reports
+  reportsEmpty: ['ยังไม่มีโพสต์ในช่วงนี้', 'No posts in this period'],
+  reportsPostsEmpty: [
+    'ยังไม่มีโพสต์ที่โพสต์สำเร็จจากชุดโพสต์ในช่วงนี้',
+    'No post from a collection went out in this period',
+  ],
+  reportsScope: [
+    'นับเฉพาะโพสต์จริงของบัญชีที่ผูกกับส่วนขยาย ไม่รวมโพสต์ทดสอบและบัญชีตัวอย่าง',
+    'Counts real posts of accounts paired with the extension only. Test posts and sample accounts are left out',
+  ],
+  reportsFailed: ['โหลดรายงานไม่สำเร็จ', 'Could not load the report'],
+  reportsRetry: ['ลองอีกครั้ง', 'Try again'],
+  reportShareLink: ['ลิงก์รายงาน', 'Report link'],
+  reportShareOpen: ['เปิดรายงาน', 'Open report'],
+  reportSharePrint: ['พิมพ์ / บันทึกเป็น PDF', 'Print / Save as PDF'],
+  reportShareCopy: ['คัดลอกลิงก์', 'Copy link'],
+  reportShareCopied: ['คัดลอกลิงก์แล้ว', 'Link copied'],
+  reportPdfHint: [
+    'หน้ารายงานเปิดในแท็บใหม่ เลือก “บันทึกเป็น PDF” ในหน้าต่างพิมพ์',
+    'The report opens in a new tab. Choose “Save as PDF” in the print window',
+  ],
+  reportBrandMax: [
+    'ชื่อแบรนด์ยาวได้ไม่เกิน {n} ตัวอักษร',
+    'The brand name can be {n} characters at most',
+  ],
+  reportShareNeedsAdmin: [
+    'สร้างลิงก์รายงานได้เฉพาะผู้ดูแลหรือเจ้าของเวิร์กสเปซ',
+    'Only an admin or the workspace owner can create a report link',
+  ],
+
+  // The public report page (route report/:token)
+  sharedNotFound: ['ไม่พบรายงานนี้', 'Report not found'],
+  sharedNotFoundBody: [
+    'ลิงก์อาจหมดอายุหรือพิมพ์ไม่ครบ ขอลิงก์ใหม่จากผู้ส่งรายงาน',
+    'The link may have expired or be incomplete. Ask the sender for a new one',
+  ],
+  sharedFailed: ['โหลดรายงานไม่สำเร็จ ลองอีกครั้ง', 'Could not load the report. Try again'],
+  sharedFor: ['เวิร์กสเปซ {w}', 'Workspace {w}'],
+  sharedPeriod: ['ช่วงเวลา {a} – {b}', 'Period {a} – {b}'],
+  sharedCreated: ['สร้างรายงานเมื่อ {d}', 'Report created {d}'],
+  sharedSnapshot: [
+    'รายงานนี้สรุปตัวเลข ณ วันที่สร้าง ไม่อัปเดตตามหลัง',
+    'This report is a snapshot of the numbers when it was created and does not update',
+  ],
+  sharedPoweredBy: ['จัดทำด้วย AutoPost', 'Powered by AutoPost'],
+
   // Test post: the post is real, so the page shows its real state instead of the design's simulated steps
   // (t().test.l1 to l7 are not used).
   testQueued: [
