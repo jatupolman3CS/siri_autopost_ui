@@ -289,6 +289,16 @@ export interface SeedSchedule {
   /** Group URL -> own HH:MM times (a group missing here follows the schedule). */
   overrides: Record<string, string[]>;
   active: boolean;
+  // Set only by the schedule builder (no sample schedule uses these modes or options).
+  /** Drip mode: the window and the number of posts per group per day. */
+  dripFrom?: string;
+  dripTo?: string;
+  dripN?: number;
+  /** Once mode: HH:MM of the single post (its date is `start`). */
+  onceTime?: string;
+  /** Bump after N hours and delete after N days (0 = off); saved only, nothing applies them yet. */
+  bump?: number;
+  del?: number;
 }
 
 export interface SeedPost {
