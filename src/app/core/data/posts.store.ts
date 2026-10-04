@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { dkey, hm } from '../i18n/format';
 import { Dict } from '../i18n/i18n.service';
-import { ApiPost, ApiScheduleRequest, ApiService } from '../http/api.service';
+import { ApiPost, ApiService } from '../http/api.service';
 import { loadWithRetry } from './loading';
 import { ErrorItem, PostItem, STATUS_DOT } from './models';
 import { PLATFORMS } from './platforms';
@@ -179,13 +179,6 @@ export class PostsStore {
       ...months.map(([y, m]) => this.ensureMonth(y, m, true)),
       this.loadErrors(),
     ]);
-  }
-
-  async schedule(body: ApiScheduleRequest): Promise<number> {
-    const wsId = this.requireWs();
-    const r = await this.api.schedule(wsId, body);
-    await this.refresh();
-    return r.created;
   }
 
   async remove(id: string): Promise<void> {

@@ -20,6 +20,32 @@ export const AP_I18N_FLOW = {
   // A control of a plan the owner does not have ({plan} is the plan's name, from t().plans).
   planLocked: ['ใช้ได้ในแผน {plan} ขึ้นไป', 'Available on {plan} and above'],
 
+  // Collections and composer
+  // Schedule names are not on the collection (only how many schedules use it), so the page counts them.
+  usedInN: ['ใช้ใน {n} ตาราง', 'Used by {n} schedule(s)'],
+  cmpColHint: ['ชุดนี้ถูกใช้ในตารางโพสต์ {n} ตาราง', 'This collection is used by {n} schedule(s)'],
+  // An approved post that is edited in a collection that needs approval goes back to draft (server rule).
+  cmpEditResets: [
+    'ชุดนี้ต้องอนุมัติโพสต์ ถ้าแก้โพสต์ที่อนุมัติแล้ว โพสต์จะกลับเป็นฉบับร่างและต้องส่งขออนุมัติใหม่',
+    'This collection needs approval: editing an approved post sends it back to draft and it must be approved again',
+  ],
+  cmpPostGone: [
+    'ไม่พบโพสต์นี้แล้ว (อาจถูกลบไปแล้ว) จึงเริ่มโพสต์ใหม่ในชุดนี้แทน',
+    'That post no longer exists (it may have been deleted), so a new post starts in this collection instead',
+  ],
+  cmpNoCollections: [
+    'ยังไม่มีชุดโพสต์ สร้างชุดแรกก่อนจึงจะเก็บโพสต์ได้',
+    'There are no collections yet. Create the first one to save the post in',
+  ],
+  // The spintax the "insert spintax" button puts in front of the text (user content: a sample to edit).
+  spinSample: ['{สวัสดีค่ะ|หวัดดีค่ะ|ทักทายค่ะ} ', '{Hello|Hi|Hey} '],
+  exportFailed: [
+    'ส่งออกไฟล์ไม่สำเร็จ เบราว์เซอร์ไม่ให้ดาวน์โหลด',
+    'The export failed: the browser did not allow the download',
+  ],
+  // A collection may hold thousands of posts: the page shows the first 50 and this button adds 50 more.
+  showMorePosts: ['แสดงโพสต์เพิ่ม (เหลืออีก {n})', 'Show more posts ({n} left)'],
+
   // Empty states of the three pages (heading + description for app-empty-state).
   emptyCollectionsTitle: ['ยังไม่มีชุดโพสต์', 'No post collections yet'],
   emptyCollectionsBody: [

@@ -1,11 +1,16 @@
 <div class="page">
   <div class="page-head">
     <div>
-      <h1>{{ t().cmp.title }}</h1>
+      <h1>{{ d().postId ? t().cmp.editTitle : t().cmp.title }}</h1>
       <p>{{ t().cmp.sub }}</p>
       <app-perm-note level="edit" />
     </div>
+    <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="back()">
+      <i class="ph ph-caret-left"></i>{{ t().nav.collections }}
+    </button>
   </div>
+
+  <app-flow-steps [current]="1" />
 
   <div class="cmp-grid">
     <section class="panel stack">
@@ -13,30 +18,109 @@
         <label class="su-field-label" for="cmp-text">{{ t().cmp.content }}</label>
         <textarea
           id="cmp-text"
-          class="su-textarea"
-          rows="6"
+          class="su-textarea text"
+          rows="7"
           [class.su-input-error]="!!d().errText"
           [placeholder]="t().cmp.placeholder"
           [value]="d().text"
+          [readOnly]="!perm.canEdit()"
           [attr.maxlength]="limits.postText"
+          [attr.aria-invalid]="d().errText ? true : null"
           (input)="setText($any($event.target).value)"
         ></textarea>
         <div class="counter">
-          <span class="err">{{ d().errText }}</span>
+          <span class="err" role="alert">{{ d().errText }}</span>
           <span class="muted"
             >{{ d().text.length }} / {{ limits.postText }} {{ t().cmp.chars }}</span
           >
         </div>
       </div>
-      <app-select-field
-        [label]="t().cmp.template"
-        [placeholder]="t().cmp.templatePh"
-        [options]="snippetOptions()"
-        [resetAfterChange]="true"
-        (valueChange)="insertSnippet($event)"
-      />
+
       <div>
-        <div class="fw5 fs14 mb8">{{ t().cmp.media }}</div>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost tools-toggle"
+          [attr.aria-expanded]="showTools()"
+          (click)="toggleTools()"
+        >
+          <i class="ph" [class]="showTools() ? 'ph-caret-up' : 'ph-caret-down'"></i
+          >{{ t().cmp.tools }}
+        </button>
+      </div>
+      @if (showTools()) {
+        <div class="tools">
+          <app-select-field
+            [label]="t().cmp.template"
+            [placeholder]="t().cmp.templatePh"
+            [options]="snippetOptions()"
+            [resetAfterChange]="true"
+            [disabled]="!perm.canEdit()"
+            (valueChange)="insertSnippet($event)"
+          />
+          <div class="tool-btns">
+            <div class="btn-row">
+              <button
+                type="button"
+                class="su-btn su-btn-sm su-btn-secondary"
+                [disabled]="!perm.canEdit()"
+                [attr.title]="perm.editHint() || null"
+                (click)="insertCode()"
+              >
+                <i class="ph ph-hash"></i>{{ t().cmp.insertCode }}
+              </button>
+              <button
+                type="button"
+                class="su-btn su-btn-sm su-btn-secondary"
+                [disabled]="!perm.canEdit()"
+                [attr.title]="perm.editHint() || null"
+                (click)="insertSpin()"
+              >
+                <i class="ph ph-shuffle"></i>{{ t().cmp.insertSpin }}
+              </button>
+              <button
+                type="button"
+                class="su-btn su-btn-sm su-btn-secondary"
+                [disabled]="!perm.canEdit()"
+                [attr.title]="perm.editHint() || null"
+                (click)="aiModal.set(true)"
+              >
+                <i class="ph ph-sparkle"></i>{{ t().cmp.ai }}
+              </button>
+            </div>
+            <span class="small muted">{{ t().cmp.codeHint }} · {{ t().cmp.spinHint }}</span>
+          </div>
+        </div>
+      }
+
+      <div>
+        <div class="media-head">
+          <div>
+            <span class="fw5 fs14">{{ t().cmp.media }}</span>
+            <span class="small muted"> · {{ mediaSelLabel() }}</span>
+          </div>
+          <div class="btn-row slim">
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-ghost"
+              [disabled]="uploading() || !perm.canEdit()"
+              [attr.title]="perm.editHint() || null"
+              (click)="picker.click()"
+            >
+              <i class="ph ph-upload-simple"></i>{{ t().cmp.upload }}
+            </button>
+            <input
+              #picker
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              hidden
+              (change)="upload(picker)"
+            />
+            <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/library">
+              <i class="ph ph-images"></i>{{ t().cmp.openLibrary }}
+            </a>
+          </div>
+        </div>
         <div class="media">
           @for (m of mediaPick(); track m.id) {
             <button
@@ -44,8 +128,9 @@
               class="m"
               [class.on]="m.selected"
               [title]="m.label"
-              (click)="toggleMedia(m.id)"
+              [disabled]="!perm.canEdit()"
               [attr.aria-pressed]="m.selected"
+              (click)="toggleMedia(m.id)"
             >
               <span class="thumb">
                 @if (m.src) {
@@ -63,123 +148,81 @@
             <a class="small" routerLink="/app/library">{{ t().api.noMedia }}</a>
           }
         </div>
+        <p class="small muted hint">{{ t().cmp.mediaHint }}</p>
       </div>
     </section>
 
     <div class="stack">
-      <section class="panel">
-        <h2 class="h2">{{ t().cmp.targets }}</h2>
-        <p class="err tgt-err">{{ d().errTargets }}</p>
-        @for (a of targetRows(); track a.id) {
-          <div class="tgt">
-            <div class="tgt-row">
-              <app-checkbox
-                class="grow"
-                [label]="a.label"
-                [checked]="a.checked"
-                [disabled]="a.disabled"
-                (checkedChange)="setTarget(a.id, $event)"
-              />
-              @if (a.demo) {
-                <span class="badge" [title]="t().api.demoHint">{{ t().api.demoAccount }}</span>
-              }
-              @if (a.unbound) {
-                <span class="badge" [title]="t().api.unboundHint">{{
-                  t().api.unboundAccount
-                }}</span>
-              }
-              <span class="pico s28"><i class="ph" [class]="a.icon"></i></span>
-            </div>
-            @if (a.showGroups) {
-              <div class="groups">
-                <div class="small muted grp-head">
-                  <span>{{ groupsSel() }}</span>
-                  <button type="button" class="link-btn small" (click)="selectAllGroups()">
-                    {{ t().cmp.selectAll }}
-                  </button>
-                  <button type="button" class="link-btn small" (click)="clearGroups()">
-                    {{ t().cmp.clear }}
-                  </button>
-                </div>
-                <div class="pills">
-                  @for (g of a.groups; track g) {
-                    <button
-                      type="button"
-                      class="pill"
-                      [class.on]="d().groups.includes(g)"
-                      (click)="toggleGroup(g)"
-                    >
-                      {{ g }}
-                    </button>
-                  }
-                </div>
-              </div>
-            }
-            @if (a.needsLogin) {
-              <div class="relogin small">{{ t().cmp.relogin }}</div>
-            }
-            @if (a.unbound) {
-              <div class="relogin small">{{ t().api.unboundHint }}</div>
-            }
-            @if (a.needsGroups) {
-              <div class="relogin small">{{ t().api.noGroupsYet }}</div>
-            }
-          </div>
-        }
-      </section>
-
-      <section class="panel stack">
-        <h2 class="h2">{{ t().cmp.schedule }}</h2>
-        <div class="when">
-          <app-input-field
-            type="date"
-            [label]="t().cmp.date"
-            [value]="d().date"
-            (valueChange)="store.patch({ date: $event, errTime: '' })"
-          />
-          <app-input-field
-            type="time"
-            [label]="t().cmp.timeStart"
-            [value]="d().time"
-            [error]="d().errTime"
-            (valueChange)="store.patch({ time: $event, errTime: '' })"
-          />
-        </div>
+      <section class="panel col-panel">
+        <h2 class="h2">{{ t().cmp.collection }}</h2>
         <app-select-field
-          [label]="t().cmp.repeat"
-          [options]="repeatOptions()"
-          [value]="d().repeat"
-          (valueChange)="setRepeat($event)"
+          [label]="t().cmp.collection"
+          [placeholder]="t().cmp.colPh"
+          [options]="collectionOptions()"
+          [value]="d().collectionId"
+          [error]="d().errCol"
+          [disabled]="!perm.canEdit()"
+          (valueChange)="setCollection($event)"
         />
-        @if (repeatNote()) {
-          <p class="small muted">{{ repeatNote() }}</p>
+        <div>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-ghost"
+            [disabled]="!perm.canEdit()"
+            [attr.title]="perm.editHint() || null"
+            (click)="colModal.set(true)"
+          >
+            <i class="ph ph-plus"></i>{{ t().cmp.newColLink }}
+          </button>
+        </div>
+        @if (collectionHint()) {
+          <p class="cmp-hint">{{ collectionHint() }}</p>
         }
-        <app-checkbox
-          [label]="useDelayLabel()"
-          [checked]="d().useDelay"
-          (checkedChange)="store.patch({ useDelay: $event })"
-        />
+        @if (editResets()) {
+          <p class="cmp-hint">{{ t().api.flow.cmpEditResets }}</p>
+        }
+        <div class="foot">
+          <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="cancel()">
+            {{ t().common.cancel }}
+          </button>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-secondary"
+            [disabled]="busy() || !perm.canEdit()"
+            [attr.title]="perm.editHint() || null"
+            (click)="save(true)"
+          >
+            {{ t().cmp.saveNew }}
+          </button>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-primary"
+            [disabled]="busy() || !perm.canEdit()"
+            [attr.title]="perm.editHint() || null"
+            (click)="save(false)"
+          >
+            {{ t().cmp.save }}<i class="ph ph-arrow-right"></i>
+          </button>
+        </div>
       </section>
-    </div>
-  </div>
 
-  <div class="panel bottom">
-    <div class="sum">
-      <i class="ph ph-timer"></i><span>{{ summary() }}</span>
-    </div>
-    <div class="actions gap12">
-      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="saveDraft()">
-        {{ t().cmp.draft }}
-      </button>
-      <button
-        type="button"
-        class="su-btn su-btn-sm su-btn-primary"
-        [disabled]="busy() || !perm.canEdit()"
-        [attr.title]="perm.editHint() || null"
-        (click)="submit()"
-      >
-        {{ t().cmp.submit }}<i class="ph ph-arrow-right"></i>
-      </button>
+      <app-composer-preview
+        [text]="d().text"
+        [media]="d().media"
+        [settings]="target()?.settings ?? null"
+      />
     </div>
   </div>
 </div>
+
+<app-new-collection-modal
+  [open]="colModal()"
+  (created)="collectionCreated($event.id)"
+  (closed)="colModal.set(false)"
+/>
+<app-ai-writer-modal
+  [open]="aiModal()"
+  [defaultCollectionId]="d().collectionId"
+  (generated)="generated($event.collectionId)"
+  (closed)="aiModal.set(false)"
+/>

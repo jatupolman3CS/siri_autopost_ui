@@ -48,7 +48,7 @@ describe('AccountsStore', () => {
       http.expectOne(URL).flush([renamed, ...ACCOUNTS.slice(1)]);
       await settle();
       expect(store.list()[0].name).toBe('Facebook · Shop PC');
-      expect(store.allGroups()).toEqual(['A', 'B']);
+      expect(store.list()[0].groups).toEqual(['A', 'B']);
     },
   );
 

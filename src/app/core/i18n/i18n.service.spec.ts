@@ -150,9 +150,11 @@ describe('lazy dictionary packs', () => {
     localStorage.clear();
     const service = TestBed.inject(I18nService);
     const before = service.t();
+    // Specs share modules inside a worker: another spec may have imported the pack already.
+    const loadedBefore = 'flow' in before.api;
     await import('./i18n.flow');
     const after = service.t();
-    expect(after).not.toBe(before);
+    if (!loadedBefore) expect(after).not.toBe(before);
     expect(after.api.flow.storedOnlyBadge).toBe('บันทึกเท่านั้น');
     service.setLang('en');
     expect(service.t().api.flow.storedOnlyBadge).toBe('Saved only');
