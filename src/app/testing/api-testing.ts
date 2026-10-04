@@ -18,6 +18,9 @@ export const WORKSPACE: ApiWorkspace = {
   role: 'owner',
   limits: { accounts: 10, posts: null, devices: 3, seats: 3 },
   advancedAntiBan: true,
+  notifications: true,
+  autoReply: true,
+  clientReports: false,
 };
 
 export const USER: ApiUser = {
@@ -74,6 +77,12 @@ export function apiPost(over: Partial<ApiPost> & { id: string; scheduledAt: stri
     failureCode: null,
     failureDetail: null,
     publishedAt: null,
+    scheduleId: null,
+    collectionPostId: null,
+    linkId: null,
+    code: null,
+    targetUrl: null,
+    isTest: false,
     ...over,
   };
 }

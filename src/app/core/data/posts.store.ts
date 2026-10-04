@@ -38,6 +38,12 @@ export function toItem(p: ApiPost): PostItem {
     code: p.failureCode ?? null,
     detail: p.failureDetail,
     publishedAt: p.publishedAt ? new Date(p.publishedAt) : null,
+    scheduleId: p.scheduleId ?? null,
+    collectionPostId: p.collectionPostId ?? null,
+    linkId: p.linkId ?? null,
+    targetUrl: p.targetUrl ?? null,
+    groupCode: p.code ?? null,
+    isTest: p.isTest ?? false,
   };
 }
 

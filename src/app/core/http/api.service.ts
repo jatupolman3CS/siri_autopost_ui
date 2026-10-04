@@ -40,6 +40,16 @@ export type ApiConfigSaved = S['ConfigSavedDto'];
 export type ApiDeviceLive = S['DeviceLiveDto'];
 export type ApiDeviceLog = S['DeviceLogDto'];
 export type ApiDeviceCommand = S['DeviceCommandDto'];
+export type ApiCollection = S['CollectionDto'];
+export type ApiCollectionSettings = S['CollectionSettingsDto'];
+export type ApiCollectionPost = S['CollectionPostDto'];
+export type ApiApprovalAction = S['ApprovalAction'];
+export type ApiLinkSet = S['LinkSetDto'];
+export type ApiSetLink = S['SetLinkDto'];
+export type ApiBulkLinksResult = S['BulkLinksResultDto'];
+export type ApiCsvLinkRow = S['CsvLinkRow'];
+export type ApiCsvImportResult = S['CsvImportResultDto'];
+export type ApiGroupLink = S['GroupLinkDto'];
 
 /** Set on a request whose errors the caller shows itself (no toast from errorInterceptor). */
 export const QUIET = new HttpContextToken<boolean>(() => false);
@@ -355,6 +365,138 @@ export class ApiService {
   }
   clearDeviceLogs(ws: string, device: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/devices/${device}/logs`));
+  }
+  // Collections ("ชุดโพสต์"): sets of library posts with their composing settings.
+  collections(ws: string, background = false) {
+    return run(
+      this.http.get<ApiCollection[]>(`/api/workspaces/${ws}/collections`, background ? quiet : {}),
+    );
+  }
+  createCollection(ws: string, name: string, description?: string) {
+    const body: S['CreateCollectionRequest'] = { name, description: description ?? null };
+    return run(this.http.post<ApiCollection>(`/api/workspaces/${ws}/collections`, body));
+  }
+  updateCollection(ws: string, id: string, body: S['UpdateCollectionRequest']) {
+    return run(this.http.put<ApiCollection>(`/api/workspaces/${ws}/collections/${id}`, body));
+  }
+  deleteCollection(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/collections/${id}`));
+  }
+  createCollectionPost(ws: string, collection: string, text: string, mediaIds: string[] = []) {
+    const body: S['CollectionPostRequest'] = { text, mediaIds };
+    return run(
+      this.http.post<ApiCollectionPost>(
+        `/api/workspaces/${ws}/collections/${collection}/posts`,
+        body,
+      ),
+    );
+  }
+  /** Several posts at once (the AI writer); at most 20. */
+  createCollectionPosts(
+    ws: string,
+    collection: string,
+    items: { text: string; mediaIds?: string[] }[],
+  ) {
+    const body: S['CollectionPostsBatchRequest'] = {
+      items: items.map((i) => ({ text: i.text, mediaIds: i.mediaIds ?? [] })),
+    };
+    return run(
+      this.http.post<ApiCollectionPost[]>(
+        `/api/workspaces/${ws}/collections/${collection}/posts/batch`,
+        body,
+      ),
+    );
+  }
+  /** Edits a post; `collectionId` moves it to another collection. */
+  updateCollectionPost(
+    ws: string,
+    collection: string,
+    id: string,
+    body: S['UpdateCollectionPostRequest'],
+  ) {
+    return run(
+      this.http.put<ApiCollectionPost>(
+        `/api/workspaces/${ws}/collections/${collection}/posts/${id}`,
+        body,
+      ),
+    );
+  }
+  deleteCollectionPost(ws: string, collection: string, id: string) {
+    return run(
+      this.http.delete<void>(`/api/workspaces/${ws}/collections/${collection}/posts/${id}`),
+    );
+  }
+  collectionPostApproval(ws: string, collection: string, id: string, action: ApiApprovalAction) {
+    const body: S['ApprovalRequest'] = { action };
+    return run(
+      this.http.post<ApiCollectionPost>(
+        `/api/workspaces/${ws}/collections/${collection}/posts/${id}/approval`,
+        body,
+      ),
+    );
+  }
+
+  // Link sets ("ชุดลิงก์กลุ่ม"): Facebook group URLs with a group code and a daily cap.
+  linkSets(ws: string, background = false) {
+    return run(
+      this.http.get<ApiLinkSet[]>(`/api/workspaces/${ws}/link-sets`, background ? quiet : {}),
+    );
+  }
+  createLinkSet(ws: string, name: string, postAsAccountId?: string | null) {
+    const body: S['CreateLinkSetRequest'] = { name, postAsAccountId: postAsAccountId ?? null };
+    return run(this.http.post<ApiLinkSet>(`/api/workspaces/${ws}/link-sets`, body));
+  }
+  updateLinkSet(ws: string, id: string, body: S['UpdateLinkSetRequest']) {
+    return run(this.http.put<ApiLinkSet>(`/api/workspaces/${ws}/link-sets/${id}`, body));
+  }
+  deleteLinkSet(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/link-sets/${id}`));
+  }
+  /** Adds a row; a blank or invalid address makes an invalid row the page shows in red. */
+  addLink(
+    ws: string,
+    set: string,
+    body: S['AddLinkRequest'] = { name: null, url: null, code: null, dailyMax: null },
+  ) {
+    return run(this.http.post<ApiSetLink>(`/api/workspaces/${ws}/link-sets/${set}/links`, body));
+  }
+  updateLink(ws: string, set: string, id: string, body: S['UpdateLinkRequest']) {
+    return run(
+      this.http.put<ApiSetLink>(`/api/workspaces/${ws}/link-sets/${set}/links/${id}`, body),
+    );
+  }
+  deleteLink(ws: string, set: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/link-sets/${set}/links/${id}`));
+  }
+  /** Turns a link back on after the engine switched it off. */
+  enableLink(ws: string, set: string, id: string) {
+    return run(
+      this.http.post<ApiSetLink>(`/api/workspaces/${ws}/link-sets/${set}/links/${id}/enable`, {}),
+    );
+  }
+  /** Lines of `url | code`. */
+  bulkLinks(ws: string, set: string, text: string) {
+    const body: S['BulkLinksRequest'] = { text };
+    return run(
+      this.http.post<ApiBulkLinksResult>(`/api/workspaces/${ws}/link-sets/${set}/links/bulk`, body),
+    );
+  }
+  /** Adds groups of a connected account (by URL) to a set. */
+  importGroups(ws: string, set: string, accountId: string, urls: string[]) {
+    const body: S['ImportGroupsRequest'] = { accountId, urls };
+    return run(
+      this.http.post<ApiLinkSet>(`/api/workspaces/${ws}/link-sets/${set}/links/import`, body),
+    );
+  }
+  importLinksCsv(ws: string, rows: ApiCsvLinkRow[]) {
+    const body: S['ImportCsvRequest'] = { rows };
+    return run(
+      this.http.post<ApiCsvImportResult>(`/api/workspaces/${ws}/link-sets/import-csv`, body),
+    );
+  }
+  /** The groups a connected account's browser has synced (name + address). */
+  accountGroups(ws: string, account: string) {
+    return run(this.http.get<ApiGroupLink[]>(`/api/workspaces/${ws}/accounts/${account}/groups`));
   }
 }
 

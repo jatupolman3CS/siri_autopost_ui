@@ -31,6 +31,12 @@ export interface Workspace {
   limits: Record<LimitKey, number | null>;
   /** The owner's plan includes the advanced anti-ban settings. */
   advancedAntiBan: boolean;
+  /** The owner's plan includes Telegram / LINE OA notifications (Pro and above). */
+  notifications: boolean;
+  /** The owner's plan includes auto-reply rules (Pro and above). */
+  autoReply: boolean;
+  /** The owner's plan includes white-label client reports (Agency). */
+  clientReports: boolean;
 }
 
 /** A connected social account (from the API). */
@@ -342,7 +348,10 @@ export interface SeedArFeedItem {
 
 export interface SeedData {
   user: { name: L10n; email: string; initials: string };
-  workspaces: Omit<Workspace, 'role' | 'limits' | 'advancedAntiBan'>[];
+  workspaces: Omit<
+    Workspace,
+    'role' | 'limits' | 'advancedAntiBan' | 'notifications' | 'autoReply' | 'clientReports'
+  >[];
   platforms: Record<PlatformKey, Platform>;
   groups: string[];
   /** Post collections ("ชุดโพสต์") of the three-step flow: collections, link sets, schedules. */
@@ -399,6 +408,18 @@ export interface PostItem {
   detail?: string | null;
   /** When it went out (success and approval-pending posts); counts toward the 24-hour limits. */
   publishedAt?: Date | null;
+  /** The schedule that planned it; null for posts made by hand or by the extension. */
+  scheduleId?: string | null;
+  /** The collection post it was made from (the editable original of `text`). */
+  collectionPostId?: string | null;
+  /** The link-set link it goes to. */
+  linkId?: string | null;
+  /** The group address, when the link is known. */
+  targetUrl?: string | null;
+  /** The group code written before the content (not the failure `code`). */
+  groupCode?: string | null;
+  /** A one-off test post. */
+  isTest?: boolean;
 }
 
 export interface ErrorItem extends PostItem {

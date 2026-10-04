@@ -1,5 +1,5 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
-import { ApiEngine, ApiService } from '../http/api.service';
+import { ApiAntiBan, ApiEngine, ApiService } from '../http/api.service';
 import { AccountsStore } from './accounts.store';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
@@ -16,7 +16,12 @@ export interface AntiBanSettings {
   shuffle: boolean;
   autopause: boolean;
   warmup: boolean;
+  /** Workspace-wide rules over every schedule (Pro and above; the server keeps the old values below Pro). */
+  advanced: AdvancedAntiBan;
 }
+
+/** The advanced anti-ban rules of the engine (hours, minutes, counts; 0 = off where a count). */
+export type AdvancedAntiBan = ApiAntiBan['advanced'];
 
 export type OfflinePolicy = 'skip' | 'queue' | 'notify';
 
@@ -50,6 +55,23 @@ export function defaultAntiBan(): AntiBanSettings {
     shuffle: true,
     autopause: true,
     warmup: false,
+    advanced: defaultAdvanced(),
+  };
+}
+
+/** The server's defaults for the advanced rules. */
+export function defaultAdvanced(): AdvancedAntiBan {
+  return {
+    minGap: 2,
+    dailyAll: 0,
+    blockMin: 24,
+    blockMax: 48,
+    failStreak: 4,
+    recentAvoid: 10,
+    cooldown: 0,
+    focus: true,
+    autoOffFails: 3,
+    stopFailPct: 30,
   };
 }
 
