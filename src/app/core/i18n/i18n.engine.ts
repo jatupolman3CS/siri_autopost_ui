@@ -11,11 +11,12 @@ import { registerPack } from './i18n.service';
 // files of different features never collide. A string of the design that is wrong for the real system is
 // corrected in i18n.fixes.ts instead, with a comment saying what the design got wrong.
 export const AP_I18N_ENGINE = {
-  // A setting that is saved but not applied yet (anti-ban "bring the window to the front", notification
-  // screenshots and offline alerts). Keep the design's label and add this hint.
+  // A setting that is saved but not applied yet (anti-ban image shuffle and "bring the window to the front",
+  // notification screenshots and offline alerts). Keep the design's label and add this hint. It says plainly that
+  // nothing applies the value (neither the extension nor the server), so a switch that is on does not read as active.
   storedOnly: [
-    'บันทึกไว้ แต่ส่วนขยายยังไม่ใช้ค่านี้',
-    'Saved, but the extension does not apply this yet',
+    'บันทึกไว้เท่านั้น ยังไม่มีส่วนใดนำค่านี้ไปใช้',
+    'Saved only: nothing applies this setting yet',
   ],
   storedOnlyBadge: ['บันทึกเท่านั้น', 'Saved only'],
   // A control of a plan the owner does not have ({plan} is the plan's name, from t().plans).

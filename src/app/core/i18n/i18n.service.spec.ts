@@ -228,6 +228,20 @@ describe('lazy dictionary packs', () => {
     }
   });
 
+  it('says plainly that a stored-only setting is applied by nothing (not just "the extension")', async () => {
+    const { AP_I18N_FLOW } = await import('./i18n.flow');
+    const { AP_I18N_ENGINE } = await import('./i18n.engine');
+    for (const pack of [AP_I18N_FLOW, AP_I18N_ENGINE]) {
+      const [th, en] = pack.storedOnly;
+      expect(en).toMatch(/only/i);
+      expect(en).toMatch(/nothing applies/i);
+      expect(en).not.toMatch(/extension/i);
+      expect(th).toContain('บันทึกไว้เท่านั้น');
+      expect(th).toContain('ยังไม่มีส่วนใดนำค่านี้ไปใช้');
+      expect(th).not.toContain('ส่วนขยาย');
+    }
+  });
+
   it('gives each pack its own copy of the shared hints (stored only, plan locked)', async () => {
     // The pack files are edited by different pages, so the hints every page needs are repeated in each pack.
     const { AP_I18N_FLOW } = await import('./i18n.flow');
