@@ -44,7 +44,7 @@
         <div class="th">{{ t().adm.expires }}</div>
         <div class="th">{{ t().common.status }}</div>
         <div class="th">{{ t().common.actions }}</div>
-        @for (p of promoRows(); track p.code) {
+        @for (p of pagePromos(); track p.code) {
           <div class="td fw6">{{ p.code }}</div>
           <div class="td">{{ p.discount }}</div>
           <div class="td">{{ p.uses }}</div>
@@ -67,11 +67,12 @@
           </div>
         }
       </div>
+      <app-pager [pager]="promoPager" />
     </div>
   </section>
   <section class="panel">
     <h2 class="h2 mb4">{{ t().api.planAudit }}</h2>
-    @for (a of planLog(); track a.id) {
+    @for (a of pageLog(); track a.id) {
       <div class="row ar">
         <span class="time">{{ a.time }}</span>
         <div class="grow min0">
@@ -85,6 +86,7 @@
     } @empty {
       <p class="fs14 muted">{{ t().api.noAudit }}</p>
     }
+    <app-pager [pager]="logPager" />
   </section>
 </div>
 

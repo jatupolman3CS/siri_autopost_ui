@@ -116,3 +116,77 @@
   flex-direction: column;
   gap: 12px;
 }
+
+.folders {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.fchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+
+  .n {
+    color: var(--color-text-muted);
+    font-size: 12px;
+  }
+
+  &.on {
+    border-color: var(--color-primary, currentColor);
+    font-weight: 600;
+  }
+}
+
+.selbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  select {
+    margin-left: 6px;
+  }
+}
+
+.card {
+  position: relative;
+
+  &.sel {
+    outline: 2px solid var(--color-primary, currentColor);
+  }
+
+  .pick {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 1;
+    display: inline-flex;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+  }
+
+  .move {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+  }
+}

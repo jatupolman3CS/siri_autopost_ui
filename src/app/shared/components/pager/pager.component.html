@@ -1,0 +1,21 @@
+@if (pager().visible()) {
+  <nav class="pager" [attr.aria-label]="t().pgLabel">
+    <span class="small muted">{{ range() }}</span>
+    <span class="grow"></span>
+    <label class="size small muted">
+      {{ t().pgSize }}
+      <select [value]="pager().size()" (change)="onSize($any($event.target))">
+        @for (s of sizes; track s) {
+          <option [value]="s" [selected]="s === pager().size()">{{ s }}</option>
+        }
+      </select>
+    </label>
+    <button type="button" class="su-btn su-btn-sm su-btn-ghost" [disabled]="pager().page() <= 1" [attr.aria-label]="t().pgPrev" (click)="pager().go(pager().page() - 1)">
+      <i class="ph ph-caret-left"></i>
+    </button>
+    <span class="small">{{ pageOf() }}</span>
+    <button type="button" class="su-btn su-btn-sm su-btn-ghost" [disabled]="pager().page() >= pager().pageCount()" [attr.aria-label]="t().pgNext" (click)="pager().go(pager().page() + 1)">
+      <i class="ph ph-caret-right"></i>
+    </button>
+  </nav>
+}

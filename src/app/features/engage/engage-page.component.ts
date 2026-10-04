@@ -11,6 +11,8 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { FeatureLockComponent } from '../../shared/components/feature-lock/feature-lock.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { RuleModalComponent } from './rule-modal.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 interface RuleRow {
   rule: ApiAutoReplyRule;
@@ -25,6 +27,7 @@ interface RuleRow {
 @Component({
   selector: 'app-engage-page',
   imports: [
+    PagerComponent,
     CheckboxComponent,
     ChipComponent,
     EmptyStateComponent,
@@ -65,6 +68,8 @@ export class EngagePageComponent {
       scope: this.scopeLabel(rule.scope),
     })),
   );
+  protected readonly pager = new Pager(20);
+  protected readonly rulePage = computed(() => this.pager.slice(this.rows()));
   protected readonly count = computed(() =>
     fmt(this.t().api.engine.engageRuleCount, {
       n: this.store.ruleCount(),

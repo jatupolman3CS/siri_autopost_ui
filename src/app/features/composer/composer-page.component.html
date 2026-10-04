@@ -148,6 +148,7 @@
             <a class="small" routerLink="/app/library">{{ t().api.noMedia }}</a>
           }
         </div>
+        <app-pager [pager]="mediaPager" />
         <p class="small muted hint">{{ t().cmp.mediaHint }}</p>
       </div>
     </section>
@@ -209,6 +210,8 @@
       <app-composer-preview
         [text]="d().text"
         [media]="d().media"
+        [removable]="perm.canEdit()"
+        (removed)="toggleMedia($event)"
         [settings]="target()?.settings ?? null"
       />
     </div>

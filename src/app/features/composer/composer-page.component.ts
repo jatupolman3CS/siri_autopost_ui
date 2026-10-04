@@ -20,6 +20,8 @@ import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiPrefsService } from '../../core/services/ui-prefs.service';
 import { FlowStepsComponent } from '../../shared/components/flow-steps/flow-steps.component';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
+import { Pager } from '../../shared/components/pager/pager';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 import { NewCollectionModalComponent } from '../collections/new-collection-modal.component';
@@ -39,6 +41,7 @@ import '../../core/i18n/i18n.flow';
     ComposerPreviewComponent,
     FlowStepsComponent,
     NewCollectionModalComponent,
+    PagerComponent,
     PermNoteComponent,
     RouterLink,
     SelectFieldComponent,
@@ -82,10 +85,14 @@ export class ComposerPageComponent {
   /** The collection the draft is saved to, when it exists. */
   protected readonly target = computed(() => this.collections.byId(this.d().collectionId));
 
+  protected readonly mediaPager = new Pager(20);
+  /** The library files on the page of the picker (the library can hold thousands). */
+  private readonly mediaPage = computed(() => this.mediaPager.slice(this.library.media()));
+
   protected readonly mediaPick = computed(() => {
     const picked = this.d().media;
     const thumbs = this.library.thumbs();
-    return this.library.media().map((m) => ({
+    return this.mediaPage().map((m) => ({
       id: m.id,
       label: m.name,
       src: thumbs[m.id] ?? null,
@@ -121,6 +128,10 @@ export class ComposerPageComponent {
   });
 
   constructor() {
+    // Thumbnails are fetched for the picker's page and the files attached to the draft only.
+    effect(() =>
+      this.library.ensureThumbs([...this.mediaPage().map((m) => m.id), ...this.d().media]),
+    );
     // What the collections and link sets show here changes on other pages: read them again on arrival.
     void this.collections.refresh();
     void this.previewSets.refresh();

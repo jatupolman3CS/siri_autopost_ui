@@ -14,6 +14,8 @@ import { Customer, LimitKey, PLAN_ORDER, PlanKey } from '../../core/data/models'
 import { baht, fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 import { AdminActionModalComponent, AdminActionRequest } from './admin-action-modal.component';
 import { AdminViewService } from './admin-view.service';
@@ -37,7 +39,7 @@ const BLANK: Customer = {
 
 @Component({
   selector: 'app-customer-detail-page',
-  imports: [RouterLink, SelectFieldComponent, AdminActionModalComponent],
+  imports: [RouterLink, SelectFieldComponent, AdminActionModalComponent, PagerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './customer-detail-page.component.html',
   styleUrl: './customer-detail-page.component.scss',
@@ -232,4 +234,20 @@ export class CustomerDetailPageComponent {
     const c = await this.admin.retryCharge(txId);
     this.notify.success(fmt(this.t().adm.chargeRetried, { c: c?.name ?? '' }));
   }
+
+  /** Current page of this customer's invoices. */
+  protected readonly txPager = new Pager(20);
+  protected readonly pageTx = computed(() => this.txPager.slice(this.tx()));
+
+  /** Current page of this customer's recent jobs. */
+  protected readonly jobsPager = new Pager(20);
+  protected readonly pageJobs = computed(() => this.jobsPager.slice(this.jobs()));
+
+  /** Current page of this customer's activity log. */
+  protected readonly auditPager = new Pager(20);
+  protected readonly pageAudit = computed(() => this.auditPager.slice(this.auditRows()));
+
+  /** Current page of the bound devices. */
+  protected readonly devPager = new Pager(20);
+  protected readonly pageDevices = computed(() => this.devPager.slice(this.devices()));
 }

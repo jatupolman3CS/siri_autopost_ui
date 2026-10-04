@@ -35,7 +35,7 @@
   @if (!store.loaded()) {
     <section class="panel loading" aria-busy="true">—</section>
   } @else {
-    @for (c of store.collections(); track c.id) {
+    @for (c of cards(); track c.id) {
       <app-collection-card [collection]="c" />
     } @empty {
       <app-empty-state
@@ -44,6 +44,7 @@
         [description]="t().api.flow.emptyCollectionsBody"
       />
     }
+    <app-pager [pager]="pager" />
   }
 
   <app-next-step [label]="t().flow.n1" (go)="router.navigateByUrl('/app/targets')" />

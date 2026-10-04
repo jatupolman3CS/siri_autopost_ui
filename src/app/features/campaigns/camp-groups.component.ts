@@ -15,11 +15,14 @@ import { shortGroup, usedToday } from '../../core/ext/run-view';
 import '../../core/i18n/i18n.ext';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 // Section 1 of a campaign: its groups (link, name, own text such as a purchase code, posts allowed
 // per 24 hours) and the bulk paste of many groups at once (client/dashboard.js renderGroups/btnBulkAdd).
 @Component({
   selector: 'app-camp-groups',
+  imports: [PagerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './camp-groups.component.html',
   styleUrl: './camp-groups.component.scss',
@@ -61,6 +64,8 @@ export class CampGroupsComponent {
     });
   });
 
+  protected readonly pager = new Pager(20);
+  protected readonly page = computed(() => this.pager.slice(this.rows()));
   protected readonly info = computed(() => {
     const c = this.campaign();
     this.store.campaigns();
@@ -126,6 +131,8 @@ export class CampGroupsComponent {
     this.store.change(() =>
       c.groups.push({ url: '', name: '', text: '', enabled: true, dailyMax: 0 }),
     );
+    // The new row is the last one: show its page.
+    this.pager.go(Math.ceil(c.groups.length / this.pager.size()));
   }
 
   /** Category headings, "url | group text", "url (note)" and "[1/วัน]" lines, as in the extension. */

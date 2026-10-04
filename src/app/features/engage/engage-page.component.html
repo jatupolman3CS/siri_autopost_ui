@@ -41,7 +41,7 @@
               <app-chip>{{ t().api.engine.storedOnlyBadge }}</app-chip>
             </div>
           </div>
-          @for (r of rows(); track r.rule.id) {
+          @for (r of rulePage(); track r.rule.id) {
             <div class="rule" [class.off]="!r.rule.on">
               <div class="body">
                 <div class="chips">
@@ -79,6 +79,7 @@
           } @empty {
             <p class="none muted fs14">{{ t().api.engine.engageNoRules }}</p>
           }
+          <app-pager [pager]="pager" />
         </section>
 
         <section class="panel tryit">

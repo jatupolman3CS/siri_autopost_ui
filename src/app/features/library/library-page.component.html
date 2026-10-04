@@ -72,15 +72,105 @@
   </div>
 
   @if (tab() === 'media') {
+    <div class="folders" role="toolbar" [attr.aria-label]="t().lib.fBar">
+      <button
+        type="button"
+        class="fchip"
+        [class.on]="folder() === 'all'"
+        (click)="pickFolder('all')"
+      >
+        <i class="ph ph-images"></i>{{ t().lib.fAll }}
+        <span class="n">{{ folderChips().all }}</span>
+      </button>
+      @for (f of folderChips().folders; track f.id) {
+        <button
+          type="button"
+          class="fchip"
+          [class.on]="folder() === f.id"
+          (click)="pickFolder(f.id)"
+        >
+          <i class="ph ph-folder"></i>{{ f.name }} <span class="n">{{ f.n }}</span>
+        </button>
+      }
+      @if (folderChips().folders.length) {
+        <button
+          type="button"
+          class="fchip"
+          [class.on]="folder() === 'none'"
+          (click)="pickFolder('none')"
+        >
+          <i class="ph ph-folder-dashed"></i>{{ t().lib.fNone }}
+          <span class="n">{{ folderChips().none }}</span>
+        </button>
+      }
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+        (click)="openFolder('new')"
+      >
+        <i class="ph ph-folder-plus"></i>{{ t().lib.fNew }}
+      </button>
+      @if (currentFolder(); as cf) {
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          [disabled]="!perm.canEdit()"
+          (click)="openFolder('rename')"
+        >
+          <i class="ph ph-pencil-simple"></i>{{ t().lib.fRename }}
+        </button>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          [disabled]="!perm.canEdit()"
+          (click)="deleteModal.set(true)"
+        >
+          <i class="ph ph-trash"></i>{{ t().lib.fDelete }}
+        </button>
+      }
+    </div>
+    @if (perm.canEdit() && mediaRows().length) {
+      <div class="selbar">
+        <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="selectPage()">
+          <i class="ph ph-check-square"></i>{{ t().lib.fSelectPage }}
+        </button>
+        @if (selected().size) {
+          <span class="small">{{ selected().size }} {{ t().lib.fSelected }}</span>
+          <label class="small muted">
+            {{ t().lib.fMoveTo }}
+            <select (change)="moveSelected($any($event.target))">
+              <option value="__" selected disabled>{{ t().lib.fChoose }}</option>
+              <option value="">{{ t().lib.fNone }}</option>
+              @for (o of moveOptions(); track o.id) {
+                <option [value]="o.id">{{ o.name }}</option>
+              }
+            </select>
+          </label>
+        }
+      </div>
+    }
     <div class="grid g180">
       @for (m of mediaRows(); track m.id) {
-        <div class="panel panel-hover card">
+        <div class="panel panel-hover card" [class.sel]="m.selected">
+          @if (perm.canEdit()) {
+            <label class="pick" [attr.title]="t().lib.fSelectOne">
+              <input type="checkbox" [checked]="m.selected" (change)="toggleSelect(m.id)" />
+            </label>
+          }
           <div class="thumb">
             @if (m.video) {
               @if (m.videoSrc) {
                 <video [src]="m.videoSrc" controls autoplay playsinline preload="metadata"></video>
               } @else {
-                <button type="button" class="play" [disabled]="m.videoLoading" (click)="playVideo(m.id)" [attr.aria-label]="m.label">
+                <button
+                  type="button"
+                  class="play"
+                  [disabled]="m.videoLoading"
+                  (click)="playVideo(m.id)"
+                  [attr.aria-label]="m.label"
+                >
                   <i class="ph" [class]="m.videoLoading ? 'ph-spinner' : 'ph-play-circle'"></i>
                 </button>
               }
@@ -93,6 +183,18 @@
           <div class="fw5 fs14 ellipsis">{{ m.label }}</div>
           <div class="small muted">{{ m.meta }}</div>
           <div class="small muted">{{ m.used }}</div>
+          @if (perm.canEdit() && moveOptions().length) {
+            <select
+              class="move"
+              [attr.aria-label]="t().lib.fMoveTo"
+              (change)="moveOne(m.id, $any($event.target))"
+            >
+              <option value="" [selected]="!m.folderId">{{ t().lib.fNone }}</option>
+              @for (o of moveOptions(); track o.id) {
+                <option [value]="o.id" [selected]="o.id === m.folderId">{{ o.name }}</option>
+              }
+            </select>
+          }
           <button
             type="button"
             class="su-btn su-btn-sm su-btn-ghost su-btn-full"
@@ -105,6 +207,7 @@
         </div>
       }
     </div>
+    <app-pager [pager]="mediaPager" />
   } @else {
     <div class="grid g280">
       @for (s of snippetRows(); track s.id) {
@@ -125,8 +228,58 @@
         </div>
       }
     </div>
+    <app-pager [pager]="snippetPager" />
   }
 </div>
+
+<app-modal
+  [open]="folderModal() !== null"
+  [title]="folderModal() === 'rename' ? t().lib.fRename : t().lib.fNew"
+  (closed)="folderModal.set(null)"
+>
+  <div class="form">
+    <app-input-field
+      [label]="t().lib.fName"
+      [(value)]="folderName"
+      [error]="folderErr()"
+      [maxlength]="80"
+    />
+  </div>
+  <div modal-footer>
+    <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="folderModal.set(null)">
+      {{ t().common.cancel }}
+    </button>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      [disabled]="savingFolder() || !perm.canEdit()"
+      (click)="saveFolder()"
+    >
+      {{ t().common.save }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [open]="deleteModal()" [title]="t().lib.fDelete" (closed)="deleteModal.set(false)">
+  <p class="fs14">{{ t().lib.fDeleteBody }}</p>
+  <div modal-footer>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-secondary"
+      (click)="deleteModal.set(false)"
+    >
+      {{ t().common.cancel }}
+    </button>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      [disabled]="!perm.canEdit()"
+      (click)="removeFolder()"
+    >
+      {{ t().common.confirm }}
+    </button>
+  </div>
+</app-modal>
 
 <app-modal [open]="modal()" [title]="t().lib.newSnippet" (closed)="modal.set(false)">
   <div class="form">

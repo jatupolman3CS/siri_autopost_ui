@@ -186,6 +186,13 @@ export async function signInHoldingWorkspaces(
   };
 }
 
+/** Answers the thumbnail fetches of the library files a page shows (they are fetched when a page shows them). */
+export function answerThumbs(http: HttpTestingController): void {
+  for (const r of http.match((req) => /\/media\/[^/]+\/content$/.test(req.url))) {
+    r.flush(new Blob());
+  }
+}
+
 export function answerWorkspaceLoads(
   http: HttpTestingController,
   data: {
@@ -199,6 +206,7 @@ export function answerWorkspaceLoads(
   } = {},
 ): void {
   const base = `/api/workspaces/${WS}`;
+  answerThumbs(http);
   for (const r of http.match((req) => req.url === `${base}/posts`)) {
     const from = new Date(r.request.params.get('from')!);
     const to = new Date(r.request.params.get('to')!);
@@ -213,6 +221,7 @@ export function answerWorkspaceLoads(
   for (const r of http.match(`${base}/accounts`)) r.flush(ACCOUNTS);
   for (const r of http.match(`${base}/media`)) r.flush([]);
   for (const r of http.match(`${base}/snippets`)) r.flush([]);
+  for (const r of http.match(`${base}/media-folders`)) r.flush([]);
   for (const r of http.match(`${base}/devices`)) r.flush(data.devices ?? []);
   // The collection → link set → schedule flow (empty unless a test passes data).
   for (const r of http.match(`${base}/collections`)) r.flush(data.collections ?? []);

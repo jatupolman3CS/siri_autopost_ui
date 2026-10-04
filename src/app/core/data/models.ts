@@ -94,6 +94,13 @@ export interface MediaItem {
   meta: string;
   kind: 'image' | 'video';
   used: number;
+  /** The library folder the file is in; null/absent = no folder. */
+  folderId?: string | null;
+}
+
+export interface MediaFolder {
+  id: string;
+  name: string;
 }
 
 export interface Snippet {

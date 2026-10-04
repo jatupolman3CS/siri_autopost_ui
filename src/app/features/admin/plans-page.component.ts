@@ -8,6 +8,8 @@ import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { AdminViewService, txDate } from './admin-view.service';
 
 /** What the API accepts as a promo code (Promo.Create): letters and digits, 3-30, after trimming and upper-casing. */
@@ -26,7 +28,7 @@ export function promoStatus(p: Pick<Promo, 'active' | 'expiresAt'>, now = new Da
 
 @Component({
   selector: 'app-plans-page',
-  imports: [InputFieldComponent, ModalComponent, SelectFieldComponent],
+  imports: [InputFieldComponent, ModalComponent, SelectFieldComponent, PagerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './plans-page.component.html',
   styleUrl: './plans-page.component.scss',
@@ -140,4 +142,12 @@ export class PlansPageComponent {
     this.modal.set(false);
     this.notify.success(fmt(this.t().adm.promoCreated, { c: code }));
   }
+
+  /** Current page of the promo codes. */
+  protected readonly promoPager = new Pager(20);
+  protected readonly pagePromos = computed(() => this.promoPager.slice(this.promoRows()));
+
+  /** Current page of the plan and promo activity log. */
+  protected readonly logPager = new Pager(20);
+  protected readonly pageLog = computed(() => this.logPager.slice(this.planLog()));
 }

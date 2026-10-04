@@ -95,7 +95,7 @@
 
   <section class="panel">
     <h2 class="h2 mb4">{{ t().bill.invoices }}</h2>
-    @for (inv of invoices(); track inv.id) {
+    @for (inv of invoicePage(); track inv.id) {
       <div class="row inv">
         <span class="grow120">{{ inv.date }}</span>
         <span class="fw5">{{ inv.amount }}</span>
@@ -116,6 +116,7 @@
     } @empty {
       <p class="small muted">{{ t().api.noInvoices }}</p>
     }
+    <app-pager [pager]="invoicePager" />
   </section>
 </div>
 

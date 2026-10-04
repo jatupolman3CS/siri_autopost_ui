@@ -68,13 +68,14 @@
   }
 
   <div class="rows">
-    @for (l of set().links; track l.id) {
+    @for (l of linkPage(); track l.id) {
       <app-link-row [setId]="set().id" [link]="l" [focus]="l.id === newId()" />
     }
     @if (!set().links.length) {
       <p class="empty">{{ t().ts.empty }}</p>
     }
   </div>
+  <app-pager [pager]="pager" />
 
   <div>
     <button

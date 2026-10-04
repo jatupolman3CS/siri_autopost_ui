@@ -82,11 +82,12 @@
     @if (chats().length) {
       <div class="chats" role="group" [attr.aria-label]="t().api.engine.notifyChatsPick">
         <span class="small muted">{{ t().api.engine.notifyChatsPick }}</span>
-        @for (c of chats(); track c.id) {
+        @for (c of chatPage(); track c.id) {
           <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="pick(c)">
             {{ c.title }} · {{ c.id }}
           </button>
         }
+        <app-pager [pager]="chatPager" />
       </div>
     }
   } @else {

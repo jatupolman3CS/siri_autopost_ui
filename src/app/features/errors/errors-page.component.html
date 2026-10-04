@@ -15,7 +15,7 @@
     </div>
   </div>
 
-  @for (e of rows(); track e.id) {
+  @for (e of pageRows(); track e.id) {
     <section class="panel err">
       <span class="pico s40"><i class="ph" [class]="e.icon"></i></span>
       <div class="body">
@@ -78,4 +78,5 @@
       />
     </div>
   }
+  <app-pager [pager]="pager" />
 </div>

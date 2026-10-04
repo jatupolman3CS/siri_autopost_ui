@@ -10,7 +10,7 @@ import { ApiRole } from '../../core/http/api.service';
 import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import { answerThumbs, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { apiCollection, apiCollectionPost } from '../../testing/collection-fixtures';
 import { LibraryPageComponent } from './library-page.component';
 
@@ -76,6 +76,7 @@ describe('LibraryPageComponent and the composer draft', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     try {
+      answerThumbs(http);
       http.verify();
     } finally {
       TestBed.resetTestingModule();

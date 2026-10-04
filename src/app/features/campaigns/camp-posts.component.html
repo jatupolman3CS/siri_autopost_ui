@@ -126,7 +126,7 @@
     <p class="ext-hint">{{ x().replaceHint }}</p>
   </details>
 
-  @for (row of posts(); track row.p.id) {
+  @for (row of page(); track row.p.id) {
     <div class="post stack">
       <div class="panel-head">
         <strong>{{ x().variant }} {{ row.n }}</strong>
@@ -168,6 +168,7 @@
       </div>
     </div>
   }
+  <app-pager [pager]="pager" />
 
   <div>
     <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="addPost()">

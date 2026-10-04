@@ -10,6 +10,8 @@ import '../../core/i18n/i18n.engine';
 import { Dict, I18nService, fmt } from '../../core/i18n/i18n.service';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 /** Icon and colour of every state the log can show. */
 const LOG_LOOK: Record<TestLogKind, { icon: string; color: string }> = {
@@ -27,7 +29,7 @@ const LOG_LOOK: Record<TestLogKind, { icon: string; color: string }> = {
 // post (events plus a 3 s poll), so the log is what the extension really reported, never a simulation.
 @Component({
   selector: 'app-test-page',
-  imports: [PermNoteComponent, SelectFieldComponent],
+  imports: [PagerComponent, PermNoteComponent, SelectFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './test-page.component.html',
   styleUrl: './test-page.component.scss',
@@ -108,6 +110,11 @@ export class TestPageComponent {
     const t = this.t();
     return this.store.log().map((e) => this.logRow(e, t));
   });
+
+  protected readonly logPager = new Pager(20);
+  protected readonly logPage = computed(() => this.logPager.slice(this.logRows()));
+  protected readonly historyPager = new Pager(20);
+  protected readonly historyPage = computed(() => this.historyPager.slice(this.historyRows()));
 
   protected readonly historyRows = computed(() => {
     const t = this.t();

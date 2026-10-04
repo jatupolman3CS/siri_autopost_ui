@@ -249,7 +249,7 @@ describe('CollectionsPageComponent', () => {
       expect(cards()[0].textContent).toContain(t().col.empty);
     });
 
-    it('shows 50 posts and a button for 50 more', async () => {
+    it('shows 50 posts a page', async () => {
       const many = Array.from({ length: 120 }, (_, i) =>
         apiCollectionPost({ id: 'p' + i, collectionId: 'a', text: 'post ' + i }),
       );
@@ -258,15 +258,14 @@ describe('CollectionsPageComponent', () => {
       );
       await rerender();
       expect(rows(cards()[0]).length).toBe(50);
-      const more = cards()[0].querySelector<HTMLButtonElement>('.more')!;
-      expect(more.textContent).toContain('70');
-      more.click();
+      const next = () => cards()[0].querySelectorAll<HTMLButtonElement>('.pager button')[1];
+      next().click();
       await rerender();
-      expect(rows(cards()[0]).length).toBe(100);
-      cards()[0].querySelector<HTMLButtonElement>('.more')!.click();
+      expect(rows(cards()[0]).length).toBe(50);
+      next().click();
       await rerender();
-      expect(rows(cards()[0]).length).toBe(120);
-      expect(cards()[0].querySelector('.more')).toBeNull();
+      expect(rows(cards()[0]).length).toBe(20);
+      expect(next().disabled).toBe(true);
     });
   });
 

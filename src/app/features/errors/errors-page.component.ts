@@ -9,10 +9,12 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 @Component({
   selector: 'app-errors-page',
-  imports: [EmptyStateComponent, PermNoteComponent],
+  imports: [PagerComponent, EmptyStateComponent, PermNoteComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './errors-page.component.html',
   styleUrl: './errors-page.component.scss',
@@ -32,6 +34,9 @@ export class ErrorsPageComponent {
   protected readonly todayList = computed(() =>
     this.sorted().filter((e) => dkey(e.dt) === this.posts.todayKey()),
   );
+
+  protected readonly pager = new Pager(20);
+  protected readonly pageRows = computed(() => this.pager.slice(this.rows()));
 
   protected readonly rows = computed(() => {
     const li = this.i18n.li();

@@ -228,7 +228,7 @@ describe('ComposerPageComponent', () => {
       await settle();
       expect(draft().draft().postId).toBeNull();
       http.expectOne(BASE).flush(DATA);
-      for (const r of http.match((r) => /\/(link-sets|media|snippets)$/.test(r.url))) r.flush([]);
+      for (const r of http.match((r) => /\/(link-sets|media|media-folders|snippets)$/.test(r.url))) r.flush([]);
       await rerender();
       expect(draft().draft()).toMatchObject({ postId: 'a2', text: 'โพสต์สอง' });
     });

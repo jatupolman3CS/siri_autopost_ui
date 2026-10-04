@@ -26,6 +26,8 @@ import {
   PlanCard,
   PlanCardsComponent,
 } from '../../shared/components/plan-cards/plan-cards.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 const EXPIRY_WARN_DAYS = 30;
 
@@ -34,7 +36,13 @@ const EXPIRY_WARN_DAYS = 30;
 // Stripe confirms (the webhook, or the return from Checkout handled here).
 @Component({
   selector: 'app-billing-page',
-  imports: [CycleSwitchComponent, InputFieldComponent, ModalComponent, PlanCardsComponent],
+  imports: [
+    PagerComponent,
+    CycleSwitchComponent,
+    InputFieldComponent,
+    ModalComponent,
+    PlanCardsComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './billing-page.component.html',
   styleUrl: './billing-page.component.scss',
@@ -183,6 +191,9 @@ export class BillingPageComponent {
     if (!this.hasSubscription()) return 'checkout';
     return k === this.session.plan() && this.cancelling() ? 'resume' : 'change';
   });
+  protected readonly invoicePager = new Pager(20);
+  protected readonly invoicePage = computed(() => this.invoicePager.slice(this.invoices()));
+
   protected readonly planTitle = computed(() => {
     const k = this.planModal();
     return k ? fmt(this.t().bill.confirmTitle, { plan: this.t().plans[k].name }) : '';
