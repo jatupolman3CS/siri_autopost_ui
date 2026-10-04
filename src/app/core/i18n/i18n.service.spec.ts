@@ -137,6 +137,83 @@ describe('the corrections over the design copy', () => {
   });
 });
 
+describe('lazy dictionary packs', () => {
+  afterEach(() => localStorage.clear());
+
+  const pairs = (node: unknown, path = ''): [string, readonly [string, string]][] =>
+    Array.isArray(node) && typeof node[0] === 'string'
+      ? [[path, node as [string, string]]]
+      : Object.entries(node as object).flatMap(([k, v]) => pairs(v, path ? `${path}.${k}` : k));
+  const placeholders = (text: string) => (text.match(/\{\w+\}/g) ?? []).sort();
+
+  it('adds t().api.flow once its module is imported, in both languages, and updates t() at once', async () => {
+    localStorage.clear();
+    const service = TestBed.inject(I18nService);
+    const before = service.t();
+    await import('./i18n.flow');
+    const after = service.t();
+    expect(after).not.toBe(before);
+    expect(after.api.flow.storedOnlyBadge).toBe('บันทึกเท่านั้น');
+    service.setLang('en');
+    expect(service.t().api.flow.storedOnlyBadge).toBe('Saved only');
+  });
+
+  it('adds t().api.engine the same way', async () => {
+    localStorage.clear();
+    const service = TestBed.inject(I18nService);
+    await import('./i18n.engine');
+    expect(service.t().api.engine.storedOnlyBadge).toBe('บันทึกเท่านั้น');
+    service.setLang('en');
+    expect(service.t().api.engine.planLocked).toBe('Available on {plan} and above');
+  });
+
+  it('keeps every pack side by side: registering one does not drop another', async () => {
+    localStorage.clear();
+    const service = TestBed.inject(I18nService);
+    await Promise.all([import('./i18n.ext'), import('./i18n.flow'), import('./i18n.engine')]);
+    const api = service.t().api;
+    expect(api.ext.start).toBe('เริ่มทำงาน');
+    expect(api.flow.storedOnly).toBeTruthy();
+    expect(api.engine.storedOnly).toBeTruthy();
+    // A pack never leaks into the shared strings.
+    expect(api.save).toBe('บันทึกการตั้งค่า');
+  });
+
+  it('keeps registerExt working for the campaigns page', async () => {
+    localStorage.clear();
+    const service = TestBed.inject(I18nService);
+    const { registerExt } = await import('./i18n.service');
+    const { AP_I18N_EXT } = await import('./i18n.ext');
+    registerExt(AP_I18N_EXT);
+    expect(service.t().api.ext.title).toBe('ชุดโพสต์ของส่วนขยาย');
+  });
+
+  it('gives every leaf of the packs and of the fixes both languages with the same {placeholders}', async () => {
+    const { AP_I18N_FLOW } = await import('./i18n.flow');
+    const { AP_I18N_ENGINE } = await import('./i18n.engine');
+    const all = [
+      ...pairs(AP_I18N_FLOW, 'flow'),
+      ...pairs(AP_I18N_ENGINE, 'engine'),
+      ...pairs(AP_I18N_FIXES, 'fixes'),
+    ];
+    expect(all.length).toBeGreaterThan(30);
+    for (const [path, [th, en]] of all) {
+      expect(th.trim(), `${path} th`).not.toBe('');
+      expect(en.trim(), `${path} en`).not.toBe('');
+      expect(placeholders(th), path).toEqual(placeholders(en));
+    }
+  });
+
+  it('gives each pack its own copy of the shared hints (stored only, plan locked)', async () => {
+    // The pack files are edited by different pages, so the hints every page needs are repeated in each pack.
+    const { AP_I18N_FLOW } = await import('./i18n.flow');
+    const { AP_I18N_ENGINE } = await import('./i18n.engine');
+    for (const pack of [AP_I18N_FLOW, AP_I18N_ENGINE])
+      for (const key of ['storedOnly', 'storedOnlyBadge', 'planLocked'] as const)
+        expect(pack[key], key).toBeDefined();
+  });
+});
+
 describe('page titles from the dictionary', () => {
   afterEach(() => localStorage.clear());
 

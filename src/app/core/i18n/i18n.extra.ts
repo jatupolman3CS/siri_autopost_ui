@@ -11,6 +11,9 @@ export const AP_I18N_EXTRA = {
   ],
   googleFailed: ['เข้าสู่ระบบด้วย Google ไม่สำเร็จ', 'Google sign-in failed'],
   or: ['หรือ', 'or'],
+
+  // The public page of a shared client report (route report/:token).
+  reportTitle: ['รายงานผลการโพสต์', 'Posting report'],
   emailTaken: [
     'อีเมลนี้มีบัญชีอยู่แล้ว ลองเข้าสู่ระบบแทน',
     'This email already has an account. Try logging in.',
