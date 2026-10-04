@@ -123,10 +123,11 @@ export const AP_I18N_FIXES = {
       'ดาวน์โหลดชุดโพสต์ ชุดลิงก์ ตารางโพสต์ ค่าขั้นสูง กฎแจ้งเตือนและตอบกลับอัตโนมัติเป็นไฟล์เดียว เพื่อย้ายเครื่องหรือเก็บสำรอง',
       'Download every collection, link set, schedule, the advanced settings and the notification and auto-reply rules as one file, to move machines or keep a backup',
     ],
-    // Restoring also drops the posts the replaced schedules had queued and queues them again.
+    // Restoring also drops the posts the replaced schedules had queued and queues them again. It takes two
+    // clicks: "Check the file" lists what the file holds, and only the second one replaces anything.
     restoreHint: [
-      'วางเนื้อหาไฟล์สำรอง (JSON) ชุดโพสต์ ชุดลิงก์ และตารางปัจจุบันจะถูกแทนที่ โพสต์ที่ตารางเดิมจัดคิวไว้จะถูกลบแล้วจัดคิวใหม่',
-      'Paste the backup file (JSON). The current collections, link sets and schedules are replaced; posts the old schedules queued are deleted and queued again',
+      'วางเนื้อหาไฟล์สำรอง (JSON) แล้วกด “ตรวจไฟล์” เพื่อดูสรุปก่อน ยังไม่มีอะไรถูกแทนที่จนกว่าจะยืนยันอีกครั้ง ชุดโพสต์ ชุดลิงก์ และตารางปัจจุบันจะถูกแทนที่ โพสต์ที่ตารางเดิมจัดคิวไว้จะถูกลบแล้วจัดคิวใหม่',
+      'Paste the backup file (JSON) and press “Check the file” to see a summary first; nothing is replaced until you confirm again. The current collections, link sets and schedules are replaced; posts the old schedules queued are deleted and queued again',
     ],
   },
   off: {

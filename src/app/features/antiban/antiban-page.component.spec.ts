@@ -1,12 +1,13 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { assistStorage } from '../../core/auth/token';
 import { SettingsStore, defaultAdvanced } from '../../core/data/settings.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { ApiRole } from '../../core/http/api.service';
 import '../../core/i18n/i18n.engine';
-import { I18nService } from '../../core/i18n/i18n.service';
+import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import {
   answerWorkspaceLoads,
@@ -24,6 +25,7 @@ import {
   antiBan,
   flushBackground,
 } from '../../testing/test-post.fixtures';
+import { AntibanAdvancedComponent } from './antiban-advanced.component';
 import { AntibanPageComponent } from './antiban-page.component';
 
 describe('AntibanPageComponent', () => {
@@ -400,6 +402,22 @@ describe('AntibanPageComponent', () => {
       button(adv(), t().ab.restore).click();
       await rerender();
     };
+    const check = () => modalButton(t().api.engine.restoreCheck);
+    const confirm = () => modalButton(t().api.engine.restoreConfirm);
+    const review = () => modalBody()!.querySelector<HTMLElement>('[data-testid=restore-review]');
+    /** A backup with something in every list, so the summary has numbers to show. */
+    const FILE = {
+      ...BACKUP,
+      collections: [
+        { name: 'A', description: '', icon: '', posts: [{}, {}, {}] },
+        { name: 'B', description: '', icon: '', posts: [{}] },
+      ],
+      linkSets: [{ name: 'S', postAsAccountId: null, accountIds: [], links: [{}, {}, {}, {}, {}] }],
+      schedules: [{ name: 'Morning' }, { name: 'Evening' }, { name: 'Weekend' }],
+      notificationRules: { channel: 'tg', events: {}, sets: [{ linkSet: 'S' }] },
+      autoReply: { on: true, rules: [{}, {}] },
+    };
+    const li = () => [...review()!.querySelectorAll('li')].map((l) => l.textContent!.trim());
 
     it('opens a dialog with the hint, a box for the file and the two buttons', async () => {
       expect(modalBody()).toBeNull();
@@ -408,57 +426,142 @@ describe('AntibanPageComponent', () => {
       expect(modalBody()!.textContent).toContain(t().ab.restoreHint);
       expect(modalBody()!.querySelector('textarea')!.value).toBe('');
       expect(modalButton(t().common.cancel)).toBeTruthy();
-      expect(modalButton(t().ab.restore)).toBeTruthy();
+      expect(check()).toBeTruthy();
+      // Nothing can be restored from this step: there is no restore button yet.
+      expect(modalButton(t().api.engine.restoreConfirm)).toBeUndefined();
     });
 
     it('refuses a text that is not a JSON object without asking the API', async () => {
       await openModal();
       for (const text of ['', 'not json', '[1, 2]', '42', 'null']) {
         await typeRestore(text);
-        modalButton(t().ab.restore).click();
+        check().click();
         await rerender();
         expect(modalBody()!.querySelector('.su-field-err')!.textContent).toBe(t().ab.restoreErr);
+        expect(review()).toBeNull();
       }
       http.expectNone(RESTORE_URL);
     });
 
-    it('sends the file, closes, says what was restored and reads the replaced data again', async () => {
+    it('refuses a file without collections, link sets and schedules before showing anything', async () => {
       await openModal();
-      await typeRestore(JSON.stringify(BACKUP));
-      modalButton(t().ab.restore).click();
-      await settle();
-      const req = http.expectOne(RESTORE_URL);
-      expect(req.request.body).toEqual(BACKUP);
-      req.flush({ collections: 2, linkSets: 1, schedules: 3 });
-      await settle();
-      flushBackground(http);
-      for (const r of http.match((x) => x.url === POSTS_URL)) r.flush([]);
-      await rerender();
-      expect(modalBody()).toBeNull();
-      expect(toasts().map((x) => x.message)).toContain(
-        t().ab.restored.replace('{c}', '2').replace('{s}', '1').replace('{h}', '3'),
-      );
+      for (const text of ['{}', '{"collections": []}', '{"collections":[],"linkSets":[]}']) {
+        await typeRestore(text);
+        check().click();
+        await rerender();
+        expect(modalBody()!.querySelector('.su-field-err')!.textContent).toBe(
+          t().api.engine.restoreIncomplete,
+        );
+        expect(review()).toBeNull();
+      }
+      http.expectNone(RESTORE_URL);
     });
 
-    it('keeps the dialog and the text open with the API reason when the file is refused', async () => {
-      await openModal();
-      const text = JSON.stringify({ collections: [] });
-      await typeRestore(text);
-      modalButton(t().ab.restore).click();
-      await settle();
-      http
-        .expectOne(RESTORE_URL)
-        .flush(
-          { title: 'ไฟล์สำรองไม่สมบูรณ์ ต้องมีชุดโพสต์ ชุดลิงก์ และตารางโพสต์' },
-          { status: 400, statusText: 'Bad Request' },
+    describe('the confirmation step', () => {
+      beforeEach(async () => {
+        await openModal();
+        await typeRestore(JSON.stringify(FILE));
+        check().click();
+        await rerender();
+      });
+
+      it('lists what the file contains, without sending anything yet', () => {
+        expect(review()).not.toBeNull();
+        expect(modalBody()!.querySelector('textarea')).toBeNull();
+        expect(li()).toEqual([
+          fmt(t().api.engine.restoreSumCollections, { n: 2, p: 4 }),
+          fmt(t().api.engine.restoreSumLinkSets, { n: 1, l: 5 }),
+          fmt(t().api.engine.restoreSumSchedules, { n: 3 }),
+          t().api.engine.restoreSumAdvanced,
+          fmt(t().api.engine.restoreSumNotify, { n: 1 }),
+          fmt(t().api.engine.restoreSumReply, { n: 2 }),
+        ]);
+        expect(li()[0]).toBe('2 ชุดโพสต์ (รวม 4 โพสต์)');
+        expect(review()!.textContent).toContain(t().api.engine.restoreSumPlan);
+        http.expectNone(RESTORE_URL);
+      });
+
+      it('says what is replaced: everything of those kinds, queued posts are deleted, history stays', () => {
+        const text = review()!.textContent!;
+        expect(text).toContain(t().api.engine.restoreReplaces);
+        expect(text).toContain(t().api.engine.restoreQueued);
+        expect(text).toContain(t().api.engine.restoreHistory);
+        expect(review()!.querySelector('.callout.warn')!.getAttribute('role')).toBe('alert');
+        // What is there now (the page's lists have arrived, and are empty here).
+        expect(text).toContain(fmt(t().api.engine.restoreNow, { c: 0, s: 0, h: 0 }));
+      });
+
+      it('names only the optional parts the file has', async () => {
+        button(modalBody()!.closest('.su-modal-panel')!, t().api.engine.restoreBack).click();
+        await rerender();
+        await typeRestore(JSON.stringify({ ...BACKUP, antiBanAdvanced: null }));
+        check().click();
+        await rerender();
+        expect(li()).toHaveLength(3);
+        expect(review()!.textContent).not.toContain(t().api.engine.restoreSumPlan);
+      });
+
+      it('sends the file only on the second click, and closes with the counts', async () => {
+        confirm().click();
+        await settle();
+        const req = http.expectOne(RESTORE_URL);
+        expect(req.request.body).toEqual(FILE);
+        req.flush({ collections: 2, linkSets: 1, schedules: 3 });
+        await settle();
+        flushBackground(http);
+        for (const r of http.match((x) => x.url === POSTS_URL)) r.flush([]);
+        await rerender();
+        expect(modalBody()).toBeNull();
+        expect(toasts().map((x) => x.message)).toContain(
+          t().ab.restored.replace('{c}', '2').replace('{s}', '1').replace('{h}', '3'),
         );
-      await rerender();
-      expect(modalBody()!.querySelector('.su-field-err')!.textContent).toContain(
-        'ไฟล์สำรองไม่สมบูรณ์',
-      );
-      expect(modalBody()!.querySelector('textarea')!.value).toBe(text);
-      expect(toasts()).toEqual([]);
-      expect(modalButton(t().ab.restore).disabled).toBe(false);
+      });
+
+      it('goes back to the box with the text, and asks for the second click again', async () => {
+        button(modalBody()!.closest('.su-modal-panel')!, t().api.engine.restoreBack).click();
+        await rerender();
+        expect(review()).toBeNull();
+        expect(modalBody()!.querySelector('textarea')!.value).toBe(JSON.stringify(FILE));
+        expect(confirm()).toBeUndefined();
+        check().click();
+        await rerender();
+        expect(review()).not.toBeNull();
+        http.expectNone(RESTORE_URL);
+      });
+
+      it('cannot be dismissed while the restore is on its way', async () => {
+        confirm().click();
+        await settle();
+        fixture.detectChanges();
+        expect(document.querySelector('.su-modal-panel .su-x')).toBeNull();
+        expect(confirm().disabled).toBe(true);
+        confirm().click();
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        await rerender();
+        expect(modalBody()).not.toBeNull();
+        expect(http.match(RESTORE_URL)).toHaveLength(1);
+      });
+
+      it('keeps the box and the text open with the API reason when the file is refused', async () => {
+        confirm().click();
+        await settle();
+        http
+          .expectOne(RESTORE_URL)
+          .flush(
+            { title: 'ไฟล์สำรองไม่สมบูรณ์ ชุดโพสต์ไม่ถูกต้อง' },
+            { status: 400, statusText: 'Bad Request' },
+          );
+        await rerender();
+        expect(modalBody()!.querySelector('.su-field-err')!.textContent).toContain(
+          'ไฟล์สำรองไม่สมบูรณ์',
+        );
+        expect(review()).toBeNull();
+        expect(modalBody()!.querySelector('textarea')!.value).toBe(JSON.stringify(FILE));
+        expect(toasts()).toEqual([]);
+        expect(check().disabled).toBe(false);
+        // Nothing was replaced, so nothing was read again.
+        http.expectNone(RESTORE_URL);
+      });
     });
 
     it('closes on cancel and starts empty the next time', async () => {
@@ -469,6 +572,38 @@ describe('AntibanPageComponent', () => {
       expect(modalBody()).toBeNull();
       await openModal();
       expect(modalBody()!.querySelector('textarea')!.value).toBe('');
+      expect(review()).toBeNull();
+    });
+
+    it('starts at the first step again after closing from the confirmation', async () => {
+      await openModal();
+      await typeRestore(JSON.stringify(FILE));
+      check().click();
+      await rerender();
+      expect(review()).not.toBeNull();
+      document.querySelector<HTMLElement>('.su-modal-panel .su-x')!.click();
+      await rerender();
+      await openModal();
+      expect(review()).toBeNull();
+      expect(modalBody()!.querySelector('textarea')!.value).toBe('');
+    });
+  });
+
+  describe('restore for someone who is not an admin', () => {
+    it('keeps the button that opens the dialog off, and the dialog’s buttons too', async () => {
+      await open({ role: 'editor' });
+      expect(button(adv(), t().ab.restore).disabled).toBe(true);
+      // Even if the dialog were opened some other way, nothing can be checked or sent.
+      const advanced = fixture.debugElement.query(By.directive(AntibanAdvancedComponent));
+      (advanced.componentInstance as { restoring: { set(v: boolean): void } }).restoring.set(true);
+      await rerender();
+      expect(modalButton(t().api.engine.restoreCheck).disabled).toBe(true);
+      expect(modalButton(t().api.engine.restoreCheck).title).toBe(t().api.permAdmin);
+      await typeRestore(JSON.stringify(BACKUP));
+      modalButton(t().api.engine.restoreCheck).click();
+      await rerender();
+      expect(modalBody()!.querySelector('[data-testid=restore-review]')).toBeNull();
+      http.expectNone(RESTORE_URL);
     });
   });
 });

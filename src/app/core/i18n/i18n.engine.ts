@@ -129,6 +129,42 @@ export const AP_I18N_ENGINE = {
   reportShareExpires: ['ลิงก์ใช้ได้ถึง {d}', 'The link works until {d}'],
   // The title of the public report page (route report/:token) is api.reportTitle in i18n.extra.ts.
 
+  // Restore: the file is checked first, then its contents are listed and a second click confirms the replacement.
+  restoreCheck: ['ตรวจไฟล์', 'Check the file'],
+  restoreBack: ['ย้อนกลับ', 'Back'],
+  restoreConfirm: ['แทนที่และกู้คืน', 'Replace and restore'],
+  restoreIncomplete: [
+    'ไฟล์นี้ไม่ใช่ไฟล์สำรองที่สมบูรณ์ ต้องมีชุดโพสต์ ชุดลิงก์ และตารางโพสต์',
+    'This is not a complete backup: it needs collections, link sets and schedules',
+  ],
+  restoreSumTitle: ['ไฟล์นี้มี', 'This file contains'],
+  restoreSumCollections: ['{n} ชุดโพสต์ (รวม {p} โพสต์)', '{n} collection(s), {p} post(s) in all'],
+  restoreSumLinkSets: ['{n} ชุดลิงก์ (รวม {l} ลิงก์)', '{n} link set(s), {l} link(s) in all'],
+  restoreSumSchedules: ['{n} ตารางโพสต์', '{n} schedule(s)'],
+  restoreSumAdvanced: ['ค่า anti-ban ขั้นสูง', 'Advanced anti-ban settings'],
+  restoreSumNotify: ['กฎแจ้งเตือนของ {n} ชุดลิงก์', 'Notification rules for {n} link set(s)'],
+  restoreSumReply: ['กฎตอบกลับอัตโนมัติ {n} กฎ', '{n} auto-reply rule(s)'],
+  restoreSumPlan: [
+    'ค่าขั้นสูง กฎแจ้งเตือน และกฎตอบกลับอัตโนมัติจะถูกใช้เฉพาะเมื่อแผนของเจ้าของเวิร์กสเปซรองรับ',
+    'The advanced settings, notification rules and auto-reply rules are applied only when the workspace owner’s plan includes them',
+  ],
+  restoreNow: [
+    'ตอนนี้เวิร์กสเปซนี้มี {c} ชุดโพสต์ · {s} ชุดลิงก์ · {h} ตาราง',
+    'This workspace has {c} collection(s) · {s} link set(s) · {h} schedule(s) right now',
+  ],
+  restoreReplaces: [
+    'ชุดโพสต์ ชุดลิงก์ และตารางโพสต์ทั้งหมดในเวิร์กสเปซนี้จะถูกแทนที่ด้วยข้อมูลในไฟล์ สิ่งที่ไม่อยู่ในไฟล์จะหายไป',
+    'Every collection, link set and schedule in this workspace is replaced by what is in the file. Anything that is not in the file is removed',
+  ],
+  restoreQueued: [
+    'โพสต์ที่ตารางเดิมจัดคิวไว้ล่วงหน้าจะถูกลบ แล้วจัดคิวใหม่ตามตารางในไฟล์',
+    'Posts the old schedules had queued ahead are deleted, and queued again from the schedules in the file',
+  ],
+  restoreHistory: [
+    'ประวัติโพสต์ที่ส่งไปแล้วยังอยู่ครบ',
+    'The history of posts that were already sent stays',
+  ],
+
   // Backup: the file holds no secrets.
   backupNoSecrets: [
     'ไฟล์สำรองไม่มีโทเค็น (Telegram, LINE) ต้องกรอกใหม่หลังกู้คืน',
