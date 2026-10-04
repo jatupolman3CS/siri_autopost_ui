@@ -643,6 +643,50 @@ describe('CollectionsPageComponent', () => {
       expect(controls.every((c) => c.disabled)).toBe(true);
     });
 
+    it.each([
+      ['editor', true],
+      ['admin', false],
+      ['owner', false],
+    ] as const)(
+      '%s: the approval rule is off = %s while the other settings stay editable',
+      async (role, off) => {
+        await open(DATA, role);
+        btn(t().col.settings, cards()[0]).click();
+        await rerender();
+        const panel = cards()[0].querySelector('app-collection-settings')!;
+        const checks = [...panel.querySelectorAll<HTMLInputElement>('input[type=checkbox]')];
+        // shuffle, watermark, approval
+        expect(checks.map((c) => c.disabled)).toEqual([false, false, off]);
+        expect(panel.querySelector<HTMLTextAreaElement>('textarea')!.disabled).toBe(false);
+        const host = panel.querySelectorAll('app-checkbox')[2];
+        expect(!!host.getAttribute('title')).toBe(off);
+      },
+    );
+
+    it('an editor typing in a text field sends the settings with the approval rule unchanged', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      try {
+        await open(DATA, 'editor');
+        btn(t().col.settings, cards()[0]).click();
+        await rerender();
+        const area = cards()[0].querySelector<HTMLTextAreaElement>(
+          'app-collection-settings textarea',
+        )!;
+        area.value = '#new';
+        area.dispatchEvent(new Event('input'));
+        vi.advanceTimersByTime(800);
+        const req = http.expectOne({ method: 'PUT', url: `${BASE}/a` });
+        expect(req.request.body.settings).toMatchObject({
+          hashtags: '#new',
+          requireApproval: false,
+        });
+        req.flush(apiCollection({ id: 'a', settings: { hashtags: '#new' } }));
+        await settle();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('is read-only in assist mode', async () => {
       await open(DATA, 'owner', true);
       expect(btn(t().col.newCol).disabled).toBe(true);

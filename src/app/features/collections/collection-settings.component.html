@@ -78,7 +78,8 @@
     <app-checkbox
       [label]="t().col.requireApproval"
       [checked]="s().requireApproval"
-      [disabled]="!perm.canEdit()"
+      [disabled]="!perm.canAdmin()"
+      [attr.title]="perm.adminHint() || null"
       (checkedChange)="set({ requireApproval: $event })"
     />
     <span class="small muted hint">{{ t().col.approvalHint }}</span>

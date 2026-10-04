@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { EXPORT_FILES, downloadCsv, postsToCsv } from '../flow';
 import {
@@ -51,6 +52,33 @@ const metaOf = (c: ApiCollection | Meta): Meta => ({
   settings: { ...c.settings },
 });
 
+/**
+ * What a collection shows after its save: the server's values, except text it only trimmed (the person may be
+ * in the middle of a word and the space typed before the next one must stay).
+ */
+function shownAfterSave(sent: Meta, saved: Meta): Meta {
+  const keep = (typed: string, got: string) => (typed.trim() === got ? typed : got);
+  return {
+    ...saved,
+    name: keep(sent.name, saved.name),
+    description: keep(sent.description, saved.description),
+    settings: {
+      ...saved.settings,
+      hashtags: keep(sent.settings.hashtags, saved.settings.hashtags),
+      pageTags: keep(sent.settings.pageTags, saved.settings.pageTags),
+      footer: keep(sent.settings.footer, saved.settings.footer),
+    },
+  };
+}
+
+const sameMeta = (a: Meta, b: Meta): boolean =>
+  a.name === b.name &&
+  a.description === b.description &&
+  a.icon === b.icon &&
+  (Object.keys({ ...a.settings, ...b.settings }) as (keyof ApiCollectionSettings)[]).every(
+    (k) => a.settings[k] === b.settings[k],
+  );
+
 /** A post is used by schedules when the collection does not ask for approval, or when it was approved. */
 export function isUsable(collection: Pick<ApiCollection, 'settings'>, post: ApiCollectionPost) {
   return !collection.settings.requireApproval || post.approval === 'approved';
@@ -64,7 +92,8 @@ function approvalAfter(action: ApiApprovalAction): ApiCollectionPost['approval']
 // The workspace's post collections ("ชุดโพสต์") with their posts, from /collections. Settings edits are
 // optimistic: the page shows them at once, they are sent in one complete PUT 800 ms after the last change,
 // and a refusal puts the collection back to what the server last confirmed (the API's reason is toasted by
-// the error interceptor). Posts are added and edited by the pages that wait for the server (the composer
+// the error interceptor); a 403 for the approval rule, which needs the admin role, takes back only that
+// switch and sends the other edits again. Text the server only trimmed stays as it was typed. Posts are added and edited by the pages that wait for the server (the composer
 // goes on only when the post is saved); deleting a post and the approval buttons are optimistic too.
 // None of the optimistic methods rejects: they answer whether the server took the change.
 @Injectable({ providedIn: 'root' })
@@ -215,13 +244,32 @@ export class CollectionsStore {
       const saved = await this.api.updateCollection(entry.ws, id, entry.meta);
       entry.confirmed = metaOf(saved);
       if (entry.ws === this.ws.id()) {
-        // The server's values (trimmed names...) replace what is shown, unless the person went on editing.
-        if (!entry.dirty) this.show(id, entry.confirmed);
+        // The server's values replace what is shown, unless the person went on editing; text it only trimmed
+        // stays as typed.
+        if (!entry.dirty) this.show(id, shownAfterSave(entry.meta, entry.confirmed));
         this.patchCollection(id, (c) => ({ ...c, scheduleCount: saved.scheduleCount }));
       }
-    } catch {
+    } catch (e) {
       // The interceptor has toasted the reason. Edits made meanwhile are sent with the next request; with
       // none, the collection goes back to what the server last confirmed.
+      const approval = entry.meta.settings.requireApproval;
+      if (
+        e instanceof HttpErrorResponse &&
+        e.status === 403 &&
+        approval !== entry.confirmed.settings.requireApproval
+      ) {
+        // The approval rule is the one setting that needs a higher role (admin): take back only that change
+        // and send the others again, so a refused switch does not cost the rest of the edits.
+        entry.meta = {
+          ...entry.meta,
+          settings: {
+            ...entry.meta.settings,
+            requireApproval: entry.confirmed.settings.requireApproval,
+          },
+        };
+        if (entry.ws === this.ws.id()) this.show(id, entry.meta);
+        if (!sameMeta(entry.meta, entry.confirmed)) entry.dirty = true;
+      }
       if (!entry.dirty) {
         entry.meta = entry.confirmed;
         if (entry.ws === this.ws.id()) this.show(id, entry.confirmed);

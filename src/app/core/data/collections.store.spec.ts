@@ -201,11 +201,86 @@ describe('CollectionsStore', () => {
       vi.advanceTimersByTime(800);
       http
         .expectOne({ method: 'PUT', url: `${BASE}/a` })
+        .flush({ title: 'ข้อความยาวเกินไป' }, { status: 400, statusText: 'Bad Request' });
+      await settle();
+      expect(store.byId('a')?.settings).toMatchObject({ requireApproval: false, footer: '' });
+      vi.advanceTimersByTime(5000);
+      http.expectNone({ method: 'PUT', url: `${BASE}/a` });
+    });
+
+    it('takes back only the approval switch when the server refuses it for the role, and saves the other edits', async () => {
+      store.updateSettings('a', { requireApproval: true, footer: 'kept footer' });
+      store.rename('a', 'Renamed');
+      vi.advanceTimersByTime(800);
+      http
+        .expectOne({ method: 'PUT', url: `${BASE}/a` })
+        .flush({ title: 'ไม่มีสิทธิ์' }, { status: 403, statusText: 'Forbidden' });
+      await settle();
+      // The refused switch is off again at once; the other edits stay on screen and are sent again.
+      expect(store.byId('a')).toMatchObject({
+        name: 'Renamed',
+        settings: { requireApproval: false, footer: 'kept footer' },
+      });
+      const retry = http.expectOne({ method: 'PUT', url: `${BASE}/a` });
+      expect(retry.request.body).toMatchObject({
+        name: 'Renamed',
+        settings: { requireApproval: false, footer: 'kept footer' },
+      });
+      retry.flush(apiCollection({ id: 'a', name: 'Renamed', settings: { footer: 'kept footer' } }));
+      await settle();
+      expect(store.byId('a')).toMatchObject({
+        name: 'Renamed',
+        settings: { requireApproval: false, footer: 'kept footer' },
+      });
+      vi.advanceTimersByTime(5000);
+      http.expectNone({ method: 'PUT', url: `${BASE}/a` });
+    });
+
+    it('goes back to the last confirmed values when even the retry without the switch is refused', async () => {
+      store.updateSettings('a', { requireApproval: true, footer: 'x' });
+      vi.advanceTimersByTime(800);
+      http
+        .expectOne({ method: 'PUT', url: `${BASE}/a` })
+        .flush({ title: 'ไม่มีสิทธิ์' }, { status: 403, statusText: 'Forbidden' });
+      await settle();
+      http
+        .expectOne({ method: 'PUT', url: `${BASE}/a` })
         .flush({ title: 'ไม่มีสิทธิ์' }, { status: 403, statusText: 'Forbidden' });
       await settle();
       expect(store.byId('a')?.settings).toMatchObject({ requireApproval: false, footer: '' });
       vi.advanceTimersByTime(5000);
       http.expectNone({ method: 'PUT', url: `${BASE}/a` });
+    });
+
+    it('keeps a space or line break typed at the end of a text the server only trimmed', async () => {
+      store.updateSettings('a', { hashtags: '#a #b ', pageTags: 'tag ', footer: 'LINE @shop\n' });
+      store.rename('a', 'Condo ', 'about ');
+      vi.advanceTimersByTime(800);
+      const req = http.expectOne({ method: 'PUT', url: `${BASE}/a` });
+      req.flush(
+        apiCollection({
+          id: 'a',
+          name: 'Condo',
+          description: 'about',
+          settings: { hashtags: '#a #b', pageTags: 'tag', footer: 'LINE @shop' },
+        }),
+      );
+      await settle();
+      expect(store.byId('a')).toMatchObject({
+        name: 'Condo ',
+        description: 'about ',
+        settings: { hashtags: '#a #b ', pageTags: 'tag ', footer: 'LINE @shop\n' },
+      });
+    });
+
+    it('shows another text the server stored instead of what was typed', async () => {
+      store.updateSettings('a', { footer: 'typed' });
+      vi.advanceTimersByTime(800);
+      http
+        .expectOne({ method: 'PUT', url: `${BASE}/a` })
+        .flush(apiCollection({ id: 'a', settings: { footer: 'typed (server)' } }));
+      await settle();
+      expect(store.byId('a')?.settings.footer).toBe('typed (server)');
     });
 
     it('sends what was typed while a save was on its way, with a body of its own', async () => {
