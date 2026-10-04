@@ -422,6 +422,14 @@ describe('NotificationsStore', () => {
       expect(await testing).toEqual({ status: 'failed', message: 'ต้องใช้แผน Pro ขึ้นไป' });
     });
 
+    it('says the API did not answer when the request never arrives', async () => {
+      await start({ notifications: notifications({ ...TELEGRAM_READY }) });
+      const testing = store.testChannel('tg');
+      await settle();
+      http.expectOne(`${NOTIFY_URL}/test`).error(new ProgressEvent('error'));
+      expect(await testing).toEqual({ status: 'unreachable' });
+    });
+
     it('stops when the save before the test is refused', async () => {
       await start({ notifications: notifications({ ...TELEGRAM_READY }) });
       store.setTarget('tg', '-1');
@@ -430,7 +438,7 @@ describe('NotificationsStore', () => {
       http
         .expectOne({ url: NOTIFY_URL, method: 'PUT' })
         .flush({ title: 'no' }, { status: 403, statusText: 'Forbidden' });
-      expect(await testing).toEqual({ status: 'failed', message: null });
+      expect(await testing).toEqual({ status: 'saveFailed' });
       http.expectNone(`${NOTIFY_URL}/test`);
     });
   });
@@ -460,6 +468,14 @@ describe('NotificationsStore', () => {
       expect(req.request.body).toEqual({ token: null });
       req.flush({ chats: [] });
       expect(await finding).toEqual({ status: 'ok', chats: [] });
+    });
+
+    it('says the API did not answer when the request never arrives', async () => {
+      await start({ notifications: notifications({ ...TELEGRAM_READY }) });
+      const finding = store.findChats();
+      await settle();
+      http.expectOne(`${NOTIFY_URL}/telegram/chats`).error(new ProgressEvent('error'));
+      expect(await finding).toEqual({ status: 'unreachable' });
     });
 
     it('reports Telegram refusing the token', async () => {

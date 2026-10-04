@@ -46,13 +46,19 @@ export type TokenState = 'none' | 'saved' | 'new' | 'clear';
 
 export type NotifyTestOutcome =
   | { status: 'ok' }
-  | { status: 'failed'; message: string | null }
+  /** The platform or the API said no, with its reason. */
+  | { status: 'failed'; message: string }
   /** The channel has no token or no recipient yet: nothing was sent. */
-  | { status: 'incomplete' };
+  | { status: 'incomplete' }
+  /** The save that comes first was refused (the error interceptor has shown why). */
+  | { status: 'saveFailed' }
+  /** No answer from the API. */
+  | { status: 'unreachable' };
 export type FindChatsOutcome =
   | { status: 'ok'; chats: ApiTelegramChat[] }
-  | { status: 'failed'; message: string | null }
-  | { status: 'incomplete' };
+  | { status: 'failed'; message: string }
+  | { status: 'incomplete' }
+  | { status: 'unreachable' };
 
 /** What the summary line counts: active groups, those that get an alert, and through which channel. */
 export interface NotifySummary {
@@ -426,12 +432,13 @@ export class NotificationsStore {
     const state = channel === 'tg' ? this.telegramState() : this.lineState();
     if ((state !== 'saved' && state !== 'new') || target.trim() === '')
       return { status: 'incomplete' };
-    if (this.dirty() && !(await this.save())) return { status: 'failed', message: null };
+    if (this.dirty() && !(await this.save())) return { status: 'saveFailed' };
     try {
       const result = await this.api.testNotification(wsId, channel);
-      return result.ok ? { status: 'ok' } : { status: 'failed', message: result.message };
+      return result.ok ? { status: 'ok' } : { status: 'failed', message: result.message ?? '' };
     } catch (e) {
-      return { status: 'failed', message: problemMessage(e) };
+      const message = problemMessage(e);
+      return message ? { status: 'failed', message } : { status: 'unreachable' };
     }
   }
 
@@ -445,7 +452,8 @@ export class NotificationsStore {
       const found = await this.api.telegramChats(wsId, this.tokens().tg ?? undefined);
       return { status: 'ok', chats: found.chats };
     } catch (e) {
-      return { status: 'failed', message: problemMessage(e) };
+      const message = problemMessage(e);
+      return message ? { status: 'failed', message } : { status: 'unreachable' };
     }
   }
 }
