@@ -175,7 +175,11 @@ describe('SchedulesStore', () => {
       await settle();
       // The follow-up reads wait for the answer: the new schedule is already in the list.
       expect(store.schedules().map((s) => s.id)).toEqual(['a', 'n']);
-      answerChangeRefresh(http);
+      const asked = answerChangeRefresh(http);
+      expect(asked.posts).toBeGreaterThan(0);
+      expect(asked.errors).toBe(1);
+      expect(asked.collections).toBe(1);
+      expect(asked.linkSets).toBe(1);
       await settle();
       const result = await done;
       expect(result.created).toBe(14);
@@ -208,7 +212,8 @@ describe('SchedulesStore', () => {
       req.flush({ ...A, active: false, nextRunAt: null });
       await settle();
       expect(store.byId('a')?.active).toBe(false);
-      answerChangeRefresh(http);
+      const asked = answerChangeRefresh(http);
+      expect([asked.posts > 0, asked.collections, asked.linkSets]).toEqual([true, 1, 1]);
       const saved = await done;
       expect(saved?.active).toBe(false);
       expect(store.isBusy('a')).toBe(false);
@@ -249,7 +254,8 @@ describe('SchedulesStore', () => {
       req.flush(null);
       await settle();
       expect(store.schedules().map((s) => s.id)).toEqual(['b']);
-      answerChangeRefresh(http);
+      const asked = answerChangeRefresh(http);
+      expect([asked.posts > 0, asked.collections, asked.linkSets]).toEqual([true, 1, 1]);
       await done;
       expect(store.isBusy('a')).toBe(false);
     });

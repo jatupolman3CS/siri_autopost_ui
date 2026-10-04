@@ -70,15 +70,25 @@ export function saveBody(over: Partial<ApiSaveSchedule> = {}): ApiSaveSchedule {
 
 /**
  * Answers the reads a schedule change sets off (the queue, the error reports, the collections and the link
- * sets of the workspace) with what is given, or with nothing.
+ * sets of the workspace) with what is given, or with nothing. Resolves to how many of each were asked for.
  */
 export function answerChangeRefresh(
   http: HttpTestingController,
   data: { posts?: unknown[]; collections?: unknown[]; linkSets?: unknown[] } = {},
-): void {
-  for (const r of http.match((x) => x.url === `/api/workspaces/${WS}/posts`))
-    r.flush(data.posts ?? []);
-  for (const r of http.match(`/api/workspaces/${WS}/errors`)) r.flush([]);
-  for (const r of http.match(`/api/workspaces/${WS}/collections`)) r.flush(data.collections ?? []);
-  for (const r of http.match(`/api/workspaces/${WS}/link-sets`)) r.flush(data.linkSets ?? []);
+): { posts: number; errors: number; collections: number; linkSets: number } {
+  const base = `/api/workspaces/${WS}`;
+  const posts = http.match((x) => x.url === `${base}/posts`);
+  posts.forEach((r) => r.flush(data.posts ?? []));
+  const errors = http.match(`${base}/errors`);
+  errors.forEach((r) => r.flush([]));
+  const collections = http.match(`${base}/collections`);
+  collections.forEach((r) => r.flush(data.collections ?? []));
+  const linkSets = http.match(`${base}/link-sets`);
+  linkSets.forEach((r) => r.flush(data.linkSets ?? []));
+  return {
+    posts: posts.length,
+    errors: errors.length,
+    collections: collections.length,
+    linkSets: linkSets.length,
+  };
 }

@@ -374,7 +374,7 @@ describe('SchedulesPageComponent', () => {
       expect(req.request.body).toEqual({ active: false });
       req.flush({ ...MORNING, active: false, nextRunAt: null });
       await settle();
-      answerChangeRefresh(http);
+      expect(answerChangeRefresh(http).posts).toBeGreaterThan(0);
       await settle();
       fixture.detectChanges();
       expect(rowsOf(el)[0].querySelector('.status')?.textContent?.trim()).toBe(t().sch.pausedL);
@@ -390,7 +390,7 @@ describe('SchedulesPageComponent', () => {
       expect(req.request.body).toEqual({ active: true });
       req.flush(MORNING);
       await settle();
-      answerChangeRefresh(http);
+      expect(answerChangeRefresh(http).posts).toBeGreaterThan(0);
       await settle();
       fixture.detectChanges();
       expect(rowsOf(el)[0].querySelector('.status')?.textContent?.trim()).toBe(t().sch.active);
@@ -407,7 +407,7 @@ describe('SchedulesPageComponent', () => {
       expect(req.request.method).toBe('DELETE');
       req.flush(null);
       await settle();
-      answerChangeRefresh(http);
+      expect(answerChangeRefresh(http).posts).toBeGreaterThan(0);
       await settle();
       fixture.detectChanges();
       expect(rowsOf(el)).toHaveLength(0);
