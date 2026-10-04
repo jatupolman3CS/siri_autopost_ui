@@ -32,10 +32,20 @@
       <p class="url" data-testid="share-url">{{ l.url }}</p>
       <span class="small muted">{{ l.expires }}</span>
       <div class="btns">
-        <a class="su-btn su-btn-sm su-btn-ghost" [href]="l.url" target="_blank" rel="noopener">
+        <a
+          class="su-btn su-btn-sm su-btn-ghost"
+          [href]="l.url"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <i class="ph ph-arrow-square-out"></i>{{ t().api.engine.reportShareOpen }}
         </a>
-        <a class="su-btn su-btn-sm su-btn-ghost" [href]="l.print" target="_blank" rel="noopener">
+        <a
+          class="su-btn su-btn-sm su-btn-ghost"
+          [href]="l.print"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <i class="ph ph-printer"></i>{{ t().api.engine.reportSharePrint }}
         </a>
         <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="copy(l.url)">

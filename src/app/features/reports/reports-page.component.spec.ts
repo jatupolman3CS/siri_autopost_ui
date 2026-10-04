@@ -10,6 +10,7 @@ import { WorkspaceStore } from '../../core/data/workspace.store';
 import { ApiReport, ApiRole } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.engine';
+import { NewTabService } from '../../core/services/new-tab.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { lookup } from '../../core/services/title.strategy';
 import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
@@ -56,6 +57,8 @@ describe('ReportsPageComponent', () => {
       report?: ApiReport;
       /** Answer the report only when the test says so. */
       hold?: boolean;
+      /** Replace the new-tab service: the addresses it is asked to open land here. */
+      opened?: string[];
     } = {},
   ) {
     http = provideApiTesting({
@@ -63,6 +66,9 @@ describe('ReportsPageComponent', () => {
       providers: [
         provideRouter([{ path: '**', children: [] }]),
         { provide: DeviceEventsService, useClass: FakeDeviceEvents },
+        ...(opts.opened
+          ? [{ provide: NewTabService, useValue: { open: (u: string) => opts.opened!.push(u) } }]
+          : []),
       ],
     });
     if (opts.assist)
@@ -393,8 +399,8 @@ describe('ReportsPageComponent', () => {
       const make = () => button(modal()!, t().rep.clientBtn)!;
       const SHARE = { token: 'tok123', path: '/report/tok123', expiresAt: '2026-11-03T05:00:00Z' };
 
-      async function dialog() {
-        const r = await open({ agency: true });
+      async function dialog(opened?: string[]) {
+        const r = await open({ agency: true, opened });
         create(r.el).click();
         r.fixture.detectChanges();
         return r;
@@ -437,7 +443,11 @@ describe('ReportsPageComponent', () => {
         await settle();
         fixture.detectChanges();
         const base = window.location.origin;
-        expect(open_).toHaveBeenCalledWith(`${base}/report/tok123?print=1`, '_blank');
+        expect(open_).toHaveBeenCalledWith(
+          `${base}/report/tok123?print=1`,
+          '_blank',
+          'noopener,noreferrer',
+        );
         expect(modal()).toBeNull();
         expect(
           toasts().some(
@@ -458,6 +468,37 @@ describe('ReportsPageComponent', () => {
           `${base}/report/tok123`,
           `${base}/report/tok123?print=1`,
         ]);
+        // The links in the card give the new tab no reference back to this page either.
+        for (const a of anchors)
+          expect(a.rel.split(' ').sort()).toEqual(['noopener', 'noreferrer']);
+      });
+
+      it('opens the print view through the new-tab service, never with window.open itself', async () => {
+        const open_ = vi.spyOn(window, 'open').mockReturnValue(null);
+        const opened: string[] = [];
+        const { fixture } = await dialog(opened);
+        type(fields()[0], 'Baan Dee Studio');
+        make().click();
+        await settle();
+        http.expectOne({ url: `${REPORT_URL}/share`, method: 'POST' }).flush(SHARE);
+        await settle();
+        fixture.detectChanges();
+        expect(opened).toEqual([`${window.location.origin}/report/tok123?print=1`]);
+        expect(open_).not.toHaveBeenCalled();
+      });
+
+      it('opens nothing for a link-only report', async () => {
+        const opened: string[] = [];
+        const { fixture } = await dialog(opened);
+        type(fields()[0], 'Baan Dee Studio');
+        selects()[1].value = 'link';
+        selects()[1].dispatchEvent(new Event('change'));
+        make().click();
+        await settle();
+        http.expectOne({ url: `${REPORT_URL}/share`, method: 'POST' }).flush(SHARE);
+        await settle();
+        fixture.detectChanges();
+        expect(opened).toEqual([]);
       });
 
       it('makes a link only: nothing opens, the link shows', async () => {
