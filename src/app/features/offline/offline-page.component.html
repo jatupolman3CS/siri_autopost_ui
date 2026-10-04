@@ -101,7 +101,7 @@
         </button>
       </div>
       <div class="fs14 fw5">{{ t().off.waiting }} ({{ waitingRows().length }})</div>
-      @for (w of waitingRows(); track w.id) {
+      @for (w of waitPage(); track w.id) {
         <div class="row tight">
           <span class="time">{{ w.time }}</span>
           <span class="pico s24"><i class="ph" [class]="w.icon"></i></span>
@@ -113,6 +113,7 @@
       } @empty {
         <p class="fs14 muted flush">{{ t().off.noWaiting }}</p>
       }
+      <app-pager [pager]="waitPager" />
     </section>
   </div>
 </div>

@@ -18,13 +18,15 @@ import '../../core/i18n/i18n.ext';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { MediaStripComponent } from './media-strip.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 // Section 2 of a campaign: how posts are picked, the lead media attached first to every post, the text
 // block added to every post (and where), page tags, find & replace, and the post variants with their
 // media and a random preview (client/dashboard.js "posts").
 @Component({
   selector: 'app-camp-posts',
-  imports: [MediaStripComponent],
+  imports: [PagerComponent, MediaStripComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './camp-posts.component.html',
   styleUrl: './camp-posts.component.scss',
@@ -45,6 +47,8 @@ export class CampPostsComponent {
     this.store.campaigns();
     return this.campaign().posts.map((p, i) => ({ p, n: i + 1 }));
   });
+  protected readonly pager = new Pager(20);
+  protected readonly page = computed(() => this.pager.slice(this.posts()));
   protected readonly lead = computed(() => {
     this.store.campaigns();
     return this.campaign().leadImageIds;
@@ -77,6 +81,8 @@ export class CampPostsComponent {
   protected addPost(): void {
     const c = this.campaign();
     this.store.change(() => c.posts.push(newPost()));
+    // The new variant is the last one: show its page.
+    this.pager.go(Math.ceil(c.posts.length / this.pager.size()));
   }
 
   protected removePost(p: CampaignPost, n: number): void {

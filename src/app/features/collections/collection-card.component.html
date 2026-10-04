@@ -44,11 +44,7 @@
       @for (p of posts(); track p.id) {
         <app-collection-post-row [collection]="collection()" [post]="p" />
       }
-      @if (more() > 0) {
-        <button type="button" class="su-btn su-btn-sm su-btn-ghost more" (click)="showMore()">
-          {{ moreLabel() }}
-        </button>
-      }
+      <app-pager [pager]="pager" />
       @if (!collection().posts.length) {
         <p class="empty">{{ t().col.empty }}</p>
       }

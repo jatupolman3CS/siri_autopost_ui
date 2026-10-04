@@ -27,13 +27,15 @@ import {
   SelectOption,
 } from '../../shared/components/select-field/select-field.component';
 import { LinkRowComponent } from './link-row.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 // One link set (the prototype's set card): its name and counts, the actions (add a link, paste several,
 // pick from an account, schedule with it, delete), the link rows, and under the "more options" toggle the
 // account that posts, an example of what is written to a group with a code and the other accounts.
 @Component({
   selector: 'app-link-set-card',
-  imports: [LinkRowComponent, SelectFieldComponent],
+  imports: [PagerComponent, LinkRowComponent, SelectFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './link-set-card.component.html',
   styleUrl: './link-set-card.component.scss',
@@ -55,6 +57,8 @@ export class LinkSetCardComponent {
 
   /** The row that was just added: its address field takes the cursor. */
   protected readonly newId = signal<string | null>(null);
+  protected readonly pager = new Pager(20);
+  protected readonly linkPage = computed(() => this.pager.slice(this.set().links));
 
   protected readonly meta = computed(() => {
     const stats = this.store.stats()[this.set().id];
@@ -144,6 +148,8 @@ export class LinkSetCardComponent {
     try {
       const row = await this.store.addLinkRow(this.set().id);
       this.newId.set(row?.id ?? null);
+      // The new row is the last one: show its page.
+      this.pager.go(Math.ceil(this.set().links.length / this.pager.size()));
     } catch {
       // The error interceptor has shown why (for example the 200-link limit).
     }

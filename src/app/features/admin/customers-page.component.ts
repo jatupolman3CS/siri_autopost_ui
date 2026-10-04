@@ -4,11 +4,13 @@ import { AdminStore } from '../../core/data/admin.store';
 import { baht } from '../../core/i18n/format';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { AdminViewService } from './admin-view.service';
 
 @Component({
   selector: 'app-customers-page',
-  imports: [RouterLink, InputFieldComponent],
+  imports: [RouterLink, InputFieldComponent, PagerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './customers-page.component.html',
   styleUrl: './customers-page.component.scss',
@@ -42,4 +44,8 @@ export class CustomersPageComponent {
         };
       });
   });
+
+  /** Current page of the customer rows. */
+  protected readonly pager = new Pager(20);
+  protected readonly pageRows = computed(() => this.pager.slice(this.rows()));
 }

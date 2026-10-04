@@ -71,7 +71,7 @@
         <h2 class="h2">{{ selTitle() }}</h2>
         <span class="muted fs14">{{ selList().length }} {{ t().common.posts }}</span>
       </div>
-      @for (p of selRows(); track p.id) {
+      @for (p of selPage(); track p.id) {
         <div class="day-row">
           <div class="day-meta">
             <span class="fw5 fs14">{{ p.time }}</span>
@@ -129,6 +129,7 @@
       } @empty {
         <app-empty-state [heading]="t().cal.empty" />
       }
+      <app-pager [pager]="selPager" />
       <div class="add">
         <button
           type="button"

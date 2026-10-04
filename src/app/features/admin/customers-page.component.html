@@ -21,7 +21,7 @@
         <div class="th">{{ t().adm.devicesCol }}</div>
         <div class="th">{{ t().adm.jobsCol }}</div>
         <div class="th">{{ t().common.actions }}</div>
-        @for (c of rows(); track c.id) {
+        @for (c of pageRows(); track c.id) {
           <div class="td col">
             <a class="link-btn" [routerLink]="c.link">{{ c.name }}</a>
             <span class="small muted">{{ c.email }}</span>
@@ -42,6 +42,7 @@
           </div>
         }
       </div>
+      <app-pager [pager]="pager" />
     </div>
   </section>
 </div>

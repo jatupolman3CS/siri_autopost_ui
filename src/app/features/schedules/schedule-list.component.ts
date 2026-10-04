@@ -10,6 +10,8 @@ import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ScheduleView, scheduleView } from './schedule-view';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 // "All schedules": one row per schedule with its pairing, cadence, today's posts and next run, and the buttons
 // to see it on the calendar, pause or resume it, and delete it. Pausing and deleting drop the schedule's future
@@ -17,7 +19,7 @@ import { ScheduleView, scheduleView } from './schedule-view';
 // change something are an editor's.
 @Component({
   selector: 'app-schedule-list',
-  imports: [EmptyStateComponent],
+  imports: [PagerComponent, EmptyStateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './schedule-list.component.html',
   styleUrl: './schedule-list.component.scss',
@@ -33,6 +35,8 @@ export class ScheduleListComponent {
   protected readonly perm = inject(PermissionsService);
   protected readonly t = this.i18n.t;
 
+  protected readonly pager = new Pager(20);
+  protected readonly page = computed(() => this.pager.slice(this.rows()));
   protected readonly rows = computed<ScheduleView[]>(() => {
     const t = this.t();
     const li = this.i18n.li();

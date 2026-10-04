@@ -4,11 +4,13 @@ import { baht, monthName, signed } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { AdminActionModalComponent, AdminActionRequest } from './admin-action-modal.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { AdminViewService } from './admin-view.service';
 
 @Component({
   selector: 'app-finance-page',
-  imports: [AdminActionModalComponent],
+  imports: [AdminActionModalComponent, PagerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './finance-page.component.html',
   styleUrl: './finance-page.component.scss',
@@ -70,4 +72,8 @@ export class FinancePageComponent {
     const c = await this.admin.retryCharge(txId);
     this.notify.success(fmt(this.t().adm.chargeRetried, { c: c?.name ?? '' }));
   }
+
+  /** Current page of the transactions. */
+  protected readonly pager = new Pager(20);
+  protected readonly pageTx = computed(() => this.pager.slice(this.view.txRows()));
 }

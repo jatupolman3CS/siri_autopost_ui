@@ -9,6 +9,7 @@ import { WorkspaceStore } from '../core/data/workspace.store';
 import { I18nService } from '../core/i18n/i18n.service';
 import {
   WS,
+  answerThumbs,
   answerWorkspaceLoads,
   apiPost,
   provideApiTesting,
@@ -59,6 +60,7 @@ describe('pages that must not claim what the system does not do', () => {
   }
 
   afterEach(() => {
+    answerThumbs(http);
     http.verify();
     TestBed.resetTestingModule();
     localStorage.clear(); // a spec may have switched the language

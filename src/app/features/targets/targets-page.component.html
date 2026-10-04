@@ -48,7 +48,7 @@
   @if (!store.loaded()) {
     <p class="muted fs14" role="status">{{ t().api.loading }}</p>
   } @else {
-    @for (s of store.sets(); track s.id) {
+    @for (s of setPage(); track s.id) {
       <app-link-set-card
         [set]="s"
         (bulk)="open('bulk', s.id)"
@@ -61,6 +61,7 @@
         [description]="t().api.flow.emptyLinkSetsBody"
       />
     }
+    <app-pager [pager]="pager" />
   }
 
   <app-next-step [label]="t().flow.n2" (go)="next()" />

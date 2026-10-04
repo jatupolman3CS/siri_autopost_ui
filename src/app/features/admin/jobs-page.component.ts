@@ -3,11 +3,13 @@ import { RouterLink } from '@angular/router';
 import { AdminStore } from '../../core/data/admin.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { AdminViewService } from './admin-view.service';
 
 @Component({
   selector: 'app-jobs-page',
-  imports: [RouterLink],
+  imports: [RouterLink, PagerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './jobs-page.component.html',
   styleUrl: './jobs-page.component.scss',
@@ -84,4 +86,12 @@ export class JobsPageComponent {
     const n = await this.admin.retryFailed(id);
     this.notify.info(n ? fmt(this.t().adm.retried, { n }) : this.t().api.nothingToRetry);
   }
+
+  /** Current page of the per-customer job rows. */
+  protected readonly pager = new Pager(20);
+  protected readonly pageRows = computed(() => this.pager.slice(this.rows()));
+
+  /** Current page of the newest platform jobs. */
+  protected readonly recentPager = new Pager(20);
+  protected readonly pageJobs = computed(() => this.recentPager.slice(this.globalJobs()));
 }

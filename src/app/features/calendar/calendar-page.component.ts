@@ -21,10 +21,12 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 @Component({
   selector: 'app-calendar-page',
-  imports: [RouterLink, EmptyStateComponent, ModalComponent, PermNoteComponent],
+  imports: [PagerComponent, RouterLink, EmptyStateComponent, ModalComponent, PermNoteComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './calendar-page.component.html',
   styleUrl: './calendar-page.component.scss',
@@ -104,6 +106,9 @@ export class CalendarPageComponent {
     const [y, m, d] = this.selDay().split('-').map(Number);
     return fmtDate(new Date(y, m - 1, d), this.i18n.li(), true);
   });
+  protected readonly selPager = new Pager(20);
+  protected readonly selPage = computed(() => this.selPager.slice(this.selRows()));
+
   protected readonly selRows = computed(() => {
     const t = this.t();
     return this.selList().map((p) => ({

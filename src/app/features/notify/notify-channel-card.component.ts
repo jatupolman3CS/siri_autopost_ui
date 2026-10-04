@@ -10,6 +10,8 @@ import '../../core/i18n/i18n.engine';
 import { NotificationService } from '../../core/services/notification.service';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 /** Shown in a token field that has a stored token: the token itself is never sent to the browser. */
 const STORED_MASK = '••••••••••••';
@@ -19,7 +21,7 @@ const STORED_MASK = '••••••••••••';
 // NotificationsStore.tokens): the field shows a mask while one is stored, and a blank field keeps it.
 @Component({
   selector: 'app-notify-channel-card',
-  imports: [CheckboxComponent, InputFieldComponent],
+  imports: [PagerComponent, CheckboxComponent, InputFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notify-channel-card.component.html',
   styleUrl: './notify-channel-card.component.scss',
@@ -57,6 +59,8 @@ export class NotifyChannelCardComponent {
 
   /** The chats a lookup found when there is more than one to pick from. */
   protected readonly chats = signal<ApiTelegramChat[]>([]);
+  protected readonly chatPager = new Pager(20);
+  protected readonly chatPage = computed(() => this.chatPager.slice(this.chats()));
   protected readonly finding = signal(false);
   protected readonly testing = signal(false);
 

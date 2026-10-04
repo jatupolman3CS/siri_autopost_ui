@@ -11,6 +11,8 @@ import { ChipComponent } from '../../shared/components/chip/chip.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ClientReportCardComponent } from './client-report-card.component';
 import { ClientReportModalComponent } from './client-report-modal.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 interface GroupRow {
   group: ApiReportGroup;
@@ -27,6 +29,7 @@ interface GroupRow {
 @Component({
   selector: 'app-reports-page',
   imports: [
+    PagerComponent,
     ChipComponent,
     EmptyStateComponent,
     ClientReportCardComponent,
@@ -59,6 +62,11 @@ export class ReportsPageComponent {
       off: isGroupOff(group),
     })),
   );
+
+  protected readonly groupPager = new Pager(20);
+  protected readonly groupPage = computed(() => this.groupPager.slice(this.rows()));
+  protected readonly postPager = new Pager(20);
+  protected readonly postPage = computed(() => this.postPager.slice(this.posts()));
 
   /** The post with the most uses gets the "top" badge (only when it was used at all). */
   protected readonly posts = computed(() =>

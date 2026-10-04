@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { ComposerPreviewService } from '../../core/data/composer-preview.service';
 import { LibraryStore } from '../../core/data/library.store';
 import { composeFull, groupSlug, seededRandom } from '../../core/flow';
@@ -26,6 +35,9 @@ export class ComposerPreviewComponent {
   readonly text = input('');
   /** The library files attached to the post. */
   readonly media = input<readonly string[]>([]);
+  /** Shows a remove button on each attached file; the page takes the file off the draft. */
+  readonly removable = input(false);
+  readonly removed = output<string>();
   /** The settings of the collection the post is saved to (footer, hashtags); none until one is chosen. */
   readonly settings = input<Pick<
     ApiCollectionSettings,
@@ -33,6 +45,10 @@ export class ComposerPreviewComponent {
   > | null>(null);
 
   protected readonly seed = signal(1);
+
+  constructor() {
+    effect(() => this.library.ensureThumbs(this.media()));
+  }
   private readonly picked = signal('');
 
   protected readonly setOptions = computed(() =>
@@ -87,6 +103,10 @@ export class ComposerPreviewComponent {
         : [];
     });
   });
+
+  protected remove(id: string): void {
+    this.removed.emit(id);
+  }
 
   protected pick(id: string): void {
     this.picked.set(id);

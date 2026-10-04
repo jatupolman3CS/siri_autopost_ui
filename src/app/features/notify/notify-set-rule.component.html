@@ -42,7 +42,7 @@
 
   @if (open()) {
     <div class="groups">
-      @for (g of rows(); track g.link.id) {
+      @for (g of groupPage(); track g.link.id) {
         <div class="group">
           <div class="ghead">
             <span class="pico s28" aria-hidden="true"><i class="ph ph-facebook-logo"></i></span>
@@ -79,6 +79,7 @@
       } @empty {
         <p class="small muted none">{{ t().api.engine.notifyNoGroups }}</p>
       }
+      <app-pager [pager]="pager" />
     </div>
   }
 </div>

@@ -25,7 +25,7 @@
         <div class="th">{{ t().adm.jFailed }}</div>
         <div class="th">{{ t().adm.lastActivity }}</div>
         <div class="th">{{ t().common.actions }}</div>
-        @for (c of rows(); track c.id) {
+        @for (c of pageRows(); track c.id) {
           <div class="td col">
             <span class="fw5">{{ c.name }}</span
             ><span class="small muted">{{ c.planName }}</span>
@@ -60,11 +60,12 @@
           </div>
         }
       </div>
+      <app-pager [pager]="pager" />
     </div>
   </section>
   <section class="panel">
     <h2 class="h2 mb4">{{ t().adm.recentJobs }}</h2>
-    @for (p of globalJobs(); track $index) {
+    @for (p of pageJobs(); track $index) {
       <div class="row jr">
         <span class="time">{{ p.time }}</span>
         <span class="cust fw5 ellipsis">{{ p.customer }}</span>
@@ -78,5 +79,6 @@
         >
       </div>
     }
+    <app-pager [pager]="recentPager" />
   </section>
 </div>

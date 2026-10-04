@@ -11,7 +11,7 @@
     </button>
   </div>
   <ol class="logs">
-    @for (l of lines(); track $index) {
+    @for (l of page(); track $index) {
       <li [class]="l.level">
         <time>{{ l.time }}</time>
         <span>{{ l.msg }}</span>
@@ -20,4 +20,5 @@
       <li class="muted">{{ x().noLogs }}</li>
     }
   </ol>
+  <app-pager [pager]="pager" />
 </section>

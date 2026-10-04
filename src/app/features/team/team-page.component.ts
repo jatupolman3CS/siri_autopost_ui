@@ -19,12 +19,15 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 import { PairDeviceModalComponent } from './pair-device-modal.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-team-page',
   imports: [
+    PagerComponent,
     RouterLink,
     InputFieldComponent,
     ModalComponent,
@@ -133,6 +136,9 @@ export class TeamPageComponent {
     });
   });
 
+  protected readonly memberPager = new Pager(20);
+  protected readonly memberPage = computed(() => this.memberPager.slice(this.memberRows()));
+
   protected readonly removeTitle = computed(() =>
     this.removing()?.you ? this.t().api.leaveTeam : this.t().api.removeMember,
   );
@@ -171,6 +177,10 @@ export class TeamPageComponent {
       isCurrent: w.id === this.workspaces.id(),
     })),
   );
+  protected readonly devicePager = new Pager(20);
+  protected readonly devicePage = computed(() => this.devicePager.slice(this.deviceRows()));
+  protected readonly wsPager = new Pager(20);
+  protected readonly wsPage = computed(() => this.wsPager.slice(this.wsRows()));
   protected readonly roleOptions = computed(() => {
     const t = this.t().team;
     return [

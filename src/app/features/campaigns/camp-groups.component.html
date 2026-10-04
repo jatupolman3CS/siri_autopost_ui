@@ -4,7 +4,7 @@
   <p class="ext-hint">{{ x().groupsHint2 }}</p>
 
   <div class="groups">
-    @for (r of rows(); track r.g) {
+    @for (r of page(); track r.g) {
       <div class="grow-row" [class.invalid]="r.invalid" [class.off]="!r.g.enabled">
         <input
           type="checkbox"
@@ -77,6 +77,7 @@
       <span class="small muted">{{ x().noGroups }}</span>
     }
   </div>
+  <app-pager [pager]="pager" />
 
   <div class="small">
     <span class="ext-good">{{ info().active }}</span> · {{ info().withText }}

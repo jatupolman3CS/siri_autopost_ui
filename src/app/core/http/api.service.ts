@@ -12,6 +12,7 @@ export type ApiPost = S['PostDto'];
 export type ApiScheduleRequest = S['ScheduleRequest'];
 export type ApiScheduleResult = S['ScheduleResultDto'];
 export type ApiMedia = S['MediaDto'];
+export type ApiMediaFolder = S['MediaFolderDto'];
 export type ApiSnippet = S['SnippetDto'];
 export type ApiAntiBan = S['AntiBanDto'];
 export type ApiOffline = S['OfflineDto'];
@@ -179,11 +180,34 @@ export class ApiService {
   media(ws: string) {
     return run(this.http.get<ApiMedia[]>(`/api/workspaces/${ws}/media`));
   }
-  upload(ws: string, file: File) {
+  upload(ws: string, file: File, folderId?: string | null) {
     const form = new FormData();
     form.append('file', file);
+    if (folderId) form.append('folderId', folderId);
     // Quiet: the library page reports rejected files itself.
     return run(this.http.post<ApiMedia>(`/api/workspaces/${ws}/media`, form, quiet));
+  }
+  mediaFolders(ws: string) {
+    return run(this.http.get<ApiMediaFolder[]>(`/api/workspaces/${ws}/media-folders`));
+  }
+  createMediaFolder(ws: string, name: string) {
+    return run(
+      this.http.post<ApiMediaFolder>(`/api/workspaces/${ws}/media-folders`, { name }, quiet),
+    );
+  }
+  renameMediaFolder(ws: string, id: string, name: string) {
+    return run(
+      this.http.put<ApiMediaFolder>(`/api/workspaces/${ws}/media-folders/${id}`, { name }, quiet),
+    );
+  }
+  deleteMediaFolder(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/media-folders/${id}`));
+  }
+  /** Puts files into a folder (null = out of every folder). */
+  moveMedia(ws: string, mediaIds: string[], folderId: string | null) {
+    return run(
+      this.http.post<ApiMedia[]>(`/api/workspaces/${ws}/media/move`, { mediaIds, folderId }),
+    );
   }
   mediaContent(ws: string, id: string) {
     return run(

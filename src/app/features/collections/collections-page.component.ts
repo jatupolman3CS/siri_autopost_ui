@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { DraftStore } from '../../core/data/draft.store';
@@ -9,6 +9,8 @@ import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { FlowStepsComponent } from '../../shared/components/flow-steps/flow-steps.component';
 import { NextStepComponent } from '../../shared/components/next-step/next-step.component';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
+import { Pager } from '../../shared/components/pager/pager';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
 import { CollectionCardComponent } from './collection-card.component';
@@ -25,6 +27,7 @@ import '../../core/i18n/i18n.flow';
     FlowStepsComponent,
     NewCollectionModalComponent,
     NextStepComponent,
+    PagerComponent,
     PermNoteComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +43,8 @@ export class CollectionsPageComponent {
   protected readonly t = inject(I18nService).t;
 
   protected readonly modal = signal(false);
+  protected readonly pager = new Pager(20);
+  protected readonly cards = computed(() => this.pager.slice(this.store.collections()));
 
   constructor() {
     // Posted counts and schedule counts move on other pages: read them again when the page opens.

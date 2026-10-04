@@ -55,7 +55,7 @@
           <div class="th">{{ t().team.role }}</div>
           <div class="th">{{ t().team.lastActive }}</div>
           <div class="th"></div>
-          @for (r of memberRows(); track r.key) {
+          @for (r of memberPage(); track r.key) {
             <div class="td who">
               <span class="pico initial">{{ r.initial }}</span>
               <div class="min0">
@@ -94,6 +94,7 @@
             </div>
           }
         </div>
+        <app-pager [pager]="memberPager" />
         @if (!team.loaded()) {
           <p class="small muted">{{ t().api.loading }}</p>
         }
@@ -113,7 +114,7 @@
           </button>
         </div>
         <p class="sub mb8">{{ devicesBody() }}</p>
-        @for (d of deviceRows(); track d.id) {
+        @for (d of devicePage(); track d.id) {
           <div class="row dev">
             <i class="ph dev-ico ph-desktop"></i>
             <div class="grow160">
@@ -166,12 +167,13 @@
             <p class="small muted flush">{{ t().api.noDevices }}</p>
           }
         }
+        <app-pager [pager]="devicePager" />
       </section>
     </div>
 
     <section class="panel">
       <h2 class="h2 mb4">{{ t().team.workspaces }}</h2>
-      @for (w of wsRows(); track w.id) {
+      @for (w of wsPage(); track w.id) {
         <div class="row">
           <div class="grow">
             <div class="fs14 fw5 ellipsis">{{ w.name }}</div>
@@ -186,6 +188,7 @@
           }
         </div>
       }
+      <app-pager [pager]="wsPager" />
     </section>
   </div>
 </div>

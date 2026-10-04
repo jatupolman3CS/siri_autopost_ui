@@ -13,6 +13,8 @@ import '../../core/i18n/i18n.engine';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 import { channelName, channelOptions } from './notify-labels';
 import { NotifyPillsComponent } from './notify-pills.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 interface GroupRow {
   link: ApiSetLink;
@@ -26,7 +28,7 @@ interface GroupRow {
 // A group is a link that posts (switched on, a real address); rules are keyed by link id like the server's.
 @Component({
   selector: 'app-notify-set-rule',
-  imports: [SelectFieldComponent, NotifyPillsComponent],
+  imports: [PagerComponent, SelectFieldComponent, NotifyPillsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notify-set-rule.component.html',
   styleUrl: './notify-set-rule.component.scss',
@@ -76,6 +78,9 @@ export class NotifySetRuleComponent {
       };
     });
   });
+
+  protected readonly pager = new Pager(20);
+  protected readonly groupPage = computed(() => this.pager.slice(this.rows()));
 
   protected groupEvents(link: ApiSetLink) {
     const s = this.store.settings();

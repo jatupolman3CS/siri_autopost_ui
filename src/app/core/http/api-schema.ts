@@ -3002,6 +3002,9 @@ export interface paths {
         content: {
           'multipart/form-data': {
             file?: components['schemas']['IFormFile'];
+          } & {
+            /** Format: uuid */
+            folderId?: string;
           };
         };
       };
@@ -3056,6 +3059,179 @@ export interface paths {
     };
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/media-folders': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MediaFolderDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['FolderRequest'];
+          'text/json': components['schemas']['FolderRequest'];
+          'application/*+json': components['schemas']['FolderRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MediaFolderDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/media-folders/{folderId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          folderId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['FolderRequest'];
+          'text/json': components['schemas']['FolderRequest'];
+          'application/*+json': components['schemas']['FolderRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MediaFolderDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          folderId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/media/move': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['MoveMediaRequest'];
+          'text/json': components['schemas']['MoveMediaRequest'];
+          'application/*+json': components['schemas']['MoveMediaRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MediaDto'][];
+          };
+        };
+      };
+    };
     delete?: never;
     options?: never;
     head?: never;
@@ -5282,6 +5458,9 @@ export interface components {
     FindTelegramChatsRequest: {
       token: null | string;
     };
+    FolderRequest: {
+      name: string;
+    };
     /** @enum {unknown} */
     FooterPosition: 'end' | 'top';
     GoogleLogInRequest: {
@@ -5404,6 +5583,15 @@ export interface components {
       usedCount: number;
       /** Format: date-time */
       createdAt: string;
+      /** Format: uuid */
+      folderId: null | string;
+    };
+    MediaFolderDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** Format: date-time */
+      createdAt: string;
     };
     /** @enum {unknown} */
     MediaKind: 'image' | 'video';
@@ -5422,6 +5610,11 @@ export interface components {
     };
     MissingImagesDto: {
       missing: string[];
+    };
+    MoveMediaRequest: {
+      mediaIds: string[];
+      /** Format: uuid */
+      folderId: null | string;
     };
     NoteRequest: {
       note: null | string;

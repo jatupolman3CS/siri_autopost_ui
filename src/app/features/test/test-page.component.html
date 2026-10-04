@@ -108,7 +108,7 @@
     <div class="side">
       <section class="panel log" aria-live="polite">
         <h2 class="h2">{{ t().test.logTitle }}</h2>
-        @for (l of logRows(); track l.key) {
+        @for (l of logPage(); track l.key) {
           <div class="row log-row">
             <i class="ph" [class]="l.icon" [style.color]="l.color"></i>
             <span class="lt muted">{{ l.time }}</span>
@@ -122,11 +122,12 @@
         } @empty {
           <p class="none">{{ t().test.none }}</p>
         }
+        <app-pager [pager]="logPager" />
       </section>
 
       <section class="panel">
         <h2 class="h2 mb4">{{ t().test.history }}</h2>
-        @for (h of historyRows(); track h.id) {
+        @for (h of historyPage(); track h.id) {
           <div class="row">
             <span class="time">{{ h.time }}</span>
             <span class="grow ellipsis">{{ h.text }}</span>
@@ -137,6 +138,7 @@
         } @empty {
           <p class="none hist">{{ t().test.none }}</p>
         }
+        <app-pager [pager]="historyPager" />
       </section>
     </div>
   </div>

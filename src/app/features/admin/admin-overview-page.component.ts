@@ -3,11 +3,13 @@ import { RouterLink } from '@angular/router';
 import { AdminStore } from '../../core/data/admin.store';
 import { baht, signed } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { AdminViewService } from './admin-view.service';
 
 @Component({
   selector: 'app-admin-overview-page',
-  imports: [RouterLink],
+  imports: [RouterLink, PagerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-overview-page.component.html',
   styleUrl: './admin-overview-page.component.scss',
@@ -121,4 +123,8 @@ export class AdminOverviewPageComponent {
     ];
   });
   protected readonly recent = computed(() => this.view.txRows().slice(0, 5));
+
+  /** Current page of the latest transactions. */
+  protected readonly pager = new Pager(20);
+  protected readonly pageRecent = computed(() => this.pager.slice(this.recent()));
 }

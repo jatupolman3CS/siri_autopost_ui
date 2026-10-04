@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { DraftStore } from '../../core/data/draft.store';
@@ -36,6 +36,11 @@ export class CollectionPostRowComponent {
 
   readonly collection = input.required<ApiCollection>();
   readonly post = input.required<ApiCollectionPost>();
+
+  constructor() {
+    // Only the three thumbnails shown are fetched.
+    effect(() => this.library.ensureThumbs(this.post().mediaIds.slice(0, 3)));
+  }
 
   protected readonly flags = computed(() => postFlags(this.post().text));
   protected readonly approvalOn = computed(() => this.collection().settings.requireApproval);

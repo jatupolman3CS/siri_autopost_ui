@@ -51,7 +51,7 @@
         <div class="th">{{ t().adm.type }}</div>
         <div class="th">{{ t().adm.amount }}</div>
         <div class="th">{{ t().common.actions }}</div>
-        @for (x of view.txRows(); track x.id) {
+        @for (x of pageTx(); track x.id) {
           <div class="td muted">{{ x.date }}</div>
           <div class="td fw5">{{ x.customer }}</div>
           <div class="td">
@@ -78,6 +78,7 @@
           </div>
         }
       </div>
+      <app-pager [pager]="pager" />
     </div>
   </section>
 </div>

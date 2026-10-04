@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
@@ -15,6 +15,8 @@ import { CsvLinksModalComponent } from './csv-links-modal.component';
 import { ImportGroupsModalComponent } from './import-groups-modal.component';
 import { LinkSetCardComponent } from './link-set-card.component';
 import { NewSetModalComponent } from './new-set-modal.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 type Dialog = 'set' | 'csv' | 'bulk' | 'import';
 
@@ -24,6 +26,7 @@ type Dialog = 'set' | 'csv' | 'bulk' | 'import';
 @Component({
   selector: 'app-targets-page',
   imports: [
+    PagerComponent,
     EmptyStateComponent,
     FlowStepsComponent,
     NextStepComponent,
@@ -44,6 +47,9 @@ export class TargetsPageComponent {
   protected readonly store = inject(LinkSetsStore);
   protected readonly perm = inject(PermissionsService);
   protected readonly t = inject(I18nService).t;
+
+  protected readonly pager = new Pager(20);
+  protected readonly setPage = computed(() => this.pager.slice(this.store.sets()));
 
   protected readonly dialog = signal<Dialog | null>(null);
   /** The set a paste or import dialog adds to. */

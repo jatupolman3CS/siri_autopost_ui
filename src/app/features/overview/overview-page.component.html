@@ -72,7 +72,7 @@
     <div class="stack">
       <section class="panel">
         <h2 class="h2 mb4">{{ t().ov.accountsTitle }}</h2>
-        @for (a of stats.accountRows(); track $index) {
+        @for (a of accountPage(); track $index) {
           <div class="row tight">
             <span class="pico"><i class="ph" [class]="a.icon"></i></span>
             <div class="grow">
@@ -95,6 +95,7 @@
             >
           </div>
         }
+        <app-pager [pager]="accountPager" />
       </section>
 
       <section class="panel">

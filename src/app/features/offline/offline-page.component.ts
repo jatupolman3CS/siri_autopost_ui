@@ -8,10 +8,12 @@ import { NotificationService } from '../../core/services/notification.service';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
+import { Pager } from '../../shared/components/pager/pager';
+import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 @Component({
   selector: 'app-offline-page',
-  imports: [CheckboxComponent, PermNoteComponent, SelectFieldComponent],
+  imports: [PagerComponent, CheckboxComponent, PermNoteComponent, SelectFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './offline-page.component.html',
   styleUrl: './offline-page.component.scss',
@@ -59,6 +61,9 @@ export class OfflinePageComponent {
     const t = this.t();
     return this.posts.waiting().map((p) => this.posts.row(p, t));
   });
+
+  protected readonly waitPager = new Pager(20);
+  protected readonly waitPage = computed(() => this.waitPager.slice(this.waitingRows()));
 
   protected set(patch: Partial<OfflineSettings>): void {
     this.settings.patchOff(patch);

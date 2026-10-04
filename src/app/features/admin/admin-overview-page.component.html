@@ -57,7 +57,7 @@
           t().common.viewAll
         }}</a>
       </div>
-      @for (x of recent(); track x.id) {
+      @for (x of pageRecent(); track x.id) {
         <div class="row tx">
           <span class="w64 muted">{{ x.date }}</span>
           <span class="grow ellipsis">{{ x.customer }}</span>
@@ -67,6 +67,7 @@
           <span class="fw5 amt">{{ x.amount }}</span>
         </div>
       }
+      <app-pager [pager]="pager" />
     </section>
   </div>
 </div>
