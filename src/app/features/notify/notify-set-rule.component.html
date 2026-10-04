@@ -1,0 +1,84 @@
+<div class="set">
+  <div class="head">
+    <span class="ico" aria-hidden="true"><i class="ph ph-link"></i></span>
+    <div class="title">
+      <div class="fw6">{{ set().name }}</div>
+      <div class="small muted">{{ meta() }}</div>
+    </div>
+    <div class="sel">
+      <app-select-field
+        [label]="t().ntf.sendTo"
+        [options]="setOptions()"
+        [value]="channel()"
+        [disabled]="!editable()"
+        (valueChange)="store.setRuleChannel(set().id, null, $any($event))"
+      />
+    </div>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-ghost"
+      [disabled]="!editable()"
+      (click)="store.setCustomEvents(set().id, null, !custom())"
+    >
+      {{ custom() ? t().ntf.useDefaultEvents : t().ntf.customEvents }}
+    </button>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-ghost"
+      [attr.aria-expanded]="open()"
+      (click)="open.set(!open())"
+    >
+      {{ open() ? t().ntf.hideGroups : t().ntf.groups }}
+    </button>
+  </div>
+
+  @if (custom() && events(); as ev) {
+    <app-notify-pills
+      [events]="ev"
+      [disabled]="!editable()"
+      (toggled)="store.setRuleEvent(set().id, null, $event.key, $event.on)"
+    />
+  }
+
+  @if (open()) {
+    <div class="groups">
+      @for (g of rows(); track g.link.id) {
+        <div class="group">
+          <div class="ghead">
+            <span class="pico s28" aria-hidden="true"><i class="ph ph-facebook-logo"></i></span>
+            <div class="title g">
+              <div class="name">{{ g.link.name || g.link.url }}</div>
+              <div class="small muted">{{ g.meta }}</div>
+            </div>
+            <div class="sel g">
+              <app-select-field
+                [label]="t().ntf.sendTo"
+                [options]="groupOptions()"
+                [value]="g.channel"
+                [disabled]="!editable()"
+                (valueChange)="store.setRuleChannel(set().id, g.link.id, $any($event))"
+              />
+            </div>
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-ghost"
+              [disabled]="!editable()"
+              (click)="store.setCustomEvents(set().id, g.link.id, !g.custom)"
+            >
+              {{ g.eventsLabel }}
+            </button>
+          </div>
+          @if (g.custom && groupEvents(g.link); as gev) {
+            <app-notify-pills
+              [events]="gev"
+              [disabled]="!editable()"
+              (toggled)="store.setRuleEvent(set().id, g.link.id, $event.key, $event.on)"
+            />
+          }
+        </div>
+      } @empty {
+        <p class="small muted none">{{ t().api.engine.notifyNoGroups }}</p>
+      }
+    </div>
+  }
+</div>

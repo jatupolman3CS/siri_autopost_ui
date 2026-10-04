@@ -1,0 +1,48 @@
+<section class="panel card">
+  <div class="who">
+    <i class="ph ph-file-pdf" aria-hidden="true"></i>
+    <h2 class="h2">{{ t().rep.client }}</h2>
+  </div>
+  <p class="sub-text">{{ t().rep.clientSub }}</p>
+  @if (!store.canShare()) {
+    <div class="lock">
+      <i class="ph ph-lock-simple muted" aria-hidden="true"></i>
+      <span>{{ t().rep.clientLocked }}</span>
+      @if (perm.role() === 'owner') {
+        <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/billing">{{
+          t().common.upgrade
+        }}</a>
+      }
+    </div>
+  }
+  <div>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-secondary"
+      [disabled]="!enabled()"
+      [attr.title]="hint() || null"
+      (click)="create.emit()"
+    >
+      <i class="ph ph-download-simple"></i>{{ t().rep.clientBtn }}
+    </button>
+  </div>
+  @if (link(); as l) {
+    <div class="share">
+      <span class="small muted">{{ t().api.engine.reportShareLink }}</span>
+      <p class="url" data-testid="share-url">{{ l.url }}</p>
+      <span class="small muted">{{ l.expires }}</span>
+      <div class="btns">
+        <a class="su-btn su-btn-sm su-btn-ghost" [href]="l.url" target="_blank" rel="noopener">
+          <i class="ph ph-arrow-square-out"></i>{{ t().api.engine.reportShareOpen }}
+        </a>
+        <a class="su-btn su-btn-sm su-btn-ghost" [href]="l.print" target="_blank" rel="noopener">
+          <i class="ph ph-printer"></i>{{ t().api.engine.reportSharePrint }}
+        </a>
+        <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="copy(l.url)">
+          <i class="ph ph-copy"></i>{{ t().api.engine.reportShareCopy }}
+        </button>
+      </div>
+      <p class="small muted hint">{{ t().api.engine.reportPdfHint }}</p>
+    </div>
+  }
+</section>

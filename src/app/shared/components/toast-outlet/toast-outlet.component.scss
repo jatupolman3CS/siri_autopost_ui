@@ -15,3 +15,8 @@
 .su-toast {
   animation: ap-rise 0.2s ease-out;
 }
+
+// A long address in a message (a report link) breaks instead of running out of the toast.
+.su-toast-msg {
+  overflow-wrap: anywhere;
+}

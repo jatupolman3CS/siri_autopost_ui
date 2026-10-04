@@ -158,6 +158,9 @@ export const AP_I18N_FIXES = {
       'ตัวอย่างเมื่อเปิดให้ใช้: /status → “ทำงานอยู่ · วันนี้ 18/32 โพสต์ · ล้มเหลว 1 · รอบถัดไป 14:00”',
       'Example once it is available: /status → “Running · today 18/32 posts · 1 failed · next round 14:00”',
     ],
+    // The design's sample has an emoji, a code line and a clock time. The server sends one line: the result, the
+    // group with its code in brackets (no brackets without a code) and the start of the post. {g} carries both.
+    sample: ['โพสต์สำเร็จ · {g} · “{t}”', 'Posted · {g} · “{t}”'],
   },
   ai: {
     // There is no language model: the drafts are filled in from text templates.
@@ -188,6 +191,23 @@ export const AP_I18N_FIXES = {
     ],
     // A group is switched off where it is listed, not "in every link set".
     disabledMsg: ['ปิดกลุ่ม {g} แล้ว', 'Group {g} switched off'],
+    // The design has the agency upload its own logo. Nothing stores one: the box only decides whether the
+    // AutoPost name and mark show on the shared page, so it is a "white-label" switch.
+    logo: [
+      'ซ่อนโลโก้และชื่อ AutoPost บนรายงาน (แสดงเฉพาะชื่อแบรนด์ของคุณ)',
+      'Hide the AutoPost logo and name on the report (show only your brand name)',
+    ],
+    // The report is a page behind a link (print or save as PDF from it), not a generated file, and its logo is
+    // the brand name only (see logo).
+    clientSub: [
+      'สรุปผลของเวิร์กสเปซนี้เป็นหน้ารายงานที่ลูกค้าเปิดผ่านลิงก์ได้ ใส่ชื่อแบรนด์ของเอเจนซี่และซ่อนชื่อ AutoPost ได้ (white-label) พิมพ์หรือบันทึกเป็น PDF จากหน้ารายงาน',
+      'A summary of this workspace as a page your client opens from a link, with your agency’s brand name and no AutoPost branding (white-label). Print it or save it as a PDF from the report page',
+    ],
+    // The periods are the last 7 and the last 30 days counted back from now, not a calendar week or month.
+    pWeek: ['7 วันล่าสุด', 'Last 7 days'],
+    pMonth: ['30 วันล่าสุด', 'Last 30 days'],
+    // {p} is a period name; the design's "<period> report for <workspace> created: <file>" named a file.
+    created: ['สร้างรายงาน ({p}) ของ {w} แล้ว: {l}', 'Report ({p}) for {w} created: {l}'],
   },
   test: {
     // The test post is real, so the page shows its real state (queued, posting, result), not simulated steps.
