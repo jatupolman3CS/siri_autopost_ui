@@ -55,4 +55,33 @@
       <p class="small muted hint">{{ t().api.engine.reportPdfHint }}</p>
     </div>
   }
+  @if (store.shares() !== null && enabled()) {
+    <div class="shares" data-testid="shares">
+      <span class="small muted">{{ t().api.engine.reportSharesTitle }}</span>
+      @for (s of live(); track s.id) {
+        <div class="share-row" data-testid="share-row">
+          <span class="share-label">{{ s.label }}</span>
+          <div class="btns">
+            <a
+              class="su-btn su-btn-sm su-btn-ghost"
+              [href]="s.url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <i class="ph ph-arrow-square-out"></i>{{ t().api.engine.reportShareOpen }}
+            </a>
+            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="copy(s.url)">
+              <i class="ph ph-copy"></i>{{ t().api.engine.reportShareCopy }}
+            </button>
+            <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="revoke(s.id)">
+              <i class="ph ph-prohibit"></i>{{ t().api.engine.reportSharesRevoke }}
+            </button>
+          </div>
+        </div>
+      } @empty {
+        <p class="small muted">{{ t().api.engine.reportSharesEmpty }}</p>
+      }
+      <p class="small muted hint">{{ t().api.engine.reportSharesHint }}</p>
+    </div>
+  }
 </section>

@@ -60,6 +60,7 @@ export type ApiAutoReplyRule = S['AutoReplyRuleDto'];
 export type ApiReport = S['ReportDto'];
 export type ApiReportGroup = S['ReportGroupDto'];
 export type ApiReportShare = S['ReportShareDto'];
+export type ApiReportShareSummary = S['ReportShareSummaryDto'];
 export type ApiSharedReport = S['SharedReportDto'];
 export type ApiSchedule = S['ScheduleDto'];
 export type ApiSaveSchedule = S['SaveScheduleRequest'];
@@ -569,6 +570,19 @@ export class ApiService {
   /** Agency: a public read-only snapshot of the report under a branded link. */
   shareReport(ws: string, body: S['ShareReportRequest']) {
     return run(this.http.post<ApiReportShare>(`/api/workspaces/${ws}/reports/share`, body));
+  }
+  /** Agency, admin: the client-report links that are still live, newest first. */
+  reportShares(ws: string, background = false) {
+    return run(
+      this.http.get<ApiReportShareSummary[]>(
+        `/api/workspaces/${ws}/reports/shares`,
+        background ? quiet : {},
+      ),
+    );
+  }
+  /** Admin: switches one client-report link off for good (it also makes room under the limit of 20). */
+  revokeReportShare(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/reports/shares/${id}`));
   }
   /** Public (no sign-in): the snapshot behind a client-report link. */
   sharedReport(token: string) {

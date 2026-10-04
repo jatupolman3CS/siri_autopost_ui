@@ -1,6 +1,11 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ApiReport, ApiReportGroup, ApiWorkspace } from '../http/api.service';
+import {
+  ApiReport,
+  ApiReportGroup,
+  ApiReportShareSummary,
+  ApiWorkspace,
+} from '../http/api.service';
 import {
   WORKSPACE,
   WS,
@@ -249,6 +254,87 @@ describe('ReportsStore', () => {
     });
   });
 
+  const LIVE: ApiReportShareSummary = {
+    id: 'sh-1',
+    brand: 'Baan Dee Studio',
+    period: 'week',
+    logo: true,
+    createdAt: '2026-10-04T05:00:00Z',
+    expiresAt: '2026-11-03T05:00:00Z',
+    path: '/report/tok',
+  };
+
+  describe('the live client links', () => {
+    it('are read once for an admin of an Agency workspace', async () => {
+      await start({ workspace: { clientReports: true, role: 'admin' } });
+      expect(store.shares()).toBeNull();
+      const done = store.ensureShares();
+      http.expectOne({ url: `${REPORT_URL}/shares`, method: 'GET' }).flush([LIVE]);
+      await done;
+      expect(store.shares()).toEqual([LIVE]);
+      await store.ensureShares(); // already known: no second request
+    });
+
+    it('are not asked for below Agency or below an admin', async () => {
+      await start({ workspace: { clientReports: false, role: 'admin' } });
+      await store.loadShares();
+      expect(store.shares()).toBeNull();
+      TestBed.resetTestingModule();
+      await start({ workspace: { clientReports: true, role: 'editor' } });
+      await store.loadShares();
+      expect(store.shares()).toBeNull();
+    });
+
+    it('keep the list as it was when reading fails', async () => {
+      await start({ workspace: { clientReports: true, role: 'admin' } });
+      const first = store.loadShares();
+      http.expectOne({ url: `${REPORT_URL}/shares`, method: 'GET' }).flush([LIVE]);
+      await first;
+      const again = store.loadShares();
+      http
+        .expectOne({ url: `${REPORT_URL}/shares`, method: 'GET' })
+        .flush({ title: 'x' }, { status: 500, statusText: 'Server Error' });
+      await again;
+      expect(store.shares()).toEqual([LIVE]);
+    });
+
+    it('go one at a time, and the link of this session goes with its own', async () => {
+      await start({ workspace: { clientReports: true, role: 'admin' } });
+      const share = store.share('Baan Dee Studio', 'week', true);
+      http
+        .expectOne({ url: `${REPORT_URL}/share`, method: 'POST' })
+        .flush({ token: 'tok', path: '/report/tok', expiresAt: '2026-11-03T05:00:00Z' });
+      await share;
+      http.expectOne({ url: `${REPORT_URL}/shares`, method: 'GET' }).flush([LIVE]);
+      await settle();
+      expect(store.lastShare()).not.toBeNull();
+
+      const revoked = store.revokeShare('sh-1');
+      http.expectOne({ url: `${REPORT_URL}/shares/sh-1`, method: 'DELETE' }).flush(null, {
+        status: 204,
+        statusText: 'No Content',
+      });
+      expect(await revoked).toBe(true);
+      expect(store.shares()).toEqual([]);
+      expect(store.lastShare()).toBeNull();
+    });
+
+    it('stay when the API refuses to switch one off, and are read again', async () => {
+      await start({ workspace: { clientReports: true, role: 'admin' } });
+      const first = store.loadShares();
+      http.expectOne({ url: `${REPORT_URL}/shares`, method: 'GET' }).flush([LIVE]);
+      await first;
+      const revoked = store.revokeShare('sh-1');
+      http
+        .expectOne({ url: `${REPORT_URL}/shares/sh-1`, method: 'DELETE' })
+        .flush({ title: 'no' }, { status: 403, statusText: 'Forbidden' });
+      expect(await revoked).toBe(false);
+      http.expectOne({ url: `${REPORT_URL}/shares`, method: 'GET' }).flush([LIVE]);
+      await settle();
+      expect(store.shares()).toEqual([LIVE]);
+    });
+  });
+
   describe('sharing', () => {
     it('makes the shareable copy and remembers its link', async () => {
       await start({ workspace: { clientReports: true } });
@@ -259,6 +345,10 @@ describe('ReportsStore', () => {
       req.flush(share);
       expect(await done).toEqual(share);
       expect(store.lastShare()).toEqual(share);
+      // The live links are read again so the new one shows up in the list.
+      http.expectOne({ url: `${REPORT_URL}/shares`, method: 'GET' }).flush([LIVE]);
+      await settle();
+      expect(store.shares()).toEqual([LIVE]);
     });
 
     it('does not remember a link the API refused to make', async () => {

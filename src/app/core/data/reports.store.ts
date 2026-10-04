@@ -1,8 +1,15 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { groupUrlKey } from '../flow/group-links';
-import { ApiReport, ApiReportGroup, ApiReportShare, ApiService } from '../http/api.service';
+import {
+  ApiReport,
+  ApiReportGroup,
+  ApiReportShare,
+  ApiReportShareSummary,
+  ApiService,
+} from '../http/api.service';
 import { LinkSetsStore } from './link-sets.store';
 import { loadWithRetry } from './loading';
+import { PermissionsService } from './permissions.service';
 import { topPosts, totalsOf } from './report-math';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
@@ -23,6 +30,7 @@ export class ReportsStore {
   private readonly api = inject(ApiService);
   private readonly ws = inject(WorkspaceStore);
   private readonly linkSets = inject(LinkSetsStore);
+  private readonly perm = inject(PermissionsService);
 
   readonly days = signal<ReportDays>(7);
   readonly report = signal<ApiReport | null>(null);
@@ -32,6 +40,8 @@ export class ReportsStore {
   readonly failed = signal(false);
   /** The link of the last client report made in this session. */
   readonly lastShare = signal<ApiReportShare | null>(null);
+  /** The client links that are still live (Agency, admin); null until they have been read. */
+  readonly shares = signal<ApiReportShareSummary[] | null>(null);
 
   readonly groups = computed(() => this.report()?.groups ?? []);
   readonly posts = computed(() => topPosts(this.report()?.posts ?? []));
@@ -46,6 +56,7 @@ export class ReportsStore {
   readonly shareLocked = computed(() => this.ws.loaded() && !this.ws.current()?.clientReports);
 
   private seq = 0;
+  private sharesSeq = 0;
   private loadedAt = 0;
 
   constructor() {
@@ -55,6 +66,8 @@ export class ReportsStore {
       this.loaded.set(false);
       this.failed.set(false);
       this.lastShare.set(null);
+      this.shares.set(null);
+      this.sharesSeq++;
       this.loadedAt = 0;
       if (id) void this.load();
     });
@@ -135,7 +148,47 @@ export class ReportsStore {
     const wsId = this.ws.id();
     if (!wsId) throw new Error('no workspace');
     const share = await this.api.shareReport(wsId, { brand: brand.trim(), period, logo });
-    if (this.ws.id() === wsId) this.lastShare.set(share);
+    if (this.ws.id() === wsId) {
+      this.lastShare.set(share);
+      void this.loadShares();
+    }
     return share;
+  }
+
+  /** Reads the live links once per workspace (only an admin of an Agency workspace may ask). */
+  async ensureShares(): Promise<void> {
+    if (this.shares() === null) await this.loadShares();
+  }
+
+  /** Reads the live links again. A refusal leaves what is shown as it is; it never rejects. */
+  async loadShares(): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId || !this.canShare() || !this.perm.canAdmin()) return;
+    const seq = ++this.sharesSeq;
+    try {
+      const list = await this.api.reportShares(wsId, true);
+      if (seq === this.sharesSeq && this.ws.id() === wsId) this.shares.set(list);
+    } catch {
+      // The list is a convenience: the link of the report just made is still shown.
+    }
+  }
+
+  /** Switches a link off. The API's refusal is shown by the error interceptor and the list is read again. */
+  async revokeShare(id: string): Promise<boolean> {
+    const wsId = this.ws.id();
+    if (!wsId) return false;
+    try {
+      await this.api.revokeReportShare(wsId, id);
+    } catch {
+      void this.loadShares();
+      return false;
+    }
+    if (this.ws.id() === wsId) {
+      const gone = this.shares()?.find((x) => x.id === id);
+      this.shares.update((list) => list && list.filter((x) => x.id !== id));
+      // The link shown from this session's last report goes too when it is the one that was switched off.
+      if (gone && this.lastShare()?.path === gone.path) this.lastShare.set(null);
+    }
+    return true;
   }
 }

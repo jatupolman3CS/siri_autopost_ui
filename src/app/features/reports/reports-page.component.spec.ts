@@ -7,7 +7,7 @@ import { assistStorage } from '../../core/auth/token';
 import { DeviceEventsService } from '../../core/data/device-events.service';
 import { ReportsStore } from '../../core/data/reports.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
-import { ApiReport, ApiRole } from '../../core/http/api.service';
+import { ApiReport, ApiReportShareSummary, ApiRole } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.engine';
 import { NewTabService } from '../../core/services/new-tab.service';
@@ -63,6 +63,8 @@ describe('ReportsPageComponent', () => {
       report?: ApiReport;
       /** Answer the report only when the test says so. */
       hold?: boolean;
+      /** The client links the API says are live (read when an admin of an Agency workspace opens the page). */
+      shares?: ApiReportShareSummary[];
       /** Replace the new-tab service: the addresses it is asked to open land here. */
       opened?: string[];
     } = {},
@@ -97,10 +99,23 @@ describe('ReportsPageComponent', () => {
       pending.flush(opts.report ?? REPORT);
       await settle();
       fixture.detectChanges();
+      // An admin of an Agency workspace sees the live client links: the card reads them once.
+      if (
+        opts.agency &&
+        !opts.assist &&
+        (opts.role ?? 'owner') !== 'editor' &&
+        opts.role !== 'viewer'
+      ) {
+        answerShares(opts.shares ?? []);
+        await settle();
+        fixture.detectChanges();
+      }
     }
     return { fixture, el: fixture.nativeElement as HTMLElement, pending };
   }
 
+  const answerShares = (list: ApiReportShareSummary[] = []) =>
+    http.expectOne({ url: `${REPORT_URL}/shares`, method: 'GET' }).flush(list);
   const t = () => TestBed.inject(I18nService).t();
   const toasts = () => TestBed.inject(NotificationService).toasts();
   const button = (root: ParentNode, text: string) =>
@@ -425,11 +440,110 @@ describe('ReportsPageComponent', () => {
       expect(create(el).disabled).toBe(true);
     });
 
+    describe('the links in use', () => {
+      const LIVE_LINKS: ApiReportShareSummary[] = [
+        {
+          id: 'sh-1',
+          brand: 'Baan Dee Studio',
+          period: 'month',
+          logo: true,
+          createdAt: '2026-10-04T05:00:00Z',
+          expiresAt: '2026-11-03T05:00:00Z',
+          path: '/report/tok-1',
+        },
+        {
+          id: 'sh-2',
+          brand: 'Cars Co',
+          period: 'week',
+          logo: false,
+          createdAt: '2026-10-03T05:00:00Z',
+          expiresAt: '2026-11-02T05:00:00Z',
+          path: '/report/tok-2',
+        },
+      ];
+      const shareRows = (el: HTMLElement) => [
+        ...card(el).querySelectorAll<HTMLElement>('[data-testid=share-row]'),
+      ];
+
+      it('are listed with their brand, period and expiry', async () => {
+        const { el } = await open({ agency: true, role: 'admin', shares: LIVE_LINKS });
+        const rows_ = shareRows(el);
+        expect(rows_.map((r) => text(r.querySelector('.share-label')!))).toEqual([
+          fmt(t().api.engine.reportSharesItem, {
+            brand: 'Baan Dee Studio',
+            period: t().rep.pMonth,
+            d: '3 พ.ย. 2569',
+          }),
+          fmt(t().api.engine.reportSharesItem, {
+            brand: 'Cars Co',
+            period: t().rep.pWeek,
+            d: '2 พ.ย. 2569',
+          }),
+        ]);
+        const open_ = rows_[0].querySelector<HTMLAnchorElement>('a')!;
+        expect(open_.getAttribute('href')).toBe(`${window.location.origin}/report/tok-1`);
+        expect(open_.rel.split(' ').sort()).toEqual(['noopener', 'noreferrer']);
+      });
+
+      it('say so when none is in use', async () => {
+        const { el } = await open({ agency: true });
+        expect(shareRows(el)).toEqual([]);
+        expect(card(el).textContent).toContain(t().api.engine.reportSharesEmpty);
+      });
+
+      it('are switched off one by one: the API is asked, the row goes, a toast says it', async () => {
+        const { fixture, el } = await open({ agency: true, shares: LIVE_LINKS });
+        button(shareRows(el)[0], t().api.engine.reportSharesRevoke)!.click();
+        await settle();
+        const del = http.expectOne({ url: `${REPORT_URL}/shares/sh-1`, method: 'DELETE' });
+        del.flush(null, { status: 204, statusText: 'No Content' });
+        await settle();
+        fixture.detectChanges();
+        expect(shareRows(el).length).toBe(1);
+        expect(card(el).textContent).toContain('Cars Co');
+        expect(card(el).textContent).not.toContain('Baan Dee Studio');
+        expect(toasts().some((x) => x.message === t().api.engine.reportSharesRevoked)).toBe(true);
+      });
+
+      it('stay as they are when the API refuses, and the list is read again', async () => {
+        const { fixture, el } = await open({ agency: true, shares: LIVE_LINKS });
+        button(shareRows(el)[1], t().api.engine.reportSharesRevoke)!.click();
+        await settle();
+        http
+          .expectOne({ url: `${REPORT_URL}/shares/sh-2`, method: 'DELETE' })
+          .flush({ title: 'ไม่พบลิงก์' }, { status: 404, statusText: 'Not Found' });
+        await settle();
+        answerShares(LIVE_LINKS);
+        await settle();
+        fixture.detectChanges();
+        expect(shareRows(el).length).toBe(2);
+        expect(toasts().some((x) => x.message === t().api.engine.reportSharesRevoked)).toBe(false);
+      });
+
+      it.each(['editor', 'viewer'] as const)(
+        'are not asked for by a %s, who may not see them',
+        async (role) => {
+          const { el } = await open({ agency: true, role });
+          expect(card(el).querySelector('[data-testid=shares]')).toBeNull();
+          http.expectNone({ url: `${REPORT_URL}/shares`, method: 'GET' });
+        },
+      );
+    });
+
     describe('the dialog', () => {
       const fields = () => modal()!.querySelectorAll<HTMLInputElement>('input.su-input');
       const selects = () => modal()!.querySelectorAll<HTMLSelectElement>('select');
       const make = () => button(modal()!, t().rep.clientBtn)!;
       const SHARE = { token: 'tok123', path: '/report/tok123', expiresAt: '2026-11-03T05:00:00Z' };
+      const LIVE: ApiReportShareSummary = {
+        id: 'sh-1',
+        brand: 'Baan Dee Studio',
+        period: 'week',
+        logo: true,
+        createdAt: '2026-10-04T05:00:00Z',
+        expiresAt: '2026-11-03T05:00:00Z',
+        path: '/report/tok123',
+      };
 
       async function dialog(opened?: string[]) {
         const r = await open({ agency: true, opened });
@@ -473,6 +587,8 @@ describe('ReportsPageComponent', () => {
         expect(req.request.body).toEqual({ brand: 'Baan Dee Studio', period: 'week', logo: true });
         req.flush(SHARE);
         await settle();
+        answerShares([LIVE]);
+        await settle();
         fixture.detectChanges();
         const base = window.location.origin;
         expect(open_).toHaveBeenCalledWith(
@@ -495,7 +611,9 @@ describe('ReportsPageComponent', () => {
         expect(card(el).textContent).toContain(
           fmt(t().api.engine.reportShareExpires, { d: '3 พ.ย. 2569' }),
         );
-        const anchors = [...card(el).querySelectorAll<HTMLAnchorElement>('a[target=_blank]')];
+        const anchors = [
+          ...card(el).querySelectorAll<HTMLAnchorElement>('.share a[target=_blank]'),
+        ];
         expect(anchors.map((a) => a.getAttribute('href'))).toEqual([
           `${base}/report/tok123`,
           `${base}/report/tok123?print=1`,
@@ -514,6 +632,8 @@ describe('ReportsPageComponent', () => {
         await settle();
         http.expectOne({ url: `${REPORT_URL}/share`, method: 'POST' }).flush(SHARE);
         await settle();
+        answerShares([LIVE]);
+        await settle();
         fixture.detectChanges();
         expect(opened).toEqual([`${window.location.origin}/report/tok123?print=1`]);
         expect(open_).not.toHaveBeenCalled();
@@ -528,6 +648,8 @@ describe('ReportsPageComponent', () => {
         make().click();
         await settle();
         http.expectOne({ url: `${REPORT_URL}/share`, method: 'POST' }).flush(SHARE);
+        await settle();
+        answerShares([LIVE]);
         await settle();
         fixture.detectChanges();
         expect(opened).toEqual([]);
@@ -548,6 +670,8 @@ describe('ReportsPageComponent', () => {
         const req = http.expectOne({ url: `${REPORT_URL}/share`, method: 'POST' });
         expect(req.request.body).toEqual({ brand: 'Baan Dee', period: 'month', logo: false });
         req.flush(SHARE);
+        await settle();
+        answerShares([LIVE]);
         await settle();
         fixture.detectChanges();
         expect(open_).not.toHaveBeenCalled();
@@ -587,6 +711,8 @@ describe('ReportsPageComponent', () => {
         make().click();
         await settle();
         http.expectOne({ url: `${REPORT_URL}/share`, method: 'POST' }).flush(SHARE);
+        await settle();
+        answerShares([LIVE]);
         await settle();
         fixture.detectChanges();
         button(card(el), t().api.engine.reportShareCopy)!.click();

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  output,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { ReportsStore } from '../../core/data/reports.store';
@@ -44,6 +52,31 @@ export class ClientReportCardComponent {
       }),
     };
   });
+
+  /** The links that are still live, each with its address, expiry and a label made of brand and period. */
+  protected readonly live = computed(() =>
+    (this.store.shares() ?? []).map((s) => ({
+      id: s.id,
+      url: reportAddress(s.path),
+      label: fmt(this.t().api.engine.reportSharesItem, {
+        brand: s.brand,
+        period: s.period === 'month' ? this.t().rep.pMonth : this.t().rep.pWeek,
+        d: fmtDate(new Date(s.expiresAt), this.i18n.li(), true),
+      }),
+    })),
+  );
+
+  constructor() {
+    // Read the live links once an admin of an Agency workspace is looking at the card.
+    effect(() => {
+      if (this.enabled()) untracked(() => void this.store.ensureShares());
+    });
+  }
+
+  protected async revoke(id: string): Promise<void> {
+    if (await this.store.revokeShare(id))
+      this.notify.success(this.t().api.engine.reportSharesRevoked);
+  }
 
   protected async copy(url: string): Promise<void> {
     try {

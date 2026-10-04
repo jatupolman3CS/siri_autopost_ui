@@ -127,6 +127,18 @@ export const AP_I18N_ENGINE = {
   // Reports: likes and comments are not collected, a shared link is a snapshot.
   reportsNoLikes: ['ยังไม่มีข้อมูลไลก์และคอมเมนต์', 'Likes and comments are not collected yet'],
   reportShareExpires: ['ลิงก์ใช้ได้ถึง {d}', 'The link works until {d}'],
+  reportSharesTitle: ['ลิงก์ที่ยังใช้ได้', 'Links in use'],
+  reportSharesEmpty: ['ยังไม่มีลิงก์ที่ใช้งานอยู่', 'No link is in use'],
+  reportSharesItem: ['{brand} · {period} · ใช้ได้ถึง {d}', '{brand} · {period} · works until {d}'],
+  reportSharesRevoke: ['ยกเลิกลิงก์', 'Revoke link'],
+  reportSharesRevoked: [
+    'ยกเลิกลิงก์แล้ว ใครที่มีลิงก์นี้จะเปิดไม่ได้อีก',
+    'Link revoked. Nobody can open it any more',
+  ],
+  reportSharesHint: [
+    'ลิงก์ที่ยกเลิกแล้วใช้ไม่ได้อีก และเว้นที่ให้สร้างลิงก์ใหม่ (สูงสุด 20 ลิงก์)',
+    'A revoked link stops working and frees a place for a new one (20 at most)',
+  ],
   // The title of the public report page (route report/:token) is api.reportTitle in i18n.extra.ts.
 
   // Restore: the file is checked first, then its contents are listed and a second click confirms the replacement.
