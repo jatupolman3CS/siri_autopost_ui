@@ -5,8 +5,11 @@ import '../i18n/i18n.engine';
 import { I18nService, fmt } from '../i18n/i18n.service';
 import { NotificationService } from '../services/notification.service';
 import { CollectionsStore } from './collections.store';
+import { AutoReplyStore } from './auto-reply.store';
 import { LinkSetsStore } from './link-sets.store';
+import { NotificationsStore } from './notifications.store';
 import { PostsStore } from './posts.store';
+import { SchedulesStore } from './schedules.store';
 import { SettingsStore } from './settings.store';
 import { WorkspaceStore } from './workspace.store';
 
@@ -24,6 +27,9 @@ export class BackupStore {
   private readonly linkSets = inject(LinkSetsStore);
   private readonly posts = inject(PostsStore);
   private readonly settings = inject(SettingsStore);
+  private readonly schedules = inject(SchedulesStore);
+  private readonly notifications = inject(NotificationsStore);
+  private readonly autoReply = inject(AutoReplyStore);
 
   /** A backup is being read or a restore is on its way. */
   readonly busy = signal(false);
@@ -81,16 +87,18 @@ export class BackupStore {
   }
 
   /**
-   * Reads again what a restore replaced: collections, link sets, the queued posts of the re-made schedules and
-   * the advanced rules. Stores of the schedules, notification rules and auto-reply read their lists here once
-   * they exist (add them to this list).
+   * Reads again what a restore replaced: collections, link sets, schedules, the queued posts of the re-made
+   * schedules, the advanced rules, the notification rules and auto-reply.
    */
   private async refreshAfterRestore(): Promise<void> {
     await Promise.allSettled([
       this.collections.refresh(),
       this.linkSets.refresh(),
+      this.schedules.refresh(),
       this.posts.refresh(),
       this.settings.load(),
+      this.notifications.load(),
+      this.autoReply.load(),
     ]);
   }
 }

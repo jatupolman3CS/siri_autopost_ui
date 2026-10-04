@@ -1,6 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import { NOTIFICATIONS, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { apiLinkSet } from '../../testing/link-sets.fixtures';
 import { BACKUP, BACKUP_URL, RESTORE_URL, antiBan } from '../../testing/test-post.fixtures';
 import { I18nService } from '../i18n/i18n.service';
@@ -94,9 +94,13 @@ describe('BackupStore', () => {
       // The answer does not wait for the lists.
       const result = await restoring;
       await settle();
-      // Collections and link sets, the queued posts of the re-made schedules, and the advanced rules.
+      // Collections, link sets, schedules, the queued posts of the re-made schedules, the advanced rules,
+      // the notification rules and auto-reply.
       http.expectOne(`/api/workspaces/${WS}/collections`).flush([]);
       http.expectOne(`/api/workspaces/${WS}/link-sets`).flush([apiLinkSet({ id: 'restored' })]);
+      http.expectOne(`/api/workspaces/${WS}/schedules`).flush([]);
+      http.expectOne(`/api/workspaces/${WS}/notifications`).flush(NOTIFICATIONS);
+      http.expectOne(`/api/workspaces/${WS}/auto-reply`).flush({ on: false, rules: [] });
       for (const r of http.match((x) => x.url === `/api/workspaces/${WS}/posts`)) r.flush([]);
       http.expectOne(`/api/workspaces/${WS}/errors`).flush([]);
       http.expectOne(`/api/workspaces/${WS}/engine`).flush({
