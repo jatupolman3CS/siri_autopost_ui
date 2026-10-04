@@ -1,75 +1,45 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AccountsStore } from '../../core/data/accounts.store';
-import { Draft, DraftStore, canTarget } from '../../core/data/draft.store';
-import { INPUT_LIMITS } from '../../core/http/input-limits';
-import { PermissionsService } from '../../core/data/permissions.service';
+import { CollectionsStore } from '../../core/data/collections.store';
+import { ComposerPreviewService } from '../../core/data/composer-preview.service';
+import { DraftStore } from '../../core/data/draft.store';
 import { LibraryStore } from '../../core/data/library.store';
-import { PlatformKey, SocialAccount, accountKind } from '../../core/data/models';
-import { PostsStore } from '../../core/data/posts.store';
-import { PLATFORMS } from '../../core/data/platforms';
-import { SettingsStore } from '../../core/data/settings.store';
+import { PermissionsService } from '../../core/data/permissions.service';
+import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
+import { UiPrefsService } from '../../core/services/ui-prefs.service';
+import { FlowStepsComponent } from '../../shared/components/flow-steps/flow-steps.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
-import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
+import { NewCollectionModalComponent } from '../collections/new-collection-modal.component';
+import { AiWriterModalComponent } from './ai-writer-modal.component';
+import { COMPOSER_PATH } from './composer-link';
+import { ComposerPreviewComponent } from './composer-preview.component';
+import '../../core/i18n/i18n.flow';
 
-interface Task {
-  a: string;
-  p: PlatformKey;
-  t: string;
-}
-
-/** One task per selected account; accounts that post to groups get one per selected group. */
-export function taskList(d: Draft, accounts: SocialAccount[]): Task[] {
-  const out: Task[] = [];
-  for (const a of accounts) {
-    if (!d.targets[a.id] || !canTarget(a)) continue;
-    if (a.groups.length)
-      d.groups
-        .filter((g) => a.groups.includes(g))
-        .forEach((g) => out.push({ a: a.id, p: a.platform, t: g }));
-    else out.push({ a: a.id, p: a.platform, t: a.defaultTarget });
-  }
-  return out;
-}
-
-/** The server queues repeats this many days ahead (Repeat.HorizonDays); nothing repeats beyond that. */
-export const REPEAT_HORIZON_DAYS = 14;
-
-/** How many days of the next REPEAT_HORIZON_DAYS the API schedules for a repeat (Occurrences in Posts.cs). */
-export function occurrences(start: Date, repeat: Draft['repeat']): number {
-  if (repeat === 'none') return 1;
-  if (repeat === 'weekly') return REPEAT_HORIZON_DAYS / 7;
-  let n = 0;
-  for (let i = 0; i < REPEAT_HORIZON_DAYS; i++) {
-    const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i).getDay();
-    if (repeat === 'daily' || (day !== 0 && day !== 6)) n++;
-  }
-  return n;
-}
-
-/** Local wall-clock time with its UTC offset, so the server repeats on the user's weekdays. */
-export function localIso(d: Date): string {
-  const pad = (n: number) => String(Math.abs(n)).padStart(2, '0');
-  const off = -d.getTimezoneOffset();
-  const sign = off >= 0 ? '+' : '-';
-  return (
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-    `T${pad(d.getHours())}:${pad(d.getMinutes())}:00` +
-    `${sign}${pad(Math.trunc(off / 60))}:${pad(off % 60)}`
-  );
-}
-
+// Writes or edits ONE post of a collection (what to post, not when or where: that is the schedules page). The
+// text with its tools (saved text, {{code}}, spintax, the AI writer), media from the library, the collection
+// it is saved to and a preview of how the engine will compose it. The draft lives in DraftStore, so it
+// survives a trip to the library; `?collection=` and `?post=` (route inputs) say which post it is.
 @Component({
   selector: 'app-composer-page',
   imports: [
-    RouterLink,
-    CheckboxComponent,
-    InputFieldComponent,
+    AiWriterModalComponent,
+    ComposerPreviewComponent,
+    FlowStepsComponent,
+    NewCollectionModalComponent,
     PermNoteComponent,
+    RouterLink,
     SelectFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,118 +49,94 @@ export function localIso(d: Date): string {
 export class ComposerPageComponent {
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
-  private readonly posts = inject(PostsStore);
-  private readonly accounts = inject(AccountsStore);
   private readonly library = inject(LibraryStore);
-  private readonly settings = inject(SettingsStore);
-  private readonly i18n = inject(I18nService);
+  private readonly previewSets = inject(ComposerPreviewService);
+  private readonly prefs = inject(UiPrefsService);
+  protected readonly collections = inject(CollectionsStore);
   protected readonly store = inject(DraftStore);
   protected readonly perm = inject(PermissionsService);
   protected readonly limits = INPUT_LIMITS;
-  protected readonly t = this.i18n.t;
+  protected readonly t = inject(I18nService).t;
+
+  /** `?collection=`: the collection a new post goes to. */
+  readonly collection = input<string | undefined>(undefined);
+  /** `?post=`: the post being edited. */
+  readonly post = input<string | undefined>(undefined);
+
   protected readonly d = this.store.draft;
-  protected readonly groups = this.accounts.allGroups;
   protected readonly busy = signal(false);
+  protected readonly uploading = signal(false);
+  protected readonly colModal = signal(false);
+  protected readonly aiModal = signal(false);
+
+  protected readonly showTools = computed(() => this.store.toolsOverride() ?? !this.prefs.simple());
 
   protected readonly snippetOptions = computed(() =>
     this.library.snippets().map((s) => ({ value: s.id, label: s.title })),
   );
+  protected readonly collectionOptions = computed(() =>
+    this.collections.collections().map((c) => ({ value: c.id, label: c.name })),
+  );
+  /** The collection the draft is saved to, when it exists. */
+  protected readonly target = computed(() => this.collections.byId(this.d().collectionId));
 
-  protected readonly mediaPick = computed(() =>
-    this.library.media().map((m) => ({
+  protected readonly mediaPick = computed(() => {
+    const picked = this.d().media;
+    const thumbs = this.library.thumbs();
+    return this.library.media().map((m) => ({
       id: m.id,
       label: m.name,
-      src: this.library.thumbs()[m.id] ?? null,
+      src: thumbs[m.id] ?? null,
       icon: m.kind === 'video' ? 'ph-video' : 'ph-image',
-      selected: this.d().media.includes(m.id),
-    })),
+      selected: picked.includes(m.id),
+    }));
+  });
+  protected readonly mediaSelLabel = computed(() =>
+    fmt(this.t().cmp.mediaSel, { n: this.d().media.length }),
   );
 
-  protected readonly targetRows = computed(() => {
-    const d = this.d();
-    return this.accounts.list().map((a) => {
-      const disabled = !canTarget(a);
-      const checked = !!d.targets[a.id] && !disabled;
-      return {
-        id: a.id,
-        icon: PLATFORMS[a.platform].icon,
-        label: `${a.name} · ${a.handle}`,
-        checked,
-        disabled,
-        groups: a.groups,
-        demo: accountKind(a) === 'sample',
-        unbound: accountKind(a) === 'unbound',
-        showGroups: a.groups.length > 0 && checked,
-        needsLogin: a.health === 'relogin' && accountKind(a) !== 'unbound',
-        // A device's Facebook account posts to groups it has synced; with none there is nowhere to send.
-        needsGroups: a.connected && a.health !== 'relogin' && !a.groups.length,
-      };
-    });
+  /** Which schedules use the collection (their number: the collection carries no more) and what editing does. */
+  protected readonly collectionHint = computed(() => {
+    const c = this.target();
+    if (!c) return this.collections.collections().length ? '' : this.t().api.flow.cmpNoCollections;
+    return c.scheduleCount
+      ? fmt(this.t().api.flow.cmpColHint, { n: c.scheduleCount })
+      : this.t().cmp.colHintNone;
   });
-  protected readonly groupsSel = computed(() =>
-    fmt(this.t().cmp.groupsSel, { n: this.d().groups.length, m: this.groups().length }),
-  );
-
-  protected readonly repeatOptions = computed(() => {
-    const c = this.t().cmp;
-    return [
-      { value: 'none', label: c.rNone },
-      { value: 'daily', label: c.rDaily },
-      { value: 'weekdays', label: c.rWeekdays },
-      { value: 'weekly', label: c.rWeekly },
-    ];
-  });
-  protected readonly useDelayLabel = computed(() => {
-    const ab = this.settings.ab();
-    return fmt(this.t().cmp.useDelay, { a: ab.min, b: ab.max });
-  });
-
-  /** The date and time picked, as a Date (NaN when incomplete). */
-  private readonly start = computed(() => {
-    const d = this.d();
-    const [y, mo, da] = d.date.split('-').map(Number);
-    const [hh, mm] = (d.time || '00:00').split(':').map(Number);
-    return new Date(y, mo - 1, da, hh, mm);
-  });
-
-  /**
-   * What scheduling will create: tasks per day, the span the smart delay spreads them over (or "all at the
-   * start time" when it is off), and for a repeat the total over the days the API queues ahead.
-   */
-  protected readonly summary = computed(() => {
-    const d = this.d();
-    const t = this.t();
-    const tasks = taskList(d, this.accounts.list());
-    if (!tasks.length) return t.cmp.summaryEmpty;
-    const ab = this.settings.ab();
-    const [h, m] = (d.time || '00:00').split(':').map(Number);
-    const spread = d.useDelay ? (Math.max(0, tasks.length - 1) * (ab.min + ab.max)) / 2 : 0;
-    const endMin = h * 60 + m + spread;
-    const t2 = `${String(Math.floor(endMin / 60) % 24).padStart(2, '0')}:${String(Math.round(endMin % 60)).padStart(2, '0')}`;
-    const platforms = new Set(tasks.map((x) => x.p)).size;
-    const delay = d.useDelay ? t.api.sumRandom : t.api.sumSame;
-    const days = occurrences(this.start(), d.repeat);
-    if (days <= 1 && d.repeat === 'none')
-      return fmt(t.cmp.summary, { n: tasks.length, p: platforms, t1: d.time, t2 }) + delay;
+  /** An approved post of a collection that needs approval goes back to draft when it is edited. */
+  protected readonly editResets = computed(() => {
+    const id = this.d().postId;
+    const found = id ? this.collections.postById(id) : undefined;
     return (
-      fmt(t.api.sumRepeat, {
-        total: tasks.length * days,
-        n: tasks.length,
-        days,
-        p: platforms,
-        t1: d.time,
-        t2,
-      }) + delay
+      !!found &&
+      this.target()?.settings.requireApproval === true &&
+      found.post.approval === 'approved'
     );
   });
 
-  /** Repeats are queued REPEAT_HORIZON_DAYS ahead, not forever: said under the repeat choice. */
-  protected readonly repeatNote = computed(() =>
-    this.d().repeat === 'none' ? '' : fmt(this.t().api.repeatNote, { n: REPEAT_HORIZON_DAYS }),
-  );
+  constructor() {
+    // What the collections and link sets show here changes on other pages: read them again on arrival.
+    void this.collections.refresh();
+    void this.previewSets.refresh();
+    // The address says which post this is (a link, a reload, the library's "back to the post"): once the
+    // collections are in, set the draft up for it unless it already is that post.
+    effect(() => {
+      if (!this.collections.loaded()) return;
+      const collection = this.collection();
+      const post = this.post();
+      untracked(() => {
+        if (this.store.open(collection, post) === 'missing')
+          this.notify.info(this.t().api.flow.cmpPostGone);
+      });
+    });
+  }
 
-  protected setText(v: string): void {
-    this.store.patch({ text: v, errText: '' });
+  protected setText(value: string): void {
+    this.store.patch({ text: value, errText: '' });
+  }
+
+  protected setCollection(id: string): void {
+    this.store.patch({ collectionId: id, errCol: '' });
   }
 
   protected insertSnippet(id: string): void {
@@ -198,84 +144,109 @@ export class ComposerPageComponent {
     if (s) this.store.appendText(s.text);
   }
 
+  protected insertCode(): void {
+    if (!this.store.insertCode()) this.notify.info(this.t().cmp.codeAlready);
+  }
+
+  protected insertSpin(): void {
+    this.store.insertSpin(this.t().api.flow.spinSample);
+  }
+
   protected toggleMedia(id: string): void {
-    const media = this.d().media;
-    if (!media.includes(id) && media.length >= INPUT_LIMITS.postMedia) {
-      this.notify.error(fmt(this.t().api.mediaMax, { n: INPUT_LIMITS.postMedia }));
-      return;
+    if (!this.store.toggleMedia(id)) this.mediaFull();
+  }
+
+  private mediaFull(): void {
+    this.notify.error(fmt(this.t().api.mediaMax, { n: INPUT_LIMITS.postMedia }));
+  }
+
+  /** Uploads to the library and attaches what the server took. */
+  protected async upload(input: HTMLInputElement): Promise<void> {
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (!files.length || !this.perm.canEdit()) return;
+    const a = this.t().api;
+    this.uploading.set(true);
+    if (files.length > 1) this.notify.info(fmt(a.uploading, { n: files.length }));
+    try {
+      const ids = await this.library.upload(files);
+      if (ids.length) this.notify.success(fmt(a.uploaded, { n: ids.length }));
+      if (ids.length < files.length) this.notify.error(a.uploadFailed);
+      if (ids.map((id) => this.store.addMedia(id)).includes(false)) this.mediaFull();
+    } finally {
+      this.uploading.set(false);
     }
-    this.store.patch({
-      media: media.includes(id) ? media.filter((x) => x !== id) : [...media, id],
-    });
   }
 
-  protected setTarget(id: string, on: boolean): void {
-    this.store.patch({
-      targets: { ...this.d().targets, [id]: on },
-      autoTargets: false,
-      errTargets: '',
-    });
+  protected toggleTools(): void {
+    this.store.toolsOverride.set(!this.showTools());
   }
 
-  protected toggleGroup(g: string): void {
-    const groups = this.d().groups;
-    this.store.patch({
-      groups: groups.includes(g) ? groups.filter((x) => x !== g) : [...groups, g],
-      autoTargets: false,
-    });
+  /** The new collection is where the post goes now. */
+  protected collectionCreated(id: string): void {
+    this.store.patch({ collectionId: id, errCol: '' });
   }
 
-  protected selectAllGroups(): void {
-    this.store.patch({ groups: [...this.groups()], autoTargets: false });
+  /** The AI writer filled a collection: show it on the collections page, open. */
+  protected generated(collectionId: string): void {
+    this.collections.openId.set(collectionId);
+    void this.router.navigateByUrl('/app/collections');
   }
 
-  protected clearGroups(): void {
-    this.store.patch({ groups: [], autoTargets: false });
+  protected cancel(): void {
+    this.store.reset();
+    void this.router.navigateByUrl('/app/collections');
   }
 
-  protected setRepeat(v: string): void {
-    this.store.patch({ repeat: v as Draft['repeat'] });
+  protected back(): void {
+    void this.router.navigateByUrl('/app/collections');
   }
 
-  protected saveDraft(): void {
-    this.notify.info(this.t().cmp.toastDraft);
-  }
-
-  /** Validates, then asks the server to queue one task per target, spaced by the smart delay. */
-  protected async submit(): Promise<void> {
+  /** Validates, then saves the post to its collection (a new post, or the one being edited). */
+  protected async save(andNew: boolean): Promise<void> {
     if (this.busy() || !this.perm.canEdit()) return;
-    const t = this.t().cmp;
+    const t = this.t();
     const d = this.d();
-    const start = this.start();
-    const tasks = taskList(d, this.accounts.list());
+    const text = d.text.trim();
+    const collection = this.collections.byId(d.collectionId);
     const errs = {
-      errText: d.text.trim() ? '' : t.errText,
-      errTargets: tasks.length ? '' : t.errTargets,
-      errTime: isNaN(start.getTime()) || start <= new Date() ? t.errTime : '',
+      errText: text ? '' : t.cmp.errText,
+      errCol: collection ? '' : t.cmp.errCol,
     };
-    if (errs.errText || errs.errTargets || errs.errTime) {
+    if (errs.errText || errs.errCol || !collection) {
       this.store.patch(errs);
       return;
     }
-    const byAccount = new Map<string, string[]>();
-    for (const tk of tasks) byAccount.set(tk.a, [...(byAccount.get(tk.a) ?? []), tk.t]);
+    const existing = d.postId ? this.collections.postById(d.postId) : undefined;
+    if (d.postId && !existing) {
+      // Deleted elsewhere meanwhile: what is written stays as a new post.
+      this.notify.info(t.api.flow.cmpPostGone);
+      this.store.patch({ postId: null });
+      return;
+    }
     this.busy.set(true);
     try {
-      const created = await this.posts.schedule({
-        content: d.text.trim(),
-        mediaIds: d.media,
-        startAt: localIso(start),
-        useDelay: d.useDelay,
-        repeat: d.repeat,
-        targets: [...byAccount.keys()].map((accountId) => {
-          const a = this.accounts.byId(accountId);
-          return { accountId, groups: a?.groups.length ? byAccount.get(accountId)! : null };
-        }),
-      });
-      if (d.replaces) await this.posts.remove(d.replaces).catch(() => undefined);
-      this.store.reset();
-      this.notify.success(fmt(t.toastDone, { n: created }));
-      void this.router.navigate(['/app/calendar'], { queryParams: { day: d.date } });
+      if (existing)
+        await this.collections.updatePost(existing.post, {
+          text,
+          mediaIds: d.media,
+          toCollectionId: collection.id,
+        });
+      else await this.collections.addPost(collection.id, text, d.media);
+      this.notify.success(existing ? t.cmp.updated : fmt(t.cmp.saved, { c: collection.name }));
+      this.collections.lastId.set(collection.id);
+      this.collections.openId.set(collection.id);
+      if (andNew) {
+        this.store.startNew(collection.id);
+        void this.router.navigate([COMPOSER_PATH], {
+          queryParams: { collection: collection.id, post: null },
+        });
+      } else {
+        this.store.reset();
+        void this.router.navigateByUrl('/app/collections');
+      }
+    } catch {
+      // The API's reason was toasted by the error interceptor; the draft stays as it is.
     } finally {
       this.busy.set(false);
     }

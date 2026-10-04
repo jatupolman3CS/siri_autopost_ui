@@ -74,22 +74,22 @@ export class LibraryStore {
     this.snippets.update((list) => [toSnippet(s), ...list]);
   }
 
-  /** Uploads files one by one; returns how many the server accepted. */
-  async upload(files: File[]): Promise<number> {
+  /** Uploads files one by one; returns the ids of the ones the server accepted (the composer attaches them). */
+  async upload(files: File[]): Promise<string[]> {
     const wsId = this.ws.id();
-    if (!wsId) return 0;
-    let ok = 0;
+    if (!wsId) return [];
+    const ids: string[] = [];
     for (const f of files) {
       try {
         const m = await this.api.upload(wsId, f);
         this.media.update((list) => [toMedia(m), ...list]);
         if (m.kind === 'image') void this.loadThumb(wsId, m.id);
-        ok++;
+        ids.push(m.id);
       } catch {
         // Counted as failed; the interceptor or the caller tells the user.
       }
     }
-    return ok;
+    return ids;
   }
 
   private async loadThumb(wsId: string, id: string): Promise<void> {

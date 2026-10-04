@@ -1,114 +1,203 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ACCOUNTS, WORKSPACE, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import { WORKSPACE, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import { apiCollection, apiCollectionPost } from '../../testing/collection-fixtures';
 import { INPUT_LIMITS } from '../http/input-limits';
-import { AccountsStore } from './accounts.store';
-import { DraftStore, blankDraft, canTarget, defaultTargets } from './draft.store';
-import { SocialAccount } from './models';
+import { CollectionsStore } from './collections.store';
+import { DraftStore, blankDraft } from './draft.store';
 import { WorkspaceStore } from './workspace.store';
 
-describe('defaultTargets', () => {
-  it('uses the design default (page groups + Instagram) when nothing is connected', () => {
-    expect(defaultTargets(ACCOUNTS)).toEqual({
-      targets: { 'acc-page': true, 'acc-ig': true },
-      groups: ['G1', 'G2', 'G3'],
-    });
-  });
-
-  it('prefers the account of a paired browser', () => {
-    const paired: SocialAccount = {
-      ...ACCOUNTS[0],
-      id: 'acc-paired',
-      name: 'Facebook · Office PC',
-      groups: ['Plants', 'Condos'],
-      connected: true,
-    };
-    expect(defaultTargets([...ACCOUNTS, paired])).toEqual({
-      targets: { 'acc-paired': true },
-      groups: ['Plants', 'Condos'],
-    });
-  });
-
-  it('never picks a connected account that has not synced its groups yet', () => {
-    const empty: SocialAccount = { ...ACCOUNTS[0], id: 'acc-new', connected: true, groups: [] };
-    expect(defaultTargets([empty, ...ACCOUNTS]).targets).toEqual({
-      'acc-page': true,
-      'acc-ig': true,
-    });
-  });
-});
-
-describe('canTarget', () => {
-  const fb = ACCOUNTS[0];
-
-  it('refuses an account that asks for a new login', () => {
-    expect(canTarget({ ...fb, health: 'relogin' })).toBe(false);
-  });
-
-  it('refuses a connected account without groups: the API would reject it', () => {
-    expect(canTarget({ ...fb, connected: true, groups: [] })).toBe(false);
-    expect(canTarget({ ...fb, connected: true, groups: ['G1'] })).toBe(true);
-  });
-
-  it('accepts sample accounts, with or without groups', () => {
-    expect(canTarget({ ...fb, groups: [] })).toBe(true);
-    expect(canTarget(ACCOUNTS[1])).toBe(true);
-  });
-});
+const a1 = apiCollectionPost({ id: 'a1', collectionId: 'a', text: 'one', mediaIds: ['m1', 'm2'] });
+const a2 = apiCollectionPost({ id: 'a2', collectionId: 'a', text: 'two' });
 
 describe('DraftStore', () => {
   let http: HttpTestingController;
   let draft: DraftStore;
+  let collections: CollectionsStore;
 
   beforeEach(async () => {
     http = provideApiTesting();
     draft = TestBed.inject(DraftStore);
-    await signIn(http);
+    collections = TestBed.inject(CollectionsStore);
+    await signIn(http, {
+      collections: [
+        apiCollection({ id: 'a', name: 'Condo', posts: [a1, a2] }),
+        apiCollection({ id: 'b', name: 'Tickets' }),
+      ],
+    });
   });
 
   afterEach(() => http.verify());
 
-  it('drops the draft when another workspace is opened: its media and the post being edited are not valid there', async () => {
-    draft.patch({
-      text: 'for the shop',
-      media: ['m1'],
-      replaces: 'post-1',
-      targets: { 'acc-ig': true },
-      autoTargets: false,
-    });
+  it('starts blank', () => {
+    expect(draft.draft()).toEqual(blankDraft());
+    expect(draft.hasDraft()).toBe(false);
+  });
+
+  it('has a draft once there is text or media, not for blanks', () => {
+    draft.patch({ text: '   ' });
+    expect(draft.hasDraft()).toBe(false);
+    draft.patch({ text: 'hello' });
+    expect(draft.hasDraft()).toBe(true);
+    draft.reset();
+    draft.addMedia('m1');
+    expect(draft.hasDraft()).toBe(true);
+  });
+
+  it('drops the draft when another workspace is opened: its media and post mean nothing there', async () => {
+    draft.edit(collections.byId('a')!, a1);
     const ws = TestBed.inject(WorkspaceStore);
     ws.list.update((l) => [...l, { ...WORKSPACE, id: 'ws-2', name: 'Other' }]);
     ws.switchTo('ws-2');
     await settle();
-    const d = draft.draft();
-    expect(d.text).toBe('');
-    expect(d.media).toEqual([]);
-    expect(d.replaces).toBeNull();
-    expect(d.autoTargets).toBe(true);
+    expect(draft.draft()).toEqual(blankDraft());
     for (const r of http.match((r) => r.url.startsWith('/api/workspaces/ws-2/'))) r.flush([]);
   });
 
-  it('keeps only targets the accounts still allow', async () => {
-    draft.patch({ targets: { 'acc-ig': true, 'acc-tt': true }, autoTargets: false });
-    // The accounts are read again (a device synced): the targets are checked against the new list.
-    TestBed.inject(AccountsStore).list.set([...ACCOUNTS]);
-    await settle();
-    // acc-tt asks for a new login: it cannot stay selected.
-    expect(draft.draft().targets).toEqual({ 'acc-ig': true });
+  describe('which collection a new post goes to', () => {
+    it('is the one last saved to, else the open one, else none', () => {
+      collections.openId.set('b');
+      collections.lastId.set('a');
+      draft.startNew();
+      expect(draft.draft().collectionId).toBe('a');
+      collections.lastId.set(null);
+      draft.startNew();
+      expect(draft.draft().collectionId).toBe('b');
+      collections.openId.set(null);
+      draft.startNew();
+      expect(draft.draft().collectionId).toBe('');
+    });
+
+    it('ignores a collection that does not exist (any more)', () => {
+      collections.lastId.set('gone');
+      collections.openId.set('b');
+      draft.startNew();
+      expect(draft.draft().collectionId).toBe('b');
+    });
+
+    it('is the one asked for when there is one', () => {
+      draft.patch({ text: 'old', postId: 'x' });
+      draft.startNew('b');
+      expect(draft.draft()).toEqual(blankDraft('b'));
+    });
   });
 
-  it('refuses a 21st media file and cuts appended text at the most the API takes', () => {
-    for (let i = 0; i < INPUT_LIMITS.postMedia; i++) expect(draft.addMedia('m' + i)).toBe(true);
-    expect(draft.addMedia('one-too-many')).toBe(false);
-    expect(draft.addMedia('m0')).toBe(true); // already attached: nothing to add
-    expect(draft.draft().media.length).toBe(INPUT_LIMITS.postMedia);
+  describe('editing a saved post', () => {
+    it('loads its text, media and collection into the draft', () => {
+      draft.edit(collections.byId('a')!, a1);
+      expect(draft.draft()).toEqual({
+        text: 'one',
+        media: ['m1', 'm2'],
+        collectionId: 'a',
+        postId: 'a1',
+        errText: '',
+        errCol: '',
+      });
+    });
 
-    draft.patch({ text: 'x'.repeat(INPUT_LIMITS.postText - 3) });
-    draft.appendText('abcdef');
-    expect(draft.draft().text.length).toBe(INPUT_LIMITS.postText);
+    it('works on a copy of the media list', () => {
+      draft.edit(collections.byId('a')!, a1);
+      draft.addMedia('m3');
+      expect(a1.mediaIds).toEqual(['m1', 'm2']);
+    });
   });
 
-  it('starts blank', () => {
-    expect(blankDraft().text).toBe('');
+  describe('open(): what the address of the composer asks for', () => {
+    it('loads the post asked for', () => {
+      expect(draft.open('a', 'a2')).toBe('loaded');
+      expect(draft.draft()).toMatchObject({ text: 'two', postId: 'a2', collectionId: 'a' });
+    });
+
+    it('finds the post even when the collection in the address is wrong or missing', () => {
+      expect(draft.open(undefined, 'a2')).toBe('loaded');
+      expect(draft.draft().collectionId).toBe('a');
+    });
+
+    it('keeps what was typed when the draft already is that post (a trip to the library and back)', () => {
+      draft.open('a', 'a2');
+      draft.patch({ text: 'two, rewritten' });
+      draft.addMedia('m9');
+      expect(draft.open('a', 'a2')).toBe('kept');
+      expect(draft.draft()).toMatchObject({ text: 'two, rewritten', media: ['m9'] });
+    });
+
+    it('starts a blank post in the asked collection when the post is gone, and says so', () => {
+      expect(draft.open('b', 'deleted')).toBe('missing');
+      expect(draft.draft()).toEqual(blankDraft('b'));
+    });
+
+    it('keeps the text of a new post and only sets the collection', () => {
+      draft.patch({ text: 'half written' });
+      expect(draft.open('b', undefined)).toBe('started');
+      expect(draft.draft()).toMatchObject({
+        text: 'half written',
+        collectionId: 'b',
+        postId: null,
+      });
+      expect(draft.open('b', undefined)).toBe('kept');
+    });
+
+    it('starts blank for a collection when another post was being edited', () => {
+      draft.open('a', 'a1');
+      expect(draft.open('b', undefined)).toBe('started');
+      expect(draft.draft()).toEqual(blankDraft('b'));
+    });
+
+    it('with no address parameters keeps the draft, and gives a draft without a collection the default one', () => {
+      collections.lastId.set('b');
+      draft.patch({ text: 'typed' });
+      expect(draft.open(undefined, undefined)).toBe('kept');
+      expect(draft.draft()).toMatchObject({ text: 'typed', collectionId: 'b' });
+      draft.patch({ collectionId: 'a' });
+      draft.open(undefined, undefined);
+      expect(draft.draft().collectionId).toBe('a');
+    });
+  });
+
+  describe('text', () => {
+    it('adds text on a new line and cuts it at the most the API takes', () => {
+      draft.patch({ text: 'first', errText: 'oops' });
+      draft.appendText('second');
+      expect(draft.draft()).toMatchObject({ text: 'first\nsecond', errText: '' });
+      draft.patch({ text: 'x'.repeat(INPUT_LIMITS.postText - 3) });
+      draft.appendText('abcdef');
+      expect(draft.draft().text.length).toBe(INPUT_LIMITS.postText);
+    });
+
+    it('puts {{code}} in front once, and says so when it is there already', () => {
+      draft.patch({ text: 'hello' });
+      expect(draft.insertCode()).toBe(true);
+      expect(draft.draft().text).toBe('{{code}}\nhello');
+      expect(draft.insertCode()).toBe(false);
+      expect(draft.draft().text).toBe('{{code}}\nhello');
+      // The Thai spelling counts too.
+      draft.patch({ text: 'สวัสดี {{ รหัส }}' });
+      expect(draft.insertCode()).toBe(false);
+    });
+
+    it('puts a sample spintax group in front', () => {
+      draft.patch({ text: 'hello' });
+      draft.insertSpin('{Hi|Hey} ');
+      expect(draft.draft().text).toBe('{Hi|Hey} hello');
+    });
+  });
+
+  describe('media', () => {
+    it('refuses a 21st file, and attaching one again changes nothing', () => {
+      for (let i = 0; i < INPUT_LIMITS.postMedia; i++) expect(draft.addMedia('m' + i)).toBe(true);
+      expect(draft.addMedia('one-too-many')).toBe(false);
+      expect(draft.addMedia('m0')).toBe(true);
+      expect(draft.draft().media.length).toBe(INPUT_LIMITS.postMedia);
+    });
+
+    it('toggles a file on and off, and reports a refusal at the limit', () => {
+      expect(draft.toggleMedia('m1')).toBe(true);
+      expect(draft.draft().media).toEqual(['m1']);
+      expect(draft.toggleMedia('m1')).toBe(true);
+      expect(draft.draft().media).toEqual([]);
+      for (let i = 0; i < INPUT_LIMITS.postMedia; i++) draft.addMedia('m' + i);
+      expect(draft.toggleMedia('extra')).toBe(false);
+      expect(draft.toggleMedia('m3')).toBe(true); // taking one off always works
+    });
   });
 });

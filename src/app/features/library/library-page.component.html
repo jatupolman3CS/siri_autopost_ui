@@ -1,4 +1,13 @@
 <div class="page">
+  @if (draft.hasDraft()) {
+    <div class="panel draft-bar">
+      <i class="ph ph-pencil-simple-line"></i>
+      <span class="grow">{{ draftBar() }}</span>
+      <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="goComposer()">
+        {{ t().lib.backToPost }}<i class="ph ph-arrow-right"></i>
+      </button>
+    </div>
+  }
   <div class="page-head">
     <div>
       <h1>{{ t().lib.title }}</h1>
@@ -79,6 +88,8 @@
           <button
             type="button"
             class="su-btn su-btn-sm su-btn-ghost su-btn-full"
+            [disabled]="!perm.canEdit()"
+            [attr.title]="perm.editHint() || null"
             (click)="useMedia(m.id)"
           >
             {{ t().lib.use }}
@@ -96,6 +107,8 @@
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-ghost"
+              [disabled]="!perm.canEdit()"
+              [attr.title]="perm.editHint() || null"
               (click)="useSnippet(s.text)"
             >
               {{ t().lib.use }}

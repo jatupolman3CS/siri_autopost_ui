@@ -296,16 +296,6 @@ export const AP_I18N_EXTRA = {
     'บัญชีนี้ยังไม่มีกลุ่ม: เปิดส่วนขยายแล้วเพิ่มกลุ่มในชุดโพสต์ก่อน',
     'This account has no groups yet: open the extension and add groups to a campaign first',
   ],
-  sumRandom: [' (เว้นระยะแบบสุ่ม)', ' (spaced randomly)'],
-  sumSame: [' (ทุกงานเริ่มพร้อมกัน)', ' (all at the start time)'],
-  sumRepeat: [
-    'จะสร้าง {total} งานโพสต์: วันละ {n} งานใน {p} แพลตฟอร์ม ระหว่าง {t1}–{t2} รวม {days} วัน',
-    'Creates {total} tasks: {n} a day across {p} platforms between {t1}–{t2}, on {days} days',
-  ],
-  repeatNote: [
-    'การทำซ้ำตั้งคิวล่วงหน้า {n} วันนับจากวันเริ่ม ไม่ได้ทำซ้ำไปเรื่อยๆ ตั้งเวลาใหม่เมื่อคิวหมด',
-    'Repeats are queued {n} days ahead of the start date, not forever. Schedule again when the queue runs out.',
-  ],
   unboundAccount: ['ยกเลิกการผูก', 'Unbound'],
   unboundHint: [
     'เครื่องของบัญชีนี้ถูกยกเลิกการผูกแล้ว ประวัติยังอยู่ แต่จะโพสต์ไม่ได้จนกว่าจะจับคู่เครื่องใหม่',

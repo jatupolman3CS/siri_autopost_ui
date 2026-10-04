@@ -1,0 +1,35 @@
+<section class="panel pv">
+  <div class="panel-head">
+    <h2 class="h2">{{ t().cmp.previewTitle }}</h2>
+    <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="respin()">
+      <i class="ph ph-shuffle"></i>{{ t().cmp.respin }}
+    </button>
+  </div>
+  <app-select-field
+    [label]="t().cmp.previewSet"
+    [options]="setOptions()"
+    [value]="setId()"
+    (valueChange)="pick($event)"
+  />
+  <div class="note">
+    <i class="ph ph-facebook-logo"></i><span>{{ note() }}</span>
+  </div>
+  @if (composed()) {
+    <p class="box">{{ composed() }}</p>
+  } @else {
+    <p class="box muted">{{ t().cmp.previewEmpty }}</p>
+  }
+  @if (chips().length) {
+    <div class="chips">
+      @for (m of chips(); track m.id) {
+        <span class="chip" [title]="m.label">
+          @if (m.src) {
+            <img [src]="m.src" alt="" />
+          } @else {
+            <i class="ph" [class]="m.icon"></i>
+          }
+        </span>
+      }
+    </div>
+  }
+</section>
