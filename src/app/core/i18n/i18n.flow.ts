@@ -100,6 +100,32 @@ export const AP_I18N_FLOW = {
     'ไม่มีแถวที่ใช้ได้ แต่ละแถวต้องมีชื่อชุดและลิงก์กลุ่ม Facebook',
     'No usable rows: each row needs a set name and a Facebook group link',
   ],
+
+  // Schedules, calendar and overview
+  schGoCollections: ['ไปสร้างชุดโพสต์', 'Create a collection'],
+  schGoLinkSets: ['ไปสร้างชุดลิงก์กลุ่ม', 'Create a link set'],
+  // Checked before the request, with the same reasons the API gives (a new schedule needs something to post and somewhere to post it).
+  schNoPosts: [
+    'ชุดโพสต์นี้ยังไม่มีโพสต์ เพิ่มโพสต์ก่อนสร้างตาราง',
+    'This collection has no posts yet. Add a post before creating the schedule',
+  ],
+  schNoApproved: [
+    'ชุดโพสต์นี้ยังไม่มีโพสต์ที่อนุมัติแล้ว อนุมัติโพสต์ก่อนสร้างตาราง',
+    'This collection has no approved posts yet. Approve a post before creating the schedule',
+  ],
+  schNoTargets: [
+    'ชุดลิงก์นี้ยังไม่มีกลุ่มที่เปิดใช้งานและลิงก์ถูกต้อง หรือบัญชีอื่นให้โพสต์',
+    'This link set has no enabled group with a valid link, and no other account to post to',
+  ],
+  // The schedule was made but the server queued nothing: its times today have passed, or its first day is more than 14 days away.
+  schNothingQueued: [
+    'สร้างตาราง {s} แล้ว แต่ยังไม่มีงานเข้าคิว เวลาของวันนี้เลยมาแล้ว หรือวันเริ่มอยู่ไกลเกิน 14 วัน ระบบจะจัดคิวให้เมื่อใกล้ถึง',
+    'Schedule {s} created, but nothing is queued yet: its times today have passed, or its first day is more than 14 days away. It is queued when the day gets close',
+  ],
+  // A "once" schedule switches itself off after its day; resuming it would queue nothing.
+  schFinished: ['เสร็จสิ้นแล้ว', 'Finished'],
+  // The calendar marks a real post made from the test page.
+  calTest: ['ทดสอบ', 'Test'],
 } as const;
 
 registerPack('flow', AP_I18N_FLOW);

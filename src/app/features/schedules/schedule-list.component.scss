@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.h2 {
+  margin-bottom: 4px;
+}
+.fs14 {
+  font-size: 14px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.ico {
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+}
+.info {
+  flex: 1;
+  min-width: 240px;
+}
+.when {
+  min-width: 160px;
+  font-size: 14px;
+}
+.btns {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}

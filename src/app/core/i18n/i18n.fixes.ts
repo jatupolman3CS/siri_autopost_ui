@@ -125,6 +125,13 @@ export const AP_I18N_FIXES = {
       'Marked as signed in again. You can retry now',
     ],
   },
+  sch: {
+    // The design asks for a name, but the name is optional: without one the API calls the schedule "collection → set".
+    errForm: [
+      'กรุณาเลือกชุดโพสต์ ชุดลิงก์ และเวลาอย่างน้อย 1 เวลา',
+      'Please choose a collection, a link set and at least one time',
+    ],
+  },
   ts: {
     // The design's "synced at 10:12" was a fixed sample time: the list is whatever the extension last reported.
     importHint: [

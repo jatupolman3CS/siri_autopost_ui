@@ -1,0 +1,35 @@
+<div class="head">
+  <div class="fw5 fs14">{{ t().sch.perGroup }}</div>
+  <div class="small muted">{{ t().sch.perGroupHint }}</div>
+</div>
+@if (form.set()) {
+  @if (form.codeCount() > 0) {
+    <div class="codes"><i class="ph ph-hash" aria-hidden="true"></i>{{ codeNote() }}</div>
+  }
+  @if (!form.members().length) {
+    <p class="note">{{ t().api.flow.schNoTargets }}</p>
+  }
+  <div class="rows">
+    @for (m of form.members(); track m.key) {
+      <div class="member">
+        <span class="pico s28" aria-hidden="true"><i class="ph" [class]="m.icon"></i></span>
+        <div class="grow">
+          <div class="ellipsis fs14">{{ m.name }}</div>
+          @if (m.code) {
+            <div class="small muted">{{ t().cal.code }} {{ m.code }}</div>
+          }
+        </div>
+        <input
+          class="su-input own"
+          [disabled]="perm.readOnly()"
+          [value]="form.overrides()[m.key] ?? ''"
+          [placeholder]="t().sch.followSchedule"
+          [attr.aria-label]="m.name"
+          (input)="form.setOverride(m.key, $any($event.target).value)"
+        />
+      </div>
+    }
+  </div>
+} @else {
+  <p class="note">{{ t().sch.pickSetFirst }}</p>
+}
