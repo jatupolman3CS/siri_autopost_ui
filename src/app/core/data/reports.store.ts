@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { normalizeGroupUrl } from '../flow/group-links';
+import { groupUrlKey } from '../flow/group-links';
 import { ApiReport, ApiReportGroup, ApiReportShare, ApiService } from '../http/api.service';
 import { LinkSetsStore } from './link-sets.store';
 import { loadWithRetry } from './loading';
@@ -98,14 +98,13 @@ export class ReportsStore {
   async disableGroup(group: ApiReportGroup): Promise<number> {
     const wsId = this.ws.id();
     if (!wsId) return 0;
-    const url = normalizeGroupUrl(group.url);
+    const url = groupUrlKey(group.url);
     let count = 0;
     try {
       const sets = await this.api.linkSets(wsId);
       for (const set of sets)
         for (const link of set.links) {
-          const same =
-            link.id === group.linkId || (url !== '' && normalizeGroupUrl(link.url) === url);
+          const same = link.id === group.linkId || (url !== '' && groupUrlKey(link.url) === url);
           if (!same || !link.enabled) continue;
           await this.api.updateLink(wsId, set.id, link.id, {
             name: link.name,

@@ -13,7 +13,7 @@ import { AccountsStore } from '../../core/data/accounts.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { ApiGroupLink } from '../../core/http/api.service';
-import { groupSlug, normalizeGroupUrl } from '../../core/flow/group-links';
+import { groupSlug, groupUrlKey, normalizeGroupUrl } from '../../core/flow/group-links';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
@@ -73,11 +73,11 @@ export class ImportGroupsModalComponent {
 
   protected readonly rows = computed(() => {
     const set = this.store.byId(this.setId() ?? '');
-    const have = new Set((set?.links ?? []).map((l) => normalizeGroupUrl(l.url)).filter(Boolean));
+    const have = new Set((set?.links ?? []).map((l) => groupUrlKey(l.url)).filter(Boolean));
     const picked = this.picked();
     const inSetText = this.t().ts.inSet;
     return (this.groups() ?? []).map((g) => {
-      const key = normalizeGroupUrl(g.url) || g.url;
+      const key = groupUrlKey(g.url) || g.url;
       const inSet = have.has(key);
       return {
         key,

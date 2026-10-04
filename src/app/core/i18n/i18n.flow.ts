@@ -126,6 +126,11 @@ export const AP_I18N_FLOW = {
   schFinished: ['เสร็จสิ้นแล้ว', 'Finished'],
   // The calendar marks a real post made from the test page.
   calTest: ['ทดสอบ', 'Test'],
+  // The server accepts a start date from yesterday to a year ahead.
+  schBadDate: [
+    'วันเริ่มต้องอยู่ระหว่างเมื่อวานถึงอีก 1 ปีข้างหน้า',
+    'The start date must be between yesterday and a year from now',
+  ],
 } as const;
 
 registerPack('flow', AP_I18N_FLOW);

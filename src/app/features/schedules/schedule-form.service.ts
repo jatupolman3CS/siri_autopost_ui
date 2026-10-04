@@ -11,6 +11,7 @@ import {
   PostOrder,
   ScheduleLike,
   ScheduleMode,
+  addDays,
   hourChips,
   isTimesMode,
   normalizeTimes,
@@ -346,6 +347,12 @@ export class ScheduleFormService {
       );
     }
     if (!this.members().length) return this.fail(t.api.flow.schNoTargets);
+    const start = this.start();
+    if (start) {
+      const today = this.posts.todayKey();
+      if (start < addDays(today, -1) || start > addDays(today, 366))
+        return this.fail(t.api.flow.schBadDate);
+    }
     this.error.set('');
     return {
       name: this.name().trim() || null,

@@ -2,6 +2,7 @@ import {
   defaultLinkName,
   duplicateUrlFlags,
   groupSlug,
+  groupUrlKey,
   isDuplicateUrl,
   linkLabel,
   linksToCsv,
@@ -438,5 +439,39 @@ describe('postsToCsv', () => {
 
   it('writes only the header for no collections', () => {
     expect(postsToCsv([])).toBe('\ufeffcollection,text,media,status');
+  });
+});
+
+describe('group slugs and case', () => {
+  it('refuses a slug without a letter or a digit', () => {
+    expect(normalizeGroupUrl(G + '.')).toBe('');
+    expect(normalizeGroupUrl(G + '..')).toBe('');
+    expect(normalizeGroupUrl(G + '-_-')).toBe('');
+    expect(normalizeGroupUrl(G + 'a.')).toBe(G + 'a.');
+  });
+
+  it('keeps the slug as typed but compares it without case', () => {
+    expect(normalizeGroupUrl('facebook.com/groups/ABC')).toBe(G + 'ABC');
+    expect(groupUrlKey('facebook.com/groups/ABC')).toBe(G + 'abc');
+    expect(groupUrlKey('nonsense')).toBe('');
+    expect(isDuplicateUrl([{ url: G + 'abc' }], G + 'ABC')).toBe(true);
+    expect(
+      duplicateUrlFlags([{ url: G + 'abc' }, { url: G + 'ABC' }, { url: G + 'other' }]),
+    ).toEqual([false, true, false]);
+  });
+
+  it('counts a bulk or CSV import of the same group in another case as a duplicate', () => {
+    const existing = [{ url: G + 'abc', code: '#1' }];
+    expect(previewBulkImport(existing, [{ url: G + 'ABC', name: 'x', code: '' }])).toEqual({
+      added: 0,
+      duplicates: 1,
+      recoded: 0,
+    });
+    expect(
+      previewCsvImport(
+        [{ name: 'S', links: existing }],
+        [{ set: 'S', name: 'n', url: G + 'ABC', code: '' }],
+      ),
+    ).toEqual({ links: 0, sets: 0 });
   });
 });

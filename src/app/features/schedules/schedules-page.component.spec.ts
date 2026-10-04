@@ -1044,6 +1044,20 @@ describe('SchedulesPageComponent', () => {
       http.expectNone(SCHEDULES_URL);
     });
 
+    it('refuses a start date outside yesterday … a year ahead before asking the server', async () => {
+      const { fixture, el } = await open();
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      const date = el.querySelector<HTMLInputElement>('input[type="date"]')!;
+      date.value = '2099-01-01';
+      date.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      create(el).click();
+      fixture.detectChanges();
+      expect(err(el)).toBe(t().api.flow.schBadDate);
+      http.expectNone(SCHEDULES_URL);
+    });
+
     it('shows the reason when the API refuses, and keeps the form for another try', async () => {
       const { fixture, el } = await open();
       await openBuilder(el, fixture);

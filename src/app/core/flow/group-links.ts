@@ -69,7 +69,13 @@ export function normalizeGroupUrl(raw: string | null | undefined): string {
   const m = String(raw ?? '')
     .trim()
     .match(GROUP_URL);
-  return m ? GROUP_URL_PREFIX + m[1] : '';
+  // A slug of dots and dashes only (`.`, `..`) is no group (the server refuses it too).
+  return m && /[A-Za-z0-9]/.test(m[1]) ? GROUP_URL_PREFIX + m[1] : '';
+}
+
+/** The key two addresses are compared by: group slugs are not case sensitive, so `ABC` and `abc` are one group. */
+export function groupUrlKey(raw: string | null | undefined): string {
+  return normalizeGroupUrl(raw).toLowerCase();
 }
 
 /** The group name or number of an address (the text after `groups/`), else the text itself. */
@@ -118,16 +124,16 @@ export function isDuplicateUrl(
   url: string | null | undefined,
   ignoreIndex = -1,
 ): boolean {
-  const key = normalizeGroupUrl(url);
+  const key = groupUrlKey(url);
   if (!key) return false;
-  return links.some((l, i) => i !== ignoreIndex && normalizeGroupUrl(l.url) === key);
+  return links.some((l, i) => i !== ignoreIndex && groupUrlKey(l.url) === key);
 }
 
 /** Per row: true when an earlier row has the same normalized address (the first one is not flagged). */
 export function duplicateUrlFlags(links: readonly LinkLike[]): boolean[] {
   const seen = new Set<string>();
   return links.map((l) => {
-    const key = normalizeGroupUrl(l.url);
+    const key = groupUrlKey(l.url);
     if (!key) return false;
     if (seen.has(key)) return true;
     seen.add(key);
@@ -152,16 +158,17 @@ export function previewBulkImport(
 ): BulkPreview {
   const codes = new Map<string, string>();
   for (const l of existing) {
-    const key = normalizeGroupUrl(l.url);
+    const key = groupUrlKey(l.url);
     if (key && !codes.has(key)) codes.set(key, l.code ?? '');
   }
   let added = 0;
   let duplicates = 0;
   let recoded = 0;
   for (const l of parsed) {
-    const current = codes.get(l.url);
+    const key = l.url.toLowerCase();
+    const current = codes.get(key);
     if (current === undefined) {
-      codes.set(l.url, l.code);
+      codes.set(key, l.code);
       added++;
       continue;
     }
@@ -219,7 +226,7 @@ export function previewCsvImport(
   const urls = new Map<string, Set<string>>();
   for (const s of existing) {
     const known = urls.get(s.name) ?? new Set<string>();
-    s.links.forEach((l) => known.add(normalizeGroupUrl(l.url)));
+    s.links.forEach((l) => known.add(groupUrlKey(l.url)));
     urls.set(s.name, known);
   }
   let links = 0;
@@ -231,7 +238,7 @@ export function previewCsvImport(
       urls.set(row.set, known);
       sets++;
     }
-    const key = normalizeGroupUrl(row.url);
+    const key = groupUrlKey(row.url);
     if (!key || known.has(key)) continue;
     known.add(key);
     links++;
