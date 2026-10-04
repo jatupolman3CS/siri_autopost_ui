@@ -210,6 +210,34 @@ describe('LinkSetsStore', () => {
       expect(rowOf('s1', 'a').url).toBe('https://www.facebook.com/groups/condo.bkk');
     });
 
+    it('keeps a space typed at the end of a text the server only trimmed', async () => {
+      await start();
+      store.editLink('s1', 'a', { name: 'คอนโด ', code: '#Jan24 ' });
+      await wait();
+      http.expectOne(`${SET_URL('s1')}/links/a`).flush({ ...A, name: 'คอนโด', code: '#Jan24' });
+      await settle();
+      expect(rowOf('s1', 'a').name).toBe('คอนโด ');
+      expect(rowOf('s1', 'a').code).toBe('#Jan24 ');
+    });
+
+    it('keeps an emptied name empty while the server derives one from the address', async () => {
+      await start();
+      store.editLink('s1', 'a', { name: '' });
+      await wait();
+      http.expectOne(`${SET_URL('s1')}/links/a`).flush({ ...A, name: 'a' });
+      await settle();
+      expect(rowOf('s1', 'a').name).toBe('');
+    });
+
+    it('shows another text the server stored instead of what was typed', async () => {
+      await start();
+      store.editLink('s1', 'a', { code: '#x' });
+      await wait();
+      http.expectOne(`${SET_URL('s1')}/links/a`).flush({ ...A, code: '#X' });
+      await settle();
+      expect(rowOf('s1', 'a').code).toBe('#X');
+    });
+
     it('flags an address that is not a Facebook group before the server answers', async () => {
       await start();
       store.editLink('s1', 'a', { url: 'https://example.com/x' });
@@ -528,6 +556,22 @@ describe('LinkSetsStore', () => {
       two.flush({ ...SET, accountIds: ['acc-ig', 'acc-tt', 'acc-x'] });
       expect(await second).toBe(true);
       expect(store.byId('s1')?.accountIds).toEqual(['acc-ig', 'acc-tt', 'acc-x']);
+    });
+  });
+
+  describe('"more options" of a set', () => {
+    it('remembers the choice per set, and forgets it with the workspace', async () => {
+      await start();
+      expect(store.moreOpen()).toEqual({});
+      store.setMore('s1', true);
+      store.setMore('s2', false);
+      expect(store.moreOpen()).toEqual({ s1: true, s2: false });
+      const ws = TestBed.inject(WorkspaceStore);
+      ws.list.update((l) => [...l, { ...WORKSPACE, id: 'ws-2', name: 'Other' }]);
+      ws.switchTo('ws-2');
+      await settle();
+      expect(store.moreOpen()).toEqual({});
+      http.expectOne(`/api/workspaces/ws-2/link-sets`).flush([]);
     });
   });
 

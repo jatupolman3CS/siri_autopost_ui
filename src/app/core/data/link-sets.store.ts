@@ -15,6 +15,8 @@ import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
+/** How much the API accepts per field of a set and its links (Domain `LinkSet`/`SetLink`): inputs stop here. */
+export const LINK_LIMITS = { setName: 120, name: 200, url: 300, code: 100, dailyMax: 50 } as const;
 /** How long an edit waits for the next keystroke before the whole link row is saved. */
 export const EDIT_DEBOUNCE_MS = 600;
 /** Events that move a link's health (the engine switched it off, it went pending, it was enabled again). */
@@ -100,6 +102,9 @@ export class LinkSetsStore {
   /** The composing settings of the first collection, for the "example" of a coded group (null: none, no footer). */
   readonly exampleSettings = signal<ComposeSettings | null>(null);
 
+  /** Per set id: the person's choice for its "more options" section (no entry: it follows simple mode). */
+  readonly moreOpen = signal<Record<string, boolean>>({});
+
   readonly setCount = computed(() => this.sets().length);
   /** Links the engine would post to, in every set: switched on and a real group address. */
   readonly linkCount = computed(() =>
@@ -125,6 +130,7 @@ export class LinkSetsStore {
       this.sets.set([]);
       this.loaded.set(false);
       this.exampleSettings.set(null);
+      this.moreOpen.set({});
       this.exampleRequested = false;
       if (id) void this.load(id);
     });
@@ -194,6 +200,11 @@ export class LinkSetsStore {
   }
 
   // ---- sets -------------------------------------------------------------------------------------------------
+
+  /** Opens or closes the "more options" of a set; `open` is what it shows now. */
+  setMore(id: string, open: boolean): void {
+    this.moreOpen.update((m) => ({ ...m, [id]: open }));
+  }
 
   async createSet(name: string, postAsAccountId?: string | null): Promise<ApiLinkSet> {
     const wsId = this.requireWs();
@@ -425,9 +436,17 @@ export class LinkSetsStore {
       });
       if (this.pending.get(key) !== p || this.ws.id() !== wsId) return;
       p.confirmed = saved;
-      // Nothing newer was typed: show what the server stored (the normalised address).
-      if (!p.dirty)
-        this.setLinks(setId, (links) => links.map((l) => (l.id === linkId ? saved : l)));
+      // Nothing newer was typed: show what the server stored (the normalised address), but keep text the
+      // server only trimmed or filled in, so a space typed before the next word is not taken away.
+      if (!p.dirty) {
+        const shown: ApiSetLink = {
+          ...saved,
+          name: keepText(row.name, saved.name, true),
+          code: keepText(row.code, saved.code),
+          url: row.url.trim() === saved.url ? row.url : saved.url,
+        };
+        this.setLinks(setId, (links) => links.map((l) => (l.id === linkId ? shown : l)));
+      }
     } catch {
       ok = false;
       if (this.pending.get(key) === p && this.ws.id() === wsId) {
@@ -498,3 +517,12 @@ export class LinkSetsStore {
 }
 
 const pendingKey = (setId: string, linkId: string) => `${setId}/${linkId}`;
+
+/**
+ * What a field shows after its save: the server's text, except when the server only trimmed what was typed
+ * (or, for a name, filled in the one it derives from an empty field): the person may be in the middle of it.
+ */
+function keepText(sent: string, got: string, derivedWhenEmpty = false): string {
+  const trimmed = sent.trim();
+  return trimmed === got || (derivedWhenEmpty && trimmed === '') ? sent : got;
+}
