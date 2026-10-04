@@ -31,7 +31,7 @@ function settingsWith(name: string, extra: object = {}) {
         groups: [
           { url: 'https://www.facebook.com/groups/1/', name: 'G1', text: '#A1', enabled: true },
         ],
-        posts: [{ id: 'p1', text: 'สวัสดี', imageIds: [], groupUrls: [] }],
+        posts: [{ id: 'p1', text: 'สวัสดี', imageIds: [], imageUrls: [], groupUrls: [] }],
         config: { groupDelayMin: 4 },
         ...extra,
       },
