@@ -105,6 +105,28 @@ describe('the corrections over the design copy', () => {
     }
   });
 
+  it('does not call the template-based post writer "AI": there is no language model', () => {
+    const service = i18n();
+    for (const lang of ['th', 'en'] as const) {
+      service.setLang(lang);
+      const t = service.t();
+      for (const [name, text] of Object.entries({
+        'cmp.ai': t.cmp.ai,
+        'cmp.tools': t.cmp.tools,
+        'ai.title': t.ai.title,
+        'ar.locked': t.ar.locked,
+        'ai.note': t.ai.note,
+      }))
+        expect(text, `${lang} ${name}`).not.toMatch(/\bAI\b/);
+    }
+    service.setLang('th');
+    expect(service.t().cmp.ai).toBe('ตัวช่วยร่างโพสต์ (แม่แบบ)');
+    expect(service.t().ai.title).toBe(service.t().cmp.ai);
+    service.setLang('en');
+    expect(service.t().cmp.ai).toBe('Post drafts (templates)');
+    expect(service.t().ai.title).toBe('Post drafts (templates)');
+  });
+
   it('does not show a made-up extension version or pause time', () => {
     const service = i18n();
     service.setLang('en');

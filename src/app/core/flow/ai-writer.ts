@@ -1,4 +1,4 @@
-// The "AI writer" of the prototype is a template generator, not a model: every post is an opening
+// The design's "AI writer" (the app calls it "post drafts") is a template generator, not a model: every post is an opening
 // line and a closing line (both written in spintax, which is resolved only when the post is sent)
 // around the topic and a bullet per selling point. This is a port of it; nothing here is a server
 // rule. The text it returns is user content (Thai) and goes into the collection like typed text

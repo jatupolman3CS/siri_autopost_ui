@@ -21,8 +21,9 @@ import { SelectFieldComponent } from '../../shared/components/select-field/selec
 /** The numbers of posts the dialog offers (the API takes up to 20 in one batch). */
 const COUNTS = ['1', '3', '5', '10', '20'];
 
-// The "write with AI" dialog: a topic, optional selling points, a tone and a number of posts become drafts from
-// text templates (core/flow/ai-writer, no language model) that are added to a collection in one batch.
+// The "post drafts" dialog (the design called it "write with AI", but there is no language model): a topic,
+// optional selling points, a tone and a number of posts become drafts from text templates (core/flow/ai-writer)
+// that are added to a collection in one batch.
 @Component({
   selector: 'app-ai-writer-modal',
   imports: [InputFieldComponent, ModalComponent, SelectFieldComponent],

@@ -67,6 +67,12 @@ export const AP_I18N_FIXES = {
       'จะสร้าง {n} งานโพสต์ใน {p} แพลตฟอร์ม ระหว่าง {t1}–{t2}',
       'Creates {n} tasks across {p} platforms between {t1}–{t2}',
     ],
+    // There is no AI: the "write with AI" tool fills text templates in (see ai.note), so it is not called AI.
+    ai: ['ตัวช่วยร่างโพสต์ (แม่แบบ)', 'Post drafts (templates)'],
+    tools: [
+      'เครื่องมือเพิ่มเติม (ข้อความสำเร็จรูป, รหัสกลุ่ม, Spintax, ตัวช่วยร่างโพสต์)',
+      'More tools (snippets, group code, spintax, post drafts)',
+    ],
     // The draft only lives in this browser tab.
     toastDraft: [
       'เก็บฉบับร่างไว้แล้ว (อยู่ในหน้านี้จนกว่าจะปิดหรือรีโหลด)',
@@ -203,7 +209,8 @@ export const AP_I18N_FIXES = {
     sample: ['โพสต์สำเร็จ · {g} · “{t}”', 'Posted · {g} · “{t}”'],
   },
   ai: {
-    // There is no language model: the drafts are filled in from text templates.
+    // There is no language model: the drafts are filled in from text templates, so the dialog is not "AI".
+    title: ['ตัวช่วยร่างโพสต์ (แม่แบบ)', 'Post drafts (templates)'],
     note: [
       'โพสต์สร้างจากแม่แบบข้อความ ไม่ได้ใช้โมเดลภาษา โปรดตรวจและแก้ก่อนนำไปใช้',
       'Posts are filled in from text templates, not written by a language model. Review and edit them before use',
