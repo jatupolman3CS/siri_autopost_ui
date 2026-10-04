@@ -1,0 +1,145 @@
+<main class="wrap">
+  <div class="tools no-print">
+    <app-lang-theme-switch />
+    @if (state() === 'ready') {
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="printNow()">
+        <i class="ph ph-printer"></i>{{ t().api.engine.reportSharePrint }}
+      </button>
+    }
+  </div>
+
+  @switch (state()) {
+    @case ('loading') {
+      <div class="panel box" role="status">
+        <h1>{{ t().api.reportTitle }}</h1>
+        <p class="muted">{{ t().api.loading }}</p>
+      </div>
+    }
+    @case ('missing') {
+      <div class="panel box">
+        <i class="ph ph-link-break big" aria-hidden="true"></i>
+        <h1>{{ t().api.engine.sharedNotFound }}</h1>
+        <p class="muted">{{ t().api.engine.sharedNotFoundBody }}</p>
+      </div>
+    }
+    @case ('error') {
+      <div class="panel box" role="alert">
+        <i class="ph ph-warning big" aria-hidden="true"></i>
+        <h1>{{ t().api.reportTitle }}</h1>
+        <p class="muted">{{ t().api.engine.sharedFailed }}</p>
+        <div>
+          <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="load()">
+            {{ t().api.engine.reportsRetry }}
+          </button>
+        </div>
+      </div>
+    }
+    @default {
+      @if (view(); as v) {
+        <article class="doc">
+          <header class="head">
+            @if (!v.white) {
+              <div class="ap"><i class="ph-fill ph-paper-plane-tilt"></i><span>AutoPost</span></div>
+            }
+            <h1>{{ v.brand }}</h1>
+            <p class="kind">{{ t().api.reportTitle }} · {{ v.period }}</p>
+            @if (v.summary) {
+              <p class="summary">{{ v.summary }}</p>
+            }
+            <p class="meta">{{ v.meta }}</p>
+          </header>
+
+          <div class="kpis">
+            <div class="panel kpi">
+              <span class="label">{{ t().rep.posted }}</span>
+              <span class="value">{{ v.totals.posted }}</span>
+            </div>
+            <div class="panel kpi">
+              <span class="label">{{ t().rep.pending }}</span>
+              <span class="value">{{ v.totals.pending }}</span>
+            </div>
+            <div class="panel kpi">
+              <span class="label">{{ t().rep.failed }}</span>
+              <span class="value">{{ v.totals.failed }}</span>
+            </div>
+            <div class="panel kpi">
+              <span class="label">{{ t().rep.rate }}</span>
+              <span class="value">{{ v.totals.rate }}%</span>
+            </div>
+          </div>
+
+          <section class="panel sec">
+            <h2 class="h2">{{ t().rep.byGroup }}</h2>
+            @if (v.groups.length === 0) {
+              <p class="muted fs14">{{ t().api.engine.reportsEmpty }}</p>
+            } @else {
+              <div class="tbl-wrap">
+                <div class="tbl groups">
+                  <div class="th">{{ t().rep.group }}</div>
+                  <div class="th">{{ t().rep.posted }}</div>
+                  <div class="th">{{ t().rep.pending }}</div>
+                  <div class="th">{{ t().rep.failed }}</div>
+                  <div class="th">{{ t().rep.rate }}</div>
+                  @for (g of v.groups; track g.key) {
+                    <div class="td name">
+                      <span class="pico s24" aria-hidden="true"
+                        ><i class="ph" [class]="g.icon"></i
+                      ></span>
+                      <span class="ellipsis" [attr.title]="g.name">
+                        @if (g.href) {
+                          <a [href]="g.href" target="_blank" rel="noopener noreferrer">{{
+                            g.name
+                          }}</a>
+                        } @else {
+                          {{ g.name }}
+                        }
+                      </span>
+                    </div>
+                    <div class="td">{{ g.posted }}</div>
+                    <div class="td">{{ g.pending }}</div>
+                    <div class="td">{{ g.failed }}</div>
+                    <div class="td rate">
+                      <span class="ratebar" aria-hidden="true"
+                        ><span [style.width.%]="g.rate" [style.background]="g.color"></span
+                      ></span>
+                      {{ g.rate }}%
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </section>
+
+          @if (v.posts.length) {
+            <section class="panel sec">
+              <h2 class="h2">{{ t().rep.byPost }}</h2>
+              <div class="tbl byPost">
+                <div class="th">{{ t().rep.post }}</div>
+                <div class="th">{{ t().rep.used }}</div>
+                @for (p of v.posts; track p.collectionPostId) {
+                  <div class="td postcell">
+                    <span class="clamp" [attr.title]="p.full">{{ p.excerpt }}</span>
+                    @if (p.top) {
+                      <app-chip tone="accent"
+                        ><i class="ph ph-star" aria-hidden="true"></i>{{ t().rep.best }}</app-chip
+                      >
+                    }
+                  </div>
+                  <div class="td">{{ p.used }}</div>
+                }
+              </div>
+            </section>
+          }
+
+          <footer class="foot small muted">
+            <span>{{ v.created }} · {{ v.expires }}</span>
+            <span>{{ t().api.engine.sharedSnapshot }}</span>
+            @if (!v.white) {
+              <span class="by">{{ t().api.engine.sharedPoweredBy }}</span>
+            }
+          </footer>
+        </article>
+      }
+    }
+  }
+</main>

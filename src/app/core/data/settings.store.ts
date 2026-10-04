@@ -1,5 +1,5 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
-import { ApiEngine, ApiService } from '../http/api.service';
+import { ApiAntiBan, ApiEngine, ApiService } from '../http/api.service';
 import { AccountsStore } from './accounts.store';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
@@ -16,7 +16,12 @@ export interface AntiBanSettings {
   shuffle: boolean;
   autopause: boolean;
   warmup: boolean;
+  /** Workspace-wide rules over every schedule (Pro and above; the server keeps the old values below Pro). */
+  advanced: AdvancedAntiBan;
 }
+
+/** The advanced anti-ban rules of the engine (hours, minutes, counts; 0 = off where a count). */
+export type AdvancedAntiBan = ApiAntiBan['advanced'];
 
 export type OfflinePolicy = 'skip' | 'queue' | 'notify';
 
@@ -50,6 +55,23 @@ export function defaultAntiBan(): AntiBanSettings {
     shuffle: true,
     autopause: true,
     warmup: false,
+    advanced: defaultAdvanced(),
+  };
+}
+
+/** The server's defaults for the advanced rules. */
+export function defaultAdvanced(): AdvancedAntiBan {
+  return {
+    minGap: 2,
+    dailyAll: 0,
+    blockMin: 24,
+    blockMax: 48,
+    failStreak: 4,
+    recentAvoid: 10,
+    cooldown: 0,
+    focus: true,
+    autoOffFails: 3,
+    stopFailPct: 30,
   };
 }
 
@@ -159,6 +181,11 @@ export class SettingsStore {
     this.ab.update((v) => ({ ...v, ...patch }));
   }
 
+  /** Changes some of the advanced rules (the others keep their values). */
+  patchAdvanced(patch: Partial<AdvancedAntiBan>): void {
+    this.ab.update((v) => ({ ...v, advanced: { ...v.advanced, ...patch } }));
+  }
+
   patchOff(patch: Partial<OfflineSettings>): void {
     this.off.update((v) => ({ ...v, ...patch }));
   }
@@ -184,7 +211,12 @@ export class SettingsStore {
 
   private apply(e: ApiEngine): void {
     const { autoPause, ...rest } = e.antiBan;
-    this.ab.set({ ...rest, autopause: autoPause });
+    // The advanced rules always come with the settings; the defaults only guard an answer that lacks them.
+    this.ab.set({
+      ...rest,
+      autopause: autoPause,
+      advanced: { ...defaultAdvanced(), ...rest.advanced },
+    });
     this.off.set({ ...e.offline, window: e.offline.window as OfflineSettings['window'] });
     this.applyPresence(e);
   }

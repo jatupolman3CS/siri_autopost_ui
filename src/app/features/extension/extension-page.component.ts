@@ -12,6 +12,7 @@ import { SettingsStore } from '../../core/data/settings.store';
 import { DevicesStore } from '../../core/data/devices.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import { autoPauseLine } from '../../core/data/auto-pause-line';
 
 // Preview of what the browser extension's popup shows (the extension itself has only a status page
 // since 2.2). The numbers come from the workspace; the activity list is a sample.
@@ -51,10 +52,19 @@ export class ExtensionPageComponent {
       ? e.offline
       : this.ext.jobsPaused()
         ? e.paused
-        : posting
-          ? e.live
-          : e.idle;
+        : this.autoPauses().length
+          ? this.t().api.engine.devAutoPausedTag
+          : posting
+            ? e.live
+            : e.idle;
   });
+
+  /** One line per browser the engine has paused itself (a Facebook block, posts that kept failing). */
+  protected readonly autoPauses = computed(() =>
+    this.devices
+      .autoPaused()
+      .map((p) => autoPauseLine(p, this.devices.now(), this.t(), this.i18n.li())),
+  );
 
   protected readonly next = computed(() => {
     const p = this.posts.next();

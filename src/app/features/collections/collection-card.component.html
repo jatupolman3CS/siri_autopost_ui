@@ -1,0 +1,57 @@
+<section class="panel card">
+  <div class="head">
+    <span class="ico"><i class="ph" [class]="collection().icon"></i></span>
+    <div class="grow info">
+      <div class="fw6">{{ collection().name }}</div>
+      <div class="small muted">{{ meta() }}</div>
+    </div>
+    <div class="btns">
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+        (click)="add()"
+      >
+        <i class="ph ph-pencil-simple-line"></i>{{ t().col.addPost }}
+      </button>
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="schedule()">
+        <i class="ph ph-calendar-check"></i>{{ t().col.schedule }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [attr.aria-expanded]="cfgOpen()"
+        (click)="cfgOpen.set(!cfgOpen())"
+      >
+        <i class="ph ph-gear"></i>{{ cfgOpen() ? t().col.hideSettings : t().col.settings }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [attr.aria-expanded]="open()"
+        (click)="toggle()"
+      >
+        {{ open() ? t().col.collapse : t().col.expand }}
+      </button>
+    </div>
+  </div>
+  @if (cfgOpen()) {
+    <app-collection-settings [collection]="collection()" />
+  }
+  @if (open()) {
+    <div class="posts">
+      @for (p of posts(); track p.id) {
+        <app-collection-post-row [collection]="collection()" [post]="p" />
+      }
+      @if (more() > 0) {
+        <button type="button" class="su-btn su-btn-sm su-btn-ghost more" (click)="showMore()">
+          {{ moreLabel() }}
+        </button>
+      }
+      @if (!collection().posts.length) {
+        <p class="empty">{{ t().col.empty }}</p>
+      }
+    </div>
+  }
+</section>

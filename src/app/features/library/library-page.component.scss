@@ -2,6 +2,24 @@
   font-size: 14px;
 }
 
+.draft-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-color: var(--color-primary);
+  font-size: 14px;
+
+  > .ph {
+    font-size: 22px;
+    color: var(--color-primary);
+  }
+
+  .grow {
+    min-width: 200px;
+  }
+}
+
 .tabs {
   display: flex;
   gap: 4px;

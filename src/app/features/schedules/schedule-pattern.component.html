@@ -1,0 +1,117 @@
+@if (form.isTimes()) {
+  <div class="col">
+    <div class="fw5 fs14">{{ t().sch.times }}</div>
+    <div class="chips">
+      @for (c of form.chips(); track c) {
+        <button
+          type="button"
+          class="tchip"
+          [class.on]="form.times().includes(c)"
+          [attr.aria-pressed]="form.times().includes(c)"
+          [disabled]="perm.readOnly()"
+          (click)="form.toggleTime(c)"
+        >
+          {{ c }}
+        </button>
+      }
+    </div>
+    <div class="best">
+      <i class="ph ph-chart-line-up" aria-hidden="true"></i>
+      <span>{{ bestLabel() }}</span>
+      <span class="small muted">{{ t().sch.bestTimeHint }}</span>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="perm.readOnly() || !form.best()?.length"
+        (click)="form.useBest()"
+      >
+        {{ t().sch.useBest }}
+      </button>
+    </div>
+    <div class="add">
+      <div class="w220" (keydown.enter)="form.addTime()">
+        <app-input-field
+          [label]="t().sch.addTime"
+          placeholder="09:30"
+          [disabled]="perm.readOnly()"
+          [(value)]="form.extra"
+        />
+      </div>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary"
+        [disabled]="perm.readOnly()"
+        (click)="form.addTime()"
+      >
+        {{ t().sch.add }}
+      </button>
+    </div>
+  </div>
+}
+
+@if (form.isInterval()) {
+  <div class="grid">
+    <app-input-field
+      [label]="t().sch.firstRound"
+      type="time"
+      [disabled]="perm.readOnly()"
+      [(value)]="form.first"
+    />
+    <div>
+      <label class="su-field-label" for="sch-every">{{ t().sch.every }}</label>
+      <input
+        id="sch-every"
+        class="su-input"
+        type="number"
+        min="1"
+        max="24"
+        [disabled]="perm.readOnly()"
+        [value]="form.every()"
+        (change)="form.setEvery($any($event.target).value)"
+      />
+    </div>
+  </div>
+  <p class="note">{{ roundsPreview() }}</p>
+}
+
+@if (form.isOnce()) {
+  <div class="w220">
+    <app-input-field
+      [label]="t().sch.onceTime"
+      type="time"
+      [disabled]="perm.readOnly()"
+      [(value)]="form.onceTime"
+    />
+  </div>
+}
+
+@if (form.isDrip()) {
+  <div class="grid">
+    <app-input-field
+      [label]="t().sch.dripFrom"
+      type="time"
+      [disabled]="perm.readOnly()"
+      [(value)]="form.dripFrom"
+    />
+    <app-input-field
+      [label]="t().sch.dripTo"
+      type="time"
+      [disabled]="perm.readOnly()"
+      [(value)]="form.dripTo"
+    />
+    <div>
+      <label class="su-field-label" for="sch-drip-n">{{ t().sch.dripN }}</label>
+      <input
+        id="sch-drip-n"
+        class="su-input"
+        type="number"
+        min="1"
+        max="12"
+        [disabled]="perm.readOnly()"
+        [value]="form.dripCount()"
+        (change)="form.setDripCount($any($event.target).value)"
+      />
+    </div>
+  </div>
+  <p class="note">{{ dripPreview() }}</p>
+}

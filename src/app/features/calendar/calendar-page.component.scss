@@ -139,8 +139,33 @@
   display: flex;
   gap: 4px;
 }
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+// The group code (and the "test" marker) of a post: a small pill, as in the design.
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .add {
   margin-top: 12px;
+}
+.past {
+  margin: 8px 0 0;
 }
 .modal-p {
   margin: 0;

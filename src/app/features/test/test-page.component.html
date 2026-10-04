@@ -1,0 +1,143 @@
+<div class="page">
+  <div class="page-head">
+    <div class="w760">
+      <h1>{{ t().test.title }}</h1>
+      <p>{{ t().test.sub }}</p>
+      <app-perm-note level="edit" />
+    </div>
+  </div>
+
+  @if (banner(); as text) {
+    <div class="panel alert" role="alert">
+      <i class="ph ph-wifi-slash"></i><span>{{ text }}</span>
+    </div>
+  } @else if (store.paused()) {
+    <div class="callout warn" role="note">
+      <i class="ph ph-pause-circle"></i><span>{{ t().api.engine.testPaused }}</span>
+    </div>
+  }
+
+  <div class="callout real" role="note">
+    <i class="ph ph-warning-circle" aria-hidden="true"></i
+    ><span>{{ t().api.engine.testReal }}</span>
+  </div>
+
+  <div class="grid-2eq">
+    <section class="panel form">
+      <div class="selects">
+        <app-select-field
+          [label]="t().test.set"
+          [options]="setOptions()"
+          [value]="store.setId()"
+          [disabled]="!canPick()"
+          (valueChange)="store.pickSet($event)"
+        />
+        <app-select-field
+          [label]="t().test.group"
+          [placeholder]="t().test.groupPh"
+          [options]="groupOptions()"
+          [value]="store.member()?.key ?? ''"
+          [disabled]="!canPick()"
+          (valueChange)="store.pickGroup($event)"
+        />
+        <app-select-field
+          [label]="t().test.col"
+          [options]="colOptions()"
+          [value]="store.collectionId()"
+          [disabled]="!canPick()"
+          (valueChange)="store.pickCollection($event)"
+        />
+        <app-select-field
+          [label]="t().test.post"
+          [options]="postOptions()"
+          [value]="store.postId()"
+          [disabled]="!canPick()"
+          (valueChange)="store.pickPost($event)"
+        />
+      </div>
+
+      <div>
+        <label class="su-field-label" for="test-text">{{ t().test.override }}</label>
+        <textarea
+          id="test-text"
+          class="su-textarea ta"
+          rows="3"
+          [value]="store.text()"
+          [placeholder]="t().test.overridePh"
+          [readOnly]="!canPick()"
+          [attr.maxlength]="maxText"
+          [attr.aria-describedby]="'test-text-hint'"
+          (input)="onText($event)"
+        ></textarea>
+        <p id="test-text-hint" class="small muted hint">{{ t().api.engine.testOverrideHint }}</p>
+      </div>
+
+      <div class="pv">
+        <div class="pv-head">
+          <span class="small muted">{{ t().test.preview }} · {{ filesLabel() }}</span>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-ghost"
+            [disabled]="!canPick()"
+            (click)="store.reshuffle()"
+          >
+            <i class="ph ph-shuffle"></i>{{ t().cmp.respin }}
+          </button>
+        </div>
+        <p class="box">{{ preview() }}</p>
+      </div>
+
+      <div class="foot">
+        @if (error()) {
+          <span class="err" role="alert">{{ error() }}</span>
+        } @else {
+          <span class="small muted">{{ t().test.confirmBody }}</span>
+        }
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-primary"
+          [disabled]="!canRun()"
+          [attr.title]="perm.editHint() || null"
+          (click)="store.run()"
+        >
+          <i class="ph ph-paper-plane-right"></i>{{ runLabel() }}
+        </button>
+      </div>
+    </section>
+
+    <div class="side">
+      <section class="panel log" aria-live="polite">
+        <h2 class="h2">{{ t().test.logTitle }}</h2>
+        @for (l of logRows(); track l.key) {
+          <div class="row log-row">
+            <i class="ph" [class]="l.icon" [style.color]="l.color"></i>
+            <span class="lt muted">{{ l.time }}</span>
+            <span class="lx"
+              >{{ l.text }}
+              @if (l.detail) {
+                <span class="detail small muted">{{ l.detail }}</span>
+              }
+            </span>
+          </div>
+        } @empty {
+          <p class="none">{{ t().test.none }}</p>
+        }
+      </section>
+
+      <section class="panel">
+        <h2 class="h2 mb4">{{ t().test.history }}</h2>
+        @for (h of historyRows(); track h.id) {
+          <div class="row">
+            <span class="time">{{ h.time }}</span>
+            <span class="grow ellipsis">{{ h.text }}</span>
+            <span class="status"
+              ><span class="dot" [style.background]="h.dot"></span>{{ h.status }}</span
+            >
+          </div>
+        } @empty {
+          <p class="none hist">{{ t().test.none }}</p>
+        }
+      </section>
+    </div>
+  </div>
+</div>

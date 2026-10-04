@@ -11,6 +11,8 @@ let nextId = 0;
 })
 export class CheckboxComponent {
   readonly label = input('');
+  /** The name a screen reader reads when there is no visible label (a switch inside a table row). */
+  readonly ariaLabel = input<string | null>(null);
   readonly disabled = input(false);
   readonly checked = model(false);
   protected readonly id = `su-check-${nextId++}`;

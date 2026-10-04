@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { ApiService } from '../http/api.service';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
@@ -25,8 +25,6 @@ export class AccountsStore {
   readonly list = signal<SocialAccount[]>([]);
   /** The list for the current workspace has arrived (the composer and the overview wait for it). */
   readonly loaded = signal(false);
-  /** Every Facebook group any account posts to, in account order. */
-  readonly allGroups = computed(() => [...new Set(this.list().flatMap((a) => a.groups))]);
 
   constructor() {
     whenWorkspaceChanges((id) => {

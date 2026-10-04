@@ -105,6 +105,28 @@ describe('the corrections over the design copy', () => {
     }
   });
 
+  it('does not call the template-based post writer "AI": there is no language model', () => {
+    const service = i18n();
+    for (const lang of ['th', 'en'] as const) {
+      service.setLang(lang);
+      const t = service.t();
+      for (const [name, text] of Object.entries({
+        'cmp.ai': t.cmp.ai,
+        'cmp.tools': t.cmp.tools,
+        'ai.title': t.ai.title,
+        'ar.locked': t.ar.locked,
+        'ai.note': t.ai.note,
+      }))
+        expect(text, `${lang} ${name}`).not.toMatch(/\bAI\b/);
+    }
+    service.setLang('th');
+    expect(service.t().cmp.ai).toBe('ตัวช่วยร่างโพสต์ (แม่แบบ)');
+    expect(service.t().ai.title).toBe(service.t().cmp.ai);
+    service.setLang('en');
+    expect(service.t().cmp.ai).toBe('Post drafts (templates)');
+    expect(service.t().ai.title).toBe('Post drafts (templates)');
+  });
+
   it('does not show a made-up extension version or pause time', () => {
     const service = i18n();
     service.setLang('en');
@@ -134,6 +156,99 @@ describe('the corrections over the design copy', () => {
     expect(service.t().api.ext.start).toBe('เริ่มทำงาน');
     service.setLang('en');
     expect(service.t().api.ext.start).toBe('Start');
+  });
+});
+
+describe('lazy dictionary packs', () => {
+  afterEach(() => localStorage.clear());
+
+  const pairs = (node: unknown, path = ''): [string, readonly [string, string]][] =>
+    Array.isArray(node) && typeof node[0] === 'string'
+      ? [[path, node as [string, string]]]
+      : Object.entries(node as object).flatMap(([k, v]) => pairs(v, path ? `${path}.${k}` : k));
+  const placeholders = (text: string) => (text.match(/\{\w+\}/g) ?? []).sort();
+
+  it('adds t().api.flow once its module is imported, in both languages, and updates t() at once', async () => {
+    localStorage.clear();
+    const service = TestBed.inject(I18nService);
+    const before = service.t();
+    // Specs share modules inside a worker: another spec may have imported the pack already.
+    const loadedBefore = 'flow' in before.api;
+    await import('./i18n.flow');
+    const after = service.t();
+    if (!loadedBefore) expect(after).not.toBe(before);
+    expect(after.api.flow.storedOnlyBadge).toBe('บันทึกเท่านั้น');
+    service.setLang('en');
+    expect(service.t().api.flow.storedOnlyBadge).toBe('Saved only');
+  });
+
+  it('adds t().api.engine the same way', async () => {
+    localStorage.clear();
+    const service = TestBed.inject(I18nService);
+    await import('./i18n.engine');
+    expect(service.t().api.engine.storedOnlyBadge).toBe('บันทึกเท่านั้น');
+    service.setLang('en');
+    expect(service.t().api.engine.planLocked).toBe('Available on {plan} and above');
+  });
+
+  it('keeps every pack side by side: registering one does not drop another', async () => {
+    localStorage.clear();
+    const service = TestBed.inject(I18nService);
+    await Promise.all([import('./i18n.ext'), import('./i18n.flow'), import('./i18n.engine')]);
+    const api = service.t().api;
+    expect(api.ext.start).toBe('เริ่มทำงาน');
+    expect(api.flow.storedOnly).toBeTruthy();
+    expect(api.engine.storedOnly).toBeTruthy();
+    // A pack never leaks into the shared strings.
+    expect(api.save).toBe('บันทึกการตั้งค่า');
+  });
+
+  it('keeps registerExt working for the campaigns page', async () => {
+    localStorage.clear();
+    const service = TestBed.inject(I18nService);
+    const { registerExt } = await import('./i18n.service');
+    const { AP_I18N_EXT } = await import('./i18n.ext');
+    registerExt(AP_I18N_EXT);
+    expect(service.t().api.ext.title).toBe('ชุดโพสต์ของส่วนขยาย');
+  });
+
+  it('gives every leaf of the packs and of the fixes both languages with the same {placeholders}', async () => {
+    const { AP_I18N_FLOW } = await import('./i18n.flow');
+    const { AP_I18N_ENGINE } = await import('./i18n.engine');
+    const all = [
+      ...pairs(AP_I18N_FLOW, 'flow'),
+      ...pairs(AP_I18N_ENGINE, 'engine'),
+      ...pairs(AP_I18N_FIXES, 'fixes'),
+    ];
+    expect(all.length).toBeGreaterThan(30);
+    for (const [path, [th, en]] of all) {
+      expect(th.trim(), `${path} th`).not.toBe('');
+      expect(en.trim(), `${path} en`).not.toBe('');
+      expect(placeholders(th), path).toEqual(placeholders(en));
+    }
+  });
+
+  it('says plainly that a stored-only setting is applied by nothing (not just "the extension")', async () => {
+    const { AP_I18N_FLOW } = await import('./i18n.flow');
+    const { AP_I18N_ENGINE } = await import('./i18n.engine');
+    for (const pack of [AP_I18N_FLOW, AP_I18N_ENGINE]) {
+      const [th, en] = pack.storedOnly;
+      expect(en).toMatch(/only/i);
+      expect(en).toMatch(/nothing applies/i);
+      expect(en).not.toMatch(/extension/i);
+      expect(th).toContain('บันทึกไว้เท่านั้น');
+      expect(th).toContain('ยังไม่มีส่วนใดนำค่านี้ไปใช้');
+      expect(th).not.toContain('ส่วนขยาย');
+    }
+  });
+
+  it('gives each pack its own copy of the shared hints (stored only, plan locked)', async () => {
+    // The pack files are edited by different pages, so the hints every page needs are repeated in each pack.
+    const { AP_I18N_FLOW } = await import('./i18n.flow');
+    const { AP_I18N_ENGINE } = await import('./i18n.engine');
+    for (const pack of [AP_I18N_FLOW, AP_I18N_ENGINE])
+      for (const key of ['storedOnly', 'storedOnlyBadge', 'planLocked'] as const)
+        expect(pack[key], key).toBeDefined();
   });
 });
 

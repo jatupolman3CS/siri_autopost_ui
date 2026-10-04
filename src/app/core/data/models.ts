@@ -31,6 +31,12 @@ export interface Workspace {
   limits: Record<LimitKey, number | null>;
   /** The owner's plan includes the advanced anti-ban settings. */
   advancedAntiBan: boolean;
+  /** The owner's plan includes Telegram / LINE OA notifications (Pro and above). */
+  notifications: boolean;
+  /** The owner's plan includes auto-reply rules (Pro and above). */
+  autoReply: boolean;
+  /** The owner's plan includes white-label client reports (Agency). */
+  clientReports: boolean;
 }
 
 /** A connected social account (from the API). */
@@ -66,6 +72,8 @@ export function accountKind(a: Pick<SocialAccount, 'connected' | 'name'>): Accou
 /** Sample account in the design data (landing preview, admin mock). */
 export interface SeedAccount {
   id: string;
+  /** The sample device (SeedData.devices) the account posts through. */
+  deviceId: string;
   platform: PlatformKey;
   name: string;
   handle: L10n;
@@ -124,6 +132,8 @@ export interface Device {
   id: string;
   name: string;
   browser: string;
+  /** Sample address of the computer (the design's account lines read "via X · browser · IP"). */
+  ip: string;
   /** Key into t.team (seenNow, seenYesterday). */
   seen: string;
   isThis: boolean;
@@ -236,24 +246,133 @@ export interface SeedFailure {
   code: ErrorCode;
 }
 
+export interface SeedCollection {
+  id: string;
+  name: L10n;
+  /** Phosphor icon class. */
+  icon: string;
+}
+
+/** One Facebook group of a link set. */
+export interface SeedLink {
+  /** https://www.facebook.com/groups/<slug> */
+  url: string;
+  name: string;
+  /** Written before the post text in this group ("" = none). */
+  code: string;
+  enabled: boolean;
+  /** Most posts a day to this group (0 = no limit). */
+  dailyMax: number;
+}
+
+export interface SeedTargetSet {
+  id: string;
+  name: L10n;
+  /** Other social accounts that post to the same set. */
+  accounts: string[];
+  links: SeedLink[];
+}
+
+export type ScheduleMode = 'daily' | 'weekdays' | 'weekend' | 'interval' | 'drip' | 'once';
+
+export interface SeedSchedule {
+  id: string;
+  name: L10n;
+  /** Collection id. */
+  col: string;
+  /** Link set id. */
+  set: string;
+  mode: ScheduleMode;
+  /** HH:MM */
+  times: string[];
+  /** Interval mode: a round every N hours from `first`. */
+  every: number;
+  /** HH:MM of the first round. */
+  first: string;
+  /** YYYY-MM-DD */
+  start: string;
+  order: 'shuffle' | 'rotate';
+  /** Group URL -> own HH:MM times (a group missing here follows the schedule). */
+  overrides: Record<string, string[]>;
+  active: boolean;
+  // Set only by the schedule builder (no sample schedule uses these modes or options).
+  /** Drip mode: the window and the number of posts per group per day. */
+  dripFrom?: string;
+  dripTo?: string;
+  dripN?: number;
+  /** Once mode: HH:MM of the single post (its date is `start`). */
+  onceTime?: string;
+  /** Bump after N hours and delete after N days (0 = off); saved only, nothing applies them yet. */
+  bump?: number;
+  del?: number;
+}
+
+export interface SeedPost {
+  id: string;
+  /** Collection id. */
+  col: string;
+  /** Media ids of the library. */
+  media: string[];
+  text: L10n;
+}
+
+export interface SeedMemberGroup {
+  url: string;
+  name: string;
+  members: number;
+  /** Joining needs the admins' approval, so a post waits there. */
+  approval: boolean;
+  last: 'ok' | 'pending' | 'failed';
+}
+
+export interface SeedArRule {
+  id: string;
+  /** Comma separated keywords. */
+  keywords: string;
+  reply: string;
+  inbox: string;
+  /** 'all', or the id of the one collection the rule applies to. */
+  scope: string;
+  on: boolean;
+}
+
+export interface SeedArFeedItem {
+  who: string;
+  text: string;
+  group: string;
+  /** HH:MM */
+  time: string;
+  /** The rule that matched, null = none. */
+  rule: string | null;
+}
+
 export interface SeedData {
   user: { name: L10n; email: string; initials: string };
-  workspaces: Omit<Workspace, 'role' | 'limits' | 'advancedAntiBan'>[];
+  workspaces: Omit<
+    Workspace,
+    'role' | 'limits' | 'advancedAntiBan' | 'notifications' | 'autoReply' | 'clientReports'
+  >[];
   platforms: Record<PlatformKey, Platform>;
   groups: string[];
-  // Collections, target sets and schedules come from a later design iteration
-  // that has no screens yet; they are kept for the next phase.
-  collections: unknown[];
-  targetSets: unknown[];
-  schedules: unknown[];
+  /** Post collections ("ชุดโพสต์") of the three-step flow: collections, link sets, schedules. */
+  collections: SeedCollection[];
+  /** Link sets ("ชุดลิงก์กลุ่ม"): Facebook group links with a group code each. */
+  targetSets: SeedTargetSet[];
+  schedules: SeedSchedule[];
   accounts: SeedAccount[];
   targets: Target[];
-  posts: { id: string; col: string; media: string[]; text: L10n }[];
+  /** Library posts: each belongs to one collection and may carry media of the library. */
+  posts: SeedPost[];
   failed: SeedFailure[];
   media: SeedMedia[];
   snippets: SeedSnippet[];
   limits: Record<PlatformKey, number>;
   usedToday: Record<PlatformKey, number>;
+  /** Groups a social account is a member of, offered by "import groups from account". */
+  memberGroups: SeedMemberGroup[];
+  /** Auto-reply rules and the comment feed of the engage page. */
+  arRules: SeedArRule[];
+  arFeed: SeedArFeedItem[];
   members: Member[];
   devices: Device[];
   planLimits: Record<PlanKey, PlanLimits>;
@@ -289,6 +408,18 @@ export interface PostItem {
   detail?: string | null;
   /** When it went out (success and approval-pending posts); counts toward the 24-hour limits. */
   publishedAt?: Date | null;
+  /** The schedule that planned it; null for posts made by hand or by the extension. */
+  scheduleId?: string | null;
+  /** The collection post it was made from (the editable original of `text`). */
+  collectionPostId?: string | null;
+  /** The link-set link it goes to. */
+  linkId?: string | null;
+  /** The group address, when the link is known. */
+  targetUrl?: string | null;
+  /** The group code written before the content (not the failure `code`). */
+  groupCode?: string | null;
+  /** A one-off test post. */
+  isTest?: boolean;
 }
 
 export interface ErrorItem extends PostItem {

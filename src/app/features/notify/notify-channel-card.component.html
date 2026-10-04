@@ -1,0 +1,114 @@
+<section class="panel card" [attr.aria-label]="name()" [attr.title]="hint() || null">
+  <div class="head">
+    <div class="who">
+      <i
+        class="ph"
+        [class.ph-telegram-logo]="tg()"
+        [class.ph-chat-circle-dots]="!tg()"
+        aria-hidden="true"
+      ></i>
+      <h2 class="h2">{{ name() }}</h2>
+    </div>
+    <app-checkbox
+      [label]="t().ntf.enable"
+      [checked]="on()"
+      [disabled]="!editable()"
+      (checkedChange)="store.setChannelOn(channel(), $event)"
+    />
+  </div>
+
+  <div class="field">
+    <app-input-field
+      [label]="tg() ? t().ntf.tgToken : t().ntf.lineToken"
+      type="password"
+      autocomplete="new-password"
+      [placeholder]="placeholder()"
+      [value]="typed()"
+      [maxlength]="limits.token"
+      [disabled]="!editable()"
+      (valueChange)="store.setToken(channel(), $event)"
+    />
+    @switch (state()) {
+      @case ('saved') {
+        <p class="note">
+          <span>{{ t().api.engine.tokenSaved }}</span>
+          <button
+            type="button"
+            class="link-btn"
+            [disabled]="!editable()"
+            (click)="store.setTokenRemoved(channel(), true)"
+          >
+            {{ t().api.engine.notifyRemoveToken }}
+          </button>
+        </p>
+      }
+      @case ('clear') {
+        <p class="note warn">
+          <span>{{ t().api.engine.notifyTokenRemoves }}</span>
+          <button
+            type="button"
+            class="link-btn"
+            [disabled]="!editable()"
+            (click)="store.setTokenRemoved(channel(), false)"
+          >
+            {{ t().api.engine.notifyKeepToken }}
+          </button>
+        </p>
+      }
+    }
+  </div>
+
+  @if (tg()) {
+    <div class="target">
+      <div class="grow-field">
+        <app-input-field
+          [label]="t().ntf.tgChat"
+          placeholder="-1001234567890"
+          [value]="target()"
+          [maxlength]="limits.target"
+          [disabled]="!editable()"
+          (valueChange)="store.setTarget('tg', $event)"
+        />
+      </div>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary"
+        [disabled]="!editable() || finding()"
+        (click)="find()"
+      >
+        {{ t().ntf.tgFind }}
+      </button>
+    </div>
+    @if (chats().length) {
+      <div class="chats" role="group" [attr.aria-label]="t().api.engine.notifyChatsPick">
+        <span class="small muted">{{ t().api.engine.notifyChatsPick }}</span>
+        @for (c of chats(); track c.id) {
+          <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="pick(c)">
+            {{ c.title }} · {{ c.id }}
+          </button>
+        }
+      </div>
+    }
+  } @else {
+    <app-input-field
+      [label]="t().ntf.lineTo"
+      placeholder="Uxxxxxxxx… / Cxxxxxxxx…"
+      [value]="target()"
+      [maxlength]="limits.target"
+      [disabled]="!editable()"
+      (valueChange)="store.setTarget('line', $event)"
+    />
+  }
+
+  <p class="how">{{ tg() ? t().ntf.tgHow : t().ntf.lineHow }}</p>
+  <div>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-ghost"
+      [disabled]="!editable() || testing() || store.saving()"
+      (click)="test()"
+    >
+      <i class="ph ph-paper-plane-tilt"></i>{{ t().ntf.sendTest }}
+    </button>
+  </div>
+</section>

@@ -1,0 +1,67 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+// Outlined in the primary colour, as in the design.
+.hub {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-color: var(--color-primary);
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ext {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+.top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.num {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 600;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  &.done {
+    background: var(--color-success);
+    color: var(--color-primary-foreground);
+  }
+}
+.min0 {
+  min-width: 0;
+}
+.fs14 {
+  font-size: 14px;
+}

@@ -1,7 +1,9 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { AP_I18N } from './i18n.data';
+import type { AP_I18N_ENGINE } from './i18n.engine';
 import type { AP_I18N_EXT } from './i18n.ext';
 import { AP_I18N_EXTRA } from './i18n.extra';
+import type { AP_I18N_FLOW } from './i18n.flow';
 import { AP_I18N_FIXES, Fixes } from './i18n.fixes';
 
 const isNode = (v: unknown): v is Record<string, unknown> =>
@@ -19,21 +21,40 @@ export function applyFixes<T>(base: T, fixes: Fixes<T>): T {
   return out as T;
 }
 
+/**
+ * The lazy dictionary packs, each typed from its own module and living at t().api.<name> once that module
+ * has been imported (see registerPack):
+ *  - ext: the campaigns page (i18n.ext.ts)
+ *  - flow: collections, link sets, schedules, composer, calendar and overview additions (i18n.flow.ts)
+ *  - engine: test post, notifications, auto-reply, reports, anti-ban additions and backup (i18n.engine.ts)
+ * A pack is typed here but only exists at run time after its module has been imported, so every file that
+ * reads t().api.<name> must `import './i18n.<name>'`; the packs stay out of the first bundle that way.
+ */
+export interface Packs {
+  ext: typeof AP_I18N_EXT;
+  flow: typeof AP_I18N_FLOW;
+  engine: typeof AP_I18N_ENGINE;
+}
+export type PackName = keyof Packs;
+
 // The generated design dictionary with the corrections of i18n.fixes.ts over it, and the API's own strings.
-// The campaigns page's strings (api.ext) are typed here but only exist once i18n.ext.ts has been loaded,
-// which the lazily loaded campaigns feature does (see registerExt); they stay out of the first bundle.
 const SOURCE = {
   ...applyFixes(AP_I18N, AP_I18N_FIXES),
-  api: AP_I18N_EXTRA as typeof AP_I18N_EXTRA & { ext: typeof AP_I18N_EXT },
+  api: AP_I18N_EXTRA as typeof AP_I18N_EXTRA & Packs,
 };
 
-let ext: unknown = null;
-const extLoaded = signal(0);
+const packs = new Map<PackName, unknown>();
+const packsLoaded = signal(0);
+
+/** Adds a lazy pack's strings as t().api.<name> (each i18n.<name>.ts calls this when it is imported). */
+export function registerPack<K extends PackName>(name: K, part: Packs[K]): void {
+  packs.set(name, part);
+  packsLoaded.update((n) => n + 1);
+}
 
 /** Adds the campaigns page's strings (i18n.ext.ts calls this when it is imported). */
 export function registerExt(part: unknown): void {
-  ext = part;
-  extLoaded.update((n) => n + 1);
+  registerPack('ext', part as Packs['ext']);
 }
 
 export type Lang = 'th' | 'en';
@@ -64,7 +85,7 @@ export class I18nService {
   readonly lang = signal<Lang>(readStored());
   /** 0 = Thai, 1 = English: the index into [th, en] pairs. */
   readonly li = computed(() => (this.lang() === 'th' ? 0 : 1));
-  readonly t = computed(() => this.dict(this.lang(), extLoaded()));
+  readonly t = computed(() => this.dict(this.lang(), packsLoaded()));
 
   setLang(lang: Lang): void {
     this.lang.set(lang);
@@ -87,7 +108,7 @@ export class I18nService {
     if (!d) {
       const i = lang === 'th' ? 0 : 1;
       d = pick(SOURCE, i) as Dict;
-      if (ext) (d.api as { ext: unknown }).ext = pick(ext, i);
+      for (const [name, part] of packs) (d.api as Record<string, unknown>)[name] = pick(part, i);
       this.cache.set(key, d);
     }
     return d;

@@ -1,0 +1,65 @@
+<div class="page">
+  <app-flow-steps [current]="3" />
+
+  <div class="page-head">
+    <div class="intro">
+      <h1>{{ t().sch.title }}</h1>
+      <p>{{ t().sch.sub }}</p>
+      <app-perm-note level="edit" />
+    </div>
+    <div class="actions">
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        [disabled]="perm.readOnly()"
+        [attr.title]="perm.editHint() || null"
+        (click)="form.toggle()"
+      >
+        <i class="ph ph-plus"></i>{{ t().sch.newSch }}
+      </button>
+    </div>
+  </div>
+
+  @if (needDevice()) {
+    <div class="callout warn" role="note">
+      <i class="ph ph-plugs" aria-hidden="true"></i>
+      <div class="grow">{{ t().api.flow.needDevice }}</div>
+      <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/team">{{ t().ov.pair }}</a>
+    </div>
+  }
+
+  @if (needCollection() || needLinkSet()) {
+    <div class="panel setup">
+      @if (needCollection()) {
+        <div class="need">
+          <div class="grow">
+            <div class="fw6">{{ t().api.flow.emptyCollectionsTitle }}</div>
+            <div class="small muted">{{ t().api.flow.emptyCollectionsBody }}</div>
+          </div>
+          <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/collections">{{
+            t().api.flow.schGoCollections
+          }}</a>
+        </div>
+      }
+      @if (needLinkSet()) {
+        <div class="need">
+          <div class="grow">
+            <div class="fw6">{{ t().api.flow.emptyLinkSetsTitle }}</div>
+            <div class="small muted">{{ t().api.flow.emptyLinkSetsBody }}</div>
+          </div>
+          <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/targets">{{
+            t().api.flow.schGoLinkSets
+          }}</a>
+        </div>
+      }
+    </div>
+  }
+
+  @if (form.open()) {
+    <app-schedule-builder [canPost]="canPost()" />
+  }
+
+  <app-schedule-list />
+
+  <app-next-step [label]="t().flow.n3" (go)="next()" />
+</div>

@@ -964,6 +964,174 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/auto-reply": {
+      "get": {
+        "tags": [
+          "AutoReply"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoReplyDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AutoReply"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoReplyDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoReplyDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoReplyDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoReplyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/backup": {
+      "get": {
+        "tags": [
+          "Backup"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/restore": {
+      "post": {
+        "tags": [
+          "Backup"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/plans": {
       "get": {
         "tags": [
@@ -1127,6 +1295,478 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UrlDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/collections": {
+      "get": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollectionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollectionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/collections/{id}": {
+      "put": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/collections/{id}/posts": {
+      "post": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionPostRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionPostRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionPostRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPostDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/collections/{id}/posts/batch": {
+      "post": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionPostsBatchRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionPostsBatchRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionPostsBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionPostDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/collections/{id}/posts/{postId}": {
+      "put": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionPostRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionPostRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCollectionPostRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPostDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/collections/{id}/posts/{postId}/approval": {
+      "post": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionPostDto"
                 }
               }
             }
@@ -2610,6 +3250,804 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/link-sets": {
+      "get": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkSetDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLinkSetRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLinkSetRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLinkSetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkSetDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/link-sets/{id}": {
+      "put": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLinkSetRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLinkSetRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLinkSetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkSetDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/link-sets/{id}/links": {
+      "post": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddLinkRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddLinkRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetLinkDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/link-sets/{id}/links/{linkId}": {
+      "put": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "linkId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLinkRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLinkRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetLinkDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "linkId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/link-sets/{id}/links/{linkId}/enable": {
+      "post": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "linkId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetLinkDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/link-sets/{id}/links/bulk": {
+      "post": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkLinksRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkLinksRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkLinksRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkLinksResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/link-sets/{id}/links/import": {
+      "post": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportGroupsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportGroupsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportGroupsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkSetDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/link-sets/import-csv": {
+      "post": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCsvRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCsvRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCsvRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvImportResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/accounts/{accountId}/groups": {
+      "get": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupLinkDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettingsDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettingsDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettingsDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/notifications/test": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifyTestRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifyTestRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotifyTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotifyTestResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/notifications/telegram/chats": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FindTelegramChatsRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FindTelegramChatsRequest"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/FindTelegramChatsRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramChatsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/posts": {
       "get": {
         "tags": [
@@ -2858,6 +4296,469 @@
                   "items": {
                     "$ref": "#/components/schemas/PostDto"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/reports": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 7
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/reports/share": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareReportRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareReportRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportShareDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/reports/shares": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportShareSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/reports/shares/{id}": {
+      "delete": {
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/shared/{token}": {
+      "get": {
+        "tags": [
+          "SharedReports"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedReportDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/schedules": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScheduleRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScheduleRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleCreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/schedules/{id}/active": {
+      "put": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/schedules/{id}": {
+      "delete": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/schedules/best-times": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "utcOffsetMinutes",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/test-post": {
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPostRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPostRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPostRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostDto"
                 }
               }
             }
@@ -3261,6 +5162,42 @@
           }
         }
       },
+      "AddLinkRequest": {
+        "required": [
+          "name",
+          "url",
+          "code",
+          "dailyMax"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dailyMax": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "AdminJobDto": {
         "required": [
           "postId",
@@ -3343,6 +5280,62 @@
           }
         }
       },
+      "AdvancedAntiBanDto": {
+        "required": [
+          "minGap",
+          "dailyAll",
+          "blockMin",
+          "blockMax",
+          "failStreak",
+          "recentAvoid",
+          "cooldown",
+          "focus",
+          "autoOffFails",
+          "stopFailPct"
+        ],
+        "type": "object",
+        "properties": {
+          "minGap": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "dailyAll": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blockMin": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blockMax": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failStreak": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recentAvoid": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cooldown": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "focus": {
+            "type": "boolean"
+          },
+          "autoOffFails": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stopFailPct": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "AntiBanDto": {
         "required": [
           "min",
@@ -3352,7 +5345,8 @@
           "scroll",
           "shuffle",
           "autoPause",
-          "warmup"
+          "warmup",
+          "advanced"
         ],
         "type": "object",
         "properties": {
@@ -3381,6 +5375,27 @@
           },
           "warmup": {
             "type": "boolean"
+          },
+          "advanced": {
+            "$ref": "#/components/schemas/AdvancedAntiBanDto"
+          }
+        }
+      },
+      "ApprovalAction": {
+        "enum": [
+          "request",
+          "approve",
+          "reject"
+        ]
+      },
+      "ApprovalRequest": {
+        "required": [
+          "action"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/ApprovalAction"
           }
         }
       },
@@ -3495,6 +5510,464 @@
           }
         }
       },
+      "AutoReplyDto": {
+        "required": [
+          "on",
+          "rules"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutoReplyRuleDto"
+            }
+          }
+        }
+      },
+      "AutoReplyRuleDto": {
+        "required": [
+          "id",
+          "keywords",
+          "reply",
+          "inbox",
+          "scope",
+          "on"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "keywords": {
+            "type": "string"
+          },
+          "reply": {
+            "type": "string"
+          },
+          "inbox": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "on": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BackupAutoReplyDto": {
+        "required": [
+          "on",
+          "rules"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupAutoReplyRuleDto"
+            }
+          }
+        }
+      },
+      "BackupAutoReplyRuleDto": {
+        "required": [
+          "keywords",
+          "reply",
+          "inbox",
+          "collection",
+          "on"
+        ],
+        "type": "object",
+        "properties": {
+          "keywords": {
+            "type": "string"
+          },
+          "reply": {
+            "type": "string"
+          },
+          "inbox": {
+            "type": "string"
+          },
+          "collection": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "on": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BackupCollectionDto": {
+        "required": [
+          "name",
+          "description",
+          "icon",
+          "settings",
+          "posts"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/CollectionSettingsDto"
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupPostDto"
+            }
+          }
+        }
+      },
+      "BackupDto": {
+        "required": [
+          "version",
+          "createdAt",
+          "collections",
+          "linkSets",
+          "schedules",
+          "antiBanAdvanced",
+          "notificationRules",
+          "autoReply"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupCollectionDto"
+            }
+          },
+          "linkSets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupLinkSetDto"
+            }
+          },
+          "schedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupScheduleDto"
+            }
+          },
+          "antiBanAdvanced": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AdvancedAntiBanDto"
+              }
+            ]
+          },
+          "notificationRules": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BackupNotificationsDto"
+              }
+            ]
+          },
+          "autoReply": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BackupAutoReplyDto"
+              }
+            ]
+          }
+        }
+      },
+      "BackupGroupNotifyRuleDto": {
+        "required": [
+          "url",
+          "channel",
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NotifyEventsDto"
+              }
+            ]
+          }
+        }
+      },
+      "BackupLinkDto": {
+        "required": [
+          "name",
+          "url",
+          "code",
+          "dailyMax",
+          "enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "dailyMax": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BackupLinkSetDto": {
+        "required": [
+          "name",
+          "postAsAccountId",
+          "accountIds",
+          "links"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "postAsAccountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupLinkDto"
+            }
+          }
+        }
+      },
+      "BackupNotificationsDto": {
+        "required": [
+          "channel",
+          "events",
+          "sets"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "$ref": "#/components/schemas/NotifyEventsDto"
+          },
+          "sets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupSetNotifyRuleDto"
+            }
+          }
+        }
+      },
+      "BackupPostDto": {
+        "required": [
+          "text",
+          "mediaIds",
+          "approval"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "mediaIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "approval": {
+            "$ref": "#/components/schemas/PostApproval"
+          }
+        }
+      },
+      "BackupScheduleDto": {
+        "required": [
+          "name",
+          "collection",
+          "linkSet",
+          "mode",
+          "times",
+          "everyHours",
+          "firstTime",
+          "startDate",
+          "onceTime",
+          "order",
+          "dripFrom",
+          "dripTo",
+          "dripCount",
+          "bumpHours",
+          "autoDeleteDays",
+          "overrides",
+          "active",
+          "utcOffsetMinutes"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "collection": {
+            "type": "string"
+          },
+          "linkSet": {
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ScheduleMode"
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "everyHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstTime": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "onceTime": {
+            "type": "string"
+          },
+          "order": {
+            "$ref": "#/components/schemas/PostOrder"
+          },
+          "dripFrom": {
+            "type": "string"
+          },
+          "dripTo": {
+            "type": "string"
+          },
+          "dripCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bumpHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "autoDeleteDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overrides": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "utcOffsetMinutes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "BackupSetNotifyRuleDto": {
+        "required": [
+          "linkSet",
+          "channel",
+          "events",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "linkSet": {
+            "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NotifyEventsDto"
+              }
+            ]
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupGroupNotifyRuleDto"
+            }
+          }
+        }
+      },
       "BillingCycle": {
         "enum": [
           "month",
@@ -3563,6 +6036,48 @@
           }
         }
       },
+      "BulkLinksRequest": {
+        "required": [
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "BulkLinksResultDto": {
+        "required": [
+          "added",
+          "duplicates",
+          "recoded",
+          "invalid",
+          "set"
+        ],
+        "type": "object",
+        "properties": {
+          "added": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duplicates": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recoded": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "invalid": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "set": {
+            "$ref": "#/components/schemas/LinkSetDto"
+          }
+        }
+      },
       "CardDto": {
         "required": [
           "brand",
@@ -3614,6 +6129,191 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "CollectionDto": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "icon",
+          "settings",
+          "posts",
+          "scheduleCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/CollectionSettingsDto"
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionPostDto"
+            }
+          },
+          "scheduleCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CollectionPostDto": {
+        "required": [
+          "id",
+          "collectionId",
+          "text",
+          "mediaIds",
+          "approval",
+          "postedCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          },
+          "mediaIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "approval": {
+            "$ref": "#/components/schemas/PostApproval"
+          },
+          "postedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CollectionPostInput": {
+        "required": [
+          "text",
+          "mediaIds"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "mediaIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "CollectionPostRequest": {
+        "required": [
+          "text",
+          "mediaIds"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "mediaIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "CollectionPostsBatchRequest": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionPostInput"
+            }
+          }
+        }
+      },
+      "CollectionSettingsDto": {
+        "required": [
+          "hashtags",
+          "pageTags",
+          "footer",
+          "footerPos",
+          "shuffle",
+          "watermark",
+          "watermarkPos",
+          "requireApproval"
+        ],
+        "type": "object",
+        "properties": {
+          "hashtags": {
+            "type": "string"
+          },
+          "pageTags": {
+            "type": "string"
+          },
+          "footer": {
+            "type": "string"
+          },
+          "footerPos": {
+            "$ref": "#/components/schemas/FooterPosition"
+          },
+          "shuffle": {
+            "type": "boolean"
+          },
+          "watermark": {
+            "type": "boolean"
+          },
+          "watermarkPos": {
+            "$ref": "#/components/schemas/WatermarkPosition"
+          },
+          "requireApproval": {
+            "type": "boolean"
           }
         }
       },
@@ -3715,6 +6415,43 @@
           }
         }
       },
+      "CreateCollectionRequest": {
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "CreateLinkSetRequest": {
+        "required": [
+          "name",
+          "postAsAccountId"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "postAsAccountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "CreateSnippetRequest": {
         "required": [
           "title",
@@ -3738,6 +6475,60 @@
         "properties": {
           "name": {
             "type": "string"
+          }
+        }
+      },
+      "CsvImportResultDto": {
+        "required": [
+          "links",
+          "sets",
+          "invalid"
+        ],
+        "type": "object",
+        "properties": {
+          "links": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "invalid": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CsvLinkRow": {
+        "required": [
+          "set",
+          "name",
+          "url",
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "set": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -4021,6 +6812,19 @@
           },
           "jobsPaused": {
             "type": "boolean"
+          },
+          "autoPausedUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "autoPauseReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -4229,6 +7033,19 @@
           },
           "jobsPaused": {
             "type": "boolean"
+          },
+          "autoPausedUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "autoPauseReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -4389,6 +7206,26 @@
           null
         ]
       },
+      "FindTelegramChatsRequest": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "FooterPosition": {
+        "enum": [
+          "end",
+          "top"
+        ]
+      },
       "GoogleLogInRequest": {
         "required": [
           "idToken"
@@ -4412,6 +7249,28 @@
           },
           "url": {
             "type": "string"
+          }
+        }
+      },
+      "GroupNotifyRuleDto": {
+        "required": [
+          "channel",
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NotifyEventsDto"
+              }
+            ]
           }
         }
       },
@@ -4480,6 +7339,39 @@
           },
           "data": {
             "type": "string"
+          }
+        }
+      },
+      "ImportCsvRequest": {
+        "required": [
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CsvLinkRow"
+            }
+          }
+        }
+      },
+      "ImportGroupsRequest": {
+        "required": [
+          "accountId",
+          "urls"
+        ],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -4671,6 +7563,83 @@
           }
         }
       },
+      "LineSettingsDto": {
+        "required": [
+          "on",
+          "token",
+          "hasToken",
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean"
+          },
+          "token": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasToken": {
+            "type": "boolean"
+          },
+          "to": {
+            "type": "string"
+          }
+        }
+      },
+      "LinkHealth": {
+        "enum": [
+          "ok",
+          "pending",
+          "off"
+        ]
+      },
+      "LinkSetDto": {
+        "required": [
+          "id",
+          "name",
+          "postAsAccountId",
+          "accountIds",
+          "links",
+          "scheduleCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "postAsAccountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetLinkDto"
+            }
+          },
+          "scheduleCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "LogInCommand": {
         "required": [
           "email",
@@ -4803,6 +7772,121 @@
         "type": "object",
         "properties": {
           "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "NotificationSettingsDto": {
+        "required": [
+          "telegram",
+          "line",
+          "channel",
+          "events",
+          "sets",
+          "commandsOn",
+          "commandsUsers"
+        ],
+        "type": "object",
+        "properties": {
+          "telegram": {
+            "$ref": "#/components/schemas/TelegramSettingsDto"
+          },
+          "line": {
+            "$ref": "#/components/schemas/LineSettingsDto"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "$ref": "#/components/schemas/NotifyEventsDto"
+          },
+          "sets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetNotifyRuleDto"
+            }
+          },
+          "commandsOn": {
+            "type": "boolean"
+          },
+          "commandsUsers": {
+            "type": "string"
+          }
+        }
+      },
+      "NotifyChannel": {
+        "enum": [
+          "default",
+          "tg",
+          "line",
+          "both",
+          "off"
+        ]
+      },
+      "NotifyEventsDto": {
+        "required": [
+          "success",
+          "fail",
+          "shot",
+          "round",
+          "startStop",
+          "block",
+          "offline",
+          "quota"
+        ],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "fail": {
+            "type": "boolean"
+          },
+          "shot": {
+            "type": "boolean"
+          },
+          "round": {
+            "type": "boolean"
+          },
+          "startStop": {
+            "type": "boolean"
+          },
+          "block": {
+            "type": "boolean"
+          },
+          "offline": {
+            "type": "boolean"
+          },
+          "quota": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NotifyTestRequest": {
+        "required": [
+          "channel"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string"
+          }
+        }
+      },
+      "NotifyTestResultDto": {
+        "required": [
+          "ok",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "message": {
             "type": [
               "null",
               "string"
@@ -5243,6 +8327,13 @@
           }
         }
       },
+      "PostApproval": {
+        "enum": [
+          "draft",
+          "pending",
+          "approved"
+        ]
+      },
       "PostDto": {
         "required": [
           "id",
@@ -5255,7 +8346,13 @@
           "status",
           "failureCode",
           "failureDetail",
-          "publishedAt"
+          "publishedAt",
+          "scheduleId",
+          "collectionPostId",
+          "linkId",
+          "code",
+          "targetUrl",
+          "isTest"
         ],
         "type": "object",
         "properties": {
@@ -5312,8 +8409,50 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "scheduleId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "collectionPostId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "linkId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "targetUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isTest": {
+            "type": "boolean"
           }
         }
+      },
+      "PostOrder": {
+        "enum": [
+          "shuffle",
+          "rotate"
+        ]
       },
       "PostStatus": {
         "enum": [
@@ -5414,6 +8553,201 @@
           }
         }
       },
+      "ReportDto": {
+        "required": [
+          "days",
+          "from",
+          "to",
+          "groups",
+          "posts"
+        ],
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportGroupDto"
+            }
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportPostDto"
+            }
+          }
+        }
+      },
+      "ReportGroupDto": {
+        "required": [
+          "linkId",
+          "name",
+          "url",
+          "platform",
+          "posted",
+          "pending",
+          "failed",
+          "rate",
+          "enabled",
+          "health"
+        ],
+        "type": "object",
+        "properties": {
+          "linkId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "platform": {
+            "$ref": "#/components/schemas/Platform"
+          },
+          "posted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pending": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "health": {
+            "$ref": "#/components/schemas/LinkHealth"
+          }
+        }
+      },
+      "ReportPostDto": {
+        "required": [
+          "collectionPostId",
+          "text",
+          "used"
+        ],
+        "type": "object",
+        "properties": {
+          "collectionPostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          },
+          "used": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ReportShareDto": {
+        "required": [
+          "token",
+          "path",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReportShareSummaryDto": {
+        "required": [
+          "id",
+          "brand",
+          "period",
+          "logo",
+          "createdAt",
+          "expiresAt",
+          "path"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "path": {
+            "type": "string"
+          }
+        }
+      },
+      "RestoreResultDto": {
+        "required": [
+          "collections",
+          "linkSets",
+          "schedules"
+        ],
+        "type": "object",
+        "properties": {
+          "collections": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "linkSets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "schedules": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "ResultRequest": {
         "required": [
           "ok",
@@ -5496,6 +8830,298 @@
           }
         }
       },
+      "SaveScheduleRequest": {
+        "required": [
+          "name",
+          "collectionId",
+          "linkSetId",
+          "mode",
+          "times",
+          "everyHours",
+          "firstTime",
+          "startDate",
+          "onceTime",
+          "order",
+          "dripFrom",
+          "dripTo",
+          "dripCount",
+          "bumpHours",
+          "autoDeleteDays",
+          "overrides",
+          "utcOffsetMinutes"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linkSetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ScheduleMode"
+          },
+          "times": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "everyHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstTime": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startDate": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "onceTime": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "$ref": "#/components/schemas/PostOrder"
+          },
+          "dripFrom": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dripTo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dripCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bumpHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "autoDeleteDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overrides": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "utcOffsetMinutes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ScheduleCreatedDto": {
+        "required": [
+          "schedule",
+          "created",
+          "firstAt",
+          "lastAt"
+        ],
+        "type": "object",
+        "properties": {
+          "schedule": {
+            "$ref": "#/components/schemas/ScheduleDto"
+          },
+          "created": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ScheduleDto": {
+        "required": [
+          "id",
+          "name",
+          "collectionId",
+          "linkSetId",
+          "mode",
+          "times",
+          "everyHours",
+          "firstTime",
+          "startDate",
+          "onceTime",
+          "order",
+          "dripFrom",
+          "dripTo",
+          "dripCount",
+          "bumpHours",
+          "autoDeleteDays",
+          "overrides",
+          "active",
+          "utcOffsetMinutes",
+          "slots",
+          "targetCount",
+          "perDay",
+          "usablePosts",
+          "todayCount",
+          "nextRunAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linkSetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ScheduleMode"
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "everyHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstTime": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "onceTime": {
+            "type": "string"
+          },
+          "order": {
+            "$ref": "#/components/schemas/PostOrder"
+          },
+          "dripFrom": {
+            "type": "string"
+          },
+          "dripTo": {
+            "type": "string"
+          },
+          "dripCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bumpHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "autoDeleteDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overrides": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "utcOffsetMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "perDay": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "usablePosts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "todayCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nextRunAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ScheduleMode": {
+        "enum": [
+          "daily",
+          "weekdays",
+          "weekend",
+          "interval",
+          "drip",
+          "once"
+        ]
+      },
       "ScheduleRequest": {
         "required": [
           "content",
@@ -5557,6 +9183,157 @@
           "lastAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "SetActiveRequest": {
+        "required": [
+          "active"
+        ],
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SetLinkDto": {
+        "required": [
+          "id",
+          "name",
+          "url",
+          "code",
+          "dailyMax",
+          "enabled",
+          "health",
+          "failStreak",
+          "valid",
+          "duplicate"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "dailyMax": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "health": {
+            "$ref": "#/components/schemas/LinkHealth"
+          },
+          "failStreak": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "duplicate": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SetNotifyRuleDto": {
+        "required": [
+          "linkSetId",
+          "channel",
+          "events",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "linkSetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NotifyEventsDto"
+              }
+            ]
+          },
+          "groups": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/GroupNotifyRuleDto"
+            }
+          }
+        }
+      },
+      "SharedReportDto": {
+        "required": [
+          "brand",
+          "workspaceName",
+          "logo",
+          "period",
+          "createdAt",
+          "expiresAt",
+          "report"
+        ],
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "workspaceName": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "boolean"
+          },
+          "period": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "report": {
+            "$ref": "#/components/schemas/ReportDto"
+          }
+        }
+      },
+      "ShareReportRequest": {
+        "required": [
+          "brand",
+          "period",
+          "logo"
+        ],
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "boolean"
           }
         }
       },
@@ -5683,6 +9460,109 @@
           }
         }
       },
+      "TelegramChatDto": {
+        "required": [
+          "id",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "TelegramChatsDto": {
+        "required": [
+          "chats"
+        ],
+        "type": "object",
+        "properties": {
+          "chats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramChatDto"
+            }
+          }
+        }
+      },
+      "TelegramSettingsDto": {
+        "required": [
+          "on",
+          "token",
+          "hasToken",
+          "chatId"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean"
+          },
+          "token": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasToken": {
+            "type": "boolean"
+          },
+          "chatId": {
+            "type": "string"
+          }
+        }
+      },
+      "TestPostRequest": {
+        "required": [
+          "linkSetId",
+          "linkId",
+          "accountId",
+          "collectionId",
+          "collectionPostId",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "linkSetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linkId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "collectionPostId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "TransactionDto": {
         "required": [
           "id",
@@ -5755,6 +9635,65 @@
           "failed"
         ]
       },
+      "UpdateCollectionPostRequest": {
+        "required": [
+          "text",
+          "mediaIds",
+          "collectionId"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "mediaIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "collectionId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "UpdateCollectionRequest": {
+        "required": [
+          "name",
+          "description",
+          "icon",
+          "settings"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "icon": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "settings": {
+            "$ref": "#/components/schemas/CollectionSettingsDto"
+          }
+        }
+      },
       "UpdateDeviceRequest": {
         "required": [
           "name",
@@ -5773,6 +9712,73 @@
               "null",
               "boolean"
             ]
+          }
+        }
+      },
+      "UpdateLinkRequest": {
+        "required": [
+          "name",
+          "url",
+          "code",
+          "dailyMax",
+          "enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dailyMax": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateLinkSetRequest": {
+        "required": [
+          "name",
+          "postAsAccountId",
+          "accountIds"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "postAsAccountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "accountIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -5896,6 +9902,14 @@
           }
         }
       },
+      "WatermarkPosition": {
+        "enum": [
+          "br",
+          "bl",
+          "tr",
+          "c"
+        ]
+      },
       "WorkspaceDto": {
         "required": [
           "id",
@@ -5904,7 +9918,10 @@
           "members",
           "role",
           "limits",
-          "advancedAntiBan"
+          "advancedAntiBan",
+          "notifications",
+          "autoReply",
+          "clientReports"
         ],
         "type": "object",
         "properties": {
@@ -5931,6 +9948,15 @@
           },
           "advancedAntiBan": {
             "type": "boolean"
+          },
+          "notifications": {
+            "type": "boolean"
+          },
+          "autoReply": {
+            "type": "boolean"
+          },
+          "clientReports": {
+            "type": "boolean"
           }
         }
       },
@@ -5952,7 +9978,16 @@
       "name": "Auth"
     },
     {
+      "name": "AutoReply"
+    },
+    {
+      "name": "Backup"
+    },
+    {
       "name": "Billing"
+    },
+    {
+      "name": "Collections"
     },
     {
       "name": "DeviceApi"
@@ -5973,7 +10008,22 @@
       "name": "Library"
     },
     {
+      "name": "LinkSets"
+    },
+    {
+      "name": "Notifications"
+    },
+    {
       "name": "Posts"
+    },
+    {
+      "name": "Reports"
+    },
+    {
+      "name": "SharedReports"
+    },
+    {
+      "name": "Schedules"
     },
     {
       "name": "StripeWebhook"

@@ -40,6 +40,36 @@ export type ApiConfigSaved = S['ConfigSavedDto'];
 export type ApiDeviceLive = S['DeviceLiveDto'];
 export type ApiDeviceLog = S['DeviceLogDto'];
 export type ApiDeviceCommand = S['DeviceCommandDto'];
+export type ApiCollection = S['CollectionDto'];
+export type ApiCollectionSettings = S['CollectionSettingsDto'];
+export type ApiCollectionPost = S['CollectionPostDto'];
+export type ApiApprovalAction = S['ApprovalAction'];
+export type ApiLinkSet = S['LinkSetDto'];
+export type ApiSetLink = S['SetLinkDto'];
+export type ApiBulkLinksResult = S['BulkLinksResultDto'];
+export type ApiCsvLinkRow = S['CsvLinkRow'];
+export type ApiCsvImportResult = S['CsvImportResultDto'];
+export type ApiGroupLink = S['GroupLinkDto'];
+export type ApiNotifications = S['NotificationSettingsDto'];
+export type ApiNotifyChannel = S['NotifyChannel'];
+export type ApiNotifyEvents = S['NotifyEventsDto'];
+export type ApiNotifyTestResult = S['NotifyTestResultDto'];
+export type ApiTelegramChat = S['TelegramChatDto'];
+export type ApiAutoReply = S['AutoReplyDto'];
+export type ApiAutoReplyRule = S['AutoReplyRuleDto'];
+export type ApiReport = S['ReportDto'];
+export type ApiReportGroup = S['ReportGroupDto'];
+export type ApiReportShare = S['ReportShareDto'];
+export type ApiReportShareSummary = S['ReportShareSummaryDto'];
+export type ApiSharedReport = S['SharedReportDto'];
+export type ApiSchedule = S['ScheduleDto'];
+export type ApiSaveSchedule = S['SaveScheduleRequest'];
+export type ApiScheduleCreated = S['ScheduleCreatedDto'];
+export type ApiScheduleMode = S['ScheduleMode'];
+export type ApiPostOrder = S['PostOrder'];
+export type ApiTestPost = S['TestPostRequest'];
+export type ApiBackup = S['BackupDto'];
+export type ApiRestoreResult = S['RestoreResultDto'];
 
 /** Set on a request whose errors the caller shows itself (no toast from errorInterceptor). */
 export const QUIET = new HttpContextToken<boolean>(() => false);
@@ -120,10 +150,15 @@ export class ApiService {
     return run(this.http.post<ApiAccount>(`/api/workspaces/${ws}/accounts/${id}/reconnect`, {}));
   }
 
-  /** Posts scheduled in [from, to) (at most 120 days). */
-  posts(ws: string, from: Date, to: Date) {
+  /** Posts scheduled in [from, to) (at most 120 days). background: a live follow-up does not toast failures. */
+  posts(ws: string, from: Date, to: Date, background = false) {
     const params = new HttpParams().set('from', from.toISOString()).set('to', to.toISOString());
-    return run(this.http.get<ApiPost[]>(`/api/workspaces/${ws}/posts`, { params }));
+    return run(
+      this.http.get<ApiPost[]>(`/api/workspaces/${ws}/posts`, {
+        params,
+        ...(background ? quiet : {}),
+      }),
+    );
   }
   schedule(ws: string, body: ApiScheduleRequest) {
     return run(this.http.post<ApiScheduleResult>(`/api/workspaces/${ws}/posts/schedule`, body));
@@ -355,6 +390,245 @@ export class ApiService {
   }
   clearDeviceLogs(ws: string, device: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/devices/${device}/logs`));
+  }
+  // Collections ("ชุดโพสต์"): sets of library posts with their composing settings.
+  collections(ws: string, background = false) {
+    return run(
+      this.http.get<ApiCollection[]>(`/api/workspaces/${ws}/collections`, background ? quiet : {}),
+    );
+  }
+  createCollection(ws: string, name: string, description?: string) {
+    const body: S['CreateCollectionRequest'] = { name, description: description ?? null };
+    return run(this.http.post<ApiCollection>(`/api/workspaces/${ws}/collections`, body));
+  }
+  updateCollection(ws: string, id: string, body: S['UpdateCollectionRequest']) {
+    return run(this.http.put<ApiCollection>(`/api/workspaces/${ws}/collections/${id}`, body));
+  }
+  deleteCollection(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/collections/${id}`));
+  }
+  createCollectionPost(ws: string, collection: string, text: string, mediaIds: string[] = []) {
+    const body: S['CollectionPostRequest'] = { text, mediaIds };
+    return run(
+      this.http.post<ApiCollectionPost>(
+        `/api/workspaces/${ws}/collections/${collection}/posts`,
+        body,
+      ),
+    );
+  }
+  /** Several posts at once (the AI writer); at most 20. */
+  createCollectionPosts(
+    ws: string,
+    collection: string,
+    items: { text: string; mediaIds?: string[] }[],
+  ) {
+    const body: S['CollectionPostsBatchRequest'] = {
+      items: items.map((i) => ({ text: i.text, mediaIds: i.mediaIds ?? [] })),
+    };
+    return run(
+      this.http.post<ApiCollectionPost[]>(
+        `/api/workspaces/${ws}/collections/${collection}/posts/batch`,
+        body,
+      ),
+    );
+  }
+  /** Edits a post; `collectionId` moves it to another collection. */
+  updateCollectionPost(
+    ws: string,
+    collection: string,
+    id: string,
+    body: S['UpdateCollectionPostRequest'],
+  ) {
+    return run(
+      this.http.put<ApiCollectionPost>(
+        `/api/workspaces/${ws}/collections/${collection}/posts/${id}`,
+        body,
+      ),
+    );
+  }
+  deleteCollectionPost(ws: string, collection: string, id: string) {
+    return run(
+      this.http.delete<void>(`/api/workspaces/${ws}/collections/${collection}/posts/${id}`),
+    );
+  }
+  collectionPostApproval(ws: string, collection: string, id: string, action: ApiApprovalAction) {
+    const body: S['ApprovalRequest'] = { action };
+    return run(
+      this.http.post<ApiCollectionPost>(
+        `/api/workspaces/${ws}/collections/${collection}/posts/${id}/approval`,
+        body,
+      ),
+    );
+  }
+
+  // Link sets ("ชุดลิงก์กลุ่ม"): Facebook group URLs with a group code and a daily cap.
+  linkSets(ws: string, background = false) {
+    return run(
+      this.http.get<ApiLinkSet[]>(`/api/workspaces/${ws}/link-sets`, background ? quiet : {}),
+    );
+  }
+  createLinkSet(ws: string, name: string, postAsAccountId?: string | null) {
+    const body: S['CreateLinkSetRequest'] = { name, postAsAccountId: postAsAccountId ?? null };
+    return run(this.http.post<ApiLinkSet>(`/api/workspaces/${ws}/link-sets`, body));
+  }
+  updateLinkSet(ws: string, id: string, body: S['UpdateLinkSetRequest']) {
+    return run(this.http.put<ApiLinkSet>(`/api/workspaces/${ws}/link-sets/${id}`, body));
+  }
+  deleteLinkSet(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/link-sets/${id}`));
+  }
+  /** Adds a row; a blank or invalid address makes an invalid row the page shows in red. */
+  addLink(
+    ws: string,
+    set: string,
+    body: S['AddLinkRequest'] = { name: null, url: null, code: null, dailyMax: null },
+  ) {
+    return run(this.http.post<ApiSetLink>(`/api/workspaces/${ws}/link-sets/${set}/links`, body));
+  }
+  updateLink(ws: string, set: string, id: string, body: S['UpdateLinkRequest']) {
+    return run(
+      this.http.put<ApiSetLink>(`/api/workspaces/${ws}/link-sets/${set}/links/${id}`, body),
+    );
+  }
+  deleteLink(ws: string, set: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/link-sets/${set}/links/${id}`));
+  }
+  /** Turns a link back on after the engine switched it off. */
+  enableLink(ws: string, set: string, id: string) {
+    return run(
+      this.http.post<ApiSetLink>(`/api/workspaces/${ws}/link-sets/${set}/links/${id}/enable`, {}),
+    );
+  }
+  /** Lines of `url | code`. */
+  bulkLinks(ws: string, set: string, text: string) {
+    const body: S['BulkLinksRequest'] = { text };
+    return run(
+      this.http.post<ApiBulkLinksResult>(`/api/workspaces/${ws}/link-sets/${set}/links/bulk`, body),
+    );
+  }
+  /** Adds groups of a connected account (by URL) to a set. */
+  importGroups(ws: string, set: string, accountId: string, urls: string[]) {
+    const body: S['ImportGroupsRequest'] = { accountId, urls };
+    return run(
+      this.http.post<ApiLinkSet>(`/api/workspaces/${ws}/link-sets/${set}/links/import`, body),
+    );
+  }
+  importLinksCsv(ws: string, rows: ApiCsvLinkRow[]) {
+    const body: S['ImportCsvRequest'] = { rows };
+    return run(
+      this.http.post<ApiCsvImportResult>(`/api/workspaces/${ws}/link-sets/import-csv`, body),
+    );
+  }
+  /** The groups a connected account's browser has synced (name + address). */
+  accountGroups(ws: string, account: string) {
+    return run(this.http.get<ApiGroupLink[]>(`/api/workspaces/${ws}/accounts/${account}/groups`));
+  }
+  // Notifications (Telegram / LINE OA), auto-reply rules and reports.
+  notifications(ws: string, background = false) {
+    return run(
+      this.http.get<ApiNotifications>(
+        `/api/workspaces/${ws}/notifications`,
+        background ? quiet : {},
+      ),
+    );
+  }
+  /** Tokens are write-only: a null token keeps the stored one, an empty string clears it. */
+  saveNotifications(ws: string, body: ApiNotifications) {
+    return run(this.http.put<ApiNotifications>(`/api/workspaces/${ws}/notifications`, body));
+  }
+  /** Sends a short test message through one channel with the stored settings. */
+  testNotification(ws: string, channel: 'tg' | 'line') {
+    const body: S['NotifyTestRequest'] = { channel };
+    return run(
+      this.http.post<ApiNotifyTestResult>(`/api/workspaces/${ws}/notifications/test`, body, quiet),
+    );
+  }
+  /** Chats the Telegram bot has seen (the typed token, or the stored one when none is given). */
+  telegramChats(ws: string, token?: string) {
+    const body: S['FindTelegramChatsRequest'] = { token: token || null };
+    return run(
+      this.http.post<S['TelegramChatsDto']>(
+        `/api/workspaces/${ws}/notifications/telegram/chats`,
+        body,
+        quiet,
+      ),
+    );
+  }
+  autoReply(ws: string, background = false) {
+    return run(
+      this.http.get<ApiAutoReply>(`/api/workspaces/${ws}/auto-reply`, background ? quiet : {}),
+    );
+  }
+  saveAutoReply(ws: string, body: ApiAutoReply) {
+    return run(this.http.put<ApiAutoReply>(`/api/workspaces/${ws}/auto-reply`, body));
+  }
+  /** Per-group and per-post results of the last 7 or 30 days. */
+  report(ws: string, days: 7 | 30) {
+    const params = new HttpParams().set('days', String(days));
+    return run(this.http.get<ApiReport>(`/api/workspaces/${ws}/reports`, { params }));
+  }
+  /** Agency: a public read-only snapshot of the report under a branded link. */
+  shareReport(ws: string, body: S['ShareReportRequest']) {
+    return run(this.http.post<ApiReportShare>(`/api/workspaces/${ws}/reports/share`, body));
+  }
+  /** Agency, admin: the client-report links that are still live, newest first. */
+  reportShares(ws: string, background = false) {
+    return run(
+      this.http.get<ApiReportShareSummary[]>(
+        `/api/workspaces/${ws}/reports/shares`,
+        background ? quiet : {},
+      ),
+    );
+  }
+  /** Admin: switches one client-report link off for good (it also makes room under the limit of 20). */
+  revokeReportShare(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/reports/shares/${id}`));
+  }
+  /** Public (no sign-in): the snapshot behind a client-report link. */
+  sharedReport(token: string) {
+    return run(
+      this.http.get<ApiSharedReport>(`/api/reports/shared/${encodeURIComponent(token)}`, quiet),
+    );
+  }
+  // Schedules ("ตารางโพสต์"): a collection paired with a link set and posting times.
+  schedules(ws: string, background = false) {
+    return run(
+      this.http.get<ApiSchedule[]>(`/api/workspaces/${ws}/schedules`, background ? quiet : {}),
+    );
+  }
+  /** Creates the schedule and queues its posts 14 days ahead (one day for "once"). */
+  createSchedule(ws: string, body: ApiSaveSchedule) {
+    return run(this.http.post<ApiScheduleCreated>(`/api/workspaces/${ws}/schedules`, body));
+  }
+  /** Pausing drops its future queued posts; resuming queues them again. */
+  setScheduleActive(ws: string, id: string, active: boolean) {
+    const body: S['SetActiveRequest'] = { active };
+    return run(this.http.put<ApiSchedule>(`/api/workspaces/${ws}/schedules/${id}/active`, body));
+  }
+  deleteSchedule(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/schedules/${id}`));
+  }
+  /**
+   * The hours (HH:00) with the most successful posts in the last 30 days, in the person's time zone. Quiet: it is
+   * only a hint, so a failure shows no toast (the builder just has no suggestion).
+   */
+  bestTimes(ws: string, utcOffsetMinutes: number) {
+    const params = new HttpParams().set('utcOffsetMinutes', String(utcOffsetMinutes));
+    return run(
+      this.http.get<string[]>(`/api/workspaces/${ws}/schedules/best-times`, { params, ...quiet }),
+    );
+  }
+  /** One real post to a group now, to check the extension, the group code and the media. Quiet: the page shows the refusal. */
+  testPost(ws: string, body: ApiTestPost) {
+    return run(this.http.post<ApiPost>(`/api/workspaces/${ws}/test-post`, body, quiet));
+  }
+  /** Every collection, link set, schedule and setting as one file (no tokens). */
+  backup(ws: string) {
+    return run(this.http.get<ApiBackup>(`/api/workspaces/${ws}/backup`));
+  }
+  /** Replaces the workspace's collections, link sets, schedules and settings with a backup. Quiet: the dialog shows the refusal. */
+  restore(ws: string, body: ApiBackup) {
+    return run(this.http.post<ApiRestoreResult>(`/api/workspaces/${ws}/restore`, body, quiet));
   }
 }
 

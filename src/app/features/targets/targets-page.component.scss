@@ -1,0 +1,27 @@
+.intro {
+  max-width: 720px;
+}
+
+// The "how group codes work" card: a hash icon beside the heading and the explanation.
+.code {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  > .ph {
+    flex-shrink: 0;
+    font-size: 24px;
+    color: var(--color-primary);
+  }
+  p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+}
+
+.fs14 {
+  font-size: 14px;
+}
+.min0 {
+  min-width: 0;
+}

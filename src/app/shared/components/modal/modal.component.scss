@@ -1,3 +1,8 @@
 :host ::ng-deep [modal-footer] {
   display: contents;
 }
+
+// The panel takes focus only as a last resort (a dialog with nothing to press); it needs no ring then.
+.su-modal-panel:focus {
+  outline: none;
+}

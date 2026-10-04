@@ -6,6 +6,7 @@
       [id]="id"
       [checked]="checked()"
       [disabled]="disabled()"
+      [attr.aria-label]="ariaLabel()"
       (change)="checked.set($any($event.target).checked)"
     />
     <span class="su-check-box" aria-hidden="true"></span>

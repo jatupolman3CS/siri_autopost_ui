@@ -1,0 +1,94 @@
+<div class="page">
+  <div class="page-head">
+    <div class="intro">
+      <h1>{{ t().ntf.title }}</h1>
+      <p>{{ t().ntf.sub }}</p>
+      <app-perm-note level="admin" />
+    </div>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      [disabled]="!editable() || !store.loaded() || store.saving()"
+      [attr.title]="hint() || null"
+      (click)="save()"
+    >
+      {{ t().common.save }}
+    </button>
+  </div>
+
+  @if (store.locked()) {
+    <app-feature-lock [heading]="t().ntf.advanced" [body]="t().ntf.locked" />
+  }
+
+  @if (!store.loaded()) {
+    <p class="muted fs14" role="status">{{ t().api.loading }}</p>
+  } @else {
+    <div class="content" [class.locked]="store.locked()">
+      <div class="grid-2eq">
+        <app-notify-channel-card channel="tg" [editable]="editable()" [hint]="hint()" />
+        <app-notify-channel-card channel="line" [editable]="editable()" [hint]="hint()" />
+      </div>
+
+      <section class="panel stack12" [attr.title]="hint() || null">
+        <div class="events-head">
+          <div>
+            <h2 class="h2">{{ t().ntf.events }}</h2>
+            <div class="small muted">{{ t().ntf.eventsDefault }}</div>
+          </div>
+          <div class="w240">
+            <app-select-field
+              [label]="t().ntf.sendTo"
+              [options]="channelOptions()"
+              [value]="channel()"
+              [disabled]="!editable()"
+              (valueChange)="setChannel($event)"
+            />
+          </div>
+        </div>
+        @if (events(); as ev) {
+          <app-notify-pills
+            [events]="ev"
+            [disabled]="!editable()"
+            (toggled)="store.setDefaultEvent($event.key, $event.on)"
+          />
+        }
+        <p class="small muted info">
+          <i class="ph ph-info" aria-hidden="true"></i>{{ t().api.engine.notifyNotSent }}
+        </p>
+        <div class="preview">
+          <span class="small muted">{{ t().ntf.preview }}</span>
+          <p class="sample">{{ sample() }}</p>
+        </div>
+      </section>
+
+      <section class="panel stack12" [attr.title]="hint() || null">
+        <div>
+          <h2 class="h2">{{ t().ntf.perSet }}</h2>
+          <div class="small muted">{{ t().ntf.perSetHint }}</div>
+        </div>
+        @if (!store.setsLoaded()) {
+          <p class="muted fs14" role="status">{{ t().api.loading }}</p>
+        } @else {
+          <div class="fs14" role="status">{{ summary() }}</div>
+          @for (n of notReady(); track n) {
+            <p class="callout warn small">
+              <i class="ph ph-warning" aria-hidden="true"></i><span>{{ n }}</span>
+            </p>
+          }
+          <div class="sets">
+            @for (s of store.sets(); track s.id) {
+              <app-notify-set-rule [set]="s" [editable]="editable()" />
+            } @empty {
+              <p class="muted fs14 none">
+                {{ t().api.engine.notifyNoSets }}
+                <a class="link-btn" routerLink="/app/targets">{{ t().ts.title }}</a>
+              </p>
+            }
+          </div>
+        }
+      </section>
+
+      <app-notify-commands-card [editable]="editable()" [attr.title]="hint() || null" />
+    </div>
+  }
+</div>

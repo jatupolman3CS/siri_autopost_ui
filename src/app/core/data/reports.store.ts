@@ -1,0 +1,194 @@
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { groupUrlKey } from '../flow/group-links';
+import {
+  ApiReport,
+  ApiReportGroup,
+  ApiReportShare,
+  ApiReportShareSummary,
+  ApiService,
+} from '../http/api.service';
+import { LinkSetsStore } from './link-sets.store';
+import { loadWithRetry } from './loading';
+import { PermissionsService } from './permissions.service';
+import { topPosts, totalsOf } from './report-math';
+import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
+
+export type ReportDays = 7 | 30;
+/** The period of a shared report: the last 7 days or the last 30 days. */
+export type SharePeriod = 'week' | 'month';
+/** A visit older than this reads the numbers again. */
+const FRESH_MS = 30_000;
+/** How long the brand name of a client report can be (Domain `ReportShare.MaxBrandLength`). */
+export const BRAND_MAX = 120;
+
+// The report of the current workspace: how the groups and the posts did over the last 7 or 30 days, and (Agency)
+// the shareable copy for a client. Reading is for every role and plan; the numbers are real posts of paired
+// accounts only (no test posts, no sample accounts) and carry no likes or comments, because none are collected.
+// The page asks again when it is entered (`ensureFresh`) and whenever the period changes.
+@Injectable({ providedIn: 'root' })
+export class ReportsStore {
+  private readonly api = inject(ApiService);
+  private readonly ws = inject(WorkspaceStore);
+  private readonly linkSets = inject(LinkSetsStore);
+  private readonly perm = inject(PermissionsService);
+
+  readonly days = signal<ReportDays>(7);
+  readonly report = signal<ApiReport | null>(null);
+  /** The report of the chosen period has arrived (the page shows "—" until then). */
+  readonly loaded = signal(false);
+  /** The last read gave up (a refusal, or a server that stayed down). */
+  readonly failed = signal(false);
+  /** The link of the last client report made in this session. */
+  readonly lastShare = signal<ApiReportShare | null>(null);
+  /** The client links that are still live (Agency, admin); null until they have been read. */
+  readonly shares = signal<ApiReportShareSummary[] | null>(null);
+
+  readonly groups = computed(() => this.report()?.groups ?? []);
+  readonly posts = computed(() => topPosts(this.report()?.posts ?? []));
+  /** Totals over the groups, for the shared page's summary tiles. */
+  readonly totals = computed(() => totalsOf(this.groups()));
+  /** The owner's plan includes client reports (Agency). */
+  readonly canShare = computed(() => !!this.ws.current()?.clientReports);
+  /**
+   * The plan is known and does not include client reports (the card says so). Only known once the workspaces
+   * have arrived: before that nothing is locked, so the lock does not flash on a reload.
+   */
+  readonly shareLocked = computed(() => this.ws.loaded() && !this.ws.current()?.clientReports);
+
+  private seq = 0;
+  private sharesSeq = 0;
+  private loadedAt = 0;
+
+  constructor() {
+    whenWorkspaceChanges((id) => {
+      this.seq++;
+      this.report.set(null);
+      this.loaded.set(false);
+      this.failed.set(false);
+      this.lastShare.set(null);
+      this.shares.set(null);
+      this.sharesSeq++;
+      this.loadedAt = 0;
+      if (id) void this.load();
+    });
+  }
+
+  /** Switches the period and reads it. */
+  setDays(days: ReportDays): void {
+    if (days === this.days()) return;
+    this.days.set(days);
+    this.report.set(null);
+    this.loaded.set(false);
+    void this.load();
+  }
+
+  /** Reads the report of the chosen period (transient failures are retried; it never throws). */
+  async load(): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    const days = this.days();
+    const seq = ++this.seq;
+    const current = () => seq === this.seq && this.ws.id() === wsId;
+    this.failed.set(false);
+    this.loadedAt = Date.now();
+    const ok = await loadWithRetry(async () => {
+      const r = await this.api.report(wsId, days);
+      if (current()) this.report.set(r);
+    }, current);
+    if (!current()) return;
+    if (ok) this.loaded.set(true);
+    else this.failed.set(true);
+  }
+
+  /**
+   * Reads again when the numbers on screen are older than half a minute. A store that has not read yet is left
+   * alone: it reads as soon as its workspace is known.
+   */
+  ensureFresh(): void {
+    if (this.loadedAt !== 0 && Date.now() - this.loadedAt > FRESH_MS) void this.load();
+  }
+
+  /**
+   * Switches a group off: every link with the group's address (the same group can sit in several sets) is set to
+   * disabled. The links are read fresh first, so a row edited on the link sets page is not overwritten with an
+   * old copy. Resolves to how many links were switched off (0 = none found, or the API refused).
+   */
+  async disableGroup(group: ApiReportGroup): Promise<number> {
+    const wsId = this.ws.id();
+    if (!wsId) return 0;
+    const url = groupUrlKey(group.url);
+    let count = 0;
+    try {
+      const sets = await this.api.linkSets(wsId);
+      for (const set of sets)
+        for (const link of set.links) {
+          const same = link.id === group.linkId || (url !== '' && groupUrlKey(link.url) === url);
+          if (!same || !link.enabled) continue;
+          await this.api.updateLink(wsId, set.id, link.id, {
+            name: link.name,
+            url: link.url,
+            code: link.code,
+            dailyMax: link.dailyMax,
+            enabled: false,
+          });
+          count++;
+        }
+    } catch {
+      // The error interceptor has shown why; what was switched off before the failure stays off.
+    }
+    if (this.ws.id() === wsId) {
+      void this.linkSets.refresh();
+      void this.load();
+    }
+    return count;
+  }
+
+  /** Makes the shareable copy of the report (Agency, admin). The API refuses (and says why) otherwise. */
+  async share(brand: string, period: SharePeriod, logo: boolean): Promise<ApiReportShare> {
+    const wsId = this.ws.id();
+    if (!wsId) throw new Error('no workspace');
+    const share = await this.api.shareReport(wsId, { brand: brand.trim(), period, logo });
+    if (this.ws.id() === wsId) {
+      this.lastShare.set(share);
+      void this.loadShares();
+    }
+    return share;
+  }
+
+  /** Reads the live links once per workspace (only an admin of an Agency workspace may ask). */
+  async ensureShares(): Promise<void> {
+    if (this.shares() === null) await this.loadShares();
+  }
+
+  /** Reads the live links again. A refusal leaves what is shown as it is; it never rejects. */
+  async loadShares(): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId || !this.canShare() || !this.perm.canAdmin()) return;
+    const seq = ++this.sharesSeq;
+    try {
+      const list = await this.api.reportShares(wsId, true);
+      if (seq === this.sharesSeq && this.ws.id() === wsId) this.shares.set(list);
+    } catch {
+      // The list is a convenience: the link of the report just made is still shown.
+    }
+  }
+
+  /** Switches a link off. The API's refusal is shown by the error interceptor and the list is read again. */
+  async revokeShare(id: string): Promise<boolean> {
+    const wsId = this.ws.id();
+    if (!wsId) return false;
+    try {
+      await this.api.revokeReportShare(wsId, id);
+    } catch {
+      void this.loadShares();
+      return false;
+    }
+    if (this.ws.id() === wsId) {
+      const gone = this.shares()?.find((x) => x.id === id);
+      this.shares.update((list) => list && list.filter((x) => x.id !== id));
+      // The link shown from this session's last report goes too when it is the one that was switched off.
+      if (gone && this.lastShare()?.path === gone.path) this.lastShare.set(null);
+    }
+    return true;
+  }
+}

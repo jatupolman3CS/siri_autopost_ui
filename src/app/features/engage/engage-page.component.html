@@ -1,0 +1,113 @@
+<div class="page">
+  <div class="page-head">
+    <div class="intro">
+      <h1>{{ t().ar.title }}</h1>
+      <p>{{ t().ar.sub }}</p>
+      <app-perm-note level="admin" />
+    </div>
+    <div class="actions">
+      <app-checkbox
+        [label]="t().ar.on"
+        [checked]="store.on()"
+        [disabled]="!editable() || !store.loaded()"
+        (checkedChange)="store.setOn($event)"
+      />
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        [disabled]="!editable() || !store.loaded() || store.full()"
+        [attr.title]="addHint() || null"
+        (click)="dialog.set(true)"
+      >
+        <i class="ph ph-plus"></i>{{ t().ar.newRule }}
+      </button>
+    </div>
+  </div>
+
+  @if (store.locked()) {
+    <app-feature-lock [heading]="t().ntf.advanced" [body]="t().ar.locked" />
+  }
+
+  @if (!store.loaded()) {
+    <p class="muted fs14" role="status">{{ t().api.loading }}</p>
+  } @else {
+    <div class="grid-2" [class.locked]="store.locked()">
+      <div class="stack">
+        <section class="panel rules" [attr.title]="hint() || null">
+          <div class="panel-head">
+            <h2 class="h2">{{ t().ar.rules }}</h2>
+            <div class="meta">
+              <span class="fs14 muted">{{ count() }}</span>
+              <app-chip>{{ t().api.engine.storedOnlyBadge }}</app-chip>
+            </div>
+          </div>
+          @for (r of rows(); track r.rule.id) {
+            <div class="rule" [class.off]="!r.rule.on">
+              <div class="body">
+                <div class="chips">
+                  @for (k of r.keywords; track $index) {
+                    <app-chip tone="primary">{{ k }}</app-chip>
+                  }
+                  <app-chip>{{ r.scope }}</app-chip>
+                </div>
+                <div class="fs14">
+                  <i class="ph ph-chat-centered-text muted" aria-hidden="true"></i>
+                  {{ r.rule.reply || '—' }}
+                </div>
+                <div class="fs14 muted">
+                  <i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
+                  {{ r.rule.inbox || '—' }}
+                </div>
+              </div>
+              <div class="ctl">
+                <app-checkbox
+                  [label]="t().ar.enabled"
+                  [checked]="r.rule.on"
+                  [disabled]="!editable()"
+                  (checkedChange)="toggle(r.rule.id, $event)"
+                />
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  [disabled]="!editable()"
+                  (click)="remove(r.rule.id)"
+                >
+                  {{ t().common.remove }}
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <p class="none muted fs14">{{ t().api.engine.engageNoRules }}</p>
+          }
+        </section>
+
+        <section class="panel tryit">
+          <h2 class="h2">{{ t().ar.tryTitle }}</h2>
+          <input
+            class="try"
+            [value]="tryText()"
+            [placeholder]="t().ar.tryPh"
+            [attr.aria-label]="t().ar.tryTitle"
+            [disabled]="store.locked()"
+            (input)="onTry($event)"
+          />
+          <p class="result" role="status">{{ tryResult() }}</p>
+          <p class="small muted note">
+            <i class="ph ph-info" aria-hidden="true"></i>{{ t().api.engine.engageTryNote }}
+          </p>
+        </section>
+      </div>
+
+      <section class="panel feed">
+        <h2 class="h2">{{ t().ar.feed }}</h2>
+        <app-empty-state
+          icon="ph-chat-centered-text"
+          [heading]="t().api.engine.engageFeedEmpty"
+          [description]="t().api.engine.engageNoFeed"
+        />
+      </section>
+    </div>
+  }
+
+  <app-rule-modal [open]="dialog()" (closed)="dialog.set(false)" />
+</div>

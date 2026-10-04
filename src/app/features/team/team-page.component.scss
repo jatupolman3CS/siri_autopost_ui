@@ -83,3 +83,15 @@
   gap: 4px;
   flex-wrap: wrap;
 }
+
+.auto {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 2px;
+  > .ph {
+    font-size: 14px;
+    margin-top: 1px;
+    color: var(--color-warning);
+  }
+}

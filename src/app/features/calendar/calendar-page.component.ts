@@ -8,17 +8,19 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AccountsStore } from '../../core/data/accounts.store';
+import { CollectionsStore } from '../../core/data/collections.store';
 import { DraftStore } from '../../core/data/draft.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { STATUS_DOT } from '../../core/data/models';
 import { PostsStore, QueueItem } from '../../core/data/posts.store';
 import { dayNames, displayYear, dkey, fmtDate, monthName } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
+import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
 
 @Component({
   selector: 'app-calendar-page',
@@ -34,7 +36,7 @@ export class CalendarPageComponent {
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   private readonly draft = inject(DraftStore);
-  private readonly accounts = inject(AccountsStore);
+  private readonly collections = inject(CollectionsStore);
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
   protected readonly posts = inject(PostsStore);
@@ -106,8 +108,18 @@ export class CalendarPageComponent {
     const t = this.t();
     return this.selList().map((p) => ({
       ...this.posts.row(p, t),
+      // What the task holds is what goes out (or went out): the text composed when it was queued, which a later
+      // edit of the collection post does not change. Only a task with no text of its own shows the post's.
+      text: p.text.trim()
+        ? p.text
+        : (this.collections.postById(p.collectionPostId)?.post.text ?? ''),
+      /** The group code the text was written with (shown as a chip). */
+      code: p.groupCode ?? '',
+      isTest: p.isTest,
       item: p,
       editable: p.status === 'queued',
+      // A test post has no place in a collection to go back to: it can be removed, not edited.
+      canEdit: p.status === 'queued' && !p.isTest,
       isFailed: p.status === 'failed' || p.status === 'pending',
     }));
   });
@@ -130,25 +142,27 @@ export class CalendarPageComponent {
     this.selDay.set(this.posts.todayKey());
   }
 
+  /** The selected day is before today: a schedule cannot start there. */
+  protected readonly pastDay = computed(() => this.selDay() < this.posts.todayKey());
+
+  /** "Add" on a day: the schedule builder opens with that day as its start (never a day that has passed). */
   protected addOnDay(): void {
-    this.draft.patch({ date: this.selDay() });
-    void this.router.navigateByUrl('/app/composer');
+    if (this.pastDay()) return;
+    void this.router.navigate(['/app/schedules'], { queryParams: { start: this.selDay() } });
   }
 
-  /** Opens a queued post in the composer; the old post is deleted once the edit is scheduled. */
+  /**
+   * Opens the collection post a queued task came from in the composer. A task that has none (made before
+   * collections existed) starts a new post with its text and media, to be saved into a collection.
+   */
   protected edit(p: QueueItem): void {
-    const toGroup = !!this.accounts.byId(p.accountId)?.groups.length;
-    this.draft.reset({
-      text: p.text,
-      media: p.mediaIds,
-      date: p.key,
-      time: p.time,
-      targets: { [p.accountId]: true },
-      groups: toGroup ? [p.target] : [],
-      autoTargets: false,
-      replaces: p.id,
-    });
-    void this.router.navigateByUrl('/app/composer');
+    const found = this.collections.postById(p.collectionPostId);
+    if (found) this.draft.edit(found.collection, found.post);
+    else {
+      this.draft.startNew();
+      this.draft.patch({ text: p.text, media: p.mediaIds });
+    }
+    void this.router.navigate([COMPOSER_PATH], { queryParams: composerParams(this.draft.draft()) });
   }
 
   protected async confirmDelete(): Promise<void> {

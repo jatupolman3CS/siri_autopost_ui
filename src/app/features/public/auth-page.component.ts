@@ -139,7 +139,7 @@ export class AuthPageComponent {
 
   /** The server has no Google client id (or could not be reached): say so instead of hiding the button. */
   protected googleOff(): void {
-    this.notify.error(this.t().auth.googleOff);
+    this.notify.error(this.t().api.googleOff);
   }
 
   private async googleSignIn(idToken: string): Promise<void> {
@@ -150,7 +150,7 @@ export class AuthPageComponent {
     } catch (e) {
       const a = this.t().api;
       this.notify.error(
-        e instanceof HttpErrorResponse && e.status === 403 ? a.blocked : this.t().auth.googleFailed,
+        e instanceof HttpErrorResponse && e.status === 403 ? a.blocked : this.t().api.googleFailed,
       );
     } finally {
       this.busy.set(false);

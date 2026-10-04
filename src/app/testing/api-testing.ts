@@ -3,7 +3,15 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { authInterceptor } from '../core/auth/auth.interceptor';
 import { SessionStore } from '../core/data/session.store';
-import { ApiAccount, ApiDevice, ApiPost, ApiUser, ApiWorkspace } from '../core/http/api.service';
+import {
+  ApiAccount,
+  ApiCollection,
+  ApiDevice,
+  ApiLinkSet,
+  ApiPost,
+  ApiUser,
+  ApiWorkspace,
+} from '../core/http/api.service';
 
 // Test helpers: a signed-in user with one workspace, served by HttpTestingController.
 
@@ -18,6 +26,9 @@ export const WORKSPACE: ApiWorkspace = {
   role: 'owner',
   limits: { accounts: 10, posts: null, devices: 3, seats: 3 },
   advancedAntiBan: true,
+  notifications: true,
+  autoReply: true,
+  clientReports: false,
 };
 
 export const USER: ApiUser = {
@@ -28,6 +39,26 @@ export const USER: ApiUser = {
   plan: 'pro',
   cycle: 'month',
   status: 'active',
+};
+
+/** What GET notifications answers for a workspace that has not set anything up (tokens are never returned). */
+export const NOTIFICATIONS = {
+  telegram: { on: false, token: null, hasToken: false, chatId: '' },
+  line: { on: false, token: null, hasToken: false, to: '' },
+  channel: 'tg',
+  events: {
+    success: false,
+    fail: true,
+    shot: true,
+    round: true,
+    startStop: true,
+    block: true,
+    offline: true,
+    quota: false,
+  },
+  sets: [],
+  commandsOn: false,
+  commandsUsers: '',
 };
 
 export const ACCOUNTS: ApiAccount[] = [
@@ -74,6 +105,12 @@ export function apiPost(over: Partial<ApiPost> & { id: string; scheduledAt: stri
     failureCode: null,
     failureDetail: null,
     publishedAt: null,
+    scheduleId: null,
+    collectionPostId: null,
+    linkId: null,
+    code: null,
+    targetUrl: null,
+    isTest: false,
     ...over,
   };
 }
@@ -108,6 +145,10 @@ export async function signIn(
     user?: Partial<ApiUser>;
     workspace?: Partial<ApiWorkspace>;
     devices?: ApiDevice[];
+    collections?: ApiCollection[];
+    linkSets?: ApiLinkSet[];
+    /** Answers GET schedules (the schedules store; typed by whoever builds it). */
+    schedules?: unknown[];
   } = {},
 ): Promise<void> {
   const login = TestBed.inject(SessionStore).logIn(USER.email, 'password1');
@@ -122,6 +163,29 @@ export async function signIn(
   await settle();
 }
 
+/**
+ * Logs in but leaves the workspace list unanswered, as on a reload before the list has arrived: `answer()` then
+ * sends the list and answers the loads that follow, so a spec can look at a page in between.
+ */
+export async function signInHoldingWorkspaces(
+  http: HttpTestingController,
+  data: Parameters<typeof answerWorkspaceLoads>[1] = {},
+): Promise<{ answer: (workspace?: Partial<ApiWorkspace>) => Promise<void> }> {
+  const login = TestBed.inject(SessionStore).logIn(USER.email, 'password1');
+  http.expectOne('/api/auth/login').flush({ token: 't0k', expiresAt: '2099-01-01', user: USER });
+  await login;
+  await settle();
+  const list = http.expectOne('/api/workspaces');
+  return {
+    answer: async (workspace = {}) => {
+      list.flush([{ ...WORKSPACE, ...workspace }]);
+      await settle();
+      answerWorkspaceLoads(http, data);
+      await settle();
+    },
+  };
+}
+
 export function answerWorkspaceLoads(
   http: HttpTestingController,
   data: {
@@ -129,6 +193,9 @@ export function answerWorkspaceLoads(
     errors?: ApiPost[];
     simulatedOffline?: boolean;
     devices?: ApiDevice[];
+    collections?: ApiCollection[];
+    linkSets?: ApiLinkSet[];
+    schedules?: unknown[];
   } = {},
 ): void {
   const base = `/api/workspaces/${WS}`;
@@ -147,6 +214,12 @@ export function answerWorkspaceLoads(
   for (const r of http.match(`${base}/media`)) r.flush([]);
   for (const r of http.match(`${base}/snippets`)) r.flush([]);
   for (const r of http.match(`${base}/devices`)) r.flush(data.devices ?? []);
+  // The collection → link set → schedule flow (empty unless a test passes data).
+  for (const r of http.match(`${base}/collections`)) r.flush(data.collections ?? []);
+  for (const r of http.match(`${base}/link-sets`)) r.flush(data.linkSets ?? []);
+  for (const r of http.match(`${base}/schedules`)) r.flush(data.schedules ?? []);
+  for (const r of http.match(`${base}/notifications`)) r.flush(NOTIFICATIONS);
+  for (const r of http.match(`${base}/auto-reply`)) r.flush({ on: false, rules: [] });
   for (const r of http.match(`${base}/engine`))
     r.flush({
       antiBan: {
@@ -158,6 +231,18 @@ export function answerWorkspaceLoads(
         shuffle: true,
         autoPause: true,
         warmup: false,
+        advanced: {
+          minGap: 2,
+          dailyAll: 0,
+          blockMin: 24,
+          blockMax: 48,
+          failStreak: 4,
+          recentAvoid: 10,
+          cooldown: 0,
+          focus: true,
+          autoOffFails: 3,
+          stopFailPct: 30,
+        },
       },
       offline: { policy: 'queue', window: '2h', line: true, email: true, push: false },
       extensionOnline: !data.simulatedOffline,

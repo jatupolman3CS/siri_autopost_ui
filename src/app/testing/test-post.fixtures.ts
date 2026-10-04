@@ -1,0 +1,176 @@
+import { HttpTestingController } from '@angular/common/http/testing';
+import {
+  ApiAccount,
+  ApiAntiBan,
+  ApiBackup,
+  ApiCollection,
+  ApiDevice,
+  ApiLinkSet,
+  ApiPost,
+} from '../core/http/api.service';
+import { ACCOUNTS, WS, apiPost } from './api-testing';
+import { apiCollection, apiCollectionPost } from './collection-fixtures';
+import { FB_CONNECTED, apiLink, apiLinkSet } from './link-sets.fixtures';
+
+// Fixtures of the test post page, the anti-ban page's backup/restore and the device auto-pause specs.
+
+export const POSTS_URL = `/api/workspaces/${WS}/posts`;
+export const TEST_POST_URL = `/api/workspaces/${WS}/test-post`;
+export const BACKUP_URL = `/api/workspaces/${WS}/backup`;
+export const RESTORE_URL = `/api/workspaces/${WS}/restore`;
+export const ENGINE_URL = `/api/workspaces/${WS}/engine`;
+export const ANTI_BAN_URL = `${ENGINE_URL}/anti-ban`;
+
+/** The Facebook account a paired browser brought. */
+export const FB: ApiAccount = FB_CONNECTED;
+
+/** A link set with two usable groups (one coded), one switched off and one with a wrong address. */
+export const TEST_SET: ApiLinkSet = apiLinkSet({
+  id: 's1',
+  name: 'Condo groups',
+  accountIds: ['acc-other'],
+  links: [
+    apiLink({ id: 'a', name: 'Condo BKK', code: '#Jan24' }),
+    apiLink({ id: 'b', name: 'Condo rent', url: 'https://www.facebook.com/groups/rent' }),
+    apiLink({ id: 'off', name: 'Closed group', enabled: false, health: 'off' }),
+    apiLink({ id: 'bad', name: 'Not a group', url: 'https://example.com', valid: false }),
+  ],
+});
+
+/** A second account of the set that a browser posts for. */
+export const OTHER_ACCOUNT: ApiAccount = {
+  id: 'acc-other',
+  platform: 'fb',
+  name: 'Facebook · Laptop',
+  handle: 'Facebook',
+  defaultTarget: 'โปรไฟล์',
+  health: 'ok',
+  groups: [],
+  connected: true,
+};
+
+export const TEST_COLLECTION: ApiCollection = apiCollection({
+  id: 'c1',
+  name: 'Condo',
+  settings: { footer: 'LINE @shop', hashtags: '#condo' },
+  posts: [
+    apiCollectionPost({
+      id: 'p1',
+      collectionId: 'c1',
+      text: 'ขายคอนโด {{code}}',
+      mediaIds: ['m1', 'm2'],
+    }),
+    apiCollectionPost({ id: 'p2', collectionId: 'c1', text: 'ห้องว่างให้เช่า' }),
+  ],
+});
+
+/** A collection that asks for approval: only its approved post can be tested. */
+export const APPROVAL_COLLECTION: ApiCollection = apiCollection({
+  id: 'c2',
+  name: 'Tickets',
+  settings: { requireApproval: true },
+  posts: [
+    apiCollectionPost({ id: 't1', collectionId: 'c2', text: 'รออนุมัติ', approval: 'pending' }),
+    apiCollectionPost({ id: 't2', collectionId: 'c2', text: 'อนุมัติแล้ว' }),
+  ],
+});
+
+/** What POST test-post answers: a queued test post, due now, on the Facebook account. */
+export function testPostDto(over: Partial<ApiPost> = {}): ApiPost {
+  return apiPost({
+    id: 'tp1',
+    accountId: FB.id,
+    platform: 'fb',
+    target: 'Condo BKK',
+    content: '#Jan24\nขายคอนโด',
+    scheduledAt: new Date().toISOString(),
+    status: 'queued',
+    isTest: true,
+    linkId: 'a',
+    code: '#Jan24',
+    ...over,
+  });
+}
+
+/** A paired browser; pass `autoPausedUntil` for one the engine paused itself. */
+export function device(over: Partial<ApiDevice> = {}): ApiDevice {
+  return {
+    id: 'dev-1',
+    name: 'Shop PC',
+    browser: 'Chrome',
+    version: '2.3.0',
+    createdAt: '2026-10-01T00:00:00Z',
+    lastSeenAt: new Date().toISOString(),
+    online: true,
+    accountId: FB.id,
+    jobsPaused: false,
+    autoPausedUntil: null,
+    autoPauseReason: null,
+    ...over,
+  };
+}
+
+/** What GET engine answers for the anti-ban page (the `antiBan` part of the shared fixture, with changes). */
+export function antiBan(over: Partial<ApiAntiBan> = {}): ApiAntiBan {
+  return {
+    min: 3,
+    max: 12,
+    limits: { fb: 40, x: 20, ig: 10, tt: 5, line: 3, th: 10 },
+    typing: true,
+    scroll: true,
+    shuffle: true,
+    autoPause: true,
+    warmup: false,
+    advanced: {
+      minGap: 2,
+      dailyAll: 0,
+      blockMin: 24,
+      blockMax: 48,
+      failStreak: 4,
+      recentAvoid: 10,
+      cooldown: 0,
+      focus: true,
+      autoOffFails: 3,
+      stopFailPct: 30,
+    },
+    ...over,
+  };
+}
+
+/** A small backup file as GET backup answers it. */
+export const BACKUP: ApiBackup = {
+  version: 2,
+  createdAt: '2026-10-04T00:00:00Z',
+  collections: [],
+  linkSets: [],
+  schedules: [],
+  antiBanAdvanced: antiBan().advanced,
+  notificationRules: null,
+  autoReply: null,
+};
+
+/**
+ * Answers what the other stores ask for on events and timers (their lists, the presence) with what they
+ * already hold, so a spec about one page is not about them. The posts calls are left to the spec.
+ */
+export function flushBackground(http: HttpTestingController): void {
+  const answers: Record<string, object> = {
+    accounts: [...ACCOUNTS, FB, OTHER_ACCOUNT],
+    'link-sets': [TEST_SET],
+    collections: [TEST_COLLECTION, APPROVAL_COLLECTION],
+    devices: [device()],
+    engine: {
+      antiBan: antiBan(),
+      offline: { policy: 'queue', window: '2h', line: true, email: true, push: false },
+      extensionOnline: true,
+      simulatedOffline: false,
+      devices: 1,
+      devicesOnline: 1,
+    },
+    errors: [],
+  };
+  for (const r of http.match((x) => !x.url.startsWith(POSTS_URL) && x.method === 'GET')) {
+    const key = r.request.url.split('/').pop()!;
+    if (key in answers) r.flush(answers[key]);
+  }
+}

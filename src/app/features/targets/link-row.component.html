@@ -1,0 +1,88 @@
+<div class="row" [class.off]="!link().enabled">
+  <div class="chk">
+    <app-checkbox
+      [checked]="link().enabled"
+      [ariaLabel]="label()"
+      [disabled]="perm.readOnly()"
+      (checkedChange)="toggle($event)"
+    />
+  </div>
+  <div class="cells">
+    <input
+      class="cell"
+      [value]="link().name"
+      [placeholder]="t().ts.namePh"
+      [attr.aria-label]="t().ts.namePh"
+      [maxLength]="limits.name"
+      [disabled]="perm.readOnly()"
+      (input)="edit('name', $event)"
+    />
+    <input
+      #urlInput
+      class="cell"
+      [class.bad]="!!note()"
+      [value]="link().url"
+      [placeholder]="t().ts.urlPh"
+      [attr.aria-label]="t().ts.urlPh"
+      [attr.aria-invalid]="note() ? true : null"
+      [attr.aria-describedby]="note() ? 'note-' + link().id : null"
+      [maxLength]="limits.url"
+      [disabled]="perm.readOnly()"
+      spellcheck="false"
+      (input)="edit('url', $event)"
+    />
+    <input
+      class="cell"
+      [value]="link().code"
+      [placeholder]="t().ts.codePh"
+      [attr.aria-label]="t().ts.codePh"
+      [maxLength]="limits.code"
+      [disabled]="perm.readOnly()"
+      (input)="edit('code', $event)"
+    />
+    <label class="max" [attr.title]="t().ts.maxTitle">
+      <span>{{ t().ts.maxLabel }}</span>
+      <input
+        class="cell"
+        type="number"
+        min="0"
+        [max]="limits.dailyMax"
+        [value]="link().dailyMax"
+        [attr.aria-label]="t().ts.maxLabel"
+        [disabled]="perm.readOnly()"
+        (change)="editMax($event)"
+      />
+    </label>
+  </div>
+  <button
+    type="button"
+    class="rm"
+    [attr.aria-label]="t().common.remove"
+    [attr.title]="perm.editHint() || t().common.remove"
+    [disabled]="perm.readOnly()"
+    (click)="remove()"
+  >
+    <i class="ph ph-trash" aria-hidden="true"></i>
+  </button>
+</div>
+@if (note()) {
+  <div class="note" [id]="'note-' + link().id">{{ note() }}</div>
+}
+@if (health(); as h) {
+  <div class="health">
+    <span class="status"
+      ><span class="dot" [class.bad]="h.off" [class.warn]="!h.off"></span>{{ h.label }}</span
+    >
+    @if (h.off) {
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="perm.readOnly()"
+        [attr.title]="perm.editHint() || null"
+        (click)="reenable()"
+      >
+        {{ t().ts.enableAgain }}
+      </button>
+    }
+  </div>
+}

@@ -6,6 +6,7 @@ import { PermissionsService } from '../../core/data/permissions.service';
 import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
@@ -20,7 +21,7 @@ import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.c
 export class LibraryPageComponent {
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
-  private readonly draft = inject(DraftStore);
+  protected readonly draft = inject(DraftStore);
   private readonly i18n = inject(I18nService);
   protected readonly library = inject(LibraryStore);
   protected readonly perm = inject(PermissionsService);
@@ -34,6 +35,12 @@ export class LibraryPageComponent {
   protected readonly formErr = signal('');
 
   protected readonly uploading = signal(false);
+
+  /** The composer's draft in numbers, for the bar that leads back to it. */
+  protected readonly draftBar = computed(() => {
+    const d = this.draft.draft();
+    return fmt(this.t().lib.draftBar, { n: d.media.length, c: d.text.length });
+  });
 
   protected readonly mediaRows = computed(() => {
     const thumbs = this.library.thumbs();
@@ -82,7 +89,7 @@ export class LibraryPageComponent {
     const a = this.t().api;
     if (files.length > 1) this.notify.info(fmt(a.uploading, { n: files.length }));
     try {
-      const ok = await this.library.upload(files);
+      const ok = (await this.library.upload(files)).length;
       if (ok) this.notify.success(fmt(a.uploaded, { n: ok }));
       if (ok < files.length) this.notify.error(a.uploadFailed);
     } finally {
@@ -95,11 +102,16 @@ export class LibraryPageComponent {
       this.notify.error(fmt(this.t().api.mediaMax, { n: INPUT_LIMITS.postMedia }));
       return;
     }
-    void this.router.navigateByUrl('/app/composer');
+    this.goComposer();
   }
 
   protected useSnippet(text: string): void {
     this.draft.appendText(text);
-    void this.router.navigateByUrl('/app/composer');
+    this.goComposer();
+  }
+
+  /** Back to the post being written (the draft bar), or the composer with what was just added. */
+  protected goComposer(): void {
+    void this.router.navigate([COMPOSER_PATH], { queryParams: composerParams(this.draft.draft()) });
   }
 }

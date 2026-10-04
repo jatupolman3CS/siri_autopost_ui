@@ -2,6 +2,18 @@
 // Merged into the dictionary as t().api; same [th, en] pair shape as i18n.data.ts.
 export const AP_I18N_EXTRA = {
   authInvalid: ['อีเมลหรือรหัสผ่านไม่ถูกต้อง', 'Wrong email or password'],
+  // Google sign-in: the design handoff of 2026-10 dropped these, the real app has the button.
+  googleLogin: ['เข้าสู่ระบบด้วย Google', 'Sign in with Google'],
+  googleSignup: ['สมัครด้วย Google', 'Sign up with Google'],
+  googleOff: [
+    'ยังไม่ได้ตั้งค่า Google (ผู้ดูแลต้องตั้ง Google__ClientId ที่ API)',
+    'Google sign-in is not set up yet (the admin must set Google__ClientId on the API)',
+  ],
+  googleFailed: ['เข้าสู่ระบบด้วย Google ไม่สำเร็จ', 'Google sign-in failed'],
+  or: ['หรือ', 'or'],
+
+  // The public page of a shared client report (route report/:token).
+  reportTitle: ['รายงานผลการโพสต์', 'Posting report'],
   emailTaken: [
     'อีเมลนี้มีบัญชีอยู่แล้ว ลองเข้าสู่ระบบแทน',
     'This email already has an account. Try logging in.',
@@ -283,16 +295,6 @@ export const AP_I18N_EXTRA = {
   noGroupsYet: [
     'บัญชีนี้ยังไม่มีกลุ่ม: เปิดส่วนขยายแล้วเพิ่มกลุ่มในชุดโพสต์ก่อน',
     'This account has no groups yet: open the extension and add groups to a campaign first',
-  ],
-  sumRandom: [' (เว้นระยะแบบสุ่ม)', ' (spaced randomly)'],
-  sumSame: [' (ทุกงานเริ่มพร้อมกัน)', ' (all at the start time)'],
-  sumRepeat: [
-    'จะสร้าง {total} งานโพสต์: วันละ {n} งานใน {p} แพลตฟอร์ม ระหว่าง {t1}–{t2} รวม {days} วัน',
-    'Creates {total} tasks: {n} a day across {p} platforms between {t1}–{t2}, on {days} days',
-  ],
-  repeatNote: [
-    'การทำซ้ำตั้งคิวล่วงหน้า {n} วันนับจากวันเริ่ม ไม่ได้ทำซ้ำไปเรื่อยๆ ตั้งเวลาใหม่เมื่อคิวหมด',
-    'Repeats are queued {n} days ahead of the start date, not forever. Schedule again when the queue runs out.',
   ],
   unboundAccount: ['ยกเลิกการผูก', 'Unbound'],
   unboundHint: [

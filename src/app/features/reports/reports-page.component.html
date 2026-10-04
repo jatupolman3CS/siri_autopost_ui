@@ -1,0 +1,121 @@
+<div class="page">
+  <div class="page-head">
+    <div class="intro">
+      <h1>{{ t().rep.title }}</h1>
+      <p>{{ t().rep.sub }}</p>
+    </div>
+    <div class="seg" role="group" [attr.aria-label]="t().rep.title">
+      @for (r of ranges; track r.days) {
+        <button
+          type="button"
+          [class.on]="store.days() === r.days"
+          [attr.aria-pressed]="store.days() === r.days"
+          (click)="setDays(r.days)"
+        >
+          {{ r.label() }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <section class="panel">
+    <h2 class="h2 mb8">{{ t().rep.byGroup }}</h2>
+    @if (!store.loaded()) {
+      <p class="muted fs14 status-line" role="status">
+        @if (store.failed()) {
+          {{ t().api.engine.reportsFailed }}
+          <button type="button" class="link-btn" (click)="store.load()">
+            {{ t().api.engine.reportsRetry }}
+          </button>
+        } @else {
+          {{ t().api.loading }}
+        }
+      </p>
+    } @else if (rows().length === 0) {
+      <app-empty-state icon="ph-chart-bar" [heading]="t().api.engine.reportsEmpty" />
+    } @else {
+      <div class="tbl-wrap">
+        <div class="tbl groups">
+          <div class="th">{{ t().rep.group }}</div>
+          <div class="th">{{ t().rep.posted }}</div>
+          <div class="th">{{ t().rep.pending }}</div>
+          <div class="th">{{ t().rep.failed }}</div>
+          <div class="th">{{ t().rep.rate }}</div>
+          <div class="th">{{ t().rep.likes }}</div>
+          <div class="th">{{ t().rep.comments }}</div>
+          <div class="th"></div>
+          @for (r of rows(); track rowKey(r.group)) {
+            <div class="td name">
+              <span class="pico s24" aria-hidden="true"><i class="ph" [class]="r.icon"></i></span>
+              <span class="ellipsis" [attr.title]="r.group.name">{{ r.group.name }}</span>
+            </div>
+            <div class="td">{{ r.group.posted }}</div>
+            <div class="td">{{ r.group.pending }}</div>
+            <div class="td">{{ r.group.failed }}</div>
+            <div class="td rate">
+              <span class="ratebar" aria-hidden="true"
+                ><span [style.width.%]="r.group.rate" [style.background]="r.color"></span
+              ></span>
+              {{ r.group.rate }}%
+            </div>
+            <div class="td muted" [attr.title]="t().api.engine.reportsNoLikes">—</div>
+            <div class="td muted" [attr.title]="t().api.engine.reportsNoLikes">—</div>
+            <div class="td">
+              @if (r.canDisable) {
+                <button
+                  type="button"
+                  class="su-btn su-btn-sm su-btn-ghost"
+                  [disabled]="perm.readOnly() || disabling() !== null"
+                  [attr.title]="perm.editHint() || null"
+                  (click)="disable(r)"
+                >
+                  {{ t().rep.disable }}
+                </button>
+              }
+              @if (r.off) {
+                <app-chip>{{ t().ts.hOff }}</app-chip>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      <div class="notes small muted">
+        <p><i class="ph ph-info" aria-hidden="true"></i>{{ t().api.engine.reportsNoLikes }}</p>
+        <p><i class="ph ph-info" aria-hidden="true"></i>{{ t().api.engine.reportsScope }}</p>
+      </div>
+    }
+  </section>
+
+  <div class="grid-2">
+    <section class="panel">
+      <h2 class="h2 mb8">{{ t().rep.byPost }}</h2>
+      @if (!store.loaded()) {
+        <p class="muted fs14" role="status">{{ t().api.loading }}</p>
+      } @else if (posts().length === 0) {
+        <p class="muted fs14 none">{{ t().api.engine.reportsPostsEmpty }}</p>
+      } @else {
+        <div class="tbl byPost">
+          <div class="th">{{ t().rep.post }}</div>
+          <div class="th">{{ t().rep.used }}</div>
+          <div class="th">{{ t().rep.avgLikes }}</div>
+          @for (p of posts(); track p.collectionPostId) {
+            <div class="td postcell">
+              <span class="ellipsis" [attr.title]="p.text">{{ p.text }}</span>
+              @if (p.top) {
+                <app-chip tone="accent"
+                  ><i class="ph ph-star" aria-hidden="true"></i>{{ t().rep.best }}</app-chip
+                >
+              }
+            </div>
+            <div class="td">{{ p.used }}</div>
+            <div class="td muted" [attr.title]="t().api.engine.reportsNoLikes">—</div>
+          }
+        </div>
+      }
+    </section>
+
+    <app-client-report-card (create)="dialog.set(true)" />
+  </div>
+
+  <app-client-report-modal [open]="dialog()" (closed)="dialog.set(false)" />
+</div>
