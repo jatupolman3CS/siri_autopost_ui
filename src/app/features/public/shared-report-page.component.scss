@@ -1,0 +1,187 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+// Loading, not found and failed: a small centred box.
+.box {
+  max-width: 480px;
+  margin: 12vh auto 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  h1 {
+    margin: 0;
+    font-size: 18px;
+  }
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+  .big {
+    font-size: 40px;
+    color: var(--color-text-muted);
+  }
+}
+
+.doc {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: ap-rise 0.25s ease-out;
+}
+
+.head {
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  p {
+    margin: 4px 0 0;
+  }
+}
+.ap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: var(--color-primary);
+  font-weight: 700;
+  > i {
+    font-size: 20px;
+  }
+}
+.kind {
+  font-size: 16px;
+  font-weight: 500;
+}
+.meta {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.sec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fs14 {
+  font-size: 14px;
+  margin: 0;
+}
+
+.groups {
+  grid-template-columns: minmax(150px, 2fr) repeat(3, minmax(56px, 1fr)) minmax(110px, 1.2fr);
+  min-width: 520px;
+}
+.byPost {
+  grid-template-columns: minmax(0, 4fr) minmax(70px, 1fr);
+}
+.name,
+.postcell,
+.rate {
+  gap: 8px;
+}
+.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ratebar {
+  width: 48px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  overflow: hidden;
+  display: inline-block;
+  flex-shrink: 0;
+  > span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-full);
+  }
+}
+
+.foot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+.by {
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// Printing: a plain light page without the toolbar, the numbers and bars kept.
+@page {
+  margin: 14mm;
+}
+
+@media print {
+  :host {
+    --color-bg: #fff;
+    --color-surface: #fff;
+    --color-surface-muted: #e8eef7;
+    --color-border: #cbd5e1;
+    --color-text: #0f172a;
+    --color-text-muted: #475569;
+    min-height: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .wrap {
+    max-width: none;
+    padding: 0;
+    gap: 12px;
+  }
+  .doc {
+    animation: none;
+    gap: 16px;
+  }
+  .panel {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .ratebar,
+  .ratebar > span,
+  app-chip {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
