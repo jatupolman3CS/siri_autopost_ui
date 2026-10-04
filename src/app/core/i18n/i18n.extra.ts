@@ -2,6 +2,15 @@
 // Merged into the dictionary as t().api; same [th, en] pair shape as i18n.data.ts.
 export const AP_I18N_EXTRA = {
   authInvalid: ['อีเมลหรือรหัสผ่านไม่ถูกต้อง', 'Wrong email or password'],
+  // Google sign-in: the design handoff of 2026-10 dropped these, the real app has the button.
+  googleLogin: ['เข้าสู่ระบบด้วย Google', 'Sign in with Google'],
+  googleSignup: ['สมัครด้วย Google', 'Sign up with Google'],
+  googleOff: [
+    'ยังไม่ได้ตั้งค่า Google (ผู้ดูแลต้องตั้ง Google__ClientId ที่ API)',
+    'Google sign-in is not set up yet (the admin must set Google__ClientId on the API)',
+  ],
+  googleFailed: ['เข้าสู่ระบบด้วย Google ไม่สำเร็จ', 'Google sign-in failed'],
+  or: ['หรือ', 'or'],
   emailTaken: [
     'อีเมลนี้มีบัญชีอยู่แล้ว ลองเข้าสู่ระบบแทน',
     'This email already has an account. Try logging in.',

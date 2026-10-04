@@ -27,8 +27,13 @@ export const AP_I18N_FIXES = {
       'Posts to Facebook groups now, more platforms coming',
     ],
     s1b: [
-      'ตอนนี้โพสต์ลงกลุ่ม Facebook ได้ แพลตฟอร์มอื่น (Instagram, X, TikTok, LINE OA, Threads) จะเพิ่มภายหลัง',
-      'Facebook groups work today; Instagram, X, TikTok, LINE OA and Threads come later',
+      'ไม่ต้องให้รหัสผ่านกับเรา บัญชีอยู่ในเบราว์เซอร์ของคุณเสมอ ตอนนี้โพสต์ลงกลุ่ม Facebook ได้ แพลตฟอร์มอื่น (Instagram, X, TikTok, LINE OA, Threads) จะเพิ่มภายหลัง',
+      'No passwords handed to us; your account stays in your browser. Facebook groups work today; Instagram, X, TikTok, LINE OA and Threads come later',
+    ],
+    // The Thai text had a stray "แรก" and promised to connect any social account; only Facebook works today.
+    ctaBody: [
+      'ติดตั้งส่วนขยาย ล็อกอิน Facebook ในเบราว์เซอร์ของคุณตามปกติ และตั้งเวลาโพสต์แรกได้ภายใน 10 นาที',
+      'Install the extension, sign in to Facebook in your browser as usual and schedule your first post in 10 minutes',
     ],
     // Nothing sends reminders.
     f5b: [
@@ -51,10 +56,11 @@ export const AP_I18N_FIXES = {
     perDay: ['ต่อ 24 ชม.', 'per 24 h'],
   },
   cmp: {
-    // There are no collections or schedules pages: the composer schedules directly.
-    sub: [
-      'เขียนโพสต์ เลือกบัญชีและกลุ่มปลายทาง แล้วตั้งเวลาและการทำซ้ำในหน้านี้',
-      'Write the post, pick the accounts and groups, and set when it goes out and whether it repeats, all here',
+    // The design's "Post updated. Applies to tasks not yet sent" is not what happens: a schedule copies the
+    // composed text into every task when it queues them, so editing the library post leaves queued tasks alone.
+    updated: [
+      'อัปเดตโพสต์แล้ว งานที่จัดคิวไว้แล้วยังใช้ข้อความเดิม งานที่จัดคิวหลังจากนี้ใช้ข้อความใหม่',
+      'Post updated. Tasks already queued keep the old text; tasks queued from now on use the new one',
     ],
     // "(randomized)" was only true with the smart delay on; the summary adds its own ending.
     summary: [
@@ -105,11 +111,84 @@ export const AP_I18N_FIXES = {
     noWaiting: ['ไม่มีโพสต์ค้างรอส่วนขยาย', 'Nothing is waiting for the extension'],
   },
   err: {
+    // The design's button says the extension "re-checks" the sign-in, and its help text names TikTok and a
+    // sample "Windows 11 PC". Pressing it only marks the account as signed in again (nothing is checked).
+    signin: ['ฉันเข้าสู่ระบบแล้ว', 'I have signed in again'],
+    signinHow: [
+      'เปิด Facebook ในเบราว์เซอร์ที่ผูกส่วนขยายไว้ แล้วเข้าสู่ระบบตามปกติ จากนั้นกดปุ่มนี้',
+      'Open Facebook in the browser paired with the extension and sign in as usual, then press this',
+    ],
+    checking: ['กำลังทำเครื่องหมายว่าเข้าสู่ระบบแล้ว…', 'Marking the account as signed in again…'],
     // Reconnecting only marks the account as signed in again; it is not TikTok-specific.
     signedIn: [
       'ทำเครื่องหมายว่าเข้าสู่ระบบอีกครั้งแล้ว กดลองใหม่ได้เลย',
       'Marked as signed in again. You can retry now',
     ],
+  },
+  ts: {
+    // The design's "synced at 10:12" was a fixed sample time: the list is whatever the extension last reported.
+    importHint: [
+      'รายการกลุ่มที่ส่วนขยายซิงก์ไว้ล่าสุดของบัญชีนี้ เลือกกลุ่มที่ต้องการเพิ่มเข้าชุด กลุ่มที่อยู่ในชุดแล้วถูกข้าม',
+      'The groups the extension last synced for this account. Tick the groups to add; groups already in the set are skipped',
+    ],
+    // The design named a sample page and a sample profile. Accounts are picked from the workspace's real accounts
+    // and labelled with their real names, so these are only the generic kinds.
+    postAsPage: ['เพจ Facebook', 'Facebook page'],
+    postAsProfile: ['โปรไฟล์ส่วนตัว', 'Personal profile'],
+  },
+  ntf: {
+    // The design says the extension sends the messages and the tokens stay on the machine. Our server sends
+    // them (Telegram and LINE), and the tokens are stored on the server and never shown again.
+    sub: [
+      'รับแจ้งเตือนผ่าน Telegram หรือ LINE OA เลือกเหตุการณ์ที่ต้องการ และตั้งค่าแยกตามชุดลิงก์หรือรายกลุ่มได้ ข้อความส่งจากเซิร์ฟเวอร์ของเรา โทเค็นเก็บไว้ที่เซิร์ฟเวอร์และไม่แสดงให้เห็นอีกหลังบันทึก',
+      'Get alerts on Telegram or LINE OA, choose which events to send, and override the settings per link set or per group. Messages are sent by our server; tokens are stored on the server and never shown again after saving',
+    ],
+    // "Near the daily limit" suggests an early warning; the alert goes out when a post fails for hitting the limit.
+    eQuota: ['ถึงเพดานการโพสต์', 'Posting limit reached'],
+    // Nothing reads the bot yet: the allow-list and the switch are only saved.
+    cmdBody: [
+      'ยังใช้ไม่ได้: คำสั่งผ่านแชท (หยุด/เริ่ม/ดูสถานะ) บันทึกการตั้งค่าไว้ล่วงหน้าเท่านั้น ยังไม่มีบอทที่รับคำสั่ง',
+      'Not available yet: chat commands (stop, start, status) are only saved ahead of time, and nothing listens to the bot',
+    ],
+    cmdSample: [
+      'ตัวอย่างเมื่อเปิดให้ใช้: /status → “ทำงานอยู่ · วันนี้ 18/32 โพสต์ · ล้มเหลว 1 · รอบถัดไป 14:00”',
+      'Example once it is available: /status → “Running · today 18/32 posts · 1 failed · next round 14:00”',
+    ],
+  },
+  ai: {
+    // There is no language model: the drafts are filled in from text templates.
+    note: [
+      'โพสต์สร้างจากแม่แบบข้อความ ไม่ได้ใช้โมเดลภาษา โปรดตรวจและแก้ก่อนนำไปใช้',
+      'Posts are filled in from text templates, not written by a language model. Review and edit them before use',
+    ],
+  },
+  ar: {
+    // The rules are stored, but the extension does not read comments or reply yet.
+    sub: [
+      'ตั้งกฎตอบคอมเมนต์ตามคีย์เวิร์ดและข้อความเข้าแชทไว้ล่วงหน้าได้ แต่ตอนนี้ส่วนขยายยังไม่อ่านคอมเมนต์และยังไม่ตอบ จึงบันทึกกฎไว้เท่านั้น',
+      'Set keyword rules for replying to comments and sending a chat message ahead of time. For now the extension does not read comments or reply, so the rules are only saved',
+    ],
+    // AI writing is not gated by the plan (and is template based); only the auto-reply page is.
+    locked: ['ตอบกลับอัตโนมัติใช้ได้ในแผน Pro ขึ้นไป', 'Auto-reply is available on Pro and above'],
+  },
+  rep: {
+    // Likes and comments are not collected by the extension.
+    sub: [
+      'ดูว่ากลุ่มไหนคุ้ม โพสต์ไหนใช้บ่อย และส่งรายงานให้ลูกค้าได้จากที่นี่ ยังไม่มีข้อมูลไลก์และคอมเมนต์ เพราะส่วนขยายยังไม่อ่านกลับมา',
+      'See which groups pay off, which posts are used most, and send client reports from here. Likes and comments are not collected yet, because the extension does not read them back',
+    ],
+    // The share link is a snapshot made when it is created (valid for 30 days), not a live page.
+    fLink: [
+      'ลิงก์แชร์ (สรุปตัวเลข ณ วันที่สร้าง ใช้ได้ 30 วัน)',
+      'Shareable link (a snapshot of the numbers when it is created, valid for 30 days)',
+    ],
+    // A group is switched off where it is listed, not "in every link set".
+    disabledMsg: ['ปิดกลุ่ม {g} แล้ว', 'Group {g} switched off'],
+  },
+  test: {
+    // The test post is real, so the page shows its real state (queued, posting, result), not simulated steps.
+    // The leaves l1-l7 (opening the group, scrolling, typing...) describe steps nothing reports back, so no page uses them.
+    logTitle: ['ความคืบหน้า', 'Progress'],
   },
   reasons: {
     // The design's texts were sample cases (TikTok, LINE OA, X video size). The server uses these codes for

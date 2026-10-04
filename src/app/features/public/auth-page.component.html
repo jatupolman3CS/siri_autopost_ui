@@ -49,14 +49,14 @@
       }
     </button>
     <div class="or">
-      <span>{{ t().auth.or }}</span>
+      <span>{{ t().api.or }}</span>
     </div>
     @if (googleReady()) {
       <div #google class="google"></div>
     } @else {
       <button type="button" class="su-btn su-btn-md su-btn-full" (click)="googleOff()">
         <i class="ph ph-google-logo"></i
-        >{{ isLogin() ? t().auth.googleLogin : t().auth.googleSignup }}
+        >{{ isLogin() ? t().api.googleLogin : t().api.googleSignup }}
       </button>
     }
     <div class="switch">
