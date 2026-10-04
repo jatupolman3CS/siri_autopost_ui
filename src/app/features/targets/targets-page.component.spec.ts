@@ -166,12 +166,12 @@ describe('TargetsPageComponent', () => {
       );
     });
 
-    it('has the next-step card that goes to the schedules', async () => {
+    it('has the next-step card that opens the schedule builder', async () => {
       const { fixture, el } = await open();
-      const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
       expect(el.querySelector('.next')?.textContent).toContain(t().flow.n2);
       el.querySelector<HTMLButtonElement>('.next button')!.click();
-      expect(navigate).toHaveBeenCalledWith('/app/schedules');
+      expect(navigate).toHaveBeenCalledWith(['/app/schedules'], { queryParams: { new: 1 } });
       fixture.detectChanges();
     });
 

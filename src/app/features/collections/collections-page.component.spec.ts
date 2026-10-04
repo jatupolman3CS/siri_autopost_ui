@@ -10,7 +10,13 @@ import { ApiCollection, ApiRole } from '../../core/http/api.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiPrefsService } from '../../core/services/ui-prefs.service';
-import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  WS,
+  answerWorkspaceLoads,
+  provideApiTesting,
+  settle,
+  signIn,
+} from '../../testing/api-testing';
 import { apiCollection, apiCollectionPost } from '../../testing/collection-fixtures';
 import { CollectionsPageComponent } from './collections-page.component';
 
@@ -100,6 +106,8 @@ describe('CollectionsPageComponent', () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     try {
+      // The schedules store (names in the hints) reads posts and schedules once the page exists.
+      answerWorkspaceLoads(http);
       http.verify();
     } finally {
       TestBed.resetTestingModule();

@@ -4,22 +4,30 @@ import { Router, provideRouter } from '@angular/router';
 import { assistStorage } from '../../core/auth/token';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { ComposerPreviewService } from '../../core/data/composer-preview.service';
+import { SchedulesStore } from '../../core/data/schedules.store';
 import { DraftStore } from '../../core/data/draft.store';
 import { LibraryStore } from '../../core/data/library.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { composeFull, generatePosts, seededRandom } from '../../core/flow';
 import { ApiCollection, ApiLinkSet, ApiRole } from '../../core/http/api.service';
 import { INPUT_LIMITS } from '../../core/http/input-limits';
-import { I18nService } from '../../core/i18n/i18n.service';
+import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiPrefsService } from '../../core/services/ui-prefs.service';
-import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  WS,
+  answerWorkspaceLoads,
+  provideApiTesting,
+  settle,
+  signIn,
+} from '../../testing/api-testing';
 import {
   apiCollection,
   apiCollectionPost,
   apiLinkSet,
   apiSetLink,
 } from '../../testing/collection-fixtures';
+import { apiSchedule } from '../../testing/schedules.fixtures';
 import { ComposerPageComponent } from './composer-page.component';
 
 const BASE = `/api/workspaces/${WS}/collections`;
@@ -156,6 +164,8 @@ describe('ComposerPageComponent', () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     try {
+      // The schedules store (names in the hints) reads posts and schedules once the page exists.
+      answerWorkspaceLoads(http);
       http.verify();
     } finally {
       TestBed.resetTestingModule();
@@ -454,6 +464,20 @@ describe('ComposerPageComponent', () => {
       await choose(sel, 'c');
       expect(el.querySelector('.cmp-hint')!.textContent).toBe(t().cmp.colHintNone);
       expect(draft().draft().collectionId).toBe('c');
+    });
+
+    it('names the schedules that use the chosen collection, with their times, once they have loaded', async () => {
+      await open({ collection: 'a' });
+      const store = TestBed.inject(SchedulesStore);
+      store.schedules.set([
+        apiSchedule({ id: 'x1', name: 'Morning', collectionId: 'a', slots: ['09:00', '18:00'] }),
+        apiSchedule({ id: 'x2', name: 'Other', collectionId: 'b' }),
+      ]);
+      store.loaded.set(true);
+      await rerender();
+      expect(el.querySelector('.cmp-hint')!.textContent).toBe(
+        fmt(t().cmp.colHint, { s: 'Morning (09:00, 18:00)' }),
+      );
     });
 
     it('says an approved post goes back to draft when it is edited in a collection that needs approval', async () => {

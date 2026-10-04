@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
+import { SchedulesStore } from '../../core/data/schedules.store';
 import { DraftStore } from '../../core/data/draft.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { ApiCollection } from '../../core/http/api.service';
@@ -24,6 +25,7 @@ const PAGE = 50;
 })
 export class CollectionCardComponent {
   private readonly store = inject(CollectionsStore);
+  private readonly schedules = inject(SchedulesStore);
   private readonly draft = inject(DraftStore);
   private readonly router = inject(Router);
   protected readonly perm = inject(PermissionsService);
@@ -38,11 +40,13 @@ export class CollectionCardComponent {
   protected readonly meta = computed(() => {
     const t = this.t();
     const c = this.collection();
-    return (
-      fmt(t.col.postsN, { n: c.posts.length }) +
-      ' · ' +
-      (c.scheduleCount ? fmt(t.api.flow.usedInN, { n: c.scheduleCount }) : t.col.notUsed)
-    );
+    const names = this.schedules.loaded() ? this.schedules.namesUsingCollection(c.id) : [];
+    const used = !c.scheduleCount
+      ? t.col.notUsed
+      : names.length
+        ? fmt(t.col.usedIn, { s: names.join(', ') })
+        : fmt(t.api.flow.usedInN, { n: c.scheduleCount });
+    return fmt(t.col.postsN, { n: c.posts.length }) + ' · ' + used;
   });
   protected readonly posts = computed(() => this.collection().posts.slice(0, this.shown()));
   protected readonly more = computed(() =>

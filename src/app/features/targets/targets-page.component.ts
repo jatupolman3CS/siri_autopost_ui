@@ -64,6 +64,6 @@ export class TargetsPageComponent {
   }
 
   protected next(): void {
-    void this.router.navigateByUrl('/app/schedules');
+    void this.router.navigate(['/app/schedules'], { queryParams: { new: 1 } });
   }
 }

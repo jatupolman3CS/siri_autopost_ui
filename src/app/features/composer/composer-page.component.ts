@@ -11,6 +11,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { ComposerPreviewService } from '../../core/data/composer-preview.service';
+import { SchedulesStore } from '../../core/data/schedules.store';
 import { DraftStore } from '../../core/data/draft.store';
 import { LibraryStore } from '../../core/data/library.store';
 import { PermissionsService } from '../../core/data/permissions.service';
@@ -51,6 +52,7 @@ export class ComposerPageComponent {
   private readonly notify = inject(NotificationService);
   private readonly library = inject(LibraryStore);
   private readonly previewSets = inject(ComposerPreviewService);
+  private readonly schedules = inject(SchedulesStore);
   private readonly prefs = inject(UiPrefsService);
   protected readonly collections = inject(CollectionsStore);
   protected readonly store = inject(DraftStore);
@@ -95,13 +97,17 @@ export class ComposerPageComponent {
     fmt(this.t().cmp.mediaSel, { n: this.d().media.length }),
   );
 
-  /** Which schedules use the collection (their number: the collection carries no more) and what editing does. */
+  /** Which schedules use the collection (named once the schedules have arrived, else their number). */
   protected readonly collectionHint = computed(() => {
     const c = this.target();
     if (!c) return this.collections.collections().length ? '' : this.t().api.flow.cmpNoCollections;
-    return c.scheduleCount
-      ? fmt(this.t().api.flow.cmpColHint, { n: c.scheduleCount })
-      : this.t().cmp.colHintNone;
+    if (!c.scheduleCount) return this.t().cmp.colHintNone;
+    const used = this.schedules.loaded() ? this.schedules.usingCollection(c.id) : [];
+    return used.length
+      ? fmt(this.t().cmp.colHint, {
+          s: used.map((x) => `${x.name} (${x.slots.join(', ')})`).join(' · '),
+        })
+      : fmt(this.t().api.flow.cmpColHint, { n: c.scheduleCount });
   });
   /** An approved post of a collection that needs approval goes back to draft when it is edited. */
   protected readonly editResets = computed(() => {
