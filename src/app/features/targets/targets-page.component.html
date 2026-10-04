@@ -1,0 +1,72 @@
+<div class="page">
+  <app-flow-steps [current]="2" />
+
+  <div class="page-head">
+    <div class="intro">
+      <h1>{{ t().ts.title }}</h1>
+      <p>{{ t().ts.sub }}</p>
+      <app-perm-note level="edit" />
+    </div>
+    <div class="actions">
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="!store.setCount()"
+        (click)="exportCsv()"
+      >
+        <i class="ph ph-download-simple"></i>{{ t().ts.csvExport }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="perm.readOnly()"
+        [attr.title]="perm.editHint() || null"
+        (click)="open('csv')"
+      >
+        <i class="ph ph-upload-simple"></i>{{ t().ts.csvImport }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        [disabled]="perm.readOnly()"
+        [attr.title]="perm.editHint() || null"
+        (click)="open('set')"
+      >
+        <i class="ph ph-plus"></i>{{ t().ts.newSet }}
+      </button>
+    </div>
+  </div>
+
+  <div class="panel code">
+    <i class="ph ph-hash" aria-hidden="true"></i>
+    <div class="min0">
+      <div class="fw6">{{ t().ts.codeTitle }}</div>
+      <p>{{ t().ts.codeBody }}</p>
+    </div>
+  </div>
+
+  @if (!store.loaded()) {
+    <p class="muted fs14" role="status">{{ t().api.loading }}</p>
+  } @else {
+    @for (s of store.sets(); track s.id) {
+      <app-link-set-card
+        [set]="s"
+        (bulk)="open('bulk', s.id)"
+        (importGroups)="open('import', s.id)"
+      />
+    } @empty {
+      <app-empty-state
+        icon="ph-link"
+        [heading]="t().api.flow.emptyLinkSetsTitle"
+        [description]="t().api.flow.emptyLinkSetsBody"
+      />
+    }
+  }
+
+  <app-next-step [label]="t().flow.n2" (go)="next()" />
+</div>
+
+<app-new-set-modal [open]="dialog() === 'set'" (closed)="close()" />
+<app-bulk-links-modal [open]="dialog() === 'bulk'" [setId]="dialogSet()" (closed)="close()" />
+<app-import-groups-modal [open]="dialog() === 'import'" [setId]="dialogSet()" (closed)="close()" />
+<app-csv-links-modal [open]="dialog() === 'csv'" (closed)="close()" />

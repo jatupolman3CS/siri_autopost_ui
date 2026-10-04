@@ -1,0 +1,119 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 0;
+  border-top: 1px solid var(--color-border);
+  &.off {
+    opacity: 0.6;
+  }
+}
+
+// The checkbox's own label is empty, so its flex gap would widen the column past the 44px hit area.
+.chk {
+  flex: none;
+  width: 44px;
+}
+
+// Name, address, code and cap: as many columns as fit, four at most on a wide screen.
+.cells {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+.cell {
+  height: 44px;
+  width: 100%;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 14px;
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+  &:disabled {
+    cursor: not-allowed;
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+  }
+  &.bad {
+    border-color: var(--color-danger);
+  }
+}
+
+.max {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  span {
+    white-space: nowrap;
+  }
+  .cell {
+    width: 76px;
+  }
+}
+
+.rm {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  &:hover:not(:disabled) {
+    background: var(--color-surface-muted);
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--color-bg),
+      0 0 0 4px var(--color-focus-ring);
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.note {
+  padding: 0 0 8px 48px;
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.health {
+  padding: 0 0 8px 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dot.bad {
+  background: var(--color-danger);
+}
+.dot.warn {
+  background: var(--color-warning);
+}

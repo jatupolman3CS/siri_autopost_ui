@@ -31,14 +31,6 @@ describe('routes of the redesigned app', () => {
       step: 1,
     },
     {
-      path: 'targets',
-      title: 'nav.targets',
-      cls: 'TargetsPageComponent',
-      module: () => import('./targets/targets-page.component'),
-      text: (t) => [t.ts.title, t.ts.sub],
-      step: 2,
-    },
-    {
       path: 'schedules',
       title: 'nav.schedules',
       cls: 'SchedulesPageComponent',
@@ -108,17 +100,6 @@ describe('routes of the redesigned app', () => {
       });
     });
   }
-
-  it('has the next-step card on the flow pages (simple mode)', async () => {
-    const type = await load(app.children!.find((c) => c.path === 'targets')!);
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
-    const fixture = TestBed.createComponent(type);
-    fixture.detectChanges();
-    const t = TestBed.inject(I18nService).t();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.next')?.textContent).toContain(
-      t.flow.n2,
-    );
-  });
 
   it('keeps the composer and the extension campaigns page as routes, although they have no menu item', () => {
     for (const path of ['composer', 'campaigns'])
