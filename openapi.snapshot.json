@@ -1042,6 +1042,96 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/backup": {
+      "get": {
+        "tags": [
+          "Backup"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/restore": {
+      "post": {
+        "tags": [
+          "Backup"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/plans": {
       "get": {
         "tags": [
@@ -4331,6 +4421,283 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/schedules": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScheduleRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScheduleRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleCreatedDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/schedules/{id}/active": {
+      "put": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/schedules/{id}": {
+      "delete": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/schedules/best-times": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "utcOffsetMinutes",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/test-post": {
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPostRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPostRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestPostRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/webhooks/stripe": {
       "post": {
         "tags": [
@@ -5122,6 +5489,414 @@
           },
           "on": {
             "type": "boolean"
+          }
+        }
+      },
+      "BackupAutoReplyDto": {
+        "required": [
+          "on",
+          "rules"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": "boolean"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupAutoReplyRuleDto"
+            }
+          }
+        }
+      },
+      "BackupAutoReplyRuleDto": {
+        "required": [
+          "keywords",
+          "reply",
+          "inbox",
+          "collection",
+          "on"
+        ],
+        "type": "object",
+        "properties": {
+          "keywords": {
+            "type": "string"
+          },
+          "reply": {
+            "type": "string"
+          },
+          "inbox": {
+            "type": "string"
+          },
+          "collection": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "on": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BackupCollectionDto": {
+        "required": [
+          "name",
+          "description",
+          "icon",
+          "settings",
+          "posts"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/CollectionSettingsDto"
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupPostDto"
+            }
+          }
+        }
+      },
+      "BackupDto": {
+        "required": [
+          "version",
+          "createdAt",
+          "collections",
+          "linkSets",
+          "schedules",
+          "antiBanAdvanced",
+          "notificationRules",
+          "autoReply"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupCollectionDto"
+            }
+          },
+          "linkSets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupLinkSetDto"
+            }
+          },
+          "schedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupScheduleDto"
+            }
+          },
+          "antiBanAdvanced": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AdvancedAntiBanDto"
+              }
+            ]
+          },
+          "notificationRules": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BackupNotificationsDto"
+              }
+            ]
+          },
+          "autoReply": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BackupAutoReplyDto"
+              }
+            ]
+          }
+        }
+      },
+      "BackupGroupNotifyRuleDto": {
+        "required": [
+          "url",
+          "channel",
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NotifyEventsDto"
+              }
+            ]
+          }
+        }
+      },
+      "BackupLinkDto": {
+        "required": [
+          "name",
+          "url",
+          "code",
+          "dailyMax",
+          "enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "dailyMax": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BackupLinkSetDto": {
+        "required": [
+          "name",
+          "postAsAccountId",
+          "accountIds",
+          "links"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "postAsAccountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "accountIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupLinkDto"
+            }
+          }
+        }
+      },
+      "BackupNotificationsDto": {
+        "required": [
+          "channel",
+          "events",
+          "sets"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "$ref": "#/components/schemas/NotifyEventsDto"
+          },
+          "sets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupSetNotifyRuleDto"
+            }
+          }
+        }
+      },
+      "BackupPostDto": {
+        "required": [
+          "text",
+          "mediaIds",
+          "approval"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "mediaIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "approval": {
+            "$ref": "#/components/schemas/PostApproval"
+          }
+        }
+      },
+      "BackupScheduleDto": {
+        "required": [
+          "name",
+          "collection",
+          "linkSet",
+          "mode",
+          "times",
+          "everyHours",
+          "firstTime",
+          "startDate",
+          "onceTime",
+          "order",
+          "dripFrom",
+          "dripTo",
+          "dripCount",
+          "bumpHours",
+          "autoDeleteDays",
+          "overrides",
+          "active",
+          "utcOffsetMinutes"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "collection": {
+            "type": "string"
+          },
+          "linkSet": {
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ScheduleMode"
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "everyHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstTime": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "onceTime": {
+            "type": "string"
+          },
+          "order": {
+            "$ref": "#/components/schemas/PostOrder"
+          },
+          "dripFrom": {
+            "type": "string"
+          },
+          "dripTo": {
+            "type": "string"
+          },
+          "dripCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bumpHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "autoDeleteDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overrides": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "utcOffsetMinutes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "BackupSetNotifyRuleDto": {
+        "required": [
+          "linkSet",
+          "channel",
+          "events",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "linkSet": {
+            "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/NotifyChannel"
+          },
+          "events": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NotifyEventsDto"
+              }
+            ]
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BackupGroupNotifyRuleDto"
+            }
           }
         }
       },
@@ -5969,6 +6744,19 @@
           },
           "jobsPaused": {
             "type": "boolean"
+          },
+          "autoPausedUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "autoPauseReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -6177,6 +6965,19 @@
           },
           "jobsPaused": {
             "type": "boolean"
+          },
+          "autoPausedUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "autoPauseReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -7579,6 +8380,12 @@
           }
         }
       },
+      "PostOrder": {
+        "enum": [
+          "shuffle",
+          "rotate"
+        ]
+      },
       "PostStatus": {
         "enum": [
           "queued",
@@ -7813,6 +8620,28 @@
           }
         }
       },
+      "RestoreResultDto": {
+        "required": [
+          "collections",
+          "linkSets",
+          "schedules"
+        ],
+        "type": "object",
+        "properties": {
+          "collections": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "linkSets": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "schedules": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "ResultRequest": {
         "required": [
           "ok",
@@ -7895,6 +8724,298 @@
           }
         }
       },
+      "SaveScheduleRequest": {
+        "required": [
+          "name",
+          "collectionId",
+          "linkSetId",
+          "mode",
+          "times",
+          "everyHours",
+          "firstTime",
+          "startDate",
+          "onceTime",
+          "order",
+          "dripFrom",
+          "dripTo",
+          "dripCount",
+          "bumpHours",
+          "autoDeleteDays",
+          "overrides",
+          "utcOffsetMinutes"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linkSetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ScheduleMode"
+          },
+          "times": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "everyHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstTime": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "startDate": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "onceTime": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "$ref": "#/components/schemas/PostOrder"
+          },
+          "dripFrom": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dripTo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dripCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bumpHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "autoDeleteDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overrides": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "utcOffsetMinutes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ScheduleCreatedDto": {
+        "required": [
+          "schedule",
+          "created",
+          "firstAt",
+          "lastAt"
+        ],
+        "type": "object",
+        "properties": {
+          "schedule": {
+            "$ref": "#/components/schemas/ScheduleDto"
+          },
+          "created": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ScheduleDto": {
+        "required": [
+          "id",
+          "name",
+          "collectionId",
+          "linkSetId",
+          "mode",
+          "times",
+          "everyHours",
+          "firstTime",
+          "startDate",
+          "onceTime",
+          "order",
+          "dripFrom",
+          "dripTo",
+          "dripCount",
+          "bumpHours",
+          "autoDeleteDays",
+          "overrides",
+          "active",
+          "utcOffsetMinutes",
+          "slots",
+          "targetCount",
+          "perDay",
+          "usablePosts",
+          "todayCount",
+          "nextRunAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linkSetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ScheduleMode"
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "everyHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "firstTime": {
+            "type": "string"
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "onceTime": {
+            "type": "string"
+          },
+          "order": {
+            "$ref": "#/components/schemas/PostOrder"
+          },
+          "dripFrom": {
+            "type": "string"
+          },
+          "dripTo": {
+            "type": "string"
+          },
+          "dripCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bumpHours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "autoDeleteDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "overrides": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "utcOffsetMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targetCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "perDay": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "usablePosts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "todayCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nextRunAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ScheduleMode": {
+        "enum": [
+          "daily",
+          "weekdays",
+          "weekend",
+          "interval",
+          "drip",
+          "once"
+        ]
+      },
       "ScheduleRequest": {
         "required": [
           "content",
@@ -7956,6 +9077,17 @@
           "lastAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "SetActiveRequest": {
+        "required": [
+          "active"
+        ],
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean"
           }
         }
       },
@@ -8274,6 +9406,54 @@
           },
           "chatId": {
             "type": "string"
+          }
+        }
+      },
+      "TestPostRequest": {
+        "required": [
+          "linkSetId",
+          "linkId",
+          "accountId",
+          "collectionId",
+          "collectionPostId",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "linkSetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "linkId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "collectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "collectionPostId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8695,6 +9875,9 @@
       "name": "AutoReply"
     },
     {
+      "name": "Backup"
+    },
+    {
       "name": "Billing"
     },
     {
@@ -8732,6 +9915,9 @@
     },
     {
       "name": "SharedReports"
+    },
+    {
+      "name": "Schedules"
     },
     {
       "name": "StripeWebhook"

@@ -61,6 +61,14 @@ export type ApiReport = S['ReportDto'];
 export type ApiReportGroup = S['ReportGroupDto'];
 export type ApiReportShare = S['ReportShareDto'];
 export type ApiSharedReport = S['SharedReportDto'];
+export type ApiSchedule = S['ScheduleDto'];
+export type ApiSaveSchedule = S['SaveScheduleRequest'];
+export type ApiScheduleCreated = S['ScheduleCreatedDto'];
+export type ApiScheduleMode = S['ScheduleMode'];
+export type ApiPostOrder = S['PostOrder'];
+export type ApiTestPost = S['TestPostRequest'];
+export type ApiBackup = S['BackupDto'];
+export type ApiRestoreResult = S['RestoreResultDto'];
 
 /** Set on a request whose errors the caller shows itself (no toast from errorInterceptor). */
 export const QUIET = new HttpContextToken<boolean>(() => false);
@@ -562,6 +570,41 @@ export class ApiService {
     return run(
       this.http.get<ApiSharedReport>(`/api/reports/shared/${encodeURIComponent(token)}`, quiet),
     );
+  }
+  // Schedules ("ตารางโพสต์"): a collection paired with a link set and posting times.
+  schedules(ws: string, background = false) {
+    return run(
+      this.http.get<ApiSchedule[]>(`/api/workspaces/${ws}/schedules`, background ? quiet : {}),
+    );
+  }
+  /** Creates the schedule and queues its posts 14 days ahead (one day for "once"). */
+  createSchedule(ws: string, body: ApiSaveSchedule) {
+    return run(this.http.post<ApiScheduleCreated>(`/api/workspaces/${ws}/schedules`, body));
+  }
+  /** Pausing drops its future queued posts; resuming queues them again. */
+  setScheduleActive(ws: string, id: string, active: boolean) {
+    const body: S['SetActiveRequest'] = { active };
+    return run(this.http.put<ApiSchedule>(`/api/workspaces/${ws}/schedules/${id}/active`, body));
+  }
+  deleteSchedule(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/schedules/${id}`));
+  }
+  /** The hours (HH:00) with the most successful posts in the last 30 days, in the person's time zone. */
+  bestTimes(ws: string, utcOffsetMinutes: number) {
+    const params = new HttpParams().set('utcOffsetMinutes', String(utcOffsetMinutes));
+    return run(this.http.get<string[]>(`/api/workspaces/${ws}/schedules/best-times`, { params }));
+  }
+  /** One real post to a group now, to check the extension, the group code and the media. */
+  testPost(ws: string, body: ApiTestPost) {
+    return run(this.http.post<ApiPost>(`/api/workspaces/${ws}/test-post`, body));
+  }
+  /** Every collection, link set, schedule and setting as one file (no tokens). */
+  backup(ws: string) {
+    return run(this.http.get<ApiBackup>(`/api/workspaces/${ws}/backup`));
+  }
+  /** Replaces the workspace's collections, link sets, schedules and settings with a backup. */
+  restore(ws: string, body: ApiBackup) {
+    return run(this.http.post<ApiRestoreResult>(`/api/workspaces/${ws}/restore`, body));
   }
 }
 
