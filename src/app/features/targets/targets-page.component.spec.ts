@@ -883,19 +883,78 @@ describe('TargetsPageComponent', () => {
       expect(cards(el)).toHaveLength(2);
     });
 
-    it('reads a file into the box', async () => {
-      const { fixture } = await openCsv();
+    /** Chooses `file` in the dialog's file input, as the browser reports it. */
+    async function choose(fixture: { detectChanges(): void }, file: File) {
       const input = modalBody()!.querySelector<HTMLInputElement>('input[type=file]')!;
-      const file = new File(['set,name,url\nA,B,https://www.facebook.com/groups/x'], 'links.csv', {
-        type: 'text/csv',
-      });
       Object.defineProperty(input, 'files', { value: [file], configurable: true });
       input.dispatchEvent(new Event('change'));
       await settle();
       fixture.detectChanges();
-      expect(modalBody()!.querySelector('textarea')!.value).toContain(
-        'https://www.facebook.com/groups/x',
+    }
+    const box = () => modalBody()!.querySelector('textarea')!;
+
+    it('reads a file into the box', async () => {
+      const { fixture } = await openCsv();
+      const file = new File(['set,name,url\nA,B,https://www.facebook.com/groups/x'], 'links.csv', {
+        type: 'text/csv',
+      });
+      await choose(fixture, file);
+      expect(box().value).toContain('https://www.facebook.com/groups/x');
+    });
+
+    it('reads it as UTF-8 (Thai text intact) and drops a leading BOM', async () => {
+      const { fixture } = await openCsv();
+      const text = 'set,name,url\nชุดคอนโด,ตกแต่งคอนโด,https://www.facebook.com/groups/x';
+      const bytes = new Uint8Array([0xef, 0xbb, 0xbf, ...new TextEncoder().encode(text)]);
+      await choose(fixture, new File([bytes], 'links.csv', { type: 'text/csv' }));
+      expect(box().value).toBe(text);
+      expect(box().value.charCodeAt(0)).not.toBe(0xfeff);
+    });
+
+    it('says in the hint that the file must be UTF-8 and at most 2 MB', async () => {
+      await openCsv();
+      const hint = modalBody()!.querySelector('.hint')!.textContent!;
+      expect(hint).toBe(t().ts.csvHint);
+      expect(hint).toContain('UTF-8');
+      expect(hint).toContain('2 MB');
+    });
+
+    it('refuses a file over 2 MB with a toast, and leaves the box alone', async () => {
+      const { fixture } = await openCsv();
+      type(box(), 'what was typed');
+      const big = new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'big.csv', { type: 'text/csv' });
+      await choose(fixture, big);
+      expect(box().value).toBe('what was typed');
+      const toast = toasts().find((x) => x.message === t().api.flow.csvTooBig);
+      expect(toast?.type).toBe('error');
+      expect(modalBody()!.querySelector('.su-field-err')).toBeNull();
+    });
+
+    it('takes a file of exactly 2 MB', async () => {
+      const { fixture } = await openCsv();
+      const line = 'set,name,url\n';
+      const body = 'a'.repeat(2 * 1024 * 1024 - line.length);
+      await choose(fixture, new File([line + body], 'edge.csv', { type: 'text/csv' }));
+      expect(box().value.length).toBe(2 * 1024 * 1024);
+      expect(toasts().some((x) => x.message === t().api.flow.csvTooBig)).toBe(false);
+    });
+
+    it('says when the file is not UTF-8 and leaves the box alone', async () => {
+      const { fixture } = await openCsv();
+      type(box(), 'what was typed');
+      // A Windows-874 file: the Thai letters are single bytes that are not valid UTF-8.
+      await choose(fixture, new File([new Uint8Array([0xa1, 0xb2, 0xc3, 0x2c])], 'old.csv'));
+      expect(box().value).toBe('what was typed');
+      expect(modalBody()!.querySelector('.su-field-err')?.textContent).toBe(
+        t().api.flow.csvNotUtf8,
       );
+    });
+
+    it('can choose the same file again', async () => {
+      const { fixture } = await openCsv();
+      const input = modalBody()!.querySelector<HTMLInputElement>('input[type=file]')!;
+      await choose(fixture, new File(['a'], 'a.csv'));
+      expect(input.value).toBe('');
     });
   });
 

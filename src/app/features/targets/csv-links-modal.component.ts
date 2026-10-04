@@ -16,6 +16,14 @@ import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 
+/** The biggest CSV file the import reads: plenty for a workspace's links, and the text box stays responsive. */
+export const CSV_MAX_BYTES = 2 * 1024 * 1024;
+
+/** The bytes as UTF-8 text without a leading BOM. Throws when they are not valid UTF-8. */
+function utf8Text(bytes: ArrayBuffer): string {
+  return new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^\uFEFF/, '');
+}
+
 // "Import CSV": rows `set, name, url, code` pasted from Excel or read from a file. Missing sets are created
 // by name; the server skips repeated and invalid addresses and counts them.
 @Component({
@@ -98,16 +106,30 @@ export class CsvLinksModalComponent {
     });
   }
 
-  /** Puts the file's text into the box, where it can still be checked and edited before importing. */
+  /**
+   * Puts the file's text into the box, where it can still be checked and edited before importing. The file is
+   * read as UTF-8 with a leading BOM dropped; a bigger one (CSV_MAX_BYTES) or one that is not UTF-8 is refused.
+   */
   protected async readFile(input: HTMLInputElement): Promise<void> {
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
+    if (file.size > CSV_MAX_BYTES) {
+      this.notify.error(this.t().api.flow.csvTooBig);
+      return;
+    }
+    let bytes: ArrayBuffer;
     try {
-      this.text.set(await file.text());
-      this.error.set('');
+      bytes = await file.arrayBuffer();
     } catch {
       this.error.set(this.t().api.flow.csvFileError);
+      return;
+    }
+    try {
+      this.text.set(utf8Text(bytes));
+      this.error.set('');
+    } catch {
+      this.error.set(this.t().api.flow.csvNotUtf8);
     }
   }
 

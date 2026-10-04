@@ -96,6 +96,15 @@ export const AP_I18N_FLOW = {
   // CSV import: the text box, or a file read in the browser.
   csvChooseFile: ['เลือกไฟล์ CSV', 'Choose a CSV file'],
   csvFileError: ['อ่านไฟล์นี้ไม่ได้', 'Could not read this file'],
+  // The file is read in the browser as UTF-8 (a BOM is dropped) and is at most 2 MB.
+  csvTooBig: [
+    'ไฟล์ใหญ่เกิน 2 MB เลือกไฟล์ที่เล็กกว่านี้ หรือแบ่งเป็นหลายไฟล์',
+    'The file is larger than 2 MB. Choose a smaller file or split it into several',
+  ],
+  csvNotUtf8: [
+    'ไฟล์นี้ไม่ใช่ UTF-8 ใน Excel ให้บันทึกเป็น “CSV UTF-8” แล้วเลือกใหม่',
+    'This file is not UTF-8. In Excel, save it as “CSV UTF-8” and choose it again',
+  ],
   csvNoRows: [
     'ไม่มีแถวที่ใช้ได้ แต่ละแถวต้องมีชื่อชุดและลิงก์กลุ่ม Facebook',
     'No usable rows: each row needs a set name and a Facebook group link',

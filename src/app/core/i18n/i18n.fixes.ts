@@ -174,6 +174,11 @@ export const AP_I18N_FIXES = {
     // switched off by hand. Only the failure case has its own text (hOffReason, with the count); a link that is
     // off with no failures was switched off on purpose, so "auto-disabled" would be wrong.
     hOff: ['ปิดใช้งานอยู่', 'Switched off'],
+    // The file is read as UTF-8 and may be at most 2 MB; the design only talked about pasting.
+    csvHint: [
+      'วางข้อมูลจาก Excel หรือเลือกไฟล์ CSV ที่เป็น UTF-8 (ไม่เกิน 2 MB): ชุดลิงก์, ชื่อกลุ่ม, ลิงก์, รหัสกลุ่ม (คั่นด้วยจุลภาคหรือแท็บ) ชุดที่ยังไม่มีจะถูกสร้างให้',
+      'Paste rows from Excel or choose a UTF-8 CSV file (up to 2 MB): set, group name, link, group code (comma or tab separated). Missing sets are created',
+    ],
   },
   ntf: {
     // The design says the extension sends the messages and the tokens stay on the machine. Our server sends
