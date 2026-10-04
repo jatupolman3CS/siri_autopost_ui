@@ -67,6 +67,8 @@ export interface CampaignPost {
   id: string;
   text: string;
   imageIds: string[];
+  /** http(s) links of media kept in object storage, fetched when the post goes out. */
+  imageUrls: string[];
   groupUrls: string[];
 }
 
