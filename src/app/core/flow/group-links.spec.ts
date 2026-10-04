@@ -341,6 +341,51 @@ describe('parseLinkCsv', () => {
   });
 });
 
+describe('CSV formula injection', () => {
+  const links = [
+    {
+      name: '=HYPERLINK("http://evil","x")',
+      url: G + 'a',
+      code: '+66 812345678',
+      enabled: true,
+      dailyMax: 0,
+    },
+    { name: '@cmd', url: G + 'b', code: '-1', enabled: true, dailyMax: 3 },
+  ];
+
+  it('linksToCsv writes formula-like names and codes as text and keeps numbers', () => {
+    const csv = linksToCsv([{ name: '=SET', links }]);
+    const lines = csv.slice(1).split('\r\n');
+    expect(lines[1]).toBe(`'=SET,"'=HYPERLINK(""http://evil"",""x"")",${G}a,'+66 812345678,1,0`);
+    expect(lines[2]).toBe(`'=SET,'@cmd,${G}b,'-1,1,3`);
+  });
+
+  it('an exported file read back gives the original names and codes', () => {
+    const csv = linksToCsv([{ name: '=SET', links }]);
+    const r = parseLinkCsv(csv);
+    expect(r.invalid).toBe(0);
+    expect(r.rows).toEqual([
+      { set: '=SET', name: '=HYPERLINK("http://evil","x")', url: G + 'a', code: '+66 812345678' },
+      { set: '=SET', name: '@cmd', url: G + 'b', code: '-1' },
+    ]);
+  });
+
+  it('postsToCsv guards the post text', () => {
+    const csv = postsToCsv([
+      {
+        name: '-promo',
+        posts: [{ text: '=cmd|"/c calc"!A1', mediaIds: ['m'], approval: 'approved' }],
+      },
+    ]);
+    expect(csv.slice(1).split('\r\n')[1]).toBe(`'-promo,"'=cmd|""/c calc""!A1",1,approved`);
+  });
+
+  it('a file typed by hand with an ordinary leading apostrophe is left alone', () => {
+    const r = parseLinkCsv("'A,'n,facebook.com/groups/abc,'c");
+    expect(r.rows).toEqual([{ set: "'A", name: "'n", url: G + 'abc', code: "'c" }]);
+  });
+});
+
 describe('previewCsvImport', () => {
   const rows = (text: string) => parseLinkCsv(text).rows;
 

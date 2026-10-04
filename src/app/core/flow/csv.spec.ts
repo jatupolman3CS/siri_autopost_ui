@@ -1,4 +1,4 @@
-import { CSV_BOM, csvCell, csvLine, csvText, parseCsvRecords } from './csv';
+import { CSV_BOM, csvCell, csvLine, csvText, parseCsvRecords, unescapeFormulaCell } from './csv';
 
 describe('csvCell', () => {
   it('leaves plain text, Thai text and numbers unquoted', () => {
@@ -24,6 +24,43 @@ describe('csvCell', () => {
   it('writes booleans as words', () => {
     expect(csvCell(true)).toBe('true');
     expect(csvCell(false)).toBe('false');
+  });
+});
+
+describe('csvCell formula guard', () => {
+  it.each(['=1+1', '+SUM(A1)', '-2+3', '@SUM(A1)', '=HYPERLINK("http://x","y")'])(
+    'puts an apostrophe in front of the formula-like text %s',
+    (text) => {
+      const cell = csvCell(text);
+      expect(cell.startsWith(`'${text[0]}`) || cell.startsWith(`"'${text[0]}`)).toBe(true);
+    },
+  );
+
+  it('guards a leading TAB and CR (and still quotes them)', () => {
+    expect(csvCell('\t=cmd')).toBe(`"'\t=cmd"`);
+    expect(csvCell('\rx')).toBe(`"'\rx"`);
+  });
+
+  it('writes the apostrophe outside the quotes of a quoted cell', () => {
+    expect(csvCell('=A1,B1')).toBe(`"'=A1,B1"`);
+  });
+
+  it('leaves numbers, booleans and ordinary text alone', () => {
+    expect(csvCell(-5)).toBe('-5');
+    expect(csvCell(0)).toBe('0');
+    expect(csvCell(true)).toBe('true');
+    expect(csvCell('a=b')).toBe('a=b');
+    expect(csvCell('5-3')).toBe('5-3');
+    expect(csvCell('say @home')).toBe('say @home');
+    expect(csvCell("'plain")).toBe("'plain");
+  });
+
+  it('unescapeFormulaCell is the inverse, also for text that begins with an apostrophe', () => {
+    for (const text of ['=1+1', '-x', '@a', '\tx', "'=x", "''-x", "'plain", 'plain', '', "'"]) {
+      const written = csvCell(text);
+      const back = parseCsvRecords(`a,${written}`)[0][1];
+      expect(unescapeFormulaCell(back)).toBe(text);
+    }
   });
 });
 

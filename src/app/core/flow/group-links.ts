@@ -2,7 +2,7 @@
 // derivation, the bulk `url | code` lines of POST link-sets/{id}/links/bulk and the CSV rows of
 // POST link-sets/import-csv). The server repeats every check, these helpers only give the web
 // app the same answer before it sends anything.
-import { CSV_BOM, csvText, parseCsvRecords } from './csv';
+import { CSV_BOM, csvText, parseCsvRecords, unescapeFormulaCell } from './csv';
 
 /** Same pattern as the server: a Facebook group address, any host spelling, any trailing path. */
 const GROUP_URL =
@@ -195,8 +195,10 @@ const isCsvHeader = (cells: readonly string[]) =>
 export function parseLinkCsv(text: string | null | undefined): CsvParseResult {
   const rows: CsvLinkRow[] = [];
   let invalid = 0;
-  parseCsvRecords(text).forEach((cells, index) => {
-    if (index === 0 && isCsvHeader(cells)) return;
+  parseCsvRecords(text).forEach((rawCells, index) => {
+    if (index === 0 && isCsvHeader(rawCells)) return;
+    // The export puts an apostrophe in front of text that a spreadsheet would run as a formula.
+    const cells = rawCells.map(unescapeFormulaCell);
     if (cells.length < 3) {
       invalid++;
       return;

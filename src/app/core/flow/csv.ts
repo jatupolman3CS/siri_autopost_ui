@@ -8,10 +8,28 @@ export const CSV_BOM = '\ufeff';
 
 export const CSV_MIME = 'text/csv;charset=utf-8';
 
-/** One cell: quoted (and inner quotes doubled) only when it holds a separator, quote or line break. */
+// A text cell that starts with one of these is read as a formula by spreadsheets (CSV injection).
+const FORMULA_START = /^'*[=+\-@\t\r]/;
+const ESCAPED_FORMULA = /^'+[=+\-@\t\r]/;
+
+/**
+ * One cell: quoted (and inner quotes doubled) only when it holds a separator, quote or line break.
+ * Text that a spreadsheet would run as a formula (a leading `=`, `+`, `-`, `@`, TAB or CR) gets a
+ * leading apostrophe, so a post or link name from the web cannot become a formula; numbers are
+ * written as they are. `unescapeFormulaCell` undoes it on import.
+ */
 export function csvCell(value: CsvValue): string {
-  const s = value === null || value === undefined ? '' : String(value);
+  let s = value === null || value === undefined ? '' : String(value);
+  if (typeof value === 'string' && FORMULA_START.test(s)) s = `'${s}`;
   return /[",\t\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/**
+ * Takes the apostrophe `csvCell` put in front of a formula-like text off again, so an export read
+ * back gives the original text. A cell that merely starts with an apostrophe stays as it is.
+ */
+export function unescapeFormulaCell(cell: string): string {
+  return ESCAPED_FORMULA.test(cell) ? cell.slice(1) : cell;
 }
 
 export function csvLine(values: readonly CsvValue[]): string {
