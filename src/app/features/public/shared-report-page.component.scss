@@ -79,6 +79,16 @@
   font-size: 16px;
   font-weight: 500;
 }
+.summary {
+  font-size: 15px;
+  font-weight: 500;
+}
+.name a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 2px;
+}
 .meta {
   font-size: 14px;
   color: var(--color-text-muted);

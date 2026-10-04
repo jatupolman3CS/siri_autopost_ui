@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { PLATFORMS } from '../../core/data/platforms';
-import { rateColor, topPosts, totalsOf } from '../../core/data/report-math';
+import { excerpt, rateColor, safeHref, topPosts, totalsOf } from '../../core/data/report-math';
 import { ApiService, ApiSharedReport } from '../../core/http/api.service';
 import { fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
@@ -25,13 +25,20 @@ type State = 'loading' | 'ready' | 'missing' | 'error';
 
 /** The most posts a client report lists (the API sends the 20 most used). */
 const POSTS_SHOWN = 20;
+/** A post is shown by its first characters; the full text is in the cell's tooltip (up to this many). */
+const EXCERPT_CHARS = 140;
+const TOOLTIP_CHARS = 500;
 
 // The public page of a shared client report (route report/:token, no sign-in, no app layout): the numbers an
 // Agency workspace froze when it made the link, under the agency's brand name, ready to print or save as a PDF
 // (`?print=1` opens the print dialog once the report is on screen). The `logo` switch of the report is a
 // white-label switch: with it the page carries the brand name only; without it the AutoPost name and mark show in
-// the header and the footer. (Nothing stores an agency logo, so the brand name is the logo.) The numbers are real
-// posts of paired accounts for the last 7 or 30 days; likes and comments are not collected, so there are none.
+// the header and the footer. (Nothing stores an agency logo, so the brand name is the logo.) What the page calls
+// itself comes from the snapshot's brand alone: the workspace's own name is shown only on a report that is not
+// white-label, beside a brand, and only when it says something the brand does not; a blank brand falls back to
+// the report's title, never to the workspace. A group links to its Facebook address when it has a usable one and shows its
+// name as plain text otherwise. The numbers are real posts of paired accounts for the last 7 or 30 days; likes
+// and comments are not collected, so there are none.
 @Component({
   selector: 'app-shared-report-page',
   imports: [LangThemeSwitchComponent, ChipComponent],
@@ -63,23 +70,39 @@ export class SharedReportPageComponent {
     const li = this.i18n.li();
     const groups = r.report.groups;
     const posts = topPosts(r.report.posts, POSTS_SHOWN);
+    const totals = totalsOf(groups);
+    const named = r.brand.trim();
+    const brand = named || t.api.reportTitle;
+    const workspace = r.workspaceName.trim();
+    const range = fmt(t.api.engine.sharedPeriod, {
+      a: fmtDate(new Date(r.report.from), li, true),
+      b: fmtDate(new Date(r.report.to), li, true),
+    });
+    // White-label hides everything but the brand; otherwise the workspace shows only beside a brand, and only
+    // when it is not the same name.
+    const showWorkspace =
+      !r.logo &&
+      named !== '' &&
+      workspace !== '' &&
+      workspace.toLowerCase() !== named.toLowerCase();
     return {
-      brand: r.brand,
+      brand,
+      named: named !== '',
       white: r.logo,
-      workspace: fmt(t.api.engine.sharedFor, { w: r.workspaceName }),
+      meta: showWorkspace ? `${fmt(t.api.engine.sharedFor, { w: workspace })} · ${range}` : range,
       period: r.period === 'month' || r.report.days === 30 ? t.rep.pMonth : t.rep.pWeek,
-      range: fmt(t.api.engine.sharedPeriod, {
-        a: fmtDate(new Date(r.report.from), li, true),
-        b: fmtDate(new Date(r.report.to), li, true),
-      }),
+      summary: groups.length
+        ? fmt(t.api.engine.sharedSummary, { n: totals.posted, g: groups.length, r: totals.rate })
+        : '',
       created: fmt(t.api.engine.sharedCreated, { d: fmtDate(new Date(r.createdAt), li, true) }),
       expires: fmt(t.api.engine.reportShareExpires, {
         d: fmtDate(new Date(r.expiresAt), li, true),
       }),
-      totals: totalsOf(groups),
+      totals,
       groups: groups.map((g) => ({
         key: g.linkId ?? `${g.name}|${g.url ?? ''}`,
         name: g.name,
+        href: safeHref(g.url),
         icon: PLATFORMS[g.platform].icon,
         posted: g.posted,
         pending: g.pending,
@@ -87,7 +110,12 @@ export class SharedReportPageComponent {
         rate: g.rate,
         color: rateColor(g.rate),
       })),
-      posts: posts.map((p, i) => ({ ...p, top: i === 0 && p.used > 0 })),
+      posts: posts.map((p, i) => ({
+        ...p,
+        excerpt: excerpt(p.text, EXCERPT_CHARS),
+        full: excerpt(p.text, TOOLTIP_CHARS),
+        top: i === 0 && p.used > 0,
+      })),
     };
   });
 
@@ -102,7 +130,7 @@ export class SharedReportPageComponent {
       this.t();
       const v = this.view();
       if (!v) return;
-      const text = `${v.brand} · ${this.t().api.reportTitle}`;
+      const text = v.named ? `${v.brand} · ${this.t().api.reportTitle}` : this.t().api.reportTitle;
       queueMicrotask(() => this.title.setTitle(v.white ? text : `${text} · AutoPost`));
     });
     effect(() => {

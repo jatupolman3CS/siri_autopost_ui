@@ -91,6 +91,11 @@ export const AP_I18N_ENGINE = {
     'This report is a snapshot of the numbers when it was created and does not update',
   ],
   sharedPoweredBy: ['จัดทำด้วย AutoPost', 'Powered by AutoPost'],
+  // The one-line summary under the heading of the shared report: {n} posts that went out, in {g} groups.
+  sharedSummary: [
+    'โพสต์สำเร็จ {n} ครั้งใน {g} กลุ่ม · อัตราสำเร็จ {r}%',
+    'Posted {n} time(s) in {g} group(s) · {r}% success rate',
+  ],
 
   // Test post: the post is real, so the page shows its real state instead of the design's simulated steps
   // (t().test.l1 to l7 are not used).

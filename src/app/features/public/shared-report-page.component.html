@@ -43,7 +43,10 @@
             }
             <h1>{{ v.brand }}</h1>
             <p class="kind">{{ t().api.reportTitle }} · {{ v.period }}</p>
-            <p class="meta">{{ v.workspace }} · {{ v.range }}</p>
+            @if (v.summary) {
+              <p class="summary">{{ v.summary }}</p>
+            }
+            <p class="meta">{{ v.meta }}</p>
           </header>
 
           <div class="kpis">
@@ -82,7 +85,15 @@
                       <span class="pico s24" aria-hidden="true"
                         ><i class="ph" [class]="g.icon"></i
                       ></span>
-                      <span class="ellipsis" [attr.title]="g.name">{{ g.name }}</span>
+                      <span class="ellipsis" [attr.title]="g.name">
+                        @if (g.href) {
+                          <a [href]="g.href" target="_blank" rel="noopener noreferrer">{{
+                            g.name
+                          }}</a>
+                        } @else {
+                          {{ g.name }}
+                        }
+                      </span>
                     </div>
                     <div class="td">{{ g.posted }}</div>
                     <div class="td">{{ g.pending }}</div>
@@ -107,7 +118,7 @@
                 <div class="th">{{ t().rep.used }}</div>
                 @for (p of v.posts; track p.collectionPostId) {
                   <div class="td postcell">
-                    <span class="clamp" [attr.title]="p.text">{{ p.text }}</span>
+                    <span class="clamp" [attr.title]="p.full">{{ p.excerpt }}</span>
                     @if (p.top) {
                       <app-chip tone="accent"
                         ><i class="ph ph-star" aria-hidden="true"></i>{{ t().rep.best }}</app-chip

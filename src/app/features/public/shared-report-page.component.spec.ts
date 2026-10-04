@@ -156,12 +156,57 @@ describe('SharedReportPageComponent', () => {
   });
 
   describe('the report', () => {
-    it('shows the brand name, the workspace, the period and its dates', async () => {
+    it('shows the brand name, the period and its dates, and not the workspace of a white-label report', async () => {
       const { el } = await open();
       expect(el.querySelector('.head h1')?.textContent).toBe('Baan Dee Studio');
       expect(text(el.querySelector('.kind'))).toBe(`${t().api.reportTitle} · ${t().rep.pWeek}`);
       expect(text(el.querySelector('.meta'))).toBe(
+        fmt(t().api.engine.sharedPeriod, { a: '27 ก.ย. 2569', b: '4 ต.ค. 2569' }),
+      );
+      expect(el.textContent).not.toContain('Shop');
+    });
+
+    it('names the workspace too when the report is not white-label', async () => {
+      const { el } = await open({ body: { ...FULL, logo: false } });
+      expect(text(el.querySelector('.meta'))).toBe(
         `${fmt(t().api.engine.sharedFor, { w: 'Shop' })} · ${fmt(t().api.engine.sharedPeriod, { a: '27 ก.ย. 2569', b: '4 ต.ค. 2569' })}`,
+      );
+    });
+
+    it('does not repeat the workspace when it is the brand', async () => {
+      const { el } = await open({
+        body: {
+          ...FULL,
+          logo: false,
+          brand: 'Baan Dee Studio',
+          workspaceName: ' baan dee studio ',
+        },
+      });
+      expect(text(el.querySelector('.meta'))).toBe(
+        fmt(t().api.engine.sharedPeriod, { a: '27 ก.ย. 2569', b: '4 ต.ค. 2569' }),
+      );
+    });
+
+    it('never falls back to the workspace name: a blank brand shows the report title', async () => {
+      for (const logo of [true, false]) {
+        const { el, fixture } = await open({
+          body: { ...FULL, logo, brand: '   ', workspaceName: 'Private client workspace' },
+        });
+        expect(text(el.querySelector('.head h1'))).toBe(t().api.reportTitle);
+        expect(el.textContent).not.toContain('Private client workspace');
+        fixture.destroy();
+        http.verify();
+        TestBed.resetTestingModule();
+      }
+    });
+
+    it('summarises the numbers in one line under the heading, and says nothing for an empty report', async () => {
+      const { el } = await open();
+      expect(text(el.querySelector('.head .summary'))).toBe(
+        fmt(t().api.engine.sharedSummary, { n: 24, g: 2, r: 80 }),
+      );
+      expect(text(el.querySelector('.head .summary'))).toBe(
+        'โพสต์สำเร็จ 24 ครั้งใน 2 กลุ่ม · อัตราสำเร็จ 80%',
       );
     });
 
@@ -201,6 +246,68 @@ describe('SharedReportPageComponent', () => {
       expect(el.textContent).not.toContain(t().rep.comments);
     });
 
+    describe('group addresses', () => {
+      const cell = (el: HTMLElement, i: number) => el.querySelectorAll('.groups .td.name')[i]!;
+
+      it('links a group that has an address, in a new tab with no opener', async () => {
+        const { el } = await open({
+          body: sharedReport({
+            report: report({
+              groups: [
+                reportGroup({
+                  name: 'Condo BKK',
+                  linkId: 'a',
+                  url: 'https://www.facebook.com/groups/condo',
+                  posted: 3,
+                }),
+              ],
+            }),
+          }),
+        });
+        const a = cell(el, 0).querySelector('a')!;
+        expect(a.getAttribute('href')).toBe('https://www.facebook.com/groups/condo');
+        expect(a.getAttribute('target')).toBe('_blank');
+        expect(a.getAttribute('rel')).toBe('noopener noreferrer');
+        expect(a.textContent).toBe('Condo BKK');
+      });
+
+      it('shows the name as plain text, with no empty link, when there is no usable address', async () => {
+        const { el } = await open({
+          body: sharedReport({
+            report: report({
+              groups: [
+                reportGroup({ name: 'Gone group', posted: 1 }),
+                reportGroup({ name: 'Blank', url: '   ', linkId: 'b', posted: 1 }),
+                reportGroup({ name: 'Script', url: 'javascript:alert(1)', linkId: 'c', posted: 1 }),
+                reportGroup({
+                  name: 'Not an address',
+                  url: 'facebook.com/x',
+                  linkId: 'd',
+                  posted: 1,
+                }),
+                reportGroup({
+                  name: 'Other scheme',
+                  url: 'ftp://example.com/x',
+                  linkId: 'e',
+                  posted: 1,
+                }),
+              ],
+            }),
+          }),
+        });
+        const names = [...el.querySelectorAll('.groups .td.name')];
+        expect(names.map((n) => text(n))).toEqual([
+          'Gone group',
+          'Blank',
+          'Script',
+          'Not an address',
+          'Other scheme',
+        ]);
+        expect(el.querySelectorAll('.groups a')).toHaveLength(0);
+        expect(el.querySelectorAll('a[href=""], a:not([href])')).toHaveLength(0);
+      });
+    });
+
     it('lists the most used posts with the top badge on the first', async () => {
       const { el } = await open();
       expect([...el.querySelectorAll('.byPost .th')].map((h) => text(h))).toEqual([
@@ -216,8 +323,27 @@ describe('SharedReportPageComponent', () => {
       expect(el.querySelectorAll('.byPost app-chip')).toHaveLength(1);
     });
 
+    it('shows the start of a long post, with the text in the tooltip', async () => {
+      const long = `First line\n${'long text '.repeat(60)}`;
+      const { el } = await open({
+        body: sharedReport({
+          report: report({
+            groups: [reportGroup({ name: 'A', linkId: 'a', posted: 1 })],
+            posts: [{ collectionPostId: 'p1', text: long, used: 3 }],
+          }),
+        }),
+      });
+      const cell = el.querySelector('.byPost .clamp')!;
+      expect(cell.textContent!.startsWith('First line long text')).toBe(true);
+      expect(cell.textContent!.endsWith('…')).toBe(true);
+      expect([...cell.textContent!].length).toBeLessThanOrEqual(141);
+      expect(cell.getAttribute('title')!.startsWith('First line long text')).toBe(true);
+      expect([...cell.getAttribute('title')!].length).toBeLessThanOrEqual(501);
+    });
+
     it('says when nothing was posted, and leaves out the post table', async () => {
       const { el } = await open({ body: sharedReport() });
+      expect(el.querySelector('.summary')).toBeNull();
       expect(el.querySelector('.groups')).toBeNull();
       expect(el.textContent).toContain(t().api.engine.reportsEmpty);
       expect(el.querySelector('.byPost')).toBeNull();
@@ -236,8 +362,10 @@ describe('SharedReportPageComponent', () => {
       const { fixture, el } = await open();
       TestBed.inject(I18nService).setLang('en');
       fixture.detectChanges();
-      expect(text(el.querySelector('.meta'))).toContain('Workspace Shop');
       expect(text(el.querySelector('.meta'))).toContain('27 Sep 2026 – 4 Oct 2026');
+      expect(text(el.querySelector('.summary'))).toBe(
+        'Posted 24 time(s) in 2 group(s) · 80% success rate',
+      );
       expect(text(el.querySelector('.kind'))).toBe('Posting report · Last 7 days');
       TestBed.inject(I18nService).setLang('th');
     });
@@ -279,6 +407,13 @@ describe('SharedReportPageComponent', () => {
       await Promise.resolve();
       expect(title.getTitle()).toBe('Baan Dee Studio · Posting report');
       TestBed.inject(I18nService).setLang('th');
+    });
+
+    it('keeps the workspace out of the tab title, and out of a white-label page whatever it is called', async () => {
+      await open({ body: { ...FULL, logo: true, brand: '', workspaceName: 'Secret Client' } });
+      await Promise.resolve();
+      expect(TestBed.inject(Title).getTitle()).toBe(t().api.reportTitle);
+      expect(document.body.textContent).not.toContain('Secret Client');
     });
 
     it('says AutoPost in the tab title when it is not white-label', async () => {

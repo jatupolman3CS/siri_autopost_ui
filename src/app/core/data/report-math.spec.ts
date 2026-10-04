@@ -3,8 +3,10 @@ import { reportGroup } from '../../testing/engine.fixtures';
 import {
   REPORT_TOP_POSTS,
   canDisableGroup,
+  excerpt,
   isGroupOff,
   rateColor,
+  safeHref,
   topPosts,
   totalsOf,
 } from './report-math';
@@ -53,5 +55,51 @@ describe('report helpers', () => {
   it('totals the groups; the rate is 100 when nothing finished', () => {
     expect(totalsOf(GROUPS)).toEqual({ posted: 11, pending: 1, failed: 2, rate: 85 });
     expect(totalsOf([])).toEqual({ posted: 0, pending: 0, failed: 0, rate: 100 });
+  });
+
+  describe('safeHref', () => {
+    it('keeps http and https addresses, written out by the URL parser', () => {
+      expect(safeHref('https://www.facebook.com/groups/condo')).toBe(
+        'https://www.facebook.com/groups/condo',
+      );
+      expect(safeHref('  http://example.com ')).toBe('http://example.com/');
+    });
+
+    it('is null for nothing, for text that is not an address and for any other scheme', () => {
+      for (const bad of [
+        null,
+        undefined,
+        '',
+        '   ',
+        'facebook.com/groups/x',
+        'javascript:alert(1)',
+        'JavaScript:alert(1)',
+        'data:text/html,<b>x</b>',
+        'ftp://example.com/x',
+        'mailto:a@b.co',
+        '//example.com/x',
+        'https://',
+      ])
+        expect(safeHref(bad), String(bad)).toBeNull();
+    });
+  });
+
+  describe('excerpt', () => {
+    it('returns a short text as it is, with white space collapsed', () => {
+      expect(excerpt('Teak  shelf\n1,290 baht')).toBe('Teak shelf 1,290 baht');
+      expect(excerpt('')).toBe('');
+    });
+
+    it('cuts a long text at the limit with an ellipsis', () => {
+      const out = excerpt('a'.repeat(300), 140);
+      expect([...out]).toHaveLength(141);
+      expect(out.endsWith('…')).toBe(true);
+      expect(excerpt('b'.repeat(140), 140)).toBe('b'.repeat(140));
+    });
+
+    it('does not cut a character in half, and drops a space before the ellipsis', () => {
+      expect(excerpt('😀'.repeat(10), 3)).toBe('😀😀😀…');
+      expect(excerpt('one two three', 4)).toBe('one…');
+    });
   });
 });

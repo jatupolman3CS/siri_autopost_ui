@@ -48,3 +48,29 @@ export function totalsOf(groups: readonly ApiReportGroup[]): ReportTotals {
   const done = posted + failed;
   return { posted, pending, failed, rate: done === 0 ? 100 : Math.round((posted / done) * 100) };
 }
+
+/**
+ * An address safe to put in a link on a public page: only `http:` and `https:` addresses, written out in full by
+ * the URL parser. Anything else (empty, not an address, `javascript:`, `data:`, `ftp:`...) is null, and the page
+ * shows the name as plain text instead.
+ */
+export function safeHref(url: string | null | undefined): string | null {
+  const text = (url ?? '').trim();
+  if (!text) return null;
+  try {
+    const parsed = new URL(text);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The start of a text for a table cell: white space collapsed, cut at `max` characters (counting whole
+ * characters, never half of a surrogate pair) with an ellipsis. A shorter text is returned as it is.
+ */
+export function excerpt(text: string, max = 140): string {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  const chars = [...flat];
+  return chars.length <= max ? flat : `${chars.slice(0, max).join('').trimEnd()}…`;
+}
