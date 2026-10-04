@@ -1,0 +1,16 @@
+<nav class="steps" [attr.aria-label]="t().ov.startTitle">
+  @for (s of steps(); track s.n) {
+    <a
+      class="step"
+      [class.on]="s.n === current()"
+      [attr.aria-current]="s.n === current() ? 'step' : null"
+      [routerLink]="s.path"
+    >
+      <span class="num">{{ s.n }}</span>
+      <span class="text">
+        <span class="title">{{ s.title }}</span>
+        <span class="body">{{ s.body }}</span>
+      </span>
+    </a>
+  }
+</nav>

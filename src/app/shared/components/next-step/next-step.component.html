@@ -1,0 +1,12 @@
+@if (prefs.simple()) {
+  <div class="next panel">
+    <i class="ph ph-arrow-bend-down-right"></i>
+    <div class="grow">
+      <div class="small muted">{{ t().flow.next }}</div>
+      <div class="fw6">{{ label() }}</div>
+    </div>
+    <button type="button" class="su-btn su-btn-sm su-btn-primary" (click)="go.emit()">
+      {{ label() }}<i class="ph ph-arrow-right"></i>
+    </button>
+  </div>
+}
