@@ -4,6 +4,7 @@ import { ApiCollection } from '../http/api.service';
 import { WORKSPACE, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import { SET_URL, apiLink, apiLinkSet } from '../../testing/link-sets.fixtures';
+import { CollectionsStore } from './collections.store';
 import { DeviceEventsService } from './device-events.service';
 import {
   EDIT_DEBOUNCE_MS,
@@ -44,6 +45,8 @@ describe('LinkSetsStore', () => {
   beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }));
   afterEach(() => {
     vi.useRealTimers();
+    // The collections store (the source of the example settings) asks for its own list on a workspace switch.
+    for (const r of http.match((x) => x.url.endsWith('/collections'))) r.flush([]);
     http.verify();
   });
 
@@ -116,26 +119,17 @@ describe('LinkSetsStore', () => {
       ).toBeUndefined();
     });
 
-    it('reads the first collection settings once, only when asked', async () => {
+    it('takes the example settings from the first collection', async () => {
       await start();
-      http.expectNone(`/api/workspaces/${WS}/collections`);
-      const collection = {
-        id: 'c1',
-        settings: { hashtags: '#a', footer: 'F', footerPos: 'top' },
-      } as unknown as ApiCollection;
-      const first = store.ensureExampleSettings();
-      void store.ensureExampleSettings();
-      http.expectOne(`/api/workspaces/${WS}/collections`).flush([collection]);
-      await first;
-      expect(store.exampleSettings()).toEqual({ hashtags: '#a', footer: 'F', footerPos: 'top' });
-    });
-
-    it('has no example settings when there is no collection', async () => {
-      await start();
-      const done = store.ensureExampleSettings();
-      http.expectOne(`/api/workspaces/${WS}/collections`).flush([]);
-      await done;
       expect(store.exampleSettings()).toBeNull();
+      const collections = TestBed.inject(CollectionsStore);
+      collections.collections.set([
+        {
+          id: 'c1',
+          settings: { hashtags: '#a', footer: 'F', footerPos: 'top' },
+        } as unknown as ApiCollection,
+      ]);
+      expect(store.exampleSettings()).toEqual({ hashtags: '#a', footer: 'F', footerPos: 'top' });
     });
   });
 

@@ -43,7 +43,7 @@ describe('TargetsPageComponent', () => {
       connected?: boolean;
       /** Simple mode off: the "more options" of every set start open. */
       simple?: boolean;
-      /** What GET collections answers when the "more options" ask for the composing settings. */
+      /** What GET collections answers (the first collection's settings feed the example under "more options"). */
       collections?: ApiCollection[];
     } = {},
   ) {
@@ -68,6 +68,7 @@ describe('TargetsPageComponent', () => {
     await signIn(http, {
       workspace: { role: opts.role ?? 'owner' },
       linkSets: opts.holdSets ? [] : (opts.sets ?? [SET]),
+      collections: opts.collections,
     });
     TestBed.inject(AccountsStore).list.set(
       opts.connected === false ? ACCOUNTS : [...ACCOUNTS, FB_CONNECTED],
@@ -75,8 +76,6 @@ describe('TargetsPageComponent', () => {
     const fixture = TestBed.createComponent(TargetsPageComponent);
     fixture.detectChanges();
     await settle();
-    for (const r of http.match(`/api/workspaces/${WS}/collections`))
-      r.flush(opts.collections ?? []);
     await settle();
     fixture.detectChanges();
     return { fixture, el: fixture.nativeElement as HTMLElement };
@@ -453,7 +452,6 @@ describe('TargetsPageComponent', () => {
       expect(card.querySelector('.postas')).not.toBeNull();
       expect(card.querySelector('.accs')).not.toBeNull();
       expect(button(card, t().common.less)!.getAttribute('aria-expanded')).toBe('true');
-      http.expectOne(`/api/workspaces/${WS}/collections`).flush([]);
       button(card, t().common.less)!.click();
       fixture.detectChanges();
       expect(card.querySelector('.postas')).toBeNull();
@@ -576,11 +574,10 @@ describe('TargetsPageComponent', () => {
       );
     });
 
-    it('have no example, and read no collection, when no group has a code', async () => {
+    it('have no example when no group has a code', async () => {
       const set = apiLinkSet({ id: 's1', links: [B] });
       const { el } = await openMore({ sets: [set] });
       expect(cards(el)[0].querySelector('.eg')).toBeNull();
-      http.expectNone(`/api/workspaces/${WS}/collections`);
     });
   });
 

@@ -7,7 +7,6 @@ import {
   input,
   output,
   signal,
-  untracked,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
@@ -136,13 +135,6 @@ export class LinkSetCardComponent {
       after: at < 0 ? '' : full.slice(at + body.length),
     };
   });
-
-  constructor() {
-    // The footer and hashtags of the example come from the first collection, which is only read when needed.
-    effect(() => {
-      if (this.more() && this.example()) untracked(() => void this.store.ensureExampleSettings());
-    });
-  }
 
   protected toggleMore(): void {
     this.store.setMore(this.set().id, !this.more());

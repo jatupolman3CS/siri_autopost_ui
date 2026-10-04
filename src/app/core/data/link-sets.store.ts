@@ -11,6 +11,7 @@ import {
 import { ComposeSettings } from '../flow/compose';
 import { EXPORT_FILES, downloadCsv } from '../flow/download';
 import { duplicateUrlFlags, linksToCsv, normalizeGroupUrl } from '../flow/group-links';
+import { CollectionsStore } from './collections.store';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
@@ -99,8 +100,11 @@ export class LinkSetsStore {
   readonly sets = signal<ApiLinkSet[]>([]);
   /** The sets of the current workspace have arrived (the page shows "—" until then). */
   readonly loaded = signal(false);
+  private readonly collections = inject(CollectionsStore);
   /** The composing settings of the first collection, for the "example" of a coded group (null: none, no footer). */
-  readonly exampleSettings = signal<ComposeSettings | null>(null);
+  readonly exampleSettings = computed<ComposeSettings | null>(
+    () => this.collections.collections()[0]?.settings ?? null,
+  );
 
   /** Per set id: the person's choice for its "more options" section (no entry: it follows simple mode). */
   readonly moreOpen = signal<Record<string, boolean>>({});
@@ -121,7 +125,6 @@ export class LinkSetsStore {
   /** Set updates (post-as, other accounts) sent or waiting, per set: they go one after the other. */
   private readonly setOps = new Map<string, Promise<void>>();
   private readonly setOpCount = new Map<string, number>();
-  private exampleRequested = false;
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
@@ -129,9 +132,7 @@ export class LinkSetsStore {
       this.dropAll();
       this.sets.set([]);
       this.loaded.set(false);
-      this.exampleSettings.set(null);
       this.moreOpen.set({});
-      this.exampleRequested = false;
       if (id) void this.load(id);
     });
     // Live: the engine switching a group off (or on) shows without a reload.
@@ -179,23 +180,6 @@ export class LinkSetsStore {
       }
     } catch {
       // The next event or poll tries again.
-    }
-  }
-
-  /**
-   * Reads the first collection's composing settings once (the example of a group code shows its footer and
-   * hashtags). The collections come with all their posts, so nothing asks for them until a page needs them.
-   */
-  async ensureExampleSettings(): Promise<void> {
-    const wsId = this.ws.id();
-    if (!wsId || this.exampleRequested) return;
-    this.exampleRequested = true;
-    try {
-      const list = await this.api.collections(wsId, true);
-      if (this.ws.id() === wsId) this.exampleSettings.set(list[0]?.settings ?? null);
-    } catch {
-      // No footer in the example; the next visit asks again.
-      if (this.ws.id() === wsId) this.exampleRequested = false;
     }
   }
 
