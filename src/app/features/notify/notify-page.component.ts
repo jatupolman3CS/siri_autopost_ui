@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PermissionsService } from '../../core/data/permissions.service';
+import { compose, spin } from '../../core/flow/compose';
 import {
   NotificationsStore,
   ResolvedChannel,
@@ -80,7 +81,13 @@ export class NotifyPageComponent {
     const group = link
       ? `${link.name || link.url}${link.code.trim() ? ` (${link.code.trim()})` : ''}`
       : '—';
-    const post = this.store.samplePost();
+    // The server sends the start of the text as written for that group, on one line.
+    const post = compose(
+      spin(this.store.samplePost(), () => 0),
+      link?.code,
+    )
+      .replace(/\s+/g, ' ')
+      .trim();
     return fmt(this.t().ntf.sample, {
       g: group,
       c: link?.code.trim() || '—',

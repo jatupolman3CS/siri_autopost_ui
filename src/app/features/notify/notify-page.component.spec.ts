@@ -71,15 +71,13 @@ describe('NotifyPageComponent', () => {
     http.expectOne(NOTIFY_URL).flush(opts.notifications ?? notifications());
     http.expectOne(SETS_URL).flush(opts.sets ?? [SET, SET2]);
     await settle();
-    http
-      .expectOne(COLLECTIONS_URL)
-      .flush([
-        {
-          id: 'c1',
-          name: 'Shelves',
-          posts: (opts.posts ?? ['Teak shelf']).map((text) => ({ text })),
-        },
-      ]);
+    http.expectOne(COLLECTIONS_URL).flush([
+      {
+        id: 'c1',
+        name: 'Shelves',
+        posts: (opts.posts ?? ['Teak shelf']).map((text) => ({ text })),
+      },
+    ]);
     await settle();
     fixture.detectChanges();
     return { fixture, el: fixture.nativeElement as HTMLElement };
@@ -187,14 +185,23 @@ describe('NotifyPageComponent', () => {
     it('previews an alert in the format the server sends, with a coded group and a post', async () => {
       const { el } = await open();
       const sample = el.querySelector('.sample')!.textContent;
-      expect(sample).toBe(fmt(t().ntf.sample, { g: 'Condo BKK (#Jan24)', t: 'Teak shelf' }));
+      expect(sample).toBe(fmt(t().ntf.sample, { g: 'Condo BKK (#Jan24)', t: '#Jan24 Teak shelf' }));
       expect(sample).not.toContain('10:21');
       expect(sample).not.toContain('✅');
     });
 
+    it('writes the post as the server would for that group: spintax resolved, the code in, one line', async () => {
+      const { el } = await open({ posts: ['{สวัสดี|หวัดดี} ห้อง {{code}}\nโทรเลย'] });
+      expect(el.querySelector('.sample')!.textContent).toBe(
+        fmt(t().ntf.sample, { g: 'Condo BKK (#Jan24)', t: 'สวัสดี ห้อง #Jan24 โทรเลย' }),
+      );
+    });
+
     it('cuts a long post in the preview', async () => {
       const { el } = await open({ posts: ['x'.repeat(60)] });
-      expect(el.querySelector('.sample')!.textContent).toContain('x'.repeat(40) + '…');
+      expect(el.querySelector('.sample')!.textContent).toContain(
+        `“${('#Jan24 ' + 'x'.repeat(60)).slice(0, 40)}…”`,
+      );
     });
   });
 

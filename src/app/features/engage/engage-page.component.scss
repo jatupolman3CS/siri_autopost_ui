@@ -1,4 +1,6 @@
 .intro {
+  // Leaves room for the switch and the button beside the title (they wrap below on a narrow screen).
+  flex: 1 1 400px;
   max-width: 760px;
 }
 .fs14 {

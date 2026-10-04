@@ -29,7 +29,6 @@ export const AP_I18N_ENGINE = {
     'โทเค็นที่บันทึกไว้จะถูกลบเมื่อกดบันทึก',
     'The saved token is removed when you save',
   ],
-  notifyTokenField: ['โทเค็น {ch}', '{ch} token'],
   notifyChatsPick: ['พบแชทเหล่านี้ เลือกแชทที่ต้องการ', 'Chats found. Pick the one to use'],
   notifyChatsNone: [
     'ยังไม่พบแชท ลองส่งข้อความหาบอทสักข้อความ แล้วค้นหาใหม่',
@@ -44,7 +43,6 @@ export const AP_I18N_ENGINE = {
     '{ch} ยังไม่พร้อม (ต้องเปิดใช้และกรอกโทเค็นกับผู้รับ) จึงยังไม่มีข้อความส่งผ่านช่องทางนี้',
     '{ch} is not ready (it needs to be on, with a token and a recipient), so nothing is sent through it yet',
   ],
-  notifyEventsCount: ['เหตุการณ์ที่ส่ง {n}/{m}', '{n}/{m} events sent'],
 
   // Auto-reply
   engageRuleCount: ['{n} กฎ · เปิดอยู่ {m}', '{n} rules · {m} on'],
@@ -76,14 +74,6 @@ export const AP_I18N_ENGINE = {
   reportPdfHint: [
     'หน้ารายงานเปิดในแท็บใหม่ เลือก “บันทึกเป็น PDF” ในหน้าต่างพิมพ์',
     'The report opens in a new tab. Choose “Save as PDF” in the print window',
-  ],
-  reportBrandMax: [
-    'ชื่อแบรนด์ยาวได้ไม่เกิน {n} ตัวอักษร',
-    'The brand name can be {n} characters at most',
-  ],
-  reportShareNeedsAdmin: [
-    'สร้างลิงก์รายงานได้เฉพาะผู้ดูแลหรือเจ้าของเวิร์กสเปซ',
-    'Only an admin or the workspace owner can create a report link',
   ],
 
   // The public report page (route report/:token)
