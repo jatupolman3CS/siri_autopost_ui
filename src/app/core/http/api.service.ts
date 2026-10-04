@@ -594,10 +594,15 @@ export class ApiService {
   deleteSchedule(ws: string, id: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/schedules/${id}`));
   }
-  /** The hours (HH:00) with the most successful posts in the last 30 days, in the person's time zone. */
+  /**
+   * The hours (HH:00) with the most successful posts in the last 30 days, in the person's time zone. Quiet: it is
+   * only a hint, so a failure shows no toast (the builder just has no suggestion).
+   */
   bestTimes(ws: string, utcOffsetMinutes: number) {
     const params = new HttpParams().set('utcOffsetMinutes', String(utcOffsetMinutes));
-    return run(this.http.get<string[]>(`/api/workspaces/${ws}/schedules/best-times`, { params }));
+    return run(
+      this.http.get<string[]>(`/api/workspaces/${ws}/schedules/best-times`, { params, ...quiet }),
+    );
   }
   /** One real post to a group now, to check the extension, the group code and the media. Quiet: the page shows the refusal. */
   testPost(ws: string, body: ApiTestPost) {

@@ -11,6 +11,8 @@ import {
   saveBody,
 } from '../../testing/schedules.fixtures';
 import { utcOffsetMinutes } from '../flow/schedule-math';
+import { QUIET } from '../http/api.service';
+import { NotificationService } from '../services/notification.service';
 import { DeviceEventsService } from './device-events.service';
 import { SchedulesStore } from './schedules.store';
 import { WorkspaceStore } from './workspace.store';
@@ -271,24 +273,137 @@ describe('SchedulesStore', () => {
   });
 
   describe('best times', () => {
+    const BEST_URL = (ws = 'ws-1') => `/api/workspaces/${ws}/schedules/best-times`;
+    const switchTo = async (id: string) => {
+      const ws = TestBed.inject(WorkspaceStore);
+      ws.list.update((l) => [...l, { ...WORKSPACE, id, name: 'Other' }]);
+      ws.switchTo(id);
+      await settle();
+    };
+    /** The other workspace asks for its own data; none of it is this test's business. */
+    const flushOther = (id: string) => {
+      for (const r of http.match((x) => x.url.startsWith(`/api/workspaces/${id}`))) r.flush([]);
+    };
+
     it('asks for the hours in the time zone of this browser', async () => {
       await start();
       const done = store.bestTimes();
       await settle();
-      const req = http.expectOne((r) => r.url === `${SCHEDULES_URL}/best-times`);
+      const req = http.expectOne((r) => r.url === BEST_URL());
       expect(req.request.params.get('utcOffsetMinutes')).toBe(String(utcOffsetMinutes()));
       req.flush(['18:00', '09:00']);
       expect(await done).toEqual(['09:00', '18:00']);
+    });
+
+    it('asks quietly: a failure shows no toast', async () => {
+      await start();
+      const done = store.bestTimes();
+      await settle();
+      const req = http.expectOne((r) => r.url === BEST_URL());
+      expect(req.request.context.get(QUIET)).toBe(true);
+      req.flush('x', { status: 500, statusText: 'x' });
+      await done;
+      expect(TestBed.inject(NotificationService).toasts()).toEqual([]);
     });
 
     it('gives no hours when the answer fails: it is only a hint', async () => {
       await start();
       const done = store.bestTimes();
       await settle();
-      http
-        .expectOne((r) => r.url === `${SCHEDULES_URL}/best-times`)
-        .flush('x', { status: 500, statusText: 'x' });
+      http.expectOne((r) => r.url === BEST_URL()).flush('x', { status: 500, statusText: 'x' });
       expect(await done).toEqual([]);
+    });
+
+    it('keeps the hours in `best`: none until asked, then what the API says', async () => {
+      await start();
+      expect(store.best()).toBeNull();
+      const done = store.askBest();
+      await settle();
+      expect(store.best()).toEqual([]); // asking
+      http.expectOne((r) => r.url === BEST_URL()).flush(['19:00', '09:00', '12:00']);
+      await done;
+      expect(store.best()).toEqual(['09:00', '12:00', '19:00']);
+    });
+
+    it('does not ask again while the hours are fresh, and does after ten minutes', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+      await start();
+      let done = store.askBest();
+      await settle();
+      http.expectOne((r) => r.url === BEST_URL()).flush(['09:00']);
+      await done;
+      await store.askBest();
+      http.expectNone((r) => r.url === BEST_URL());
+      expect(store.best()).toEqual(['09:00']);
+
+      vi.setSystemTime(Date.now() + 11 * 60_000);
+      done = store.askBest();
+      await settle();
+      http.expectOne((r) => r.url === BEST_URL()).flush(['21:00']);
+      await done;
+      expect(store.best()).toEqual(['21:00']);
+    });
+
+    it('is asked for again after a failed read', async () => {
+      await start();
+      let done = store.askBest();
+      await settle();
+      http.expectOne((r) => r.url === BEST_URL()).flush('x', { status: 500, statusText: 'x' });
+      await done;
+      expect(store.best()).toEqual([]);
+      done = store.askBest();
+      await settle();
+      http.expectOne((r) => r.url === BEST_URL()).flush(['08:00']);
+      await done;
+      expect(store.best()).toEqual(['08:00']);
+    });
+
+    it('empties with the workspace, so one workspace’s hours never show in another', async () => {
+      await start();
+      const done = store.askBest();
+      await settle();
+      http.expectOne((r) => r.url === BEST_URL()).flush(['09:00']);
+      await done;
+      expect(store.best()).toEqual(['09:00']);
+
+      await switchTo('ws-2');
+      expect(store.best()).toBeNull();
+      flushOther('ws-2');
+      await settle();
+      expect(store.best()).toBeNull();
+
+      // The other workspace asks for its own hours.
+      const again = store.askBest();
+      await settle();
+      http.expectOne((r) => r.url === BEST_URL('ws-2')).flush(['22:00']);
+      await again;
+      expect(store.best()).toEqual(['22:00']);
+    });
+
+    it('drops an answer that arrives after the workspace has changed', async () => {
+      await start();
+      const done = store.askBest();
+      await settle();
+      const late = http.expectOne((r) => r.url === BEST_URL());
+      await switchTo('ws-2');
+      flushOther('ws-2');
+      late.flush(['09:00', '12:00']);
+      await done;
+      await settle();
+      expect(store.best()).toBeNull();
+    });
+
+    it('forgets the hours after sign-out too', async () => {
+      await start();
+      const done = store.askBest();
+      await settle();
+      http.expectOne((r) => r.url === BEST_URL()).flush(['09:00']);
+      await done;
+      TestBed.inject(WorkspaceStore).id.set(null);
+      await settle();
+      expect(store.best()).toBeNull();
+      await store.askBest(); // no workspace: nothing is asked
+      http.expectNone((r) => r.url.endsWith('/best-times'));
     });
   });
 

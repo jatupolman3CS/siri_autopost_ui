@@ -99,8 +99,8 @@ export class ScheduleFormService {
   readonly error = signal('');
   /** The "more" section was opened (true) or closed (false) by hand; null follows simple mode. */
   readonly moreOverride = signal<boolean | null>(null);
-  /** The hours that went best (null: not asked yet). */
-  readonly best = signal<string[] | null>(null);
+  /** The hours that went best in this workspace (null: not asked yet); the schedules store keeps them. */
+  readonly best = this.schedules.best.asReadonly();
   readonly saving = signal(false);
 
   readonly more = computed(() => this.moreOverride() ?? !this.prefs.simple());
@@ -310,11 +310,9 @@ export class ScheduleFormService {
     this.error.set('');
   }
 
-  /** The best hours of the last 30 days, asked once per page visit. */
-  async askBest(): Promise<void> {
-    if (this.best() !== null) return;
-    this.best.set([]);
-    this.best.set(await this.schedules.bestTimes());
+  /** The best hours of the last 30 days (the store asks again only when they are old). */
+  askBest(): Promise<void> {
+    return this.schedules.askBest();
   }
 
   // ---------- creating ----------

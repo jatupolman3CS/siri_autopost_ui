@@ -14,6 +14,8 @@ const SCHEDULE_EVENTS = ['post'];
 const EVENT_REFRESH_MS = 1500;
 /** The event stream keeps the schedules fresh; this poll only runs while the stream is down. */
 const FALLBACK_POLL_MS = 60_000;
+/** Best hours read this recently are not asked for again (they move slowly: they come from 30 days). */
+const BEST_FRESH_MS = 10 * 60_000;
 
 // Schedules ("ตารางโพสต์") of the current workspace: a collection paired with a link set and posting times. The
 // server turns each active schedule into ordinary queued posts 14 days ahead, so everything that changes a
@@ -41,6 +43,15 @@ export class SchedulesStore {
   /** Posts the schedules have today, in each schedule's own local day. */
   readonly todayCount = computed(() => this.schedules().reduce((n, s) => n + s.todayCount, 0));
 
+  /**
+   * The hours that went best in this workspace (`HH:00`, at most three; null: not asked yet, [] none or still
+   * asking). They come from this workspace's posts, so they empty with it and never show in another one.
+   */
+  readonly best = signal<string[] | null>(null);
+  private bestAt = 0;
+  /** Counts the reads and workspace changes: an answer that is not the latest read is dropped. */
+  private bestSeq = 0;
+
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
@@ -49,6 +60,9 @@ export class SchedulesStore {
       this.schedules.set([]);
       this.busy.set(new Set());
       this.loaded.set(false);
+      this.best.set(null);
+      this.bestAt = 0;
+      this.bestSeq++;
       if (id) void this.load(id);
     });
     // Live: a post settling moves today's count and the next run.
@@ -125,15 +139,37 @@ export class SchedulesStore {
 
   /**
    * The hours (`HH:00`, at most three) with the most posts that went out in the last 30 days, in this browser's
-   * time zone. A failure gives none: the suggestion is a hint, not something to stop for.
+   * time zone. A failure gives none (and shows no toast): the suggestion is a hint, not something to stop for.
    */
   async bestTimes(): Promise<string[]> {
+    return (await this.readBest(this.ws.id())) ?? [];
+  }
+
+  /**
+   * Fills `best` for the current workspace unless it was read lately (the schedule builder calls this each time
+   * it opens). A failed read leaves `best` empty and is tried again the next time. An answer that arrives after
+   * the workspace changed is dropped.
+   */
+  async askBest(): Promise<void> {
     const wsId = this.ws.id();
-    if (!wsId) return [];
+    if (!wsId) return;
+    if (this.best() !== null && Date.now() - this.bestAt < BEST_FRESH_MS) return;
+    const seq = ++this.bestSeq;
+    this.bestAt = Date.now();
+    if (this.best() === null) this.best.set([]);
+    const hours = await this.readBest(wsId);
+    if (seq !== this.bestSeq || this.ws.id() !== wsId) return;
+    if (hours === null) this.bestAt = 0;
+    this.best.set(hours ?? []);
+  }
+
+  /** The hours the API gives, or null when it could not be read. */
+  private async readBest(wsId: string | null): Promise<string[] | null> {
+    if (!wsId) return null;
     try {
       return normalizeTimes(await this.api.bestTimes(wsId, utcOffsetMinutes()));
     } catch {
-      return [];
+      return null;
     }
   }
 
