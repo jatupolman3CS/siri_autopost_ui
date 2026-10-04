@@ -9,6 +9,16 @@ const DEVICE_EVENTS = ['device.online', 'device.paired', 'device.revoked', 'devi
 /** The event stream keeps the list fresh; this poll only runs while the stream is down. */
 const FALLBACK_POLL_MS = 60_000;
 
+/** The engine's own pause of a browser while it lasts (Facebook blocked it, or its posts kept failing), else null. */
+export function autoPauseOf(
+  d: Pick<ApiDevice, 'autoPausedUntil' | 'autoPauseReason'>,
+  now: Date,
+): { until: Date; reason: string } | null {
+  if (!d.autoPausedUntil) return null;
+  const until = new Date(d.autoPausedUntil);
+  return until.getTime() > now.getTime() ? { until, reason: d.autoPauseReason ?? '' } : null;
+}
+
 // Browsers with the extension paired to the current workspace, and the pairing code flow.
 @Injectable({ providedIn: 'root' })
 export class DevicesStore {

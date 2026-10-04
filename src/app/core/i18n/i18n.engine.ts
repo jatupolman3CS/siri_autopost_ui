@@ -57,6 +57,46 @@ export const AP_I18N_ENGINE = {
     'ไฟล์สำรองไม่มีโทเค็น (Telegram, LINE) ต้องกรอกใหม่หลังกู้คืน',
     'The backup holds no tokens (Telegram, LINE): enter them again after restoring',
   ],
+
+  // Test post, anti-ban and devices
+  // The test post's log follows the real post. testQueued/testPosting/testSuccess/testFailed are above; these
+  // are the other states it can reach, and the warnings beside the run button.
+  testPending: [
+    'ส่วนขยายโพสต์แล้ว รอแอดมินกลุ่มอนุมัติก่อนจึงจะแสดงในกลุ่ม',
+    'The extension posted it. The group admins must approve it before it shows in the group',
+  ],
+  testSkipped: ['โพสต์ทดสอบถูกข้าม', 'The test post was skipped'],
+  testWaiting: [
+    'ส่วนขยายออฟไลน์ โพสต์ทดสอบรอจนกว่าจะกลับมาออนไลน์',
+    'The extension is offline: the test post waits until it is back online',
+  ],
+  testStillWaiting: [
+    'ส่วนขยายยังไม่ตอบกลับ โพสต์ทดสอบยังอยู่ในคิวและจะออกไปเมื่อส่วนขยายรับงาน ดูผลได้ในรายการด้านล่าง',
+    'The extension has not answered yet. The test post stays queued and goes out when the extension picks it up. See the result in the list below',
+  ],
+  testPaused: [
+    'เครื่องที่ผูกไว้พักรับงานอยู่ (พักเองหรือพักอัตโนมัติ) โพสต์ทดสอบจะรอจนกว่าจะเริ่มรับงานอีกครั้ง',
+    'The paired browser has its jobs paused (by hand or automatically), so the test post waits until it takes jobs again',
+  ],
+  testNoAccount: [
+    'ยังไม่มีบัญชี Facebook ที่ผูกกับเครื่อง จับคู่เครื่องในหน้าทีมก่อนจึงจะทดลองโพสต์ได้',
+    'No Facebook account is bound to a browser yet. Pair a computer on the Team page before a test post',
+  ],
+
+  // Anti-ban: the block pause only runs with the automatic pause switched on; the file could not be saved.
+  blockNeedsAuto: [
+    'ใช้เมื่อเปิด “หยุดอัตโนมัติเมื่อแพลตฟอร์มแสดงคำเตือน” ด้านบนเท่านั้น',
+    'Applies only while “Pause automatically when the platform shows a warning” above is on',
+  ],
+  backupFailed: [
+    'ดาวน์โหลดไฟล์สำรองไม่สำเร็จ เบราว์เซอร์ไม่ให้ดาวน์โหลด',
+    'The backup could not be saved: the browser did not allow the download',
+  ],
+
+  // Devices: the engine paused a browser by itself (a Facebook block, or posts that kept failing).
+  // {t} is a time, {r} the reason the API gives (Thai text from the server).
+  devAutoPaused: ['พักอัตโนมัติถึง {t}: {r}', 'Paused automatically until {t}: {r}'],
+  devAutoPausedTag: ['พักอัตโนมัติ', 'Paused automatically'],
 } as const;
 
 registerPack('engine', AP_I18N_ENGINE);
