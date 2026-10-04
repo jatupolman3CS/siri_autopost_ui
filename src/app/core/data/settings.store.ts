@@ -181,6 +181,11 @@ export class SettingsStore {
     this.ab.update((v) => ({ ...v, ...patch }));
   }
 
+  /** Changes some of the advanced rules (the others keep their values). */
+  patchAdvanced(patch: Partial<AdvancedAntiBan>): void {
+    this.ab.update((v) => ({ ...v, advanced: { ...v.advanced, ...patch } }));
+  }
+
   patchOff(patch: Partial<OfflineSettings>): void {
     this.off.update((v) => ({ ...v, ...patch }));
   }
@@ -206,7 +211,12 @@ export class SettingsStore {
 
   private apply(e: ApiEngine): void {
     const { autoPause, ...rest } = e.antiBan;
-    this.ab.set({ ...rest, autopause: autoPause });
+    // The advanced rules always come with the settings; the defaults only guard an answer that lacks them.
+    this.ab.set({
+      ...rest,
+      autopause: autoPause,
+      advanced: { ...defaultAdvanced(), ...rest.advanced },
+    });
     this.off.set({ ...e.offline, window: e.offline.window as OfflineSettings['window'] });
     this.applyPresence(e);
   }

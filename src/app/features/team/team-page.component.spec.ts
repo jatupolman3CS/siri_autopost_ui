@@ -132,6 +132,51 @@ describe('TeamPageComponent', () => {
     expect(el.querySelectorAll('.dev-actions button').length).toBe(0);
   });
 
+  describe('automatic pause of a browser', () => {
+    const inHours = (h: number) => new Date(Date.now() + h * 3600e3).toISOString();
+    const lines = (el: HTMLElement) =>
+      [...el.querySelectorAll('.dev .auto')].map((x) => x.textContent!.trim());
+
+    it('says until when and why the engine paused a browser itself', async () => {
+      const { el } = await open('admin', {
+        devices: [
+          {
+            ...device('d1'),
+            autoPausedUntil: inHours(0.5),
+            autoPauseReason: 'Facebook เตือนว่าโพสต์ถี่เกินไป',
+          },
+          device('d2'),
+        ],
+      });
+      const rows = [...el.querySelectorAll('.dev')];
+      expect(rows).toHaveLength(2);
+      expect(lines(el)).toHaveLength(1);
+      expect(rows[0].querySelector('.auto')!.textContent).toContain(
+        'Facebook เตือนว่าโพสต์ถี่เกินไป',
+      );
+      expect(rows[0].querySelector('.auto')!.textContent).toMatch(/พักอัตโนมัติถึง \d\d:\d\d: /);
+      expect(rows[1].querySelector('.auto')).toBeNull();
+    });
+
+    it('shows the date when the pause lasts into another day, and nothing for one that has run out', async () => {
+      const { el } = await open('admin', {
+        devices: [
+          { ...device('d1'), autoPausedUntil: inHours(40), autoPauseReason: 'บล็อก' },
+          { ...device('d2'), autoPausedUntil: inHours(-1), autoPauseReason: 'หมดเวลาแล้ว' },
+        ],
+      });
+      expect(lines(el)).toHaveLength(1);
+      expect(lines(el)[0]).toMatch(/พักอัตโนมัติถึง .+ \d\d:\d\d: บล็อก/);
+      expect(el.textContent).not.toContain('หมดเวลาแล้ว');
+    });
+
+    it('does not change what a person who paused the browser by hand sees', async () => {
+      const { el } = await open('admin', { devices: [{ ...device('d1'), jobsPaused: true }] });
+      expect(lines(el)).toEqual([]);
+      expect(el.querySelector('.dev')!.textContent).toContain('พักรับงาน');
+    });
+  });
+
   it('puts the role select back when the API refuses the change', async () => {
     const { fixture, el } = await open('owner', { members: [OWNER, member({ role: 'editor' })] });
     const select = el.querySelector<HTMLSelectElement>('select.role-sel')!;

@@ -149,10 +149,15 @@ export class ApiService {
     return run(this.http.post<ApiAccount>(`/api/workspaces/${ws}/accounts/${id}/reconnect`, {}));
   }
 
-  /** Posts scheduled in [from, to) (at most 120 days). */
-  posts(ws: string, from: Date, to: Date) {
+  /** Posts scheduled in [from, to) (at most 120 days). background: a live follow-up does not toast failures. */
+  posts(ws: string, from: Date, to: Date, background = false) {
     const params = new HttpParams().set('from', from.toISOString()).set('to', to.toISOString());
-    return run(this.http.get<ApiPost[]>(`/api/workspaces/${ws}/posts`, { params }));
+    return run(
+      this.http.get<ApiPost[]>(`/api/workspaces/${ws}/posts`, {
+        params,
+        ...(background ? quiet : {}),
+      }),
+    );
   }
   schedule(ws: string, body: ApiScheduleRequest) {
     return run(this.http.post<ApiScheduleResult>(`/api/workspaces/${ws}/posts/schedule`, body));
@@ -594,17 +599,17 @@ export class ApiService {
     const params = new HttpParams().set('utcOffsetMinutes', String(utcOffsetMinutes));
     return run(this.http.get<string[]>(`/api/workspaces/${ws}/schedules/best-times`, { params }));
   }
-  /** One real post to a group now, to check the extension, the group code and the media. */
+  /** One real post to a group now, to check the extension, the group code and the media. Quiet: the page shows the refusal. */
   testPost(ws: string, body: ApiTestPost) {
-    return run(this.http.post<ApiPost>(`/api/workspaces/${ws}/test-post`, body));
+    return run(this.http.post<ApiPost>(`/api/workspaces/${ws}/test-post`, body, quiet));
   }
   /** Every collection, link set, schedule and setting as one file (no tokens). */
   backup(ws: string) {
     return run(this.http.get<ApiBackup>(`/api/workspaces/${ws}/backup`));
   }
-  /** Replaces the workspace's collections, link sets, schedules and settings with a backup. */
+  /** Replaces the workspace's collections, link sets, schedules and settings with a backup. Quiet: the dialog shows the refusal. */
   restore(ws: string, body: ApiBackup) {
-    return run(this.http.post<ApiRestoreResult>(`/api/workspaces/${ws}/restore`, body));
+    return run(this.http.post<ApiRestoreResult>(`/api/workspaces/${ws}/restore`, body, quiet));
   }
 }
 

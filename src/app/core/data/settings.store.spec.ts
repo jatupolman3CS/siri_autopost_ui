@@ -12,7 +12,7 @@ import {
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import { AccountsStore } from './accounts.store';
 import { DeviceEventsService } from './device-events.service';
-import { SettingsStore, defaultAntiBan } from './settings.store';
+import { SettingsStore, defaultAdvanced, defaultAntiBan } from './settings.store';
 import { WorkspaceStore } from './workspace.store';
 
 const engine = (min: number, devices = 0) => ({
@@ -126,6 +126,49 @@ describe('SettingsStore', () => {
     await settle();
     expect(store.loaded()).toBe(true);
     expect(store.ab().min).toBe(5);
+  });
+
+  describe('advanced anti-ban rules', () => {
+    const ANTI_BAN = `/api/workspaces/${WS}/engine/anti-ban`;
+
+    it('starts from the defaults the server uses and changes some rules at a time', () => {
+      expect(store.ab().advanced).toEqual(defaultAdvanced());
+      store.patchAdvanced({ minGap: 5, focus: false });
+      expect(store.ab().advanced).toEqual({ ...defaultAdvanced(), minGap: 5, focus: false });
+      // The rest of the settings is untouched.
+      expect(store.ab().min).toBe(3);
+    });
+
+    it('sends them with the anti-ban settings and shows what the server stored', async () => {
+      store.patchAdvanced({ dailyAll: 50, blockMin: 12, blockMax: 36 });
+      store.patchAb({ autopause: false });
+      const saving = store.saveAb();
+      const req = http.expectOne((r) => r.method === 'PUT' && r.url === ANTI_BAN);
+      expect(req.request.body.advanced).toEqual({
+        ...defaultAdvanced(),
+        dailyAll: 50,
+        blockMin: 12,
+        blockMax: 36,
+      });
+      // The switch is called autoPause on the wire.
+      expect(req.request.body.autoPause).toBe(false);
+      expect('autopause' in req.request.body).toBe(false);
+      // A plan below Pro keeps the old advanced values: what comes back is shown.
+      req.flush({
+        ...engine(3),
+        antiBan: { ...engine(3).antiBan, advanced: { ...defaultAdvanced(), dailyAll: 0 } },
+      });
+      await saving;
+      expect(store.ab().advanced.dailyAll).toBe(0);
+    });
+
+    it('fills in the defaults when an answer has no advanced rules', async () => {
+      const loading = store.load(WS);
+      http.expectOne(`/api/workspaces/${WS}/engine`).flush(engine(4));
+      await loading;
+      expect(store.ab().min).toBe(4);
+      expect(store.ab().advanced).toEqual(defaultAdvanced());
+    });
   });
 
   it('ignores an engine answer that arrives after the workspace changed', async () => {

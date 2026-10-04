@@ -115,15 +115,7 @@
         <p class="sub">{{ t().ab.humanBody }}</p>
       </div>
       @if (locked()) {
-        <div class="lock">
-          <i class="ph ph-lock-simple muted"></i>
-          <span>{{ t().ab.locked }}</span>
-          @if (perm.role() === 'owner') {
-            <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/billing">{{
-              t().common.upgrade
-            }}</a>
-          }
-        </div>
+        <app-antiban-lock />
       }
     </div>
     <div class="human">
@@ -132,14 +124,16 @@
           <app-checkbox
             [label]="h.label"
             [checked]="h.on"
-            [disabled]="!editable() || locked() || !h.supported"
+            [disabled]="!editable() || locked()"
             (checkedChange)="setHuman(h.k, $event)"
           />
-          @if (!h.supported) {
-            <p class="small muted not-yet">{{ t().api.notYet }}</p>
+          @if (h.storedOnly) {
+            <p class="small muted not-yet">{{ t().api.engine.storedOnly }}</p>
           }
         </div>
       }
     </div>
   </section>
+
+  <app-antiban-advanced [locked]="locked()" [editable]="editable()" />
 </div>

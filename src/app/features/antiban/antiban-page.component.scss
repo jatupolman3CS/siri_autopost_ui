@@ -71,16 +71,6 @@ input[type='range'] {
   flex-wrap: wrap;
   margin-bottom: 8px;
 }
-.lock {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  flex-wrap: wrap;
-  > .ph {
-    font-size: 18px;
-  }
-}
 .not-yet {
   margin: -8px 0 8px 44px;
 }

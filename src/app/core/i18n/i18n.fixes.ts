@@ -85,14 +85,42 @@ export const AP_I18N_FIXES = {
       'โพสต์ที่ตั้งเวลาพร้อมกันจะเว้นระยะสุ่มระหว่างค่าต่ำสุดถึงสูงสุด และไม่โพสต์จากบัญชีเดียวกันถี่กว่าค่าต่ำสุด',
       'Posts scheduled together are spaced by a random wait between the minimum and maximum, and one account never posts closer than the minimum',
     ],
+    // The meter counts what is really applied: the delay, the Facebook limit, typing, scrolling, the automatic
+    // pause, and whether the plan has the advanced rules (the design's list, minus what nothing applies).
     riskNote: [
-      'คำนวณจากค่าหน่วงต่ำสุด เพดาน Facebook และการพิมพ์/เลื่อนหน้าที่เปิดไว้',
-      'Based on the minimum delay, the Facebook daily limit, and typing and scrolling',
+      'คำนวณจากค่าหน่วงต่ำสุด เพดาน Facebook การพิมพ์ การเลื่อนหน้า การหยุดอัตโนมัติ และกฎขั้นสูงของแผน',
+      'Based on the minimum delay, the Facebook daily limit, typing, scrolling, the automatic pause and the plan’s advanced rules',
     ],
-    // Shuffle, auto-pause and warm-up are stored but the extension does not act on them yet.
+    // The extension types and scrolls; the server enforces the automatic pause and the warm-up caps. Only
+    // "shuffle" is still saved without effect.
     humanBody: [
-      'ส่วนขยายใช้การพิมพ์และการเลื่อนหน้า ตัวเลือกอื่นบันทึกไว้แต่ยังไม่มีผล',
-      'The extension uses typing and scrolling. The other options are saved but have no effect yet',
+      'ส่วนขยายใช้การพิมพ์และการเลื่อนหน้า เซิร์ฟเวอร์บังคับใช้การหยุดอัตโนมัติและวอร์มอัพ ส่วนการสุ่มลำดับบันทึกไว้แต่ยังไม่มีผล',
+      'The extension types and scrolls, and the server enforces the automatic pause and the warm-up. Shuffle is saved but has no effect yet',
+    ],
+    // The cap counts a rolling 24 hours (all platforms, this workspace), not the calendar day.
+    dailyAll: [
+      'เพดานโพสต์รวมใน 24 ชม. (0 = ไม่จำกัด)',
+      'Overall posts per 24 hours (0 = no limit)',
+    ],
+    // The server looks at the last 24 hours and only once at least 10 posts have finished.
+    stopFail: [
+      'หยุดทุกตารางเมื่อล้มเหลวเกิน (% ของ 24 ชม. หลังมีอย่างน้อย 10 โพสต์, 0 = ปิด)',
+      'Stop every schedule when failures exceed (% of the last 24 h, after at least 10 posts; 0 = off)',
+    ],
+    // The caps only apply while the warm-up switch above is on; the age counts from pairing the browser.
+    warmBody: [
+      'เมื่อเปิดโหมดวอร์มอัพด้านบน บัญชีที่เพิ่งผูกเครื่องจะถูกจำกัดโพสต์ต่อวันแล้วค่อยเพิ่มตามตาราง',
+      'With the warm-up switch above on, a newly paired account is capped per day and ramps up on this timetable',
+    ],
+    // The file does not hold the basic sliders and limits, nor any token.
+    backupBody: [
+      'ดาวน์โหลดชุดโพสต์ ชุดลิงก์ ตารางโพสต์ ค่าขั้นสูง กฎแจ้งเตือนและตอบกลับอัตโนมัติเป็นไฟล์เดียว เพื่อย้ายเครื่องหรือเก็บสำรอง',
+      'Download every collection, link set, schedule, the advanced settings and the notification and auto-reply rules as one file, to move machines or keep a backup',
+    ],
+    // Restoring also drops the posts the replaced schedules had queued and queues them again.
+    restoreHint: [
+      'วางเนื้อหาไฟล์สำรอง (JSON) ชุดโพสต์ ชุดลิงก์ และตารางปัจจุบันจะถูกแทนที่ โพสต์ที่ตารางเดิมจัดคิวไว้จะถูกลบแล้วจัดคิวใหม่',
+      'Paste the backup file (JSON). The current collections, link sets and schedules are replaced; posts the old schedules queued are deleted and queued again',
     ],
   },
   off: {
