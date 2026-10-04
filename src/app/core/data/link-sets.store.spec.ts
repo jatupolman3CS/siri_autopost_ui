@@ -285,6 +285,48 @@ describe('LinkSetsStore', () => {
       second.flush({ ...A, name: 'Two' });
     });
 
+    it('does not strand an edit whose debounce ran out while a slow request was in flight', async () => {
+      await start();
+      store.editLink('s1', 'a', { name: 'One' });
+      await wait();
+      const first = http.expectOne(`${SET_URL('s1')}/links/a`);
+      // Typed again while the first request is slow: its debounce runs out before the answer comes.
+      store.editLink('s1', 'a', { name: 'One two' });
+      await wait(EDIT_DEBOUNCE_MS + 100);
+      http.expectNone(`${SET_URL('s1')}/links/a`);
+      first.flush({ ...A, name: 'One' });
+      await settle();
+      // Both edits reach the server, in order, and the last one is what stays.
+      const second = http.expectOne(`${SET_URL('s1')}/links/a`);
+      expect(first.request.body.name).toBe('One');
+      expect(second.request.body.name).toBe('One two');
+      second.flush({ ...A, name: 'One two' });
+      await settle();
+      expect(rowOf('s1', 'a').name).toBe('One two');
+      await wait();
+      http.expectNone(`${SET_URL('s1')}/links/a`);
+    });
+
+    it('still sends an edit made after a request that is then refused, and goes back only if that fails too', async () => {
+      await start();
+      store.editLink('s1', 'a', { code: '#1' });
+      await wait();
+      const first = http.expectOne(`${SET_URL('s1')}/links/a`);
+      store.editLink('s1', 'a', { code: '#2' });
+      await wait(EDIT_DEBOUNCE_MS + 100);
+      first.flush(null, { status: 422, statusText: 'x' });
+      await settle();
+      // The newer edit is not lost: it goes out with the whole newest row, and the row shows it meanwhile.
+      expect(rowOf('s1', 'a').code).toBe('#2');
+      const second = http.expectOne(`${SET_URL('s1')}/links/a`);
+      expect(second.request.body.code).toBe('#2');
+      second.flush(null, { status: 422, statusText: 'x' });
+      await settle();
+      expect(rowOf('s1', 'a').code).toBe('#Jan24');
+      await wait();
+      http.expectNone(`${SET_URL('s1')}/links/a`);
+    });
+
     it('puts the row back to what the server confirmed when the save is refused', async () => {
       await start();
       store.editLink('s1', 'a', { name: 'x'.repeat(300) });
@@ -328,6 +370,58 @@ describe('LinkSetsStore', () => {
       http.expectOne(`${SET_URL('s1')}/links/a`).flush(null, { status: 204, statusText: 'x' });
       await removing;
       await wait();
+      http.expectNone(`${SET_URL('s1')}/links/a`);
+    });
+  });
+
+  describe('edits waiting when the workspace changes', () => {
+    async function switchAway(): Promise<void> {
+      const ws = TestBed.inject(WorkspaceStore);
+      ws.list.update((l) => [...l, { ...WORKSPACE, id: 'ws-2', name: 'Other' }]);
+      ws.switchTo('ws-2');
+      await settle();
+      http.expectOne(`/api/workspaces/ws-2/link-sets`).flush([]);
+      await settle();
+    }
+
+    it('sends the row to the workspace it was edited in, not to the new one', async () => {
+      await start();
+      store.editLink('s1', 'a', { name: 'Typed just before the switch' });
+      await switchAway();
+      const req = http.expectOne(`${SET_URL('s1')}/links/a`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body.name).toBe('Typed just before the switch');
+      req.flush({ ...A, name: 'Typed just before the switch' });
+      await settle();
+      // The answer belongs to the workspace left: it is not shown in the new one.
+      expect(store.sets()).toEqual([]);
+      await wait();
+      http.expectNone(`${SET_URL('s1')}/links/a`);
+    });
+
+    it('sends the edit made after a request that was already in flight', async () => {
+      await start();
+      store.editLink('s1', 'a', { code: '#1' });
+      await wait();
+      const first = http.expectOne(`${SET_URL('s1')}/links/a`);
+      store.editLink('s1', 'a', { code: '#2' });
+      await switchAway();
+      first.flush({ ...A, code: '#1' });
+      await settle();
+      const second = http.expectOne(`${SET_URL('s1')}/links/a`);
+      expect(second.request.body.code).toBe('#2');
+      second.flush({ ...A, code: '#2' });
+      await settle();
+      http.expectNone(`${SET_URL('s1')}/links/a`);
+    });
+
+    it('sends nothing for a row that has no unsent edit', async () => {
+      await start();
+      store.editLink('s1', 'a', { name: 'Saved' }, true);
+      await settle();
+      http.expectOne(`${SET_URL('s1')}/links/a`).flush({ ...A, name: 'Saved' });
+      await settle();
+      await switchAway();
       http.expectNone(`${SET_URL('s1')}/links/a`);
     });
   });

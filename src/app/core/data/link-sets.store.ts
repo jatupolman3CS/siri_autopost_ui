@@ -75,7 +75,24 @@ function withFlags(links: ApiSetLink[]): ApiSetLink[] {
   });
 }
 
+/** The fields of a link row that `PUT .../links/{id}` takes (the body is always complete). */
+type LinkBody = Pick<ApiSetLink, 'name' | 'url' | 'code' | 'dailyMax' | 'enabled'>;
+
+const bodyOf = (l: ApiSetLink): LinkBody => ({
+  name: l.name,
+  url: l.url,
+  code: l.code,
+  dailyMax: l.dailyMax,
+  enabled: l.enabled,
+});
+
 interface PendingEdit {
+  /** The workspace and row the edit was made in (the store may move on to another before it is sent). */
+  ws: string;
+  setId: string;
+  linkId: string;
+  /** The newest values of the row: the complete body of the next request. */
+  draft: LinkBody;
   timer: ReturnType<typeof setTimeout> | null;
   inflight: boolean;
   /** An edit arrived that no request carries yet. */
@@ -91,7 +108,10 @@ interface PendingEdit {
 // last change (a toggle saves at once), one request per row at a time. A refused save puts the row back to what
 // the server last confirmed (the error interceptor has already toasted the reason). The server checks the
 // address (`valid`, `duplicate`) and keeps it normalised; an answer for a row edited again meanwhile is not
-// applied over the newer text. Rows being edited are also kept when a live read brings the sets again.
+// applied over the newer text, and the newest row is always sent once the request in flight has settled (a
+// refused request does not drop an edit made after it was sent). Rows being edited are also kept when a live
+// read brings the sets again, and edits still waiting when the workspace changes go out for the workspace
+// they were made in.
 @Injectable({ providedIn: 'root' })
 export class LinkSetsStore {
   private readonly api = inject(ApiService);
@@ -129,7 +149,8 @@ export class LinkSetsStore {
 
   constructor() {
     whenWorkspaceChanges((id) => {
-      this.dropAll();
+      this.sendPendingEdits();
+      this.resetOps();
       this.sets.set([]);
       this.loaded.set(false);
       this.moreOpen.set({});
@@ -291,15 +312,26 @@ export class LinkSetsStore {
     const key = pendingKey(setId, linkId);
     let p = this.pending.get(key);
     if (!p) {
-      p = { timer: null, inflight: false, dirty: false, confirmed: row };
+      p = {
+        ws: wsId,
+        setId,
+        linkId,
+        draft: bodyOf(row),
+        timer: null,
+        inflight: false,
+        dirty: false,
+        confirmed: row,
+      };
       this.pending.set(key, p);
     }
+    p.draft = { ...p.draft, ...patch };
     p.dirty = true;
     if (p.timer) clearTimeout(p.timer);
     p.timer = null;
     this.patchLink(setId, linkId, patch);
-    if (immediate) void this.flush(wsId, setId, linkId);
-    else p.timer = setTimeout(() => void this.flush(wsId, setId, linkId), EDIT_DEBOUNCE_MS);
+    const edit = p;
+    if (immediate) void this.flush(edit);
+    else edit.timer = setTimeout(() => void this.flush(edit), EDIT_DEBOUNCE_MS);
   }
 
   /** Removes a row at once; a refused delete puts it back where it was. Resolves to whether it is gone. */
@@ -395,56 +427,64 @@ export class LinkSetsStore {
     this.sets.update((list) => list.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   }
 
-  /** Sends the complete row as it is now. A second edit during the request is sent when it answers. */
-  private async flush(wsId: string, setId: string, linkId: string): Promise<void> {
-    const key = pendingKey(setId, linkId);
-    const p = this.pending.get(key);
-    if (!p || p.inflight) return;
+  /**
+   * Sends the newest values of the row (the complete body). While a request is on its way nothing else is sent:
+   * a debounce that runs out meanwhile is forgotten here, and the request that settles sends the newest row
+   * itself (also when it was refused, so an edit made after it was sent is never stranded).
+   */
+  private async flush(p: PendingEdit): Promise<void> {
+    const key = pendingKey(p.setId, p.linkId);
+    if (this.pending.get(key) !== p) return;
+    // The timer that got us here has fired (or an immediate edit cancelled it): never keep a stale handle,
+    // or the settling request would think a debounce is still waiting and leave the edit unsent.
     if (p.timer) clearTimeout(p.timer);
     p.timer = null;
-    const row = this.link(setId, linkId);
-    if (!row) {
-      this.pending.delete(key);
-      return;
-    }
+    if (p.inflight) return;
+    const sent = { ...p.draft };
     p.dirty = false;
     p.inflight = true;
-    let ok = true;
     try {
-      const saved = await this.api.updateLink(wsId, setId, linkId, {
-        name: row.name,
-        url: row.url,
-        code: row.code,
-        dailyMax: row.dailyMax,
-        enabled: row.enabled,
-      });
-      if (this.pending.get(key) !== p || this.ws.id() !== wsId) return;
+      const saved = await this.api.updateLink(p.ws, p.setId, p.linkId, sent);
+      if (this.pending.get(key) !== p) return;
       p.confirmed = saved;
       // Nothing newer was typed: show what the server stored (the normalised address), but keep text the
       // server only trimmed or filled in, so a space typed before the next word is not taken away.
-      if (!p.dirty) {
+      if (!p.dirty && this.ws.id() === p.ws) {
         const shown: ApiSetLink = {
           ...saved,
-          name: keepText(row.name, saved.name, true),
-          code: keepText(row.code, saved.code),
-          url: row.url.trim() === saved.url ? row.url : saved.url,
+          name: keepText(sent.name, saved.name, true),
+          code: keepText(sent.code, saved.code),
+          url: sent.url.trim() === saved.url ? sent.url : saved.url,
         };
-        this.setLinks(setId, (links) => links.map((l) => (l.id === linkId ? shown : l)));
+        this.setLinks(p.setId, (links) => links.map((l) => (l.id === p.linkId ? shown : l)));
       }
     } catch {
-      ok = false;
-      if (this.pending.get(key) === p && this.ws.id() === wsId) {
-        p.dirty = false;
-        if (p.timer) clearTimeout(p.timer);
-        p.timer = null;
-        this.setLinks(setId, (links) => links.map((l) => (l.id === linkId ? p.confirmed : l)));
+      // Edited again meanwhile: the newest row goes out next (below). Otherwise the row goes back to what the
+      // server last confirmed (the error interceptor has toasted the reason).
+      if (this.pending.get(key) === p && !p.dirty && this.ws.id() === p.ws) {
+        this.setLinks(p.setId, (links) => links.map((l) => (l.id === p.linkId ? p.confirmed : l)));
       }
     } finally {
       p.inflight = false;
-      if (this.pending.get(key) === p) {
-        if (ok && p.dirty && !p.timer) void this.flush(wsId, setId, linkId);
-        else if (!p.dirty && !p.timer) this.pending.delete(key);
+      if (this.pending.get(key) === p && !p.timer) {
+        if (p.dirty) void this.flush(p);
+        else this.pending.delete(key);
       }
+    }
+  }
+
+  /**
+   * A workspace switch or sign-out: every edit that no request carries yet goes out for the workspace it was
+   * made in, as `CollectionsStore` does (the rows are gone from the screen by then, so the pending entry holds
+   * the body). Requests in flight send their newer edit themselves when they settle.
+   */
+  private sendPendingEdits(): void {
+    for (const [key, p] of [...this.pending]) {
+      if (p.timer) clearTimeout(p.timer);
+      p.timer = null;
+      if (p.inflight) continue;
+      if (p.dirty) void this.flush(p);
+      else this.pending.delete(key);
     }
   }
 
@@ -455,13 +495,19 @@ export class LinkSetsStore {
     this.pending.delete(key);
   }
 
-  private dropAll(): void {
-    for (const p of this.pending.values()) if (p.timer) clearTimeout(p.timer);
-    this.pending.clear();
+  /** Forgets the set updates and the live-read timer of the workspace left. */
+  private resetOps(): void {
     this.setOps.clear();
     this.setOpCount.clear();
     if (this.refreshTimer) clearTimeout(this.refreshTimer);
     this.refreshTimer = null;
+  }
+
+  /** Teardown: nothing is sent any more. */
+  private dropAll(): void {
+    for (const p of this.pending.values()) if (p.timer) clearTimeout(p.timer);
+    this.pending.clear();
+    this.resetOps();
   }
 
   private scheduleRefresh(): void {
