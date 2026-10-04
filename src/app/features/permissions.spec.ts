@@ -129,20 +129,24 @@ describe('role gating of the pages', () => {
   });
 
   describe('account safety', () => {
-    it('lets only an admin save, and never offers the settings the extension ignores', async () => {
+    it('lets only an admin save and change the settings, and says which one is only saved', async () => {
       const editor = await render(AntibanPageComponent, 'editor');
       expect(editor.el.querySelector<HTMLButtonElement>('.page-head button')!.disabled).toBe(true);
       expect(off(editor.el, 'input[type=range], input[type=number]').every(Boolean)).toBe(true);
+      // The advanced rules, backup and restore are an admin's too.
+      expect(off(editor.el, '.adv button')).toEqual([true, true]);
       http.verify();
       TestBed.resetTestingModule();
 
       const admin = await render(AntibanPageComponent, 'admin');
       expect(admin.el.querySelector<HTMLButtonElement>('.page-head button')!.disabled).toBe(false);
       expect(off(admin.el, 'input[type=range], input[type=number]').some(Boolean)).toBe(false);
-      // Typing and scrolling are honoured; shuffle, auto-pause and warm-up only look stored.
+      expect(off(admin.el, '.adv button')).toEqual([false, false]);
+      // Typing and scrolling are done by the extension, auto-pause and warm-up by the server: all can be switched.
+      // Only the shuffle is saved without effect, and says so.
       const boxes = [...admin.el.querySelectorAll<HTMLInputElement>('.human input[type=checkbox]')];
-      expect(boxes.map((b) => b.disabled)).toEqual([false, false, true, true, true]);
-      expect(admin.el.querySelectorAll('.not-yet').length).toBe(3);
+      expect(boxes.map((b) => b.disabled)).toEqual([false, false, false, false, false]);
+      expect(admin.el.querySelectorAll('.not-yet').length).toBe(1);
     });
 
     it('also locks typing and scrolling when the owner plan has no advanced anti-ban', async () => {
@@ -152,6 +156,7 @@ describe('role gating of the pages', () => {
       const boxes = [...el.querySelectorAll<HTMLInputElement>('.human input[type=checkbox]')];
       expect(boxes.every((b) => b.disabled)).toBe(true);
       expect(el.querySelector('.lock')).not.toBeNull();
+      expect(off(el, '.adv button')).toEqual([true, true]);
     });
 
     it('decides "locked" by the workspace owner plan, not the signed-in user plan', async () => {

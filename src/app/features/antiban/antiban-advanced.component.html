@@ -1,0 +1,110 @@
+<section class="panel adv">
+  <div class="head">
+    <div class="w720">
+      <div class="title">
+        <h2 class="h2">{{ t().ab.advTitle }}</h2>
+        <span class="crown"><i class="ph ph-crown-simple"></i>{{ t().ab.advBadge }}</span>
+      </div>
+      <p class="sub">{{ t().ab.advBody }}</p>
+    </div>
+    @if (locked()) {
+      <app-antiban-lock />
+    }
+  </div>
+
+  <div class="nums" [class.dim]="locked()">
+    @for (n of nums(); track n.key) {
+      <label class="num">
+        <span>{{ n.text }}</span>
+        <input
+          type="number"
+          class="num-input w120"
+          [min]="n.min"
+          [max]="n.max"
+          [value]="n.value"
+          [disabled]="off()"
+          (change)="setNum(n, $any($event.target))"
+        />
+      </label>
+    }
+    <div class="num">
+      <span id="ab-block-label">{{ t().ab.blockPause }}</span>
+      <span class="pair">
+        <input
+          type="number"
+          class="num-input w88"
+          min="1"
+          max="168"
+          [value]="adv().blockMin"
+          [disabled]="off()"
+          [attr.aria-labelledby]="'ab-block-label'"
+          (change)="setBlockMin($any($event.target))"
+        />
+        <span>{{ t().ab.blockTo }}</span>
+        <input
+          type="number"
+          class="num-input w88"
+          min="1"
+          max="168"
+          [value]="adv().blockMax"
+          [disabled]="off()"
+          [attr.aria-label]="t().ab.blockPause + ' · ' + t().ab.blockTo"
+          (change)="setBlockMax($any($event.target))"
+        />
+      </span>
+      @if (!autopause()) {
+        <span class="small muted">{{ t().api.engine.blockNeedsAuto }}</span>
+      }
+    </div>
+  </div>
+
+  <div [class.dim]="locked()">
+    <app-checkbox
+      [label]="t().ab.focusWindow"
+      [checked]="adv().focus"
+      [disabled]="off()"
+      (checkedChange)="setFocus($event)"
+    />
+    <p class="small muted stored">{{ t().api.engine.storedOnly }}</p>
+  </div>
+
+  <div class="two" [class.dim]="locked()">
+    <div>
+      <div class="fw6 fs14">{{ t().ab.warmTitle }}</div>
+      <p class="small muted lead">{{ t().ab.warmBody }}</p>
+      <ul>
+        <li>{{ t().ab.w1 }}</li>
+        <li>{{ t().ab.w2 }}</li>
+        <li>{{ t().ab.w3 }}</li>
+        <li>{{ t().ab.w4 }}</li>
+      </ul>
+    </div>
+    <div>
+      <div class="fw6 fs14">{{ t().ab.backupTitle }}</div>
+      <p class="small muted lead">{{ t().ab.backupBody }}</p>
+      <div class="actions">
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-secondary"
+          [disabled]="filesOff() || backup.busy()"
+          [attr.title]="filesHint() || null"
+          (click)="download()"
+        >
+          <i class="ph ph-download-simple"></i>{{ t().ab.backup }}
+        </button>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          [disabled]="filesOff()"
+          [attr.title]="filesHint() || null"
+          (click)="restoring.set(true)"
+        >
+          <i class="ph ph-upload-simple"></i>{{ t().ab.restore }}
+        </button>
+      </div>
+      <p class="small muted stored">{{ t().api.engine.backupNoSecrets }}</p>
+    </div>
+  </div>
+</section>
+
+<app-restore-modal [open]="restoring()" (closed)="restoring.set(false)" />

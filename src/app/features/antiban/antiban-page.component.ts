@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { AntiBanSettings, SettingsStore } from '../../core/data/settings.store';
 import { PlatformKey } from '../../core/data/models';
@@ -12,17 +11,23 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
+import { AntibanAdvancedComponent } from './antiban-advanced.component';
+import { AntibanLockComponent } from './antiban-lock.component';
+import '../../core/i18n/i18n.engine';
 
 type HumanKey = 'typing' | 'scroll' | 'shuffle' | 'autopause' | 'warmup';
 
-/** The extension honours typing and scrolling only; the other behaviours are stored but not acted on yet. */
-const HONOURED: HumanKey[] = ['typing', 'scroll'];
+/**
+ * Typing and scrolling are done by the extension, the automatic pause and the warm-up caps by the server.
+ * Only the shuffle is saved without effect for now (it is shown with that note).
+ */
+const STORED_ONLY: HumanKey[] = ['shuffle'];
 /** The API's range for a platform's daily limit (AntiBanSettings.MaxDailyLimit). */
 const MAX_LIMIT = 200;
 
 @Component({
   selector: 'app-antiban-page',
-  imports: [RouterLink, CheckboxComponent, PermNoteComponent],
+  imports: [CheckboxComponent, PermNoteComponent, AntibanAdvancedComponent, AntibanLockComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './antiban-page.component.html',
   styleUrl: './antiban-page.component.scss',
@@ -48,12 +53,15 @@ export class AntibanPageComponent {
   protected readonly risk = computed(() => {
     const ab = this.ab();
     const t = this.t().ab;
-    // Only what the extension acts on counts: the delay, the Facebook limit, typing and scrolling.
+    // What is really applied counts: the delay, the Facebook limit, typing, scrolling, the automatic pause, and
+    // (as in the design) whether the plan has the advanced rules at all. Shuffle and warm-up are not in it.
     const score =
       (ab.min < 2 ? 2 : ab.min < 3 ? 1 : 0) +
       (ab.limits.fb > 40 ? 1 : 0) +
       (ab.typing ? 0 : 1) +
-      (ab.scroll ? 0 : 1);
+      (ab.scroll ? 0 : 1) +
+      (ab.autopause ? 0 : 1) +
+      (this.locked() ? 1 : 0);
     return score <= 1
       ? { label: t.riskLow, color: 'var(--color-success)' }
       : score <= 3
@@ -126,8 +134,7 @@ export class AntibanPageComponent {
       ['autopause', t.hPause],
       ['warmup', t.hWarm],
     ];
-    // Shuffle, auto-pause and warm-up are stored but the extension ignores them: shown, never editable.
-    return rows.map(([k, label]) => ({ k, label, on: ab[k], supported: HONOURED.includes(k) }));
+    return rows.map(([k, label]) => ({ k, label, on: ab[k], storedOnly: STORED_ONLY.includes(k) }));
   });
 
   protected setMin(v: string): void {
