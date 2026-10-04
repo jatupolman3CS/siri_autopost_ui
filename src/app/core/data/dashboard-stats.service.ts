@@ -2,6 +2,7 @@ import { Injectable, computed, inject } from '@angular/core';
 import { dayNames, dkey, fmtDate, hm } from '../i18n/format';
 import { Dict, I18nService } from '../i18n/i18n.service';
 import { AccountsStore } from './accounts.store';
+import { DevicesStore } from './devices.store';
 import { HEALTH_DOT, accountKind } from './models';
 import { PostsStore, QueueItem, postRow } from './posts.store';
 import { PLATFORMS } from './platforms';
@@ -54,6 +55,7 @@ export function queueRowsOf(today: QueueItem[], t: Dict) {
 export class DashboardStatsService {
   private readonly posts = inject(PostsStore);
   private readonly accounts = inject(AccountsStore);
+  private readonly devices = inject(DevicesStore);
   private readonly i18n = inject(I18nService);
 
   /** The posts of the workspace have arrived: until then the figures read "—", not 0 or 100%. */
@@ -95,8 +97,11 @@ export class DashboardStatsService {
 
   readonly accountRows = computed(() => {
     const t = this.i18n.t();
+    const devices = this.devices.list();
     return this.accounts.list().map((a) => {
       const kind = accountKind(a);
+      // The browser that posts for the account (the API gives no address, so none is shown).
+      const device = devices.find((d) => d.accountId === a.id);
       return {
         icon: PLATFORMS[a.platform].icon,
         name: a.name,
@@ -105,6 +110,13 @@ export class DashboardStatsService {
         badge:
           kind === 'sample' ? t.api.demoAccount : kind === 'unbound' ? t.api.unboundAccount : '',
         badgeHint: kind === 'sample' ? t.api.demoHint : kind === 'unbound' ? t.api.unboundHint : '',
+        /** "Posts via <computer> · <browser>"; empty until the computers have arrived. */
+        deviceLine: !this.devices.loaded()
+          ? ''
+          : device
+            ? `${t.ov.via} ${device.name} · ${device.browser}`
+            : t.ov.viaNone,
+        deviceIcon: device ? 'ph-desktop' : 'ph-plugs',
         dot: HEALTH_DOT[a.health],
         healthLabel: t.health[a.health],
       };

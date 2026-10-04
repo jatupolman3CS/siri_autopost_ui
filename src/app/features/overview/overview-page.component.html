@@ -9,6 +9,8 @@
     >
   </div>
 
+  <app-overview-hub />
+
   <div class="kpis">
     @for (k of stats.kpis(); track k.label) {
       <div class="panel kpi">
@@ -81,6 +83,12 @@
                   · <span [title]="a.badgeHint">{{ a.badge }}</span>
                 }
               </div>
+              @if (a.deviceLine) {
+                <div class="small muted via">
+                  <i class="ph" [class]="a.deviceIcon" aria-hidden="true"></i>
+                  <span class="ellipsis">{{ a.deviceLine }}</span>
+                </div>
+              }
             </div>
             <span class="status"
               ><span class="dot" [style.background]="a.dot"></span>{{ a.healthLabel }}</span
