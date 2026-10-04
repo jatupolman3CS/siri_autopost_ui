@@ -235,13 +235,50 @@ describe('CalendarPageComponent', () => {
 
   describe('add and delete', () => {
     it('"add" opens the schedule builder with the selected day as its start', async () => {
-      const { fixture, el } = await open([], '2026-11-20');
+      const day = dkey(new Date(Date.now() + 20 * 864e5));
+      const { fixture, el } = await open([], day);
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      expect(button(el, t().cal.add)!.disabled).toBe(false);
+      expect(el.querySelector('.add .past')).toBeNull();
       button(el, t().cal.add)!.click();
       await tick(fixture);
-      expect(navigate).toHaveBeenCalledWith(['/app/schedules'], {
-        queryParams: { start: '2026-11-20' },
-      });
+      expect(navigate).toHaveBeenCalledWith(['/app/schedules'], { queryParams: { start: day } });
+      http.match((r) => r.url.endsWith('/posts')).forEach((r) => r.flush([]));
+    });
+
+    it('"add" works on today', async () => {
+      const { fixture, el } = await open([], TODAY);
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      expect(button(el, t().cal.add)!.disabled).toBe(false);
+      button(el, t().cal.add)!.click();
+      await tick(fixture);
+      expect(navigate).toHaveBeenCalledWith(['/app/schedules'], { queryParams: { start: TODAY } });
+      http.match((r) => r.url.endsWith('/posts')).forEach((r) => r.flush([]));
+    });
+
+    it('"add" is off on a day that has passed, with the reason', async () => {
+      const past = dkey(new Date(Date.now() - 3 * 864e5));
+      const { fixture, el } = await open([], past);
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      const add = button(el, t().cal.add)!;
+      expect(add.disabled).toBe(true);
+      expect(add.title).toBe(t().api.flow.calPastHint);
+      expect(el.querySelector('.add .past')?.textContent).toBe(t().api.flow.calPastHint);
+      expect(add.getAttribute('aria-describedby')).toBe(el.querySelector('.past')?.id);
+      add.click();
+      await tick(fixture);
+      expect(navigate).not.toHaveBeenCalled();
+      http.match((r) => r.url.endsWith('/posts')).forEach((r) => r.flush([]));
+    });
+
+    it('turns "add" on again when a day from today is picked', async () => {
+      const past = dkey(new Date(Date.now() - 3 * 864e5));
+      const { fixture, el } = await open([], past);
+      expect(button(el, t().cal.add)!.disabled).toBe(true);
+      button(el, t().common.today)!.click();
+      await tick(fixture);
+      expect(button(el, t().cal.add)!.disabled).toBe(false);
+      expect(el.querySelector('.add .past')).toBeNull();
       http.match((r) => r.url.endsWith('/posts')).forEach((r) => r.flush([]));
     });
 

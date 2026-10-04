@@ -126,6 +126,11 @@ export const AP_I18N_FLOW = {
   schFinished: ['เสร็จสิ้นแล้ว', 'Finished'],
   // The calendar marks a real post made from the test page.
   calTest: ['ทดสอบ', 'Test'],
+  // A schedule cannot start on a day that has passed: "add" is off there.
+  calPastHint: [
+    'วันนี้ผ่านไปแล้ว เพิ่มตารางโพสต์ได้ตั้งแต่วันนี้เป็นต้นไป',
+    'This day has passed. A schedule can start today or on a later day',
+  ],
   // The server accepts a start date from yesterday to a year ahead.
   schBadDate: [
     'วันเริ่มต้องอยู่ระหว่างเมื่อวานถึงอีก 1 ปีข้างหน้า',

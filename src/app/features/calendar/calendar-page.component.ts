@@ -142,8 +142,12 @@ export class CalendarPageComponent {
     this.selDay.set(this.posts.todayKey());
   }
 
-  /** "Add" on a day: the schedule builder opens with that day as its start. */
+  /** The selected day is before today: a schedule cannot start there. */
+  protected readonly pastDay = computed(() => this.selDay() < this.posts.todayKey());
+
+  /** "Add" on a day: the schedule builder opens with that day as its start (never a day that has passed). */
   protected addOnDay(): void {
+    if (this.pastDay()) return;
     void this.router.navigate(['/app/schedules'], { queryParams: { start: this.selDay() } });
   }
 

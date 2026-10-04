@@ -133,10 +133,16 @@
         <button
           type="button"
           class="su-btn su-btn-sm su-btn-secondary su-btn-full"
+          [disabled]="pastDay()"
+          [attr.title]="pastDay() ? t().api.flow.calPastHint : null"
+          [attr.aria-describedby]="pastDay() ? 'cal-past-hint' : null"
           (click)="addOnDay()"
         >
           <i class="ph ph-plus"></i>{{ t().cal.add }}
         </button>
+        @if (pastDay()) {
+          <p id="cal-past-hint" class="small muted past">{{ t().api.flow.calPastHint }}</p>
+        }
       </div>
     </section>
   </div>

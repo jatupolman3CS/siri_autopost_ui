@@ -248,7 +248,11 @@ export class ScheduleFormService {
       this.error.set('');
     }
     if (p.linkSetId !== undefined) this.pickSet(p.linkSetId);
-    if (p.start && parseDateKey(p.start)) this.start.set(p.start);
+    // A day that has passed cannot start a schedule (the calendar's "add" on an old day): it starts today.
+    if (p.start && parseDateKey(p.start)) {
+      const today = this.posts.todayKey();
+      this.start.set(p.start < today ? today : p.start);
+    }
   }
 
   // ---------- fields ----------

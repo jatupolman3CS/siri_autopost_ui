@@ -1136,6 +1136,19 @@ describe('SchedulesPageComponent', () => {
       for (const r of http.match((x) => x.url.endsWith('/best-times'))) r.flush([]);
     });
 
+    it('starts today when the address asks for a day that has passed', async () => {
+      const yesterday = localDateKey(new Date(Date.now() - 864e5));
+      const { el } = await open({ url: `/app/schedules?collection=c1&set=s1&start=${yesterday}` });
+      expect(input(el, t().sch.start).value).toBe(TestBed.inject(PostsStore).todayKey());
+      for (const r of http.match((x) => x.url.endsWith('/best-times'))) r.flush([]);
+    });
+
+    it('keeps today and later days as they are', async () => {
+      const { el } = await open({ url: `/app/schedules?collection=c1&set=s1&start=${TOMORROW}` });
+      expect(input(el, t().sch.start).value).toBe(TOMORROW);
+      for (const r of http.match((x) => x.url.endsWith('/best-times'))) r.flush([]);
+    });
+
     it('opens with only a collection (from a collection card)', async () => {
       const { el } = await open({ url: '/app/schedules?collection=c1' });
       expect(select(el, t().sch.collection).value).toBe('c1');
