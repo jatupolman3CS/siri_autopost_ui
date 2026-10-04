@@ -1,0 +1,68 @@
+.cfg {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 12px 24px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fs14 {
+  font-size: 14px;
+}
+
+.ta {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text);
+  resize: vertical;
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    background: var(--color-surface-muted);
+    color: var(--color-text-muted);
+  }
+}
+
+.selects {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stored {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.checks {
+  display: flex;
+  flex-direction: column;
+}
+
+// Under a checkbox: lined up with its label (the 44px hit area and the gap in front of it).
+.hint {
+  padding-left: 54px;
+}

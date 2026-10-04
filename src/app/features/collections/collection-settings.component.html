@@ -1,0 +1,86 @@
+<div class="cfg" role="group" [attr.aria-label]="t().col.settings">
+  <label class="fld">
+    <span class="fw5 fs14">{{ t().col.hashtags }}</span>
+    <textarea
+      class="ta"
+      rows="2"
+      [placeholder]="t().col.hashtagsPh"
+      [value]="s().hashtags"
+      [disabled]="!perm.canEdit()"
+      [attr.title]="perm.editHint() || null"
+      [attr.maxlength]="limits.hashtags"
+      (input)="set({ hashtags: $any($event.target).value })"
+    ></textarea>
+  </label>
+  <label class="fld">
+    <span class="fw5 fs14">{{ t().col.pageTags }}</span>
+    <textarea
+      class="ta"
+      rows="2"
+      [placeholder]="t().col.pageTagsPh"
+      [value]="s().pageTags"
+      [disabled]="!perm.canEdit()"
+      [attr.title]="perm.editHint() || null"
+      [attr.maxlength]="limits.pageTags"
+      (input)="set({ pageTags: $any($event.target).value })"
+    ></textarea>
+    <span class="small muted stored"><i class="ph ph-info"></i>{{ t().api.flow.storedOnly }}</span>
+  </label>
+  <label class="fld">
+    <span class="fw5 fs14">{{ t().col.footer }}</span>
+    <textarea
+      class="ta"
+      rows="2"
+      [placeholder]="t().col.footerPh"
+      [value]="s().footer"
+      [disabled]="!perm.canEdit()"
+      [attr.title]="perm.editHint() || null"
+      [attr.maxlength]="limits.footer"
+      (input)="set({ footer: $any($event.target).value })"
+    ></textarea>
+  </label>
+  <div class="selects">
+    <app-select-field
+      [label]="t().col.footerPos"
+      [options]="footerPosOptions()"
+      [value]="s().footerPos"
+      [disabled]="!perm.canEdit()"
+      (valueChange)="setFooterPos($event)"
+    />
+    <div>
+      <app-select-field
+        [label]="t().col.wmPos"
+        [options]="wmPosOptions()"
+        [value]="s().watermarkPos"
+        [disabled]="!perm.canEdit() || !s().watermark"
+        (valueChange)="setWatermarkPos($event)"
+      />
+      <span class="small muted stored"
+        ><i class="ph ph-info"></i>{{ t().api.flow.storedOnly }}</span
+      >
+    </div>
+  </div>
+  <div class="checks">
+    <app-checkbox
+      [label]="t().col.shuffle"
+      [checked]="s().shuffle"
+      [disabled]="!perm.canEdit()"
+      (checkedChange)="set({ shuffle: $event })"
+    />
+    <span class="small muted hint">{{ t().api.flow.storedOnly }}</span>
+    <app-checkbox
+      [label]="t().col.watermark"
+      [checked]="s().watermark"
+      [disabled]="!perm.canEdit()"
+      (checkedChange)="set({ watermark: $event })"
+    />
+    <span class="small muted hint">{{ t().api.flow.storedOnly }}</span>
+    <app-checkbox
+      [label]="t().col.requireApproval"
+      [checked]="s().requireApproval"
+      [disabled]="!perm.canEdit()"
+      (checkedChange)="set({ requireApproval: $event })"
+    />
+    <span class="small muted hint">{{ t().col.approvalHint }}</span>
+  </div>
+</div>

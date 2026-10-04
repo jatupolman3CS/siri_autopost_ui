@@ -1,0 +1,52 @@
+<div class="page">
+  <div class="page-head">
+    <div class="head-text">
+      <h1>{{ t().col.title }}</h1>
+      <p>{{ t().col.sub }}</p>
+      <app-perm-note level="edit" />
+    </div>
+    <div class="actions">
+      <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="exportCsv()">
+        <i class="ph ph-download-simple"></i>{{ t().col.exportCsv }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+        (click)="modal.set(true)"
+      >
+        <i class="ph ph-plus"></i>{{ t().col.newCol }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+        (click)="write()"
+      >
+        <i class="ph ph-pencil-simple-line"></i>{{ t().col.write }}
+      </button>
+    </div>
+  </div>
+
+  <app-flow-steps [current]="1" />
+
+  @if (!store.loaded()) {
+    <section class="panel loading" aria-busy="true">—</section>
+  } @else {
+    @for (c of store.collections(); track c.id) {
+      <app-collection-card [collection]="c" />
+    } @empty {
+      <app-empty-state
+        icon="ph-folder-open"
+        [heading]="t().api.flow.emptyCollectionsTitle"
+        [description]="t().api.flow.emptyCollectionsBody"
+      />
+    }
+  }
+
+  <app-next-step [label]="t().flow.n1" (go)="router.navigateByUrl('/app/targets')" />
+</div>
+
+<app-new-collection-modal [open]="modal()" (closed)="modal.set(false)" />
