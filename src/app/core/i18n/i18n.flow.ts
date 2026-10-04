@@ -42,6 +42,38 @@ export const AP_I18N_FLOW = {
     'ผูกเครื่องก่อน: ตารางโพสต์ผ่านส่วนขยายในเบราว์เซอร์ที่ผูกไว้เท่านั้น',
     'Pair a computer first: schedules post only through the extension in a paired browser',
   ],
+
+  // Link sets
+  // How many schedules use the set (the API gives a count, not the names; a refused delete names them).
+  linkSetUsedBy: ['ใช้ในตารางโพสต์ {n} ตาราง', 'Used by schedules: {n}'],
+  // The "post as" select: only Facebook accounts with a paired computer can post.
+  postAsAuto: [
+    'อัตโนมัติ: บัญชี Facebook แรกที่ผูกเครื่อง',
+    'Automatic: the first connected Facebook account',
+  ],
+  postAsHint: [
+    'เลือกได้เฉพาะบัญชี Facebook ที่ผูกเครื่องแล้ว บัญชีนี้โพสต์ลงทุกกลุ่มในชุด',
+    'Only Facebook accounts with a paired computer can be chosen. This account posts to every group in the set',
+  ],
+  postAsMissing: ['บัญชีที่ไม่พบแล้ว', 'Account no longer exists'],
+  // Import from an account (what the extension of that account last synced).
+  importAccount: ['บัญชี Facebook', 'Facebook account'],
+  importNoAccount: [
+    'ยังไม่มีบัญชี Facebook ที่ผูกเครื่อง ผูกเครื่องที่หน้าทีมและเวิร์กสเปซก่อน แล้วค่อยดึงกลุ่มจากบัญชีนั้น',
+    'No Facebook account is connected yet. Pair a computer in Team & workspaces first, then pick groups from it',
+  ],
+  importEmpty: [
+    'บัญชีนี้ยังไม่มีกลุ่มที่ส่วนขยายซิงก์ไว้ ส่วนขยายส่งรายชื่อกลุ่มจากชุดโพสต์ของมันเอง เพิ่มกลุ่มที่นั่นก่อน หรือวางลิงก์เองก็ได้',
+    'This account has no synced groups yet. The extension sends the groups of its own campaigns: add groups there first, or paste the links yourself',
+  ],
+  importFailed: ['โหลดรายชื่อกลุ่มของบัญชีนี้ไม่ได้', 'Could not load the groups of this account'],
+  // CSV import: the text box, or a file read in the browser.
+  csvChooseFile: ['เลือกไฟล์ CSV', 'Choose a CSV file'],
+  csvFileError: ['อ่านไฟล์นี้ไม่ได้', 'Could not read this file'],
+  csvNoRows: [
+    'ไม่มีแถวที่ใช้ได้ แต่ละแถวต้องมีชื่อชุดและลิงก์กลุ่ม Facebook',
+    'No usable rows: each row needs a set name and a Facebook group link',
+  ],
 } as const;
 
 registerPack('flow', AP_I18N_FLOW);

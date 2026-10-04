@@ -135,6 +135,10 @@ export const AP_I18N_FIXES = {
     // and labelled with their real names, so these are only the generic kinds.
     postAsPage: ['เพจ Facebook', 'Facebook page'],
     postAsProfile: ['โปรไฟล์ส่วนตัว', 'Personal profile'],
+    // The design used this label both for a group the engine switched off after failures and for one the owner
+    // switched off by hand. Only the failure case has its own text (hOffReason, with the count); a link that is
+    // off with no failures was switched off on purpose, so "auto-disabled" would be wrong.
+    hOff: ['ปิดใช้งานอยู่', 'Switched off'],
   },
   ntf: {
     // The design says the extension sends the messages and the tokens stay on the machine. Our server sends
