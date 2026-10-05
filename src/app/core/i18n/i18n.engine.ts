@@ -143,6 +143,7 @@ export const AP_I18N_ENGINE = {
 
   // Restore: the file is checked first, then its contents are listed and a second click confirms the replacement.
   restoreCheck: ['ตรวจไฟล์', 'Check the file'],
+  restorePick: ['เลือกไฟล์ .json', 'Choose a .json file'],
   restoreBack: ['ย้อนกลับ', 'Back'],
   restoreConfirm: ['แทนที่และกู้คืน', 'Replace and restore'],
   restoreIncomplete: [

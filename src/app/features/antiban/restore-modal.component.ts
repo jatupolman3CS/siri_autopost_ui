@@ -74,6 +74,23 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
         </div>
       } @else {
         <p class="hint">{{ t().ab.restoreHint }}</p>
+        <input
+          #picker
+          type="file"
+          accept=".json,application/json"
+          hidden
+          data-testid="restore-file"
+          (change)="pick($event)"
+        />
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-secondary pick"
+          [disabled]="busy() || !perm.canAdmin()"
+          (click)="picker.click()"
+        >
+          <i class="ph ph-upload-simple" aria-hidden="true"></i>
+          {{ t().api.engine.restorePick }}
+        </button>
         <textarea
           class="su-textarea mono"
           rows="7"
@@ -129,6 +146,9 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
       margin: 0 0 8px;
       font-size: 14px;
       color: var(--color-text-muted);
+    }
+    .pick {
+      margin: 0 0 8px;
     }
     .mono {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -202,6 +222,20 @@ export class RestoreModalComponent {
 
   protected line(template: string, values: Record<string, number>): string {
     return fmt(template, values);
+  }
+
+  /** A chosen file replaces the text; it is checked by the same "Check the file" click as pasted text. */
+  protected async pick(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      this.text.set(await file.text());
+      this.error.set('');
+    } catch {
+      this.error.set(this.t().ab.restoreErr);
+    }
   }
 
   /** The text as a backup object, or null when it is not a JSON object. */
