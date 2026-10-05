@@ -278,7 +278,7 @@ describe('SchedulesPageComponent', () => {
       const { el } = await open({ connected: false });
       const note = el.querySelector('.callout')!;
       expect(note.textContent).toContain(t().api.flow.needDevice);
-      expect(note.querySelector('a')?.getAttribute('href')).toBe('/app/team');
+      expect(note.querySelector('a')?.getAttribute('href')).toBe('/app/team?pair=1');
     });
 
     it('has no such notice when a browser is paired', async () => {
@@ -1228,6 +1228,14 @@ describe('SchedulesPageComponent', () => {
       expect(create(el).title).toBe(t().api.flow.needDevice);
       create(el).click();
       http.expectNone(SCHEDULES_URL);
+    });
+
+    it('says so in the builder and leads to pairing that opens the dialog', async () => {
+      const { fixture, el } = await open({ connected: false });
+      await openBuilder(el, fixture);
+      const need = el.querySelector('.builder .need')!;
+      expect(need.textContent).toContain(t().api.flow.needDevice);
+      expect(need.querySelector('a')?.getAttribute('href')).toBe('/app/team?pair=1');
     });
   });
 

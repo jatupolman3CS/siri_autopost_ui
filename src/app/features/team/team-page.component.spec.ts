@@ -47,6 +47,8 @@ describe('TeamPageComponent', () => {
       devices?: ApiDevice[];
       limits?: { seats: number | null; devices: number | null };
       assist?: boolean;
+      /** Opened with ?pair=1. */
+      pair?: boolean;
     } = {},
   ) {
     http = provideApiTesting({
@@ -68,12 +70,14 @@ describe('TeamPageComponent', () => {
       },
     });
     const fixture = TestBed.createComponent(TeamPageComponent);
+    if (opts.pair) fixture.componentRef.setInput('pair', '1');
     fixture.detectChanges();
     await settle();
     answerWorkspaceLoads(http, { devices: opts.devices });
     http.expectOne(`/api/workspaces/${WS}/members`).flush(opts.members ?? [OWNER]);
     await settle();
     fixture.detectChanges();
+    if (opts.pair) await settle();
     return { fixture, el: fixture.nativeElement as HTMLElement };
   }
 
@@ -98,6 +102,27 @@ describe('TeamPageComponent', () => {
     expect(head(el)).toEqual([false, false]); // new workspace, invite
     expect(addDevice(el).disabled).toBe(false);
     expect(el.textContent).toContain('3');
+  });
+
+  it('opens the pairing dialog at once when it is opened with ?pair=1 (and an admin has room)', async () => {
+    const { fixture, el } = await open('owner', { devices: [], pair: true });
+    fixture.detectChanges();
+    http.expectOne({ method: 'POST', url: `/api/workspaces/${WS}/devices/pairing` }).flush({
+      code: 'ABCD-EFGH',
+      expiresAt: new Date(Date.now() + 600_000).toISOString(),
+    });
+    await settle();
+    fixture.detectChanges();
+    expect(
+      el.querySelector('app-pair-device-modal .su-modal, app-pair-device-modal [role=dialog]'),
+    ).not.toBeNull();
+  });
+
+  it('does not open the pairing dialog for a role that cannot pair, ?pair=1 or not', async () => {
+    const { el } = await open('editor', { devices: [], pair: true });
+    expect(
+      el.querySelector('app-pair-device-modal .su-modal, app-pair-device-modal [role=dialog]'),
+    ).toBeNull();
   });
 
   it('turns invite off when the seats are taken, and add device off when the devices are', async () => {

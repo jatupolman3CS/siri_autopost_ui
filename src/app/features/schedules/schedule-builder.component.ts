@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
@@ -31,6 +31,7 @@ import { SchedulePatternComponent } from './schedule-pattern.component';
 @Component({
   selector: 'app-schedule-builder',
   imports: [
+    RouterLink,
     InputFieldComponent,
     SelectFieldComponent,
     SchedulePatternComponent,

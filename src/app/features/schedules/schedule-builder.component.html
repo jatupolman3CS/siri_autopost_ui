@@ -125,7 +125,17 @@
       </button>
     </div>
   </div>
-  @if (form.error()) {
+  @if (!perm.readOnly() && !canPost()) {
+    <div class="need" role="alert">
+      <span class="err">{{ t().api.flow.needDevice }}</span>
+      <a
+        class="su-btn su-btn-sm su-btn-primary"
+        routerLink="/app/team"
+        [queryParams]="{ pair: 1 }"
+        >{{ t().ov.pair }}</a
+      >
+    </div>
+  } @else if (form.error()) {
     <span class="err" role="alert">{{ form.error() }}</span>
   }
 </section>
