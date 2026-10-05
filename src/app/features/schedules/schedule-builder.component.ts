@@ -89,6 +89,10 @@ export class ScheduleBuilderComponent {
       label: d ? fmt(this.t().sch.autoDelD, { d }) : this.t().sch.autoDelOff,
     })),
   );
+  protected readonly startOptions = computed<SelectOption[]>(() => [
+    { value: 'time', label: this.t().api.flow.schStartAtTime },
+    { value: 'now', label: this.t().api.flow.schStartNow },
+  ]);
   protected readonly startLabel = computed(() =>
     this.form.isOnce() ? this.t().sch.onceDate : this.t().sch.start,
   );

@@ -480,7 +480,7 @@ describe('SchedulesPageComponent', () => {
       for (const r of http.match((x) => x.url.endsWith('/best-times'))) r.flush([]);
     });
 
-    it('starts with the five basic fields, today as the start date and an empty summary', async () => {
+    it('starts with the six basic fields, today as the start date and an empty summary', async () => {
       const { fixture, el } = await open();
       await openBuilder(el, fixture);
       const labels = [...builder(el)!.querySelectorAll('.grid:first-of-type label')].map((l) =>
@@ -491,6 +491,7 @@ describe('SchedulesPageComponent', () => {
         t().sch.collection,
         t().sch.set,
         t().sch.mode,
+        t().api.flow.schStartLabel,
         t().sch.start,
       ]);
       expect(input(el, t().sch.start).value).toBe(TestBed.inject(PostsStore).todayKey());
@@ -836,6 +837,7 @@ describe('SchedulesPageComponent', () => {
       autoDeleteDays: 0,
       overrides: {},
       utcOffsetMinutes: utcOffsetMinutes(),
+      startNow: false,
       ...over,
     });
     const NEW = apiSchedule({ id: 'new', name: 'Condo posts → Condo groups' });
@@ -864,6 +866,45 @@ describe('SchedulesPageComponent', () => {
       // The form starts over for the next schedule.
       expect(builder(el)).toBeNull();
       expect(rowsOf(el)).toHaveLength(2);
+    });
+
+    it('starts right away when asked: no date, startNow true, and a note about the first round', async () => {
+      const { fixture, el } = await open();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      pick(select(el, t().api.flow.schStartLabel), 'now');
+      fixture.detectChanges();
+      expect(builder(el)!.textContent).toContain(t().api.flow.schStartNowNote);
+      // The date has nothing to say any more.
+      expect(builder(el)!.querySelector('input[type="date"]')).toBeNull();
+      create(el).click();
+      await settle();
+      const req = http.expectOne(SCHEDULES_URL);
+      expect(req.request.body).toEqual(body({ startDate: null, startNow: true }));
+      req.flush(apiScheduleCreated(NEW, { created: 28, firstAt: '2026-10-06T02:00:00Z' }));
+      await settle();
+      answerChangeRefresh(http);
+      await settle();
+      expect(navigate).toHaveBeenCalled();
+    });
+
+    it('hides the time of a once schedule that starts now and says what it does', async () => {
+      const { fixture, el } = await open();
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      pick(select(el, t().sch.mode), 'once');
+      fixture.detectChanges();
+      button(builder(el)!, t().common.more)!.click();
+      fixture.detectChanges();
+      const labels = () =>
+        [...builder(el)!.querySelectorAll('label')].map((l) => l.textContent?.trim());
+      expect(labels()).toContain(t().sch.onceTime);
+      pick(select(el, t().api.flow.schStartLabel), 'now');
+      fixture.detectChanges();
+      expect(labels()).not.toContain(t().sch.onceTime);
+      expect(builder(el)!.textContent).toContain(t().api.flow.schStartNowOnceNote);
+      expect(summary(el)).toBe(fmt(t().api.flow.schSummaryNow, { m: 3, a: 3, b: 12 }));
     });
 
     it('sends everything that was changed: name, pattern, times, order, per-group times, bump and delete', async () => {

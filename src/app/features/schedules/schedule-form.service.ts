@@ -82,6 +82,8 @@ export class ScheduleFormService {
   readonly mode = signal<ScheduleMode>('daily');
   /** Start date (the post date of "once"), `yyyy-MM-dd`; empty = today. */
   readonly start = signal('');
+  /** When it starts: `time` = at its own times (and start date), `now` = the moment it is created. */
+  readonly startMode = signal<'time' | 'now'>('time');
   readonly times = signal<string[]>(['09:00', '18:00']);
   /** The text of the "add another time" box. */
   readonly extra = signal('');
@@ -109,6 +111,7 @@ export class ScheduleFormService {
   readonly isInterval = computed(() => this.mode() === 'interval');
   readonly isOnce = computed(() => this.mode() === 'once');
   readonly isDrip = computed(() => this.mode() === 'drip');
+  readonly isNow = computed(() => this.startMode() === 'now');
 
   readonly collection = computed(() => this.collections.byId(this.collectionId()));
   readonly set = computed(() => this.linkSets.byId(this.linkSetId()));
@@ -178,6 +181,10 @@ export class ScheduleFormService {
     if (!this.collection() || !this.set() || !this.slots().length) return t.sch.summaryEmpty;
     const n = this.perDay();
     const m = this.members().length;
+    if (this.isNow() && this.isOnce()) {
+      const ab = this.settings.ab();
+      return fmt(t.api.flow.schSummaryNow, { m, a: ab.min, b: ab.max });
+    }
     if (this.isOnce()) {
       const p = parseDateKey(this.start() || this.posts.todayKey());
       const day = p ? new Date(p[0], p[1] - 1, p[2]) : new Date();
@@ -222,6 +229,7 @@ export class ScheduleFormService {
     this.linkSetId.set('');
     this.mode.set('daily');
     this.start.set('');
+    this.startMode.set('time');
     this.times.set(['09:00', '18:00']);
     this.extra.set('');
     this.every.set(6);
@@ -266,6 +274,11 @@ export class ScheduleFormService {
   pickSet(id: string): void {
     if (id !== this.linkSetId()) this.overrides.set({});
     this.linkSetId.set(id);
+    this.error.set('');
+  }
+
+  pickStartMode(mode: string): void {
+    this.startMode.set(mode === 'now' ? 'now' : 'time');
     this.error.set('');
   }
 
@@ -350,7 +363,8 @@ export class ScheduleFormService {
     }
     if (!this.members().length) return this.fail(t.api.flow.schNoTargets);
     const start = this.start();
-    if (start) {
+    // Starting now ignores the date, so a stale one in the box is not checked.
+    if (start && !this.isNow()) {
       const today = this.posts.todayKey();
       if (start < addDays(today, -1) || start > addDays(today, 366))
         return this.fail(t.api.flow.schBadDate);
@@ -364,7 +378,7 @@ export class ScheduleFormService {
       times,
       everyHours: clamp(this.every(), 1, 24),
       firstTime: toMinutes(this.first()) === null ? null : this.first(),
-      startDate: this.start() || null,
+      startDate: this.isNow() ? null : this.start() || null,
       onceTime: toMinutes(this.onceTime()) === null ? null : this.onceTime(),
       order: this.order(),
       dripFrom: toMinutes(this.dripFrom()) === null ? null : this.dripFrom(),
@@ -374,6 +388,7 @@ export class ScheduleFormService {
       autoDeleteDays: this.del(),
       overrides: overrides.overrides,
       utcOffsetMinutes: utcOffsetMinutes(),
+      startNow: this.isNow(),
     };
   }
 

@@ -9245,6 +9245,10 @@
           "utcOffsetMinutes": {
             "type": "integer",
             "format": "int32"
+          },
+          "startNow": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -9412,6 +9416,10 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "startNow": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

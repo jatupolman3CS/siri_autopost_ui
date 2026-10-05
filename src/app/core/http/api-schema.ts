@@ -5940,6 +5940,8 @@ export interface components {
       };
       /** Format: int32 */
       utcOffsetMinutes: number;
+      /** @default false */
+      startNow: boolean;
     };
     ScheduleCreatedDto: {
       schedule: components['schemas']['ScheduleDto'];
@@ -5991,6 +5993,8 @@ export interface components {
       todayCount: number;
       /** Format: date-time */
       nextRunAt: null | string;
+      /** @default false */
+      startNow: boolean;
     };
     /** @enum {unknown} */
     ScheduleMode: 'daily' | 'weekdays' | 'weekend' | 'interval' | 'drip' | 'once';

@@ -147,6 +147,22 @@ export const AP_I18N_FLOW = {
     'วันเริ่มต้องอยู่ระหว่างเมื่อวานถึงอีก 1 ปีข้างหน้า',
     'The start date must be between yesterday and a year from now',
   ],
+  // When a schedule starts: at its own times, or the moment "create" is pressed.
+  schStartLabel: ['เริ่มโพสต์', 'Start posting'],
+  schStartAtTime: ['ตามเวลาที่ตั้งไว้', 'At the times I set'],
+  schStartNow: ['เริ่มทันทีที่กดสร้าง', 'Right away, when I press create'],
+  schStartNowNote: [
+    'เมื่อกดสร้าง ระบบจะเริ่มโพสต์รอบแรกทันที โดยเข้าทีละกลุ่มแบบสุ่มลำดับ เว้นระยะห่างแต่ละกลุ่มแบบคนเล่น Facebook จากนั้นจึงโพสต์ตามเวลาที่ตั้งไว้ต่อไป',
+    'When you press create, the first round starts at once: one group at a time in a random order, with a pause between groups like a person browsing Facebook. Then the schedule carries on at its times',
+  ],
+  schStartNowOnceNote: [
+    'โพสต์ครั้งเดียวทันทีที่กดสร้าง โดยเข้าทีละกลุ่มแบบสุ่มลำดับ เว้นระยะห่างแต่ละกลุ่มแบบคนเล่น Facebook (ไม่ใช้วันและเวลาที่ตั้ง)',
+    'One round right when you press create: one group at a time in a random order, with a pause between groups like a person browsing Facebook (the date and time are not used)',
+  ],
+  schSummaryNow: [
+    'เริ่มทันที: {m} ปลายทาง ทีละกลุ่ม เว้น {a}–{b} นาทีระหว่างกลุ่ม',
+    'Starts now: {m} targets one by one, {a}–{b} min apart',
+  ],
 } as const;
 
 registerPack('flow', AP_I18N_FLOW);

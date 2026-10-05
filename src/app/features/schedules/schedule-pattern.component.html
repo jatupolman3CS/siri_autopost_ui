@@ -74,7 +74,7 @@
   <p class="note">{{ roundsPreview() }}</p>
 }
 
-@if (form.isOnce()) {
+@if (form.isOnce() && !form.isNow()) {
   <div class="w220">
     <app-input-field
       [label]="t().sch.onceTime"

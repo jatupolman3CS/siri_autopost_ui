@@ -33,6 +33,7 @@ export function apiSchedule(over: Partial<ApiSchedule> & { id: string }): ApiSch
     usablePosts: 3,
     todayCount: 0,
     nextRunAt: null,
+    startNow: false,
     ...over,
   };
 }
@@ -64,6 +65,7 @@ export function saveBody(over: Partial<ApiSaveSchedule> = {}): ApiSaveSchedule {
     autoDeleteDays: 0,
     overrides: {},
     utcOffsetMinutes: utcOffsetMinutes(),
+    startNow: false,
     ...over,
   };
 }
