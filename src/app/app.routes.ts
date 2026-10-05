@@ -65,6 +65,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'posts',
+        title: 'api.postsNav',
+        loadComponent: () =>
+          import('./features/posts/posts-page.component').then((m) => m.PostsPageComponent),
+      },
+      {
         path: 'collections',
         title: 'nav.collections',
         loadComponent: () =>

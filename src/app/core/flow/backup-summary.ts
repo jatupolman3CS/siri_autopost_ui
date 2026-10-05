@@ -6,8 +6,10 @@ import type { ApiBackup } from '../http/api.service';
 
 export interface BackupSummary {
   collections: number;
-  /** Posts over all collections. */
+  /** Different posts held by the collections: a post that sits in several (same `key`) counts once. */
   posts: number;
+  /** Posts that sit in no collection (the file's top-level `posts`), waiting in the post library. */
+  libraryPosts: number;
   linkSets: number;
   /** Links over all link sets. */
   links: number;
@@ -34,15 +36,41 @@ export function isCompleteBackup(file: Partial<ApiBackup>): boolean {
   return [file.collections, file.linkSets, file.schedules].every(Array.isArray);
 }
 
+/**
+ * Counts the different posts of `lists`: items with the same non-empty `key` are one post (a post in several
+ * collections is written once per collection with the same key); items without a key (a file from before posts
+ * could be shared) each count. `seen` carries the keys already counted, so a later list does not count them again.
+ */
+function distinctPosts(lists: unknown[][], seen: Set<string>): number {
+  let n = 0;
+  for (const items of lists) {
+    for (const item of items) {
+      const key = isObject(item) && typeof item['key'] === 'string' ? item['key'] : '';
+      if (key) {
+        if (seen.has(key)) continue;
+        seen.add(key);
+      }
+      n++;
+    }
+  }
+  return n;
+}
+
 /** Counts what the file holds. A missing or malformed list counts as none. */
 export function summarizeBackup(file: Partial<ApiBackup>): BackupSummary {
   const collections = list(file.collections);
   const linkSets = list(file.linkSets);
   const rules: unknown = file.autoReply;
   const notify: unknown = file.notificationRules;
+  const seen = new Set<string>();
+  const posts = distinctPosts(
+    collections.map((c) => (isObject(c) ? list(c['posts']) : [])),
+    seen,
+  );
   return {
     collections: collections.length,
-    posts: sum(collections, (c) => list(c['posts']).length),
+    posts,
+    libraryPosts: distinctPosts([list(file.posts)], seen),
     linkSets: linkSets.length,
     links: sum(linkSets, (s) => list(s['links']).length),
     schedules: list(file.schedules).length,

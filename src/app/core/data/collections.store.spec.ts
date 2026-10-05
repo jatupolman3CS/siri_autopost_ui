@@ -10,15 +10,17 @@ import {
 } from '../../testing/api-testing';
 import { apiCollection, apiCollectionPost } from '../../testing/collection-fixtures';
 import { CollectionsStore, isUsable } from './collections.store';
+import { MasterPostsStore } from './master-posts.store';
 import { WorkspaceStore } from './workspace.store';
 
 const BASE = `/api/workspaces/${WS}/collections`;
+const MASTER = `/api/workspaces/${WS}/master-posts`;
 
 const posts = {
-  a1: apiCollectionPost({ id: 'a1', collectionId: 'a', text: 'one', postedCount: 2 }),
-  a2: apiCollectionPost({ id: 'a2', collectionId: 'a', text: 'two', mediaIds: ['m1'] }),
-  b1: apiCollectionPost({ id: 'b1', collectionId: 'b', text: 'three', approval: 'draft' }),
-  b2: apiCollectionPost({ id: 'b2', collectionId: 'b', text: 'four', approval: 'pending' }),
+  a1: apiCollectionPost({ id: 'a1', collectionIds: ['a'], text: 'one', postedCount: 2 }),
+  a2: apiCollectionPost({ id: 'a2', collectionIds: ['a'], text: 'two', mediaIds: ['m1'] }),
+  b1: apiCollectionPost({ id: 'b1', collectionIds: ['b'], text: 'three', approval: 'draft' }),
+  b2: apiCollectionPost({ id: 'b2', collectionIds: ['b'], text: 'four', approval: 'pending' }),
 };
 
 describe('CollectionsStore', () => {
@@ -46,6 +48,19 @@ describe('CollectionsStore', () => {
     vi.useRealTimers();
     http.verify();
   });
+
+  /** Puts a1 into collection b as well, the way the server lists a post that sits in two collections. */
+  function shareA1() {
+    const shared = { ...posts.a1, collectionIds: ['a', 'b'] };
+    store.collections.update((l) =>
+      l.map((c) =>
+        c.id === 'b'
+          ? { ...c, posts: [...c.posts, shared] }
+          : { ...c, posts: c.posts.map((p) => (p.id === 'a1' ? shared : p)) },
+      ),
+    );
+    return shared;
+  }
 
   describe('reading', () => {
     it('loads the collections of the workspace and opens the first one, as the design does', () => {
@@ -345,7 +360,7 @@ describe('CollectionsStore', () => {
       const done = store.addPost('a', 'new text', ['m1', 'm2']);
       const req = http.expectOne({ method: 'POST', url: `${BASE}/a/posts` });
       expect(req.request.body).toEqual({ text: 'new text', mediaIds: ['m1', 'm2'] });
-      req.flush(apiCollectionPost({ id: 'a3', collectionId: 'a', text: 'new text' }));
+      req.flush(apiCollectionPost({ id: 'a3', text: 'new text' }));
       expect((await done).id).toBe('a3');
       expect(store.byId('a')?.posts.map((p) => p.id)).toEqual(['a1', 'a2', 'a3']);
     });
@@ -360,8 +375,8 @@ describe('CollectionsStore', () => {
         ],
       });
       req.flush([
-        apiCollectionPost({ id: 'n1', collectionId: 'b', text: 'x', approval: 'draft' }),
-        apiCollectionPost({ id: 'n2', collectionId: 'b', text: 'y', approval: 'draft' }),
+        apiCollectionPost({ id: 'n1', text: 'x', approval: 'draft' }),
+        apiCollectionPost({ id: 'n2', text: 'y', approval: 'draft' }),
       ]);
       expect((await done).length).toBe(2);
       expect(store.byId('b')?.posts.map((p) => p.id)).toEqual(['b1', 'b2', 'n1', 'n2']);
@@ -377,7 +392,7 @@ describe('CollectionsStore', () => {
     });
 
     it('updates a post in its place', async () => {
-      const done = store.updatePost(posts.a2, { text: 'two edited', mediaIds: [] });
+      const done = store.updatePost('a', posts.a2, { text: 'two edited', mediaIds: [] });
       const req = http.expectOne({ method: 'PUT', url: `${BASE}/a/posts/a2` });
       expect(req.request.body).toEqual({ text: 'two edited', mediaIds: [], collectionId: null });
       req.flush({ ...posts.a2, text: 'two edited', mediaIds: [] });
@@ -386,10 +401,14 @@ describe('CollectionsStore', () => {
     });
 
     it('moves a post to another collection', async () => {
-      const done = store.updatePost(posts.a1, { text: 'one', mediaIds: [], toCollectionId: 'b' });
+      const done = store.updatePost('a', posts.a1, {
+        text: 'one',
+        mediaIds: [],
+        toCollectionId: 'b',
+      });
       const req = http.expectOne({ method: 'PUT', url: `${BASE}/a/posts/a1` });
       expect(req.request.body.collectionId).toBe('b');
-      req.flush({ ...posts.a1, collectionId: 'b', approval: 'draft' });
+      req.flush({ ...posts.a1, collectionIds: ['b'], approval: 'draft' });
       await done;
       expect(store.byId('a')?.posts.map((p) => p.id)).toEqual(['a2']);
       expect(store.byId('b')?.posts.map((p) => p.id)).toEqual(['b1', 'b2', 'a1']);
@@ -397,26 +416,97 @@ describe('CollectionsStore', () => {
     });
 
     it('does not move a post that is saved into the collection it is already in', async () => {
-      const done = store.updatePost(posts.a1, { text: 'one', mediaIds: [], toCollectionId: 'a' });
+      const done = store.updatePost('a', posts.a1, {
+        text: 'one',
+        mediaIds: [],
+        toCollectionId: 'a',
+      });
       const req = http.expectOne({ method: 'PUT', url: `${BASE}/a/posts/a1` });
       expect(req.request.body.collectionId).toBeNull();
       req.flush(posts.a1);
       await done;
       expect(store.byId('a')?.posts.map((p) => p.id)).toEqual(['a1', 'a2']);
     });
+
+    it('shows the saved post in every collection that holds it', async () => {
+      const shared = shareA1();
+      const done = store.updatePost('b', shared, { text: 'edited once', mediaIds: [] });
+      http
+        .expectOne({ method: 'PUT', url: `${BASE}/b/posts/a1` })
+        .flush({ ...shared, text: 'edited once' });
+      await done;
+      expect(store.byId('a')?.posts[0].text).toBe('edited once');
+      expect(store.byId('b')?.posts[2].text).toBe('edited once');
+    });
+
+    it('prefers the collection it is asked about when a post sits in several', () => {
+      shareA1();
+      expect(store.postById('a1')?.collection.id).toBe('a');
+      expect(store.postById('a1', 'b')?.collection.id).toBe('b');
+      expect(store.postById('a1', 'zzz')?.collection.id).toBe('a');
+    });
+
+    it('puts library posts into a collection with one request', async () => {
+      const done = store.addExistingPosts('b', ['a1']);
+      const req = http.expectOne({ method: 'POST', url: `${BASE}/b/posts/add` });
+      expect(req.request.body).toEqual({ postIds: ['a1'] });
+      const moved = { ...posts.a1, collectionIds: ['a', 'b'] };
+      req.flush(apiCollection({ id: 'b', posts: [posts.b1, posts.b2, moved] }));
+      await done;
+      expect(store.byId('b')?.posts.map((p) => p.id)).toEqual(['b1', 'b2', 'a1']);
+      // The other collection's copy learns it sits in two collections now.
+      expect(store.byId('a')?.posts[0].collectionIds).toEqual(['a', 'b']);
+      // The settings of the collection (and anything being edited) are not replaced by the answer.
+      expect(store.byId('b')?.settings.requireApproval).toBe(true);
+    });
+
+    it('rejects when the API refuses to add library posts', async () => {
+      const done = store.addExistingPosts('b', ['zzz']);
+      http
+        .expectOne({ method: 'POST', url: `${BASE}/b/posts/add` })
+        .flush({}, { status: 404, statusText: 'Not found' });
+      await expect(done).rejects.toBeDefined();
+      expect(store.byId('b')?.posts.length).toBe(2);
+    });
+
+    it('asks the post library to read again after a change (when it is in use)', async () => {
+      const master = TestBed.inject(MasterPostsStore);
+      await settle();
+      http.expectOne(MASTER).flush([]);
+      await settle();
+      const done = store.addPost('a', 'fresh');
+      http
+        .expectOne({ method: 'POST', url: `${BASE}/a/posts` })
+        .flush(apiCollectionPost({ id: 'a3', collectionIds: ['a'], text: 'fresh' }));
+      await done;
+      const again = http.expectOne(MASTER);
+      expect(again.request.method).toBe('GET');
+      again.flush([apiCollectionPost({ id: 'a3', collectionIds: ['a'], text: 'fresh' })]);
+      await settle();
+      expect(master.posts().map((p) => p.id)).toEqual(['a3']);
+    });
   });
 
-  describe('deleting and approval', () => {
-    it('takes a post off the page at once and keeps it off when the API agrees', async () => {
-      const done = store.deletePost(posts.a1);
+  describe('taking a post out and approval', () => {
+    it('takes a post out of the collection at once and keeps it out when the API agrees', async () => {
+      const done = store.removePost('a', 'a1');
       expect(store.byId('a')?.posts.map((p) => p.id)).toEqual(['a2']);
       http.expectOne({ method: 'DELETE', url: `${BASE}/a/posts/a1` }).flush(null);
       expect(await done).toBe(true);
       expect(store.byId('a')?.posts.map((p) => p.id)).toEqual(['a2']);
     });
 
+    it('leaves the post in the collections it also sits in', async () => {
+      shareA1();
+      const done = store.removePost('a', 'a1');
+      http.expectOne({ method: 'DELETE', url: `${BASE}/a/posts/a1` }).flush(null);
+      await done;
+      expect(store.byId('a')?.posts.map((p) => p.id)).toEqual(['a2']);
+      expect(store.byId('b')?.posts.map((p) => p.id)).toEqual(['b1', 'b2', 'a1']);
+    });
+
     it('puts the post back where it was when the API refuses', async () => {
-      const done = store.deletePost(posts.a1);
+      const done = store.removePost('a', 'a1');
       expect(store.byId('a')?.posts.length).toBe(1);
       http
         .expectOne({ method: 'DELETE', url: `${BASE}/a/posts/a1` })
@@ -430,9 +520,12 @@ describe('CollectionsStore', () => {
       ['approve', posts.b2, 'approved'],
       ['reject', posts.b2, 'draft'],
     ] as const)('%s: shows %s at once and takes the server answer', async (action, post, next) => {
-      const done = store.setApproval(post, action);
+      const done = store.setApproval('b', post, action);
       expect(store.postById(post.id)?.post.approval).toBe(next);
-      const req = http.expectOne({ method: 'POST', url: `${BASE}/b/posts/${post.id}/approval` });
+      const req = http.expectOne({
+        method: 'POST',
+        url: `${BASE}/b/posts/${post.id}/approval`,
+      });
       expect(req.request.body).toEqual({ action });
       req.flush({ ...post, approval: next, updatedAt: '2026-10-02T00:00:00Z' });
       expect(await done).toBe(true);
@@ -442,13 +535,41 @@ describe('CollectionsStore', () => {
       });
     });
 
+    it('approval belongs to the post: every collection that holds it shows the new state', async () => {
+      const shared = { ...posts.b2, collectionIds: ['a', 'b'] };
+      store.collections.update((l) =>
+        l.map((c) => (c.id === 'a' ? { ...c, posts: [...c.posts, shared] } : c)),
+      );
+      const done = store.setApproval('b', posts.b2, 'approve');
+      expect(store.byId('a')?.posts[2].approval).toBe('approved');
+      http
+        .expectOne({ method: 'POST', url: `${BASE}/b/posts/b2/approval` })
+        .flush({ ...shared, approval: 'approved' });
+      await done;
+      expect(store.byId('a')?.posts[2].approval).toBe('approved');
+      expect(store.byId('b')?.posts[1].approval).toBe('approved');
+    });
+
     it('goes back to the old state when the approval is refused', async () => {
-      const done = store.setApproval(posts.b2, 'approve');
+      const done = store.setApproval('b', posts.b2, 'approve');
       http
         .expectOne({ method: 'POST', url: `${BASE}/b/posts/b2/approval` })
         .flush({}, { status: 403, statusText: 'Forbidden' });
       expect(await done).toBe(false);
       expect(store.postById('b2')?.post.approval).toBe('pending');
+    });
+
+    it('a deleted collection leaves its posts in the library: the library is read again', async () => {
+      const master = TestBed.inject(MasterPostsStore);
+      await settle();
+      http.expectOne(MASTER).flush([]);
+      await settle();
+      const done = store.remove('a');
+      http.expectOne({ method: 'DELETE', url: `${BASE}/a` }).flush(null);
+      await done;
+      http.expectOne(MASTER).flush([]);
+      await settle();
+      expect(store.byId('a')).toBeUndefined();
     });
   });
 

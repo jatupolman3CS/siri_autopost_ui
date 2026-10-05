@@ -7,8 +7,10 @@ import { CollectionsStore } from './collections.store';
 import { DraftStore, blankDraft } from './draft.store';
 import { WorkspaceStore } from './workspace.store';
 
-const a1 = apiCollectionPost({ id: 'a1', collectionId: 'a', text: 'one', mediaIds: ['m1', 'm2'] });
-const a2 = apiCollectionPost({ id: 'a2', collectionId: 'a', text: 'two' });
+const a1 = apiCollectionPost({ id: 'a1', text: 'one', mediaIds: ['m1', 'm2'] });
+const a2 = apiCollectionPost({ id: 'a2', text: 'two' });
+/** A post that sits in both collections. */
+const both = apiCollectionPost({ id: 'ab', text: 'in both', collectionIds: ['a', 'b'] });
 
 describe('DraftStore', () => {
   let http: HttpTestingController;
@@ -21,8 +23,8 @@ describe('DraftStore', () => {
     collections = TestBed.inject(CollectionsStore);
     await signIn(http, {
       collections: [
-        apiCollection({ id: 'a', name: 'Condo', posts: [a1, a2] }),
-        apiCollection({ id: 'b', name: 'Tickets' }),
+        apiCollection({ id: 'a', name: 'Condo', posts: [a1, a2, both] }),
+        apiCollection({ id: 'b', name: 'Tickets', posts: [both] }),
       ],
     });
   });
@@ -106,6 +108,17 @@ describe('DraftStore', () => {
     it('loads the post asked for', () => {
       expect(draft.open('a', 'a2')).toBe('loaded');
       expect(draft.draft()).toMatchObject({ text: 'two', postId: 'a2', collectionId: 'a' });
+    });
+
+    it('opens a post that sits in several collections in the collection the address names', () => {
+      expect(draft.open('b', 'ab')).toBe('loaded');
+      expect(draft.draft()).toMatchObject({ postId: 'ab', collectionId: 'b' });
+      draft.reset();
+      expect(draft.open('a', 'ab')).toBe('loaded');
+      expect(draft.draft().collectionId).toBe('a');
+      draft.reset();
+      expect(draft.open(undefined, 'ab')).toBe('loaded');
+      expect(draft.draft().collectionId).toBe('a');
     });
 
     it('finds the post even when the collection in the address is wrong or missing', () => {

@@ -55,6 +55,22 @@ export const AP_I18N_FIXES = {
     postsToday: ['โพสต์ใน 24 ชม.', 'Posts, last 24 h'],
     perDay: ['ต่อ 24 ชม.', 'per 24 h'],
   },
+  // The posts are a library of their own now (the first step); a collection includes posts that exist already.
+  flow: {
+    s1: ['จัดโพสต์เป็นชุด', 'Put posts into collections'],
+    s1b: ['โพสต์หนึ่งอยู่ได้หลายชุด', 'One post can sit in several collections'],
+  },
+  col: {
+    sub: [
+      'จัดโพสต์จากคลังโพสต์เป็นชุดตามสินค้าหรือหัวข้อ โพสต์หนึ่งอยู่ได้หลายชุด แต่ละชุดจะถูกจับคู่กับชุดลิงก์ที่ตรงกันในหน้าตารางโพสต์ เช่น ชุดคอนโดลงเฉพาะกลุ่มคอนโด',
+      'Put posts from the post library into collections by product or topic; one post can sit in several. Each collection is paired with the matching link set on the Schedules page, so condo posts only reach condo groups',
+    ],
+    // The row's button takes the post out of this collection only; the post stays in the library.
+    deleted: [
+      'เอาโพสต์ออกจากชุดแล้ว โพสต์ยังอยู่ในคลังโพสต์',
+      'Post taken out of the collection. It is still in the post library',
+    ],
+  },
   cmp: {
     // The design's "Post updated. Applies to tasks not yet sent" is not what happens: a schedule copies the
     // composed text into every task when it queues them, so editing the library post leaves queued tasks alone.

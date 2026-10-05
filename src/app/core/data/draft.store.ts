@@ -89,7 +89,7 @@ export class DraftStore {
     const d = this.draft();
     if (postId) {
       if (d.postId === postId) return 'kept';
-      const found = this.collections.postById(postId);
+      const found = this.collections.postById(postId, collectionId);
       if (found) {
         this.edit(found.collection, found.post);
         return 'loaded';

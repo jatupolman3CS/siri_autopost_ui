@@ -116,15 +116,28 @@ export class ComposerPageComponent {
         })
       : fmt(this.t().api.flow.cmpColHint, { n: c.scheduleCount });
   });
-  /** An approved post of a collection that needs approval goes back to draft when it is edited. */
-  protected readonly editResets = computed(() => {
+  /** The post being edited and a collection it sits in (the draft's collection when the post is there). */
+  private readonly existing = computed(() => {
     const id = this.d().postId;
-    const found = id ? this.collections.postById(id) : undefined;
-    return (
-      !!found &&
-      this.target()?.settings.requireApproval === true &&
-      found.post.approval === 'approved'
-    );
+    return id ? this.collections.postById(id, this.d().collectionId) : undefined;
+  });
+  /** The post's own message settings (own footer, hashtags), which the preview lays over the collection's. */
+  protected readonly postSettings = computed(() => this.existing()?.post.settings ?? null);
+  /**
+   * An approved post goes back to draft when its text or media change and any collection it will sit in needs
+   * approval (a move to another collection takes it out of the one it was found in).
+   */
+  protected readonly editResets = computed(() => {
+    const found = this.existing();
+    if (!found || found.post.approval !== 'approved') return false;
+    const target = this.target();
+    const ids =
+      target && target.id !== found.collection.id
+        ? [...found.post.collectionIds.filter((id) => id !== found.collection.id), target.id]
+        : found.post.collectionIds;
+    return this.collections
+      .collections()
+      .some((c) => c.settings.requireApproval && ids.includes(c.id));
   });
 
   constructor() {
@@ -234,7 +247,7 @@ export class ComposerPageComponent {
       this.store.patch(errs);
       return;
     }
-    const existing = d.postId ? this.collections.postById(d.postId) : undefined;
+    const existing = this.existing();
     if (d.postId && !existing) {
       // Deleted elsewhere meanwhile: what is written stays as a new post.
       this.notify.info(t.api.flow.cmpPostGone);
@@ -244,7 +257,7 @@ export class ComposerPageComponent {
     this.busy.set(true);
     try {
       if (existing)
-        await this.collections.updatePost(existing.post, {
+        await this.collections.updatePost(existing.collection.id, existing.post, {
           text,
           mediaIds: d.media,
           toCollectionId: collection.id,

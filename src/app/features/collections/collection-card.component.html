@@ -44,6 +44,16 @@
       >
         <i class="ph ph-pencil-simple-line"></i>{{ t().col.addPost }}
       </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        data-testid="add-from-library"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+        (click)="libraryOpen.set(true)"
+      >
+        <i class="ph ph-tray-arrow-down"></i>{{ t().api.flow.colAddFromLib }}
+      </button>
       <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="schedule()">
         <i class="ph ph-calendar-check"></i>{{ t().col.schedule }}
       </button>
@@ -80,6 +90,10 @@
     </div>
   }
 </section>
+
+@if (libraryOpen()) {
+  <app-add-from-library-modal [collection]="collection()" (closed)="libraryOpen.set(false)" />
+}
 
 <app-rename-modal
   [open]="renameOpen()"

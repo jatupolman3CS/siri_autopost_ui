@@ -23,7 +23,7 @@ const at = (hour: number, day = 0) => {
 };
 const TODAY = dkey(new Date());
 
-const POST = apiCollectionPost({ id: 'cp1', collectionId: 'c1', text: 'Condo for rent {{code}}' });
+const POST = apiCollectionPost({ id: 'cp1', text: 'Condo for rent {{code}}' });
 const COLLECTION = apiCollection({ id: 'c1', name: 'Condo posts', posts: [POST] });
 
 describe('CalendarPageComponent', () => {

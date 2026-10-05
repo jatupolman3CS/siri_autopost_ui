@@ -1679,6 +1679,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/collections/{id}/posts/add': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AddExistingPostsRequest'];
+          'text/json': components['schemas']['AddExistingPostsRequest'];
+          'application/*+json': components['schemas']['AddExistingPostsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CollectionDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/collections/{id}/posts/{postId}': {
     parameters: {
       query?: never;
@@ -4080,6 +4124,307 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/master-posts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CollectionPostDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['CreateMasterPostRequest'];
+          'text/json': components['schemas']['CreateMasterPostRequest'];
+          'application/*+json': components['schemas']['CreateMasterPostRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CollectionPostDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/master-posts/{id}/activity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          take?: number;
+        };
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CollectionPostActivityDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/master-posts/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['UpdateMasterPostRequest'];
+          'text/json': components['schemas']['UpdateMasterPostRequest'];
+          'application/*+json': components['schemas']['UpdateMasterPostRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CollectionPostDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/master-posts/{id}/active': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SetPostActiveRequest'];
+          'text/json': components['schemas']['SetPostActiveRequest'];
+          'application/*+json': components['schemas']['SetPostActiveRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CollectionPostDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/master-posts/{id}/approval': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['PostApprovalRequest'];
+          'text/json': components['schemas']['PostApprovalRequest'];
+          'application/*+json': components['schemas']['PostApprovalRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CollectionPostDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/master-posts/bulk': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['BulkRequest'];
+          'text/json': components['schemas']['BulkRequest'];
+          'application/*+json': components['schemas']['BulkRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['BulkMasterPostsResultDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/notifications': {
     parameters: {
       query?: never;
@@ -5277,6 +5622,9 @@ export interface components {
     ActiveRequest: {
       active: boolean;
     };
+    AddExistingPostsRequest: {
+      postIds: string[];
+    };
     AddLinkRequest: {
       name: null | string;
       url: null | string;
@@ -5428,6 +5776,7 @@ export interface components {
       antiBanAdvanced: null | components['schemas']['AdvancedAntiBanDto'];
       notificationRules: null | components['schemas']['BackupNotificationsDto'];
       autoReply: null | components['schemas']['BackupAutoReplyDto'];
+      posts?: null | components['schemas']['BackupPostDto'][];
     };
     BackupGroupNotifyRuleDto: {
       url: string;
@@ -5458,6 +5807,10 @@ export interface components {
       text: string;
       mediaIds: string[];
       approval: components['schemas']['PostApproval'];
+      /** @default true */
+      active: boolean;
+      settings?: null | components['schemas']['CollectionPostSettingsDto'];
+      key?: null | string;
     };
     BackupScheduleDto: {
       name: string;
@@ -5485,6 +5838,7 @@ export interface components {
       active: boolean;
       /** Format: int32 */
       utcOffsetMinutes: number;
+      repeat?: components['schemas']['PostRepeat'];
     };
     BackupSetNotifyRuleDto: {
       linkSet: string;
@@ -5522,6 +5876,19 @@ export interface components {
       invalid: number;
       set: components['schemas']['LinkSetDto'];
     };
+    BulkMasterPostsResultDto: {
+      /** Format: int32 */
+      changed: number;
+    };
+    /** @enum {unknown} */
+    BulkPostAction:
+      'activate' | 'deactivate' | 'delete' | 'add_to_collection' | 'remove_from_collection';
+    BulkRequest: {
+      postIds: string[];
+      action: components['schemas']['BulkPostAction'];
+      /** Format: uuid */
+      collectionId: null | string;
+    };
     CardDto: {
       brand: string;
       last4: string;
@@ -5547,16 +5914,39 @@ export interface components {
       scheduleCount: number;
       active: boolean;
     };
+    CollectionPostActivityDto: {
+      /** Format: uuid */
+      id: string;
+      target: string;
+      targetUrl: null | string;
+      status: components['schemas']['PostStatus'];
+      /** Format: date-time */
+      scheduledAt: string;
+      /** Format: date-time */
+      publishedAt: null | string;
+      failureDetail: null | string;
+      /** Format: uuid */
+      scheduleId: null | string;
+    };
     CollectionPostDto: {
       /** Format: uuid */
       id: string;
-      /** Format: uuid */
-      collectionId: string;
       text: string;
       mediaIds: string[];
       approval: components['schemas']['PostApproval'];
+      active: boolean;
+      settings: components['schemas']['CollectionPostSettingsDto'];
+      collectionIds: string[];
       /** Format: int32 */
       postedCount: number;
+      /** Format: int32 */
+      queuedCount: number;
+      /** Format: int32 */
+      failedCount: number;
+      /** Format: date-time */
+      lastPostedAt: null | string;
+      /** Format: date-time */
+      nextAt: null | string;
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -5572,6 +5962,18 @@ export interface components {
     };
     CollectionPostsBatchRequest: {
       items: components['schemas']['CollectionPostInput'][];
+    };
+    CollectionPostSettingsDto: {
+      hashtags: null | string;
+      footer: null | string;
+      footerPos: null | components['schemas']['FooterPosition'];
+      validFrom: null | string;
+      validUntil: null | string;
+      weekdays: null | number[];
+      timeFrom: null | string;
+      timeTo: null | string;
+      /** Format: int32 */
+      maxPerDay: number;
     };
     CollectionSettingsDto: {
       hashtags: string;
@@ -5614,6 +6016,13 @@ export interface components {
       name: string;
       /** Format: uuid */
       postAsAccountId: null | string;
+    };
+    CreateMasterPostRequest: {
+      text: string;
+      mediaIds: null | string[];
+      collectionIds: null | string[];
+      settings: null | components['schemas']['CollectionPostSettingsDto'];
+      active: null | boolean;
     };
     CreateSnippetRequest: {
       title: string;
@@ -6162,6 +6571,9 @@ export interface components {
     };
     /** @enum {unknown} */
     PostApproval: 'draft' | 'pending' | 'approved';
+    PostApprovalRequest: {
+      action: components['schemas']['ApprovalAction'];
+    };
     PostDto: {
       /** Format: uuid */
       id: string;
@@ -6190,6 +6602,11 @@ export interface components {
     };
     /** @enum {unknown} */
     PostOrder: 'shuffle' | 'rotate';
+    /**
+     * @default recent
+     * @enum {unknown}
+     */
+    PostRepeat: 'recent' | 'any' | 'never';
     /** @enum {unknown} */
     PostStatus: 'queued' | 'posting' | 'success' | 'failed' | 'skipped' | 'pending' | 'waiting';
     ProblemDetails: {
@@ -6330,6 +6747,7 @@ export interface components {
       utcOffsetMinutes: number;
       /** @default false */
       startNow: boolean;
+      repeat?: components['schemas']['PostRepeat'];
     };
     ScheduleCreatedDto: {
       schedule: components['schemas']['ScheduleDto'];
@@ -6383,6 +6801,7 @@ export interface components {
       nextRunAt: null | string;
       /** @default false */
       startNow: boolean;
+      repeat?: components['schemas']['PostRepeat'];
     };
     /** @enum {unknown} */
     ScheduleMode: 'daily' | 'weekdays' | 'weekend' | 'interval' | 'drip' | 'once';
@@ -6429,6 +6848,9 @@ export interface components {
       groups: {
         [key: string]: components['schemas']['GroupNotifyRuleDto'];
       };
+    };
+    SetPostActiveRequest: {
+      active: boolean;
     };
     SharedReportDto: {
       brand: string;
@@ -6551,6 +6973,12 @@ export interface components {
       /** Format: uuid */
       postAsAccountId: null | string;
       accountIds: null | string[];
+    };
+    UpdateMasterPostRequest: {
+      text: string;
+      mediaIds: null | string[];
+      collectionIds: null | string[];
+      settings: null | components['schemas']['CollectionPostSettingsDto'];
     };
     UpdateSnippetRequest: {
       title: string;

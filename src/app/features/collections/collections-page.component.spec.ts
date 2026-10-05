@@ -24,20 +24,18 @@ const BASE = `/api/workspaces/${WS}/collections`;
 
 const a1 = apiCollectionPost({
   id: 'a1',
-  collectionId: 'a',
   text: 'ขายคอนโด {{code}}\nโทรเลย',
   mediaIds: ['m1', 'm2'],
   postedCount: 3,
 });
-const a2 = apiCollectionPost({ id: 'a2', collectionId: 'a', text: '{สวัสดี|หวัดดี} ครับ' });
-const b1 = apiCollectionPost({ id: 'b1', collectionId: 'b', text: 'ฉบับร่าง', approval: 'draft' });
+const a2 = apiCollectionPost({ id: 'a2', text: '{สวัสดี|หวัดดี} ครับ' });
+const b1 = apiCollectionPost({ id: 'b1', text: 'ฉบับร่าง', approval: 'draft' });
 const b2 = apiCollectionPost({
   id: 'b2',
-  collectionId: 'b',
   text: 'รออนุมัติ',
   approval: 'pending',
 });
-const b3 = apiCollectionPost({ id: 'b3', collectionId: 'b', text: 'อนุมัติแล้ว' });
+const b3 = apiCollectionPost({ id: 'b3', text: 'อนุมัติแล้ว' });
 
 const DATA: ApiCollection[] = [
   apiCollection({ id: 'a', name: 'Condo', posts: [a1, a2], scheduleCount: 2 }),
@@ -118,13 +116,13 @@ describe('CollectionsPageComponent', () => {
   describe('layout', () => {
     beforeEach(() => open());
 
-    it('has the design title, subtitle, header buttons, stepper at step 1 and the next-step card', () => {
+    it('has the design title, subtitle, header buttons, stepper at step 2 and the next-step card', () => {
       expect(el.querySelector('h1')!.textContent).toBe(t().col.title);
       expect(el.querySelector('.page-head p')!.textContent).toBe(t().col.sub);
       expect(
         [...el.querySelectorAll('.page-head .actions button')].map((b) => b.textContent!.trim()),
       ).toEqual([t().col.exportCsv, t().col.newCol, t().col.write]);
-      expect(el.querySelector('a.step[aria-current="step"] .num')!.textContent!.trim()).toBe('1');
+      expect(el.querySelector('a.step[aria-current="step"] .num')!.textContent!.trim()).toBe('2');
       expect(el.querySelector('.next')!.textContent).toContain(t().flow.n1);
     });
 
@@ -251,7 +249,7 @@ describe('CollectionsPageComponent', () => {
 
     it('shows 50 posts a page', async () => {
       const many = Array.from({ length: 120 }, (_, i) =>
-        apiCollectionPost({ id: 'p' + i, collectionId: 'a', text: 'post ' + i }),
+        apiCollectionPost({ id: 'p' + i, text: 'post ' + i }),
       );
       TestBed.inject(CollectionsStore).collections.update((l) =>
         l.map((c) => (c.id === 'a' ? { ...c, posts: many } : c)),
@@ -488,11 +486,11 @@ describe('CollectionsPageComponent', () => {
     });
   });
 
-  describe('deleting a post', () => {
+  describe('taking a post out of the collection', () => {
     beforeEach(() => open());
 
-    it('removes it at once, without asking, then toasts', async () => {
-      btn(t().common.remove, rows(cards()[0])[0]).click();
+    it('takes it out at once, without asking, then toasts (it stays in the library)', async () => {
+      btn(t().api.flow.colTakeOut, rows(cards()[0])[0]).click();
       await rerender();
       expect(rows(cards()[0]).length).toBe(1);
       expect(el.querySelector('.su-modal-panel')).toBeNull();
@@ -506,7 +504,7 @@ describe('CollectionsPageComponent', () => {
     });
 
     it('brings the post back, without a "deleted" toast, when the API refuses', async () => {
-      btn(t().common.remove, rows(cards()[0])[0]).click();
+      btn(t().api.flow.colTakeOut, rows(cards()[0])[0]).click();
       await rerender();
       http
         .expectOne({ method: 'DELETE', url: `${BASE}/a/posts/a1` })
@@ -540,15 +538,15 @@ describe('CollectionsPageComponent', () => {
       expect(names(tickets()[0])).toEqual([
         t().col.requestApproval,
         t().common.edit,
-        t().common.remove,
+        t().api.flow.colTakeOut,
       ]);
       expect(names(tickets()[1])).toEqual([
         t().col.approve,
         t().col.reject,
         t().common.edit,
-        t().common.remove,
+        t().api.flow.colTakeOut,
       ]);
-      expect(names(tickets()[2])).toEqual([t().common.edit, t().common.remove]);
+      expect(names(tickets()[2])).toEqual([t().common.edit, t().api.flow.colTakeOut]);
     });
 
     it('shows no status for a collection that needs no approval', async () => {
@@ -699,6 +697,154 @@ describe('CollectionsPageComponent', () => {
     });
   });
 
+  describe('the post library in a collection', () => {
+    const MASTER = `/api/workspaces/${WS}/master-posts`;
+    const shared = apiCollectionPost({ id: 's1', text: 'อยู่สองชุด', collectionIds: ['a', 'b'] });
+    const off = apiCollectionPost({ id: 'o1', text: 'ปิดอยู่', active: false });
+    const SHARED_DATA: ApiCollection[] = [
+      apiCollection({ id: 'a', name: 'Condo', posts: [shared, off] }),
+      apiCollection({ id: 'b', name: 'Tickets', posts: [shared] }),
+    ];
+    const libraryOnly = apiCollectionPost({ id: 'l1', text: 'รออยู่ในคลัง' });
+    const libraryOther = apiCollectionPost({ id: 'l2', text: 'โพสต์อื่นในคลัง' });
+    const library = () => [
+      { ...shared, collectionIds: ['a', 'b'] },
+      { ...off, collectionIds: ['a'] },
+      libraryOnly,
+      libraryOther,
+    ];
+    const modal = () => el.querySelector<HTMLElement>('app-add-from-library-modal')!;
+
+    async function openModal(data: ApiCollection[] = SHARED_DATA, role: ApiRole = 'owner') {
+      await open(data, role);
+      btn(t().api.flow.colAddFromLib, cards()[0]).click();
+      await rerender();
+      http.expectOne(MASTER).flush(library());
+      await rerender();
+    }
+
+    it('marks a post that sits in several collections, and one that is switched off', async () => {
+      await open(SHARED_DATA);
+      const [first, second] = rows(cards()[0]);
+      expect(first.textContent).toContain(t().api.flow.colInN.replace('{n}', '2'));
+      expect(first.querySelector('.chip.off')).toBeNull();
+      expect(second.textContent).not.toContain(t().api.flow.colInN.replace('{n}', '2'));
+      expect(second.querySelector('.chip.off')!.textContent).toContain(t().api.flow.colPostOff);
+      expect(second.classList.contains('off-item')).toBe(true);
+      expect(first.classList.contains('off-item')).toBe(false);
+    });
+
+    it('labels the row button as taking the post out of this collection only', async () => {
+      await open(SHARED_DATA);
+      const take = btn(t().api.flow.colTakeOut, rows(cards()[0])[0]);
+      expect(take.getAttribute('title')).toBe(t().api.flow.colTakeOutHint);
+    });
+
+    it('takes a shared post out of one collection only', async () => {
+      await open(SHARED_DATA);
+      btn(t().api.flow.colTakeOut, rows(cards()[0])[0]).click();
+      await rerender();
+      http.expectOne({ method: 'DELETE', url: `${BASE}/a/posts/s1` }).flush(null);
+      await rerender();
+      expect(rows(cards()[0]).length).toBe(1);
+      btn(t().col.expand, cards()[1]).click();
+      await rerender();
+      expect(rows(cards()[1]).length).toBe(1);
+    });
+
+    it('says in the delete dialog that the posts stay in the library', async () => {
+      await open(SHARED_DATA);
+      cards()[0].querySelectorAll<HTMLButtonElement>('.head .ibtn')[1].click();
+      await rerender();
+      const body = el.querySelector<HTMLElement>('app-confirm-modal .su-modal-panel')!.textContent!;
+      expect(body).toContain(t().api.colDeleteBody.replace('{name}', 'Condo'));
+      expect(body).toMatch(/คลังโพสต์|post library/);
+      expect(body).not.toMatch(/พร้อมโพสต์ทั้งหมด|and all its posts/);
+    });
+
+    it('reads the library only when the dialog opens, and lists the posts that are not in the collection', async () => {
+      await open(SHARED_DATA);
+      http.expectNone(MASTER);
+      expect(modal()).toBeNull();
+      btn(t().api.flow.colAddFromLib, cards()[0]).click();
+      await rerender();
+      http.expectOne(MASTER).flush(library());
+      await rerender();
+      const items = [...modal().querySelectorAll<HTMLElement>('.item .text')];
+      expect(items.map((i) => i.textContent)).toEqual([libraryOnly.text, libraryOther.text]);
+    });
+
+    it('narrows the list by the search text', async () => {
+      await openModal();
+      const input = modal().querySelector<HTMLInputElement>('input[type="text"]')!;
+      input.value = 'ในคลัง';
+      input.dispatchEvent(new Event('input'));
+      await rerender();
+      expect([...modal().querySelectorAll('.item .text')].map((i) => i.textContent)).toEqual([
+        libraryOnly.text,
+        libraryOther.text,
+      ]);
+      input.value = 'อื่น';
+      input.dispatchEvent(new Event('input'));
+      await rerender();
+      expect([...modal().querySelectorAll('.item .text')].map((i) => i.textContent)).toEqual([
+        libraryOther.text,
+      ]);
+      input.value = 'ไม่มีแน่ ๆ';
+      input.dispatchEvent(new Event('input'));
+      await rerender();
+      expect(modal().textContent).toContain(t().api.flow.colAddFromLibEmpty);
+    });
+
+    it('puts the ticked posts into the collection with one request', async () => {
+      await openModal();
+      const ticks = () => [...modal().querySelectorAll<HTMLInputElement>('.item input')];
+      const go = () => btn(t().api.flow.colAddFromLibGo.replace('{n}', '1'), modal());
+      expect(btn(t().api.flow.colAddFromLibGo.replace('{n}', '0'), modal()).disabled).toBe(true);
+      ticks()[1].click();
+      await rerender();
+      go().click();
+      await settle();
+      const req = http.expectOne({ method: 'POST', url: `${BASE}/a/posts/add` });
+      expect(req.request.body).toEqual({ postIds: ['l2'] });
+      req.flush(
+        apiCollection({
+          id: 'a',
+          name: 'Condo',
+          posts: [shared, off, { ...libraryOther, collectionIds: ['a'] }],
+        }),
+      );
+      await settle();
+      // The library is read again: the post sits in a collection now.
+      http.expectOne(MASTER).flush(library());
+      await rerender();
+      expect(modal()).toBeNull();
+      expect(rows(cards()[0]).length).toBe(3);
+      expect(toasts().map((x) => x.message)).toEqual([t().api.flow.colAddedN.replace('{n}', '1')]);
+    });
+
+    it('keeps the dialog open with the reason when the API refuses', async () => {
+      await openModal();
+      modal().querySelector<HTMLInputElement>('.item input')!.click();
+      await rerender();
+      btn(t().api.flow.colAddFromLibGo.replace('{n}', '1'), modal()).click();
+      await settle();
+      http
+        .expectOne({ method: 'POST', url: `${BASE}/a/posts/add` })
+        .flush({ title: 'เกินจำนวนที่กำหนด' }, { status: 422, statusText: 'Unprocessable' });
+      await rerender();
+      expect(modal()).not.toBeNull();
+      expect(modal().querySelector('.su-field-err')!.textContent).toContain('เกินจำนวนที่กำหนด');
+      expect(rows(cards()[0]).length).toBe(2);
+    });
+
+    it('is off for a viewer and in assist mode', async () => {
+      await open(SHARED_DATA, 'viewer');
+      expect(btn(t().api.flow.colAddFromLib, cards()[0]).disabled).toBe(true);
+      expect(btn(t().api.flow.colTakeOut, rows(cards()[0])[0]).disabled).toBe(true);
+    });
+  });
+
   describe('roles', () => {
     it.each([
       ['viewer', true],
@@ -773,7 +919,7 @@ describe('CollectionsPageComponent', () => {
       expect(btn(t().col.newCol).disabled).toBe(true);
       expect(btn(t().col.write).disabled).toBe(true);
       expect(btn(t().common.edit).disabled).toBe(true);
-      expect(btn(t().common.remove).disabled).toBe(true);
+      expect(btn(t().api.flow.colTakeOut).disabled).toBe(true);
     });
   });
 

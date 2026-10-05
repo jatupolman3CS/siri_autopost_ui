@@ -392,8 +392,8 @@ export const AP_I18N_EXTRA = {
   colRename: ['เปลี่ยนชื่อชุดโพสต์', 'Rename collection'],
   colDelete: ['ลบชุดโพสต์', 'Delete collection'],
   colDeleteBody: [
-    'ลบชุดโพสต์ “{name}” พร้อมโพสต์ทั้งหมดในชุด? ลบไม่ได้ถ้ายังมีตารางโพสต์ใช้อยู่',
-    'Delete the collection “{name}” and all its posts? Not possible while a schedule uses it.',
+    'ลบชุดโพสต์ “{name}”? โพสต์ในชุดไม่ถูกลบ ยังอยู่ในคลังโพสต์ ลบชุดไม่ได้ถ้ายังมีตารางโพสต์ใช้อยู่',
+    'Delete the collection “{name}”? Its posts are not deleted: they stay in the post library. Not possible while a schedule uses it.',
   ],
   colOffHint: [
     'ปิดอยู่: ตารางที่ใช้ชุดนี้จะไม่สร้างโพสต์ใหม่จนกว่าจะเปิด',
@@ -405,4 +405,10 @@ export const AP_I18N_EXTRA = {
     'Off: schedules that use it post to none of these groups until it is switched on',
   ],
   schRename: ['เปลี่ยนชื่อตาราง', 'Rename schedule'],
+
+  // The post library (step 1 of the flow): the sidebar item, the route title and the stepper.
+  postsNav: ['คลังโพสต์', 'Post library'],
+  flowPosts: ['เขียนและจัดการโพสต์', 'Write and manage posts'],
+  flowPostsB: ['เปิด/ปิด ตั้งเวลาเอง ดูผลทีละโพสต์', 'On/off, own timing, results post by post'],
+  nextToCollections: ['จัดโพสต์เข้าชุดโพสต์', 'Put the posts into a collection'],
 } as const;

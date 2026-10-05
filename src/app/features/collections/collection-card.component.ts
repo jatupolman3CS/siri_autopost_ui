@@ -14,6 +14,7 @@ import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { RenameModalComponent } from '../../shared/components/rename-modal/rename-modal.component';
 import { Pager } from '../../shared/components/pager/pager';
 import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
+import { AddFromLibraryModalComponent } from './add-from-library-modal.component';
 import { CollectionPostRowComponent } from './collection-post-row.component';
 import { CollectionSettingsComponent } from './collection-settings.component';
 import '../../core/i18n/i18n.flow';
@@ -23,6 +24,7 @@ import '../../core/i18n/i18n.flow';
 @Component({
   selector: 'app-collection-card',
   imports: [
+    AddFromLibraryModalComponent,
     CollectionPostRowComponent,
     CollectionSettingsComponent,
     PagerComponent,
@@ -50,6 +52,7 @@ export class CollectionCardComponent {
   protected readonly nameLimit = INPUT_LIMITS.collectionName;
   protected readonly renameOpen = signal(false);
   protected readonly deleteOpen = signal(false);
+  protected readonly libraryOpen = signal(false);
   protected readonly deleteBody = computed(() =>
     fmt(this.t().api.colDeleteBody, { name: this.collection().name }),
   );

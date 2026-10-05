@@ -34,6 +34,7 @@ export function apiSchedule(over: Partial<ApiSchedule> & { id: string }): ApiSch
     todayCount: 0,
     nextRunAt: null,
     startNow: false,
+    repeat: 'recent',
     ...over,
   };
 }

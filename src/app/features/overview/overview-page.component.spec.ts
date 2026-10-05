@@ -45,7 +45,7 @@ const LINK_SET = apiLinkSet({
 const COLLECTION = apiCollection({
   id: 'c1',
   name: 'Condo',
-  posts: [1, 2, 3].map((i) => apiCollectionPost({ id: `p${i}`, collectionId: 'c1' })),
+  posts: [1, 2, 3].map((i) => apiCollectionPost({ id: `p${i}` })),
 });
 const COLLECTION_2 = apiCollection({ id: 'c2', name: 'Land', posts: [] });
 

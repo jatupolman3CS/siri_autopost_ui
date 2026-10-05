@@ -35,7 +35,7 @@ import {
 } from '../../testing/schedules.fixtures';
 import { SchedulesPageComponent } from './schedules-page.component';
 
-const POSTS = [1, 2, 3].map((i) => apiCollectionPost({ id: `p${i}`, collectionId: 'c1' }));
+const POSTS = [1, 2, 3].map((i) => apiCollectionPost({ id: `p${i}` }));
 const C1 = apiCollection({
   id: 'c1',
   name: 'Condo posts',
@@ -48,7 +48,7 @@ const C3 = apiCollection({
   id: 'c3',
   name: 'Needs approval',
   settings: { requireApproval: true },
-  posts: [apiCollectionPost({ id: 'p9', collectionId: 'c3', approval: 'draft' })],
+  posts: [apiCollectionPost({ id: 'p9', approval: 'draft' })],
 });
 const LINK_A = apiSetLink({ id: 'a', name: 'Condo BKK', code: '#Jan24' });
 const LINK_B = apiSetLink({ id: 'b', name: 'Condo rent' });
@@ -218,11 +218,11 @@ describe('SchedulesPageComponent', () => {
   });
 
   describe('page', () => {
-    it('shows the title, the subtitle and the stepper on step 3, with the builder closed', async () => {
+    it('shows the title, the subtitle and the stepper on step 4, with the builder closed', async () => {
       const { el } = await open();
       expect(el.querySelector('h1')?.textContent).toBe(t().sch.title);
       expect(el.querySelector('.page-head p')?.textContent).toBe(t().sch.sub);
-      expect(el.querySelector('a.step[aria-current="step"] .num')?.textContent?.trim()).toBe('3');
+      expect(el.querySelector('a.step[aria-current="step"] .num')?.textContent?.trim()).toBe('4');
       expect(builder(el)).toBeNull();
     });
 
@@ -903,6 +903,7 @@ describe('SchedulesPageComponent', () => {
       overrides: {},
       utcOffsetMinutes: utcOffsetMinutes(),
       startNow: false,
+      repeat: 'recent',
       ...over,
     });
     const NEW = apiSchedule({ id: 'new', name: 'Condo posts → Condo groups' });
@@ -952,6 +953,37 @@ describe('SchedulesPageComponent', () => {
       answerChangeRefresh(http);
       await settle();
       expect(navigate).toHaveBeenCalled();
+    });
+
+    it('sends the chosen repeat of a post to a group, and explains each choice', async () => {
+      const { fixture, el } = await open({ simple: false });
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      const f = t().api.flow;
+      const note = () => builder(el)!.textContent;
+      expect(select(el, f.repeatLabel).value).toBe('recent');
+      expect(note()).toContain(f.repeatRecentNote);
+      pick(select(el, f.repeatLabel), 'any');
+      fixture.detectChanges();
+      expect(note()).toContain(f.repeatAnyNote);
+      pick(select(el, f.repeatLabel), 'never');
+      fixture.detectChanges();
+      expect(note()).toContain(f.repeatNeverNote);
+      // Rotating in order does not pick at random: the choice is off and says so.
+      pick(select(el, t().sch.order), 'rotate');
+      fixture.detectChanges();
+      expect(select(el, f.repeatLabel).disabled).toBe(true);
+      expect(note()).toContain(f.repeatRotateNote);
+      pick(select(el, t().sch.order), 'shuffle');
+      fixture.detectChanges();
+      create(el).click();
+      await settle();
+      const req = http.expectOne(SCHEDULES_URL);
+      expect(req.request.body).toEqual(body({ repeat: 'never' }));
+      req.flush(apiScheduleCreated(NEW, { created: 0 }));
+      await settle();
+      answerChangeRefresh(http);
+      await settle();
     });
 
     it('hides the time of a once schedule that starts now and says what it does', async () => {

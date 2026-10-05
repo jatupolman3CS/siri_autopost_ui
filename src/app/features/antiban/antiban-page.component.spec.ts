@@ -498,6 +498,26 @@ describe('AntibanPageComponent', () => {
         http.expectNone(RESTORE_URL);
       });
 
+      it('counts a post that sits in several collections once, and lists the posts that are in none', async () => {
+        button(modalBody()!.closest('.su-modal-panel')!, t().api.engine.restoreBack).click();
+        await rerender();
+        const shared = (key: string) => ({ text: 'x', mediaIds: [], approval: 'approved', key });
+        await typeRestore(
+          JSON.stringify({
+            ...FILE,
+            collections: [
+              { name: 'A', description: '', icon: '', posts: [shared('k1'), shared('k2')] },
+              { name: 'B', description: '', icon: '', posts: [shared('k1')] },
+            ],
+            posts: [shared('k3'), shared('k4')],
+          }),
+        );
+        check().click();
+        await rerender();
+        expect(li()[0]).toBe(fmt(t().api.engine.restoreSumCollections, { n: 2, p: 2 }));
+        expect(li()[1]).toBe(fmt(t().api.engine.restoreSumLibrary, { n: 2 }));
+      });
+
       it('says what is replaced: everything of those kinds, queued posts are deleted, history stays', () => {
         const text = review()!.textContent!;
         expect(text).toContain(t().api.engine.restoreReplaces);

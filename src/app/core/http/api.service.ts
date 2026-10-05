@@ -44,6 +44,11 @@ export type ApiDeviceCommand = S['DeviceCommandDto'];
 export type ApiCollection = S['CollectionDto'];
 export type ApiCollectionSettings = S['CollectionSettingsDto'];
 export type ApiCollectionPost = S['CollectionPostDto'];
+export type ApiPostSettings = S['CollectionPostSettingsDto'];
+export type ApiPostActivity = S['CollectionPostActivityDto'];
+export type ApiCreateMasterPost = S['CreateMasterPostRequest'];
+export type ApiUpdateMasterPost = S['UpdateMasterPostRequest'];
+export type ApiBulkPostAction = S['BulkPostAction'];
 export type ApiApprovalAction = S['ApprovalAction'];
 export type ApiLinkSet = S['LinkSetDto'];
 export type ApiSetLink = S['SetLinkDto'];
@@ -501,6 +506,17 @@ export class ApiService {
       ),
     );
   }
+  /** Puts existing library posts into a collection (they stay in their other collections too). */
+  addPostsToCollection(ws: string, collection: string, postIds: string[]) {
+    const body: S['AddExistingPostsRequest'] = { postIds };
+    return run(
+      this.http.post<ApiCollection>(
+        `/api/workspaces/${ws}/collections/${collection}/posts/add`,
+        body,
+      ),
+    );
+  }
+  /** Takes a post out of THIS collection only; the post stays in the library (see deleteMasterPost). */
   deleteCollectionPost(ws: string, collection: string, id: string) {
     return run(
       this.http.delete<void>(`/api/workspaces/${ws}/collections/${collection}/posts/${id}`),
@@ -511,6 +527,58 @@ export class ApiService {
     return run(
       this.http.post<ApiCollectionPost>(
         `/api/workspaces/${ws}/collections/${collection}/posts/${id}/approval`,
+        body,
+      ),
+    );
+  }
+
+  // The post library ("คลังโพสต์"): every post of the workspace, whatever collections it sits in.
+  masterPosts(ws: string, background = false) {
+    return run(
+      this.http.get<ApiCollectionPost[]>(
+        `/api/workspaces/${ws}/master-posts`,
+        background ? quiet : {},
+      ),
+    );
+  }
+  /** What happened to one post: one row per group it was sent to, newest first. */
+  masterPostActivity(ws: string, id: string, take = 50) {
+    return run(
+      this.http.get<ApiPostActivity[]>(`/api/workspaces/${ws}/master-posts/${id}/activity`, {
+        params: new HttpParams().set('take', take),
+      }),
+    );
+  }
+  createMasterPost(ws: string, body: ApiCreateMasterPost) {
+    return run(this.http.post<ApiCollectionPost>(`/api/workspaces/${ws}/master-posts`, body));
+  }
+  /** `collectionIds` / `settings` null keep what the post has. */
+  updateMasterPost(ws: string, id: string, body: ApiUpdateMasterPost) {
+    return run(this.http.put<ApiCollectionPost>(`/api/workspaces/${ws}/master-posts/${id}`, body));
+  }
+  /** Off: the post is never drawn and its queued future posts are removed. */
+  setMasterPostActive(ws: string, id: string, active: boolean) {
+    const body: S['SetPostActiveRequest'] = { active };
+    return run(
+      this.http.put<ApiCollectionPost>(`/api/workspaces/${ws}/master-posts/${id}/active`, body),
+    );
+  }
+  /** Deletes the post for good: it leaves every collection and its queued posts are removed. */
+  deleteMasterPost(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/master-posts/${id}`));
+  }
+  masterPostApproval(ws: string, id: string, action: ApiApprovalAction) {
+    const body: S['PostApprovalRequest'] = { action };
+    return run(
+      this.http.post<ApiCollectionPost>(`/api/workspaces/${ws}/master-posts/${id}/approval`, body),
+    );
+  }
+  /** At most 500 posts; resolves to how many the server changed. */
+  bulkMasterPosts(ws: string, postIds: string[], action: ApiBulkPostAction, collectionId?: string) {
+    const body: S['BulkRequest'] = { postIds, action, collectionId: collectionId ?? null };
+    return run(
+      this.http.post<S['BulkMasterPostsResultDto']>(
+        `/api/workspaces/${ws}/master-posts/bulk`,
         body,
       ),
     );

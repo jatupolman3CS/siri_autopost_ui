@@ -6,6 +6,7 @@ import { SessionStore } from '../core/data/session.store';
 import {
   ApiAccount,
   ApiCollection,
+  ApiCollectionPost,
   ApiDevice,
   ApiLinkSet,
   ApiPost,
@@ -128,6 +129,13 @@ export function provideApiTesting(extra: { imports?: unknown[]; providers?: unkn
   return TestBed.inject(HttpTestingController);
 }
 
+/** The post library the server would list for these collections: each post once, in the order met. */
+export function libraryOf(collections: ApiCollection[]): ApiCollectionPost[] {
+  const seen = new Map<string, ApiCollectionPost>();
+  for (const c of collections) for (const p of c.posts) if (!seen.has(p.id)) seen.set(p.id, p);
+  return [...seen.values()];
+}
+
 /** Lets pending promise continuations and effects run. */
 export async function settle(): Promise<void> {
   for (let i = 0; i < 5; i++) {
@@ -146,6 +154,8 @@ export async function signIn(
     workspace?: Partial<ApiWorkspace>;
     devices?: ApiDevice[];
     collections?: ApiCollection[];
+    /** Answers GET master-posts (the post library); by default the posts of `collections`, each once. */
+    masterPosts?: ApiCollectionPost[];
     linkSets?: ApiLinkSet[];
     /** Answers GET schedules (the schedules store; typed by whoever builds it). */
     schedules?: unknown[];
@@ -201,6 +211,7 @@ export function answerWorkspaceLoads(
     simulatedOffline?: boolean;
     devices?: ApiDevice[];
     collections?: ApiCollection[];
+    masterPosts?: ApiCollectionPost[];
     linkSets?: ApiLinkSet[];
     schedules?: unknown[];
   } = {},
@@ -225,6 +236,8 @@ export function answerWorkspaceLoads(
   for (const r of http.match(`${base}/devices`)) r.flush(data.devices ?? []);
   // The collection → link set → schedule flow (empty unless a test passes data).
   for (const r of http.match(`${base}/collections`)) r.flush(data.collections ?? []);
+  for (const r of http.match(`${base}/master-posts`))
+    r.flush(data.masterPosts ?? libraryOf(data.collections ?? []));
   for (const r of http.match(`${base}/link-sets`)) r.flush(data.linkSets ?? []);
   for (const r of http.match(`${base}/schedules`)) r.flush(data.schedules ?? []);
   for (const r of http.match(`${base}/notifications`)) r.flush(NOTIFICATIONS);

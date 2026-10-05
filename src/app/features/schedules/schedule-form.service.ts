@@ -9,6 +9,7 @@ import { SettingsStore } from '../../core/data/settings.store';
 import { linkLabel } from '../../core/flow/group-links';
 import {
   PostOrder,
+  PostRepeat,
   ScheduleLike,
   ScheduleMode,
   addDays,
@@ -91,6 +92,8 @@ export class ScheduleFormService {
   readonly first = signal('09:00');
   readonly onceTime = signal('14:00');
   readonly order = signal<PostOrder>('shuffle');
+  /** Shuffle only: may a group get a post it already had? */
+  readonly repeat = signal<PostRepeat>('recent');
   /** What was typed per member (key → "09:30, 19:00"); empty = follows the schedule. */
   readonly overrides = signal<Record<string, string>>({});
   readonly dripFrom = signal('09:00');
@@ -236,6 +239,7 @@ export class ScheduleFormService {
     this.first.set('09:00');
     this.onceTime.set('14:00');
     this.order.set('shuffle');
+    this.repeat.set('recent');
     this.overrides.set({});
     this.dripFrom.set('09:00');
     this.dripTo.set('21:00');
@@ -382,6 +386,7 @@ export class ScheduleFormService {
       startDate: this.isNow() ? null : this.start() || null,
       onceTime: toMinutes(this.onceTime()) === null ? null : this.onceTime(),
       order: this.order(),
+      repeat: this.repeat(),
       dripFrom: toMinutes(this.dripFrom()) === null ? null : this.dripFrom(),
       dripTo: toMinutes(this.dripTo()) === null ? null : this.dripTo(),
       dripCount: clamp(this.dripCount(), 1, 12),

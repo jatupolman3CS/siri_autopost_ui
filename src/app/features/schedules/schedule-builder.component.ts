@@ -7,6 +7,8 @@ import { SchedulesStore } from '../../core/data/schedules.store';
 import {
   AUTO_DELETE_DAY_OPTIONS,
   BUMP_HOUR_OPTIONS,
+  POST_REPEATS,
+  PostRepeat,
   SCHEDULE_MODES,
   localDateKey,
 } from '../../core/flow/schedule-math';
@@ -85,6 +87,26 @@ export class ScheduleBuilderComponent {
     { value: 'shuffle', label: this.t().sch.oShuffle },
     { value: 'rotate', label: this.t().sch.oRotate },
   ]);
+  protected readonly repeatOptions = computed<SelectOption[]>(() => {
+    const f = this.t().api.flow;
+    const label: Record<PostRepeat, string> = {
+      recent: f.repeatRecent,
+      any: f.repeatAny,
+      never: f.repeatNever,
+    };
+    return POST_REPEATS.map((r) => ({ value: r, label: label[r] }));
+  });
+  /** What the chosen repeat option does (or why it does not apply: only the shuffle picks posts at random). */
+  protected readonly repeatNote = computed(() => {
+    const f = this.t().api.flow;
+    if (this.form.order() === 'rotate') return f.repeatRotateNote;
+    const note: Record<PostRepeat, string> = {
+      recent: f.repeatRecentNote,
+      any: f.repeatAnyNote,
+      never: f.repeatNeverNote,
+    };
+    return note[this.form.repeat()];
+  });
   protected readonly bumpOptions = computed<SelectOption[]>(() =>
     BUMP_HOUR_OPTIONS.map((h) => ({
       value: String(h),

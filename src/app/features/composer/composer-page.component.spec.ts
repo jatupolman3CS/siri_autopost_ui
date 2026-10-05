@@ -32,11 +32,10 @@ import { ComposerPageComponent } from './composer-page.component';
 
 const BASE = `/api/workspaces/${WS}/collections`;
 
-const a1 = apiCollectionPost({ id: 'a1', collectionId: 'a', text: 'ขายคอนโด', mediaIds: ['m1'] });
-const a2 = apiCollectionPost({ id: 'a2', collectionId: 'a', text: 'โพสต์สอง' });
+const a1 = apiCollectionPost({ id: 'a1', text: 'ขายคอนโด', mediaIds: ['m1'] });
+const a2 = apiCollectionPost({ id: 'a2', text: 'โพสต์สอง' });
 const b1 = apiCollectionPost({
   id: 'b1',
-  collectionId: 'b',
   text: 'ตั๋วหนัง',
   approval: 'approved',
 });
@@ -488,6 +487,25 @@ describe('ComposerPageComponent', () => {
       expect(el.textContent).not.toContain(t().api.flow.cmpEditResets);
     });
 
+    it('still says an approved post goes back to draft when it also sits in another collection that needs approval', async () => {
+      await open({ collection: 'a', post: 'a1' });
+      const store = TestBed.inject(CollectionsStore);
+      expect(el.textContent).not.toContain(t().api.flow.cmpEditResets);
+      // The same post also sits in "Tickets" (which needs approval): that is enough, wherever it is saved.
+      store.collections.update((l) =>
+        l.map((c) => {
+          const shared = { ...a1, collectionIds: ['a', 'b'] };
+          return c.id === 'b'
+            ? { ...c, posts: [...c.posts, shared] }
+            : c.id === 'a'
+              ? { ...c, posts: c.posts.map((p) => (p.id === 'a1' ? shared : p)) }
+              : c;
+        }),
+      );
+      await rerender();
+      expect(el.textContent).toContain(t().api.flow.cmpEditResets);
+    });
+
     it('says to create the first collection when there is none', async () => {
       await open({}, { data: [] });
       expect(el.querySelector('.cmp-hint')!.textContent).toBe(t().api.flow.cmpNoCollections);
@@ -525,7 +543,6 @@ describe('ComposerPageComponent', () => {
       req.flush(
         apiCollectionPost({
           id: 'n1',
-          collectionId: 'b',
           text: 'ตั๋วหนังราคาพิเศษ',
           approval: 'draft',
         }),
@@ -642,7 +659,7 @@ describe('ComposerPageComponent', () => {
       await settle();
       http
         .expectOne({ method: 'POST', url: `${BASE}/a/posts` })
-        .flush(apiCollectionPost({ id: 'n', collectionId: 'a' }));
+        .flush(apiCollectionPost({ id: 'n' }));
       await rerender();
       expect(navigateByUrl).toHaveBeenCalledWith('/app/collections');
     });
@@ -655,7 +672,7 @@ describe('ComposerPageComponent', () => {
       await settle();
       http
         .expectOne({ method: 'POST', url: `${BASE}/a/posts` })
-        .flush(apiCollectionPost({ id: 'n', collectionId: 'a' }));
+        .flush(apiCollectionPost({ id: 'n' }));
       await rerender();
     });
 
@@ -748,9 +765,7 @@ describe('ComposerPageComponent', () => {
       expect(req.request.body.items).toEqual(expected.map((text) => ({ text, mediaIds: [] })));
       expect(req.request.body.items.length).toBe(5);
       req.flush(
-        expected.map((text, i) =>
-          apiCollectionPost({ id: 'ai' + i, collectionId: 'b', text, approval: 'draft' }),
-        ),
+        expected.map((text, i) => apiCollectionPost({ id: 'ai' + i, text, approval: 'draft' })),
       );
       await rerender();
       expect(toasts().map((x) => x.message)).toEqual([
@@ -841,6 +856,32 @@ describe('ComposerPageComponent', () => {
       expect(previewText()).toBe('ตั๋วหนัง ซื้อ-ขายคอนโด\n\nLINE @shop\n#movie');
       await choose(select(el, t().cmp.collection), 'a');
       expect(previewText()).toBe('ตั๋วหนัง ซื้อ-ขายคอนโด');
+    });
+
+    it("lays the post's own hashtags, footer and position over the collection's", async () => {
+      await open({ collection: 'b', post: 'b1' });
+      expect(previewText()).toBe('ซื้อ-ขายคอนโด\nตั๋วหนัง\n\nLINE @shop\n#movie');
+      TestBed.inject(CollectionsStore).collections.update((l) =>
+        l.map((c) => ({
+          ...c,
+          posts: c.posts.map((p) =>
+            p.id === 'b1'
+              ? {
+                  ...p,
+                  settings: {
+                    ...p.settings,
+                    hashtags: '#own',
+                    footer: '',
+                    footerPos: 'top' as const,
+                  },
+                }
+              : p,
+          ),
+        })),
+      );
+      await rerender();
+      // Its own empty footer means none, its own tags replace the collection's.
+      expect(previewText()).toBe('ซื้อ-ขายคอนโด\nตั๋วหนัง\n#own');
     });
 
     it('puts the footer before the text when the collection says so', async () => {

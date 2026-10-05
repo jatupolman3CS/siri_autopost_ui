@@ -1,0 +1,188 @@
+<div class="page">
+  <div class="page-head">
+    <div class="head-text">
+      <h1>{{ t().api.flow.plTitle }}</h1>
+      <p>{{ t().api.flow.plSub }}</p>
+      <app-perm-note level="edit" />
+    </div>
+    <div class="actions">
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        data-testid="new-post"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+        (click)="newOpen.set(true)"
+      >
+        <i class="ph ph-plus"></i>{{ t().api.flow.plNew }}
+      </button>
+    </div>
+  </div>
+
+  <app-flow-steps [current]="1" />
+
+  @if (!store.loaded()) {
+    <section class="panel loading" aria-busy="true">—</section>
+  } @else if (!store.posts().length) {
+    <app-empty-state
+      icon="ph-note-pencil"
+      [heading]="t().api.flow.plEmptyTitle"
+      [description]="t().api.flow.plEmptyBody"
+    />
+  } @else {
+    <section class="panel tools">
+      <div class="find">
+        <app-input-field
+          [label]="t().api.flow.plSearch"
+          [placeholder]="t().api.flow.plSearchPh"
+          [value]="search()"
+          (valueChange)="setSearch($event)"
+        />
+        <app-select-field
+          [label]="t().api.flow.plFilterCollection"
+          [options]="collectionOptions()"
+          [value]="collectionFilter()"
+          (valueChange)="setCollectionFilter($event)"
+        />
+      </div>
+      <div class="chips" role="group" [attr.aria-label]="t().api.flow.plFilterState">
+        @for (f of filters(); track f.key) {
+          <button
+            type="button"
+            class="pick"
+            [class.on]="filter() === f.key"
+            [attr.aria-pressed]="filter() === f.key"
+            [attr.data-filter]="f.key"
+            (click)="setFilter(f.key)"
+          >
+            {{ f.label }} ({{ f.n }})
+          </button>
+        }
+      </div>
+      <div class="row-tools">
+        <app-checkbox
+          [label]="t().api.flow.plSelectPage"
+          [checked]="pageSelected()"
+          [disabled]="!page().length"
+          (checkedChange)="selectPage($event)"
+        />
+        <span class="small muted">{{ shownLine() }}</span>
+      </div>
+    </section>
+
+    @if (selectedIds().length) {
+      <section class="panel bulk" role="region" [attr.aria-label]="selectedLine()">
+        <span class="fw6">{{ selectedLine() }}</span>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-secondary"
+          data-testid="bulk-on"
+          [disabled]="!perm.canEdit() || bulkBusy()"
+          [attr.title]="perm.editHint() || null"
+          (click)="bulk('activate')"
+        >
+          {{ t().api.flow.plBulkOn }}
+        </button>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-secondary"
+          data-testid="bulk-off"
+          [disabled]="!perm.canEdit() || bulkBusy()"
+          [attr.title]="perm.editHint() || null"
+          (click)="bulk('deactivate')"
+        >
+          {{ t().api.flow.plBulkOff }}
+        </button>
+        <span class="bulk-col">
+          <app-select-field
+            [placeholder]="t().api.flow.plBulkPick"
+            [options]="bulkOptions()"
+            [disabled]="!perm.canEdit()"
+            [(value)]="bulkCollection"
+          />
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-secondary"
+            data-testid="bulk-add"
+            [disabled]="!perm.canEdit() || bulkBusy() || !bulkCollection()"
+            [attr.title]="perm.editHint() || null"
+            (click)="bulk('add_to_collection', bulkCollection())"
+          >
+            {{ t().api.flow.plBulkAdd }}
+          </button>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-secondary"
+            data-testid="bulk-remove"
+            [disabled]="!perm.canEdit() || bulkBusy() || !bulkCollection()"
+            [attr.title]="perm.editHint() || null"
+            (click)="bulk('remove_from_collection', bulkCollection())"
+          >
+            {{ t().api.flow.plBulkRemove }}
+          </button>
+        </span>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-danger"
+          data-testid="bulk-delete"
+          [disabled]="!perm.canEdit() || bulkBusy()"
+          [attr.title]="perm.editHint() || null"
+          (click)="bulkDeleteOpen.set(true)"
+        >
+          <i class="ph ph-trash"></i>{{ t().api.flow.plBulkDelete }}
+        </button>
+        <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="clearSelection()">
+          {{ t().api.flow.plClearSelection }}
+        </button>
+      </section>
+    }
+
+    @for (p of page(); track p.id) {
+      <app-master-post-card
+        [post]="p"
+        [selected]="isSelected(p.id)"
+        (select)="select(p.id, $event)"
+        (remove)="deleting.set($event)"
+      />
+    } @empty {
+      <p class="nomatch">{{ t().api.flow.plNoMatch }}</p>
+    }
+    <app-pager [pager]="pager" />
+  }
+
+  <app-next-step
+    [label]="t().api.nextToCollections"
+    (go)="router.navigateByUrl('/app/collections')"
+  />
+</div>
+
+<app-modal
+  [open]="newOpen()"
+  [title]="t().api.flow.plNewTitle"
+  [closable]="true"
+  (closed)="newOpen.set(false)"
+>
+  @if (newOpen()) {
+    <app-post-editor
+      [startIn]="startIn()"
+      (saved)="newOpen.set(false)"
+      (cancelled)="newOpen.set(false)"
+    />
+  }
+</app-modal>
+
+<app-confirm-modal
+  [open]="!!deleting()"
+  [title]="t().api.flow.plDelete"
+  [body]="t().api.flow.plDeleteBody"
+  [action]="deleteOne"
+  (closed)="deleting.set(null)"
+/>
+
+<app-confirm-modal
+  [open]="bulkDeleteOpen()"
+  [title]="t().api.flow.plBulkDeleteTitle"
+  [body]="bulkDeleteBody()"
+  [action]="deleteSelected"
+  (closed)="bulkDeleteOpen.set(false)"
+/>

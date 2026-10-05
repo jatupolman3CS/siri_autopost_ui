@@ -77,6 +77,18 @@
       />
       <div>
         <app-select-field
+          [label]="t().api.flow.repeatLabel"
+          [options]="repeatOptions()"
+          [disabled]="perm.readOnly() || form.order() === 'rotate'"
+          [value]="form.repeat()"
+          (valueChange)="
+            form.repeat.set($event === 'any' || $event === 'never' ? $event : 'recent')
+          "
+        />
+        <p class="su-field-help"><i class="ph ph-info" aria-hidden="true"></i>{{ repeatNote() }}</p>
+      </div>
+      <div>
+        <app-select-field
           [label]="t().sch.bump"
           [options]="bumpOptions()"
           [disabled]="perm.readOnly()"

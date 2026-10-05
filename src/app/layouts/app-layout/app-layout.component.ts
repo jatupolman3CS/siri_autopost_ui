@@ -110,7 +110,9 @@ export class AppLayoutComponent {
           },
         ]
       : [];
-    // The post editor (the composer) is not a menu item of its own: it belongs to the collections.
+    // The post library comes first; the post editor (the composer) is not a menu item of its own: it writes a
+    // post into a collection, so it belongs to the collections.
+    const posts = item('posts', 'composer', 'ph-note-pencil', { label: this.t().api.postsNav });
     const composer = ['/app/composer'];
     if (simple)
       return [
@@ -118,12 +120,10 @@ export class AppLayoutComponent {
           label: t.gWorkspace,
           items: [
             item('overview', 'overview', 'ph-squares-four'),
-            item('collections', 'collections', 'ph-folders', {
-              label: t.postsShort,
-              also: composer,
-            }),
-            item('targets', 'targets', 'ph-users-four', { label: t.groupsShort }),
-            item('schedules', 'schedules', 'ph-calendar-check', { label: t.scheduleShort }),
+            posts,
+            item('collections', 'collections', 'ph-folders', { also: composer }),
+            item('targets', 'targets', 'ph-users-four'),
+            item('schedules', 'schedules', 'ph-calendar-check'),
             item('calendar', 'calendar', 'ph-calendar-blank'),
             errors,
           ],
@@ -136,6 +136,7 @@ export class AppLayoutComponent {
         label: t.gWorkspace,
         items: [
           item('overview', 'overview', 'ph-squares-four'),
+          posts,
           item('collections', 'collections', 'ph-folders', { also: composer }),
           item('targets', 'targets', 'ph-users-four'),
           item('schedules', 'schedules', 'ph-calendar-check'),

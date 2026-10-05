@@ -6,6 +6,9 @@
 
 export type ScheduleMode = 'daily' | 'weekdays' | 'weekend' | 'interval' | 'drip' | 'once';
 export type PostOrder = 'shuffle' | 'rotate';
+/** With shuffle: whether a group may get a post again (recent = not its last few, any = yes, never = not until all were used). */
+export type PostRepeat = 'recent' | 'any' | 'never';
+export const POST_REPEATS: readonly PostRepeat[] = ['recent', 'any', 'never'];
 
 export const SCHEDULE_MODES: readonly ScheduleMode[] = [
   'daily',

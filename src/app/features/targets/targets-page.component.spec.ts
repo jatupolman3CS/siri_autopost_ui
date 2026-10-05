@@ -143,11 +143,11 @@ describe('TargetsPageComponent', () => {
   });
 
   describe('page', () => {
-    it('shows the title, the subtitle, the stepper on step 2 and the code explainer', async () => {
+    it('shows the title, the subtitle, the stepper on step 3 and the code explainer', async () => {
       const { el } = await open();
       expect(el.querySelector('h1')?.textContent).toBe(t().ts.title);
       expect(el.querySelector('.page-head p')?.textContent).toBe(t().ts.sub);
-      expect(el.querySelector('a.step[aria-current="step"] .num')?.textContent?.trim()).toBe('2');
+      expect(el.querySelector('a.step[aria-current="step"] .num')?.textContent?.trim()).toBe('3');
       expect(el.querySelector('.code .fw6')?.textContent).toBe(t().ts.codeTitle);
       expect(el.querySelector('.code p')?.textContent).toBe(t().ts.codeBody);
     });

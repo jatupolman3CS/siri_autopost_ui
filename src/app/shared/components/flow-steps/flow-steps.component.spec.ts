@@ -13,7 +13,7 @@ describe('FlowStepsComponent', () => {
   });
   afterEach(() => localStorage.clear());
 
-  function render(current: 1 | 2 | 3) {
+  function render(current: 1 | 2 | 3 | 4) {
     const fixture = TestBed.createComponent(FlowStepsComponent);
     fixture.componentRef.setInput('current', current);
     fixture.detectChanges();
@@ -21,33 +21,41 @@ describe('FlowStepsComponent', () => {
     return { fixture, el, steps: [...el.querySelectorAll<HTMLAnchorElement>('a.step')] };
   }
 
-  it('links the three steps to collections, link sets and schedules', () => {
+  it('links the four steps to posts, collections, link sets and schedules', () => {
     const { steps } = render(1);
     expect(steps.map((a) => a.getAttribute('href'))).toEqual([
+      '/app/posts',
       '/app/collections',
       '/app/targets',
       '/app/schedules',
     ]);
-    expect(steps.map((a) => a.querySelector('.num')?.textContent?.trim())).toEqual(['1', '2', '3']);
+    expect(steps.map((a) => a.querySelector('.num')?.textContent?.trim())).toEqual([
+      '1',
+      '2',
+      '3',
+      '4',
+    ]);
   });
 
   it('writes each step from the dictionary, in the current language', () => {
     const t = TestBed.inject(I18nService).t();
     const { steps } = render(1);
-    expect(steps[0].querySelector('.title')?.textContent).toBe(t.flow.s1);
-    expect(steps[1].querySelector('.body')?.textContent).toBe(t.flow.s2b);
-    expect(steps[2].querySelector('.title')?.textContent).toBe(t.flow.s3);
+    expect(steps[0].querySelector('.title')?.textContent).toBe(t.api.flowPosts);
+    expect(steps[0].querySelector('.body')?.textContent).toBe(t.api.flowPostsB);
+    expect(steps[1].querySelector('.title')?.textContent).toBe(t.flow.s1);
+    expect(steps[2].querySelector('.body')?.textContent).toBe(t.flow.s2b);
+    expect(steps[3].querySelector('.title')?.textContent).toBe(t.flow.s3);
     TestBed.inject(I18nService).setLang('en');
     TestBed.tick();
     const fixture = TestBed.createComponent(FlowStepsComponent);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.title').textContent).toBe(
-      'Write posts into a collection',
+      'Write and manage posts',
     );
   });
 
   it('marks only the current step', () => {
-    for (const current of [1, 2, 3] as const) {
+    for (const current of [1, 2, 3, 4] as const) {
       const { steps } = render(current);
       const on = steps.filter((a) => a.classList.contains('on'));
       expect(on).toHaveLength(1);

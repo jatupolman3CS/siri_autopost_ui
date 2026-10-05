@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { assistStorage } from '../../core/auth/token';
 import { CollectionsStore } from '../../core/data/collections.store';
+import { MasterPostsStore } from '../../core/data/master-posts.store';
 import { DraftStore } from '../../core/data/draft.store';
 import { LibraryStore } from '../../core/data/library.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
@@ -42,9 +43,7 @@ describe('LibraryPageComponent and the composer draft', () => {
       collections: [
         apiCollection({
           id: 'a',
-          posts: [
-            apiCollectionPost({ id: 'a1', collectionId: 'a', text: 'one', mediaIds: ['m1'] }),
-          ],
+          posts: [apiCollectionPost({ id: 'a1', text: 'one', mediaIds: ['m1'] })],
         }),
       ],
     });
@@ -263,6 +262,26 @@ describe('LibraryPageComponent and the composer draft', () => {
       ).toEqual(['m2']);
       expect(el.querySelectorAll('.card').length).toBe(1);
       expect(draft().draft().media).toEqual([]);
+    });
+
+    it('reads the post library again too (the server took the file off its posts)', async () => {
+      await open();
+      const master = TestBed.inject(MasterPostsStore);
+      await settle();
+      http.expectOne({ method: 'GET', url: `${API}/master-posts` }).flush([]);
+      await settle();
+      expect(master.loaded()).toBe(true);
+      await click(cardOf('m1').querySelectorAll('.rowtools .ibtn')[1]);
+      await confirm();
+      http
+        .expectOne((r) => r.method === 'POST' && r.url === `${API}/media/delete`)
+        .flush(null, NO_CONTENT);
+      await settle();
+      http.expectOne((r) => r.method === 'GET' && r.url === `${API}/collections`).flush([]);
+      const fresh = apiCollectionPost({ id: 'a1', text: 'one', mediaIds: [] });
+      http.expectOne({ method: 'GET', url: `${API}/master-posts` }).flush([fresh]);
+      await rerender();
+      expect(master.posts()).toEqual([fresh]);
     });
 
     it('deletes the selected files in one request', async () => {

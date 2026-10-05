@@ -3,6 +3,7 @@ import { ApiMedia, ApiMediaFolder, ApiService, ApiSnippet } from '../http/api.se
 import { CollectionsStore } from './collections.store';
 import { DraftStore } from './draft.store';
 import { loadWithRetry } from './loading';
+import { PostsSync } from './posts-sync';
 import { MediaFolder, MediaItem, Snippet } from './models';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
@@ -147,7 +148,7 @@ export class LibraryStore {
 
   /**
    * Deletes files from the library, a request at a time of at most 500. The server takes them off the collection
-   * posts that used them, so those collections (and the composer's draft, via `removed`) are told afterwards.
+   * posts that used them, so those collections (and the post library, and the composer's draft) are told afterwards.
    */
   async deleteMedia(ids: readonly string[]): Promise<void> {
     const wsId = this.ws.id();
@@ -168,7 +169,9 @@ export class LibraryStore {
       this.media.update((list) => list.filter((m) => !gone.has(m.id)));
     }
     this.injector.get(DraftStore).dropMedia(ids);
-    void this.injector.get(CollectionsStore).refresh();
+    // The server took the files off the posts that used them: read the collections and the post library again.
+    this.injector.get(CollectionsStore);
+    void this.injector.get(PostsSync).afterMediaDeleted();
   }
 
   /** Uploads files one by one; returns the ids of the ones the server accepted (the composer attaches them). */

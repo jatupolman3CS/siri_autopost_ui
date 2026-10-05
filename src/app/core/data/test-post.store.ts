@@ -1,5 +1,5 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
-import { composeFull, linkLabel, seededRandom } from '../flow';
+import { composeFull, linkLabel, postComposeSettings, seededRandom } from '../flow';
 import { ApiPost, ApiService, ApiTestPost } from '../http/api.service';
 import { problemMessage } from '../http/problem-details';
 import '../i18n/i18n.engine';
@@ -180,7 +180,9 @@ export class TestPostStore {
     const body = this.body();
     const member = this.member();
     if (!body || !member) return body;
-    return composeFull(body, member.code, this.collection()?.settings, seededRandom(this.seed()));
+    // The picked post's own footer, hashtags and footer position win over the collection's.
+    const settings = postComposeSettings(this.collection()?.settings, this.post()?.settings);
+    return composeFull(body, member.code, settings, seededRandom(this.seed()));
   });
   /** Files that go with it: the chosen post's media (the server attaches them whatever text is typed). */
   readonly files = computed(() => this.post()?.mediaIds.length ?? 0);

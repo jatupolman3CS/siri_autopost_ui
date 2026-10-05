@@ -10,8 +10,8 @@ import {
 } from '@angular/core';
 import { ComposerPreviewService } from '../../core/data/composer-preview.service';
 import { LibraryStore } from '../../core/data/library.store';
-import { composeFull, groupSlug, seededRandom } from '../../core/flow';
-import { ApiCollectionSettings } from '../../core/http/api.service';
+import { composeFull, groupSlug, postComposeSettings, seededRandom } from '../../core/flow';
+import { ApiCollectionSettings, ApiPostSettings } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 
@@ -43,6 +43,11 @@ export class ComposerPreviewComponent {
     ApiCollectionSettings,
     'hashtags' | 'footer' | 'footerPos'
   > | null>(null);
+
+  /** The post's own footer, hashtags and footer position (null follows the collection's), when it already exists. */
+  readonly postSettings = input<Pick<ApiPostSettings, 'hashtags' | 'footer' | 'footerPos'> | null>(
+    null,
+  );
 
   protected readonly seed = signal(1);
 
@@ -80,7 +85,7 @@ export class ComposerPreviewComponent {
       ? composeFull(
           this.text(),
           this.link()?.code ?? '',
-          this.settings(),
+          postComposeSettings(this.settings(), this.postSettings()),
           seededRandom(this.seed()),
         )
       : '',

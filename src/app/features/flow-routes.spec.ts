@@ -23,12 +23,20 @@ describe('routes of the redesigned app', () => {
     step?: number;
   }[] = [
     {
+      path: 'posts',
+      title: 'api.postsNav',
+      cls: 'PostsPageComponent',
+      module: () => import('./posts/posts-page.component'),
+      text: (t) => [t.api.flow.plTitle, t.api.flow.plSub],
+      step: 1,
+    },
+    {
       path: 'collections',
       title: 'nav.collections',
       cls: 'CollectionsPageComponent',
       module: () => import('./collections/collections-page.component'),
       text: (t) => [t.col.title, t.col.sub],
-      step: 1,
+      step: 2,
     },
     {
       path: 'schedules',
@@ -36,7 +44,7 @@ describe('routes of the redesigned app', () => {
       cls: 'SchedulesPageComponent',
       module: () => import('./schedules/schedules-page.component'),
       text: (t) => [t.sch.title, t.sch.sub],
-      step: 3,
+      step: 4,
     },
     {
       path: 'reports',
