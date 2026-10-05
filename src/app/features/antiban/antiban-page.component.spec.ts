@@ -457,6 +457,23 @@ describe('AntibanPageComponent', () => {
       http.expectNone(RESTORE_URL);
     });
 
+    it('fills the box from a chosen file, which is then checked like pasted text', async () => {
+      await openModal();
+      const input = modalBody()!.querySelector<HTMLInputElement>('[data-testid=restore-file]')!;
+      expect(input.accept).toContain('.json');
+      expect(button(modalBody()!, t().api.engine.restorePick)).toBeTruthy();
+      const file = new File([JSON.stringify(FILE)], 'backup.json', { type: 'application/json' });
+      Object.defineProperty(input, 'files', { value: [file], configurable: true });
+      input.dispatchEvent(new Event('change'));
+      await rerender();
+      await rerender();
+      expect(modalBody()!.querySelector('textarea')!.value).toBe(JSON.stringify(FILE));
+      check().click();
+      await rerender();
+      expect(review()).not.toBeNull();
+      http.expectNone(RESTORE_URL);
+    });
+
     describe('the confirmation step', () => {
       beforeEach(async () => {
         await openModal();
