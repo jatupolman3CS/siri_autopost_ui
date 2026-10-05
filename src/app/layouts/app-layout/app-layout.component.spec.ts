@@ -68,27 +68,28 @@ describe('the sidebar of the app shell', () => {
   });
 
   describe('simple mode (the default)', () => {
-    it('keeps the three-step flow, the calendar and the errors, then the account', async () => {
+    it('keeps the posting flow, the calendar and the errors, then the account', async () => {
       await render();
-      const t = TestBed.inject(I18nService).t().nav;
+      const all = TestBed.inject(I18nService).t();
+      const t = all.nav;
       expect(groups().map((g) => g.label)).toEqual([t.gWorkspace, t.gAccount]);
       expect(groups()[0].links.map((l) => [l.path, l.label])).toEqual([
         ['/app/overview', t.overview],
-        ['/app/collections', t.postsShort],
-        ['/app/targets', t.groupsShort],
-        ['/app/schedules', t.scheduleShort],
+        ['/app/posts', all.api.postsNav],
+        ['/app/collections', t.collections],
+        ['/app/targets', t.targets],
+        ['/app/schedules', t.schedules],
         ['/app/calendar', t.calendar],
         ['/app/errors', t.errors],
       ]);
-      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team']);
+      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team', '/app/campaigns']);
     });
 
-    it('has no item for the composer, the campaigns page or the engine pages', async () => {
+    it('has no item for the composer or the engine pages', async () => {
       await render();
       const all = groups().flatMap((g) => g.links.map((l) => l.path));
       for (const gone of [
         '/app/composer',
-        '/app/campaigns',
         '/app/library',
         '/app/reports',
         '/app/test',
@@ -121,6 +122,7 @@ describe('the sidebar of the app shell', () => {
       ]);
       expect(paths(t.gWorkspace)).toEqual([
         '/app/overview',
+        '/app/posts',
         '/app/collections',
         '/app/targets',
         '/app/schedules',
@@ -136,17 +138,21 @@ describe('the sidebar of the app shell', () => {
         '/app/offline',
         '/app/errors',
       ]);
-      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team']);
+      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team', '/app/campaigns']);
       expect(paths(t.gPreview)).toEqual(['/app/extension']);
     });
 
-    it('uses the long labels, not the short ones of simple mode', async () => {
-      await render({ simple: false });
-      const t = TestBed.inject(I18nService).t().nav;
-      const labels = groups()[0].links.map((l) => l.label);
-      expect(labels).toContain(t.collections);
-      expect(labels).toContain(t.targets);
-      expect(labels).not.toContain(t.postsShort);
+    it('keeps the names the simple menu gave its items', async () => {
+      await render();
+      const simple = groups()
+        .flatMap((g) => g.links)
+        .map((l) => [l.path, l.label]);
+      toggle().click();
+      fixture.detectChanges();
+      const full = groups()
+        .flatMap((g) => g.links)
+        .map((l) => [l.path, l.label]);
+      for (const [path, label] of simple) expect(full).toContainEqual([path, label]);
     });
 
     it('offers to hide the advanced menu', async () => {
@@ -240,6 +246,11 @@ describe('the sidebar of the app shell', () => {
     it('is marked, and only it', async () => {
       await render({ url: '/app/targets' });
       expect(on()).toEqual(['/app/targets']);
+    });
+
+    it('marks the post library on its own page, not the collections', async () => {
+      await render({ url: '/app/posts' });
+      expect(on()).toEqual(['/app/posts']);
     });
 
     it('keeps "collections" marked on the composer, which edits a post of a collection', async () => {

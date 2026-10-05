@@ -28,6 +28,7 @@ import { I18nService } from '../i18n/i18n.service';
 import '../i18n/i18n.engine';
 import { NotificationService } from '../services/notification.service';
 import { AccountsStore } from './accounts.store';
+import { CollectionsStore } from './collections.store';
 import { DeviceEventsService } from './device-events.service';
 import { SettingsStore } from './settings.store';
 import { TEST_FOLLOW_MS, TEST_POLL_MS, TestPostStore } from './test-post.store';
@@ -165,6 +166,31 @@ describe('TestPostStore', () => {
       // A group without a code gets the text as it is.
       store.pickGroup('link:b');
       expect(store.composed()).toBe('ขายคอนโด \n\nLINE @shop\n#condo');
+    });
+
+    it("lays the post's own footer, hashtags and footer position over the collection's", () => {
+      store.pickPost('p1');
+      const collections = TestBed.inject(CollectionsStore);
+      collections.collections.update((l) =>
+        l.map((c) => ({
+          ...c,
+          posts: c.posts.map((p) =>
+            p.id === 'p1'
+              ? {
+                  ...p,
+                  settings: {
+                    ...p.settings,
+                    hashtags: '#own',
+                    footer: null,
+                    footerPos: 'top' as const,
+                  },
+                }
+              : p,
+          ),
+        })),
+      );
+      // The footer of the collection stays (the post leaves it null) but goes first; the tags are its own.
+      expect(store.composed()).toBe('LINE @shop\nขายคอนโด #Jan24\n#own');
     });
 
     it('lets typed text replace the post text, and still attaches the post media (as the server does)', () => {

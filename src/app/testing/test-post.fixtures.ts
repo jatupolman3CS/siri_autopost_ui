@@ -56,11 +56,10 @@ export const TEST_COLLECTION: ApiCollection = apiCollection({
   posts: [
     apiCollectionPost({
       id: 'p1',
-      collectionId: 'c1',
       text: 'ขายคอนโด {{code}}',
       mediaIds: ['m1', 'm2'],
     }),
-    apiCollectionPost({ id: 'p2', collectionId: 'c1', text: 'ห้องว่างให้เช่า' }),
+    apiCollectionPost({ id: 'p2', text: 'ห้องว่างให้เช่า' }),
   ],
 });
 
@@ -70,8 +69,8 @@ export const APPROVAL_COLLECTION: ApiCollection = apiCollection({
   name: 'Tickets',
   settings: { requireApproval: true },
   posts: [
-    apiCollectionPost({ id: 't1', collectionId: 'c2', text: 'รออนุมัติ', approval: 'pending' }),
-    apiCollectionPost({ id: 't2', collectionId: 'c2', text: 'อนุมัติแล้ว' }),
+    apiCollectionPost({ id: 't1', text: 'รออนุมัติ', approval: 'pending' }),
+    apiCollectionPost({ id: 't2', text: 'อนุมัติแล้ว' }),
   ],
 });
 

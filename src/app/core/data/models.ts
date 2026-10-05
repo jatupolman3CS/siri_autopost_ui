@@ -96,6 +96,8 @@ export interface MediaItem {
   used: number;
   /** The library folder the file is in; null/absent = no folder. */
   folderId?: string | null;
+  /** Off = kept in the library but not offered for new posts; absent = on. */
+  active?: boolean;
 }
 
 export interface MediaFolder {
@@ -108,6 +110,8 @@ export interface Snippet {
   title: string;
   text: string;
   used: number;
+  /** Off = kept in the library but not offered for new posts; absent = on. */
+  active?: boolean;
 }
 
 export interface SeedMedia {

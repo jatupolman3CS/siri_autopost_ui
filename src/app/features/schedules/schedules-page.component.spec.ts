@@ -7,6 +7,7 @@ import { routes } from '../../app.routes';
 import { assistStorage } from '../../core/auth/token';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { DeviceEventsService } from '../../core/data/device-events.service';
+import { DevicesStore } from '../../core/data/devices.store';
 import { PostsStore } from '../../core/data/posts.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
 import { SettingsStore } from '../../core/data/settings.store';
@@ -34,7 +35,7 @@ import {
 } from '../../testing/schedules.fixtures';
 import { SchedulesPageComponent } from './schedules-page.component';
 
-const POSTS = [1, 2, 3].map((i) => apiCollectionPost({ id: `p${i}`, collectionId: 'c1' }));
+const POSTS = [1, 2, 3].map((i) => apiCollectionPost({ id: `p${i}` }));
 const C1 = apiCollection({
   id: 'c1',
   name: 'Condo posts',
@@ -47,7 +48,7 @@ const C3 = apiCollection({
   id: 'c3',
   name: 'Needs approval',
   settings: { requireApproval: true },
-  posts: [apiCollectionPost({ id: 'p9', collectionId: 'c3', approval: 'draft' })],
+  posts: [apiCollectionPost({ id: 'p9', approval: 'draft' })],
 });
 const LINK_A = apiSetLink({ id: 'a', name: 'Condo BKK', code: '#Jan24' });
 const LINK_B = apiSetLink({ id: 'b', name: 'Condo rent' });
@@ -116,6 +117,7 @@ describe('SchedulesPageComponent', () => {
     TestBed.inject(AccountsStore);
     TestBed.inject(SettingsStore);
     TestBed.inject(SchedulesStore);
+    TestBed.inject(DevicesStore);
     await signIn(http, {
       workspace: { role: opts.role ?? 'owner' },
       schedules: opts.holdSchedules ? [] : (opts.schedules ?? [MORNING]),
@@ -216,11 +218,11 @@ describe('SchedulesPageComponent', () => {
   });
 
   describe('page', () => {
-    it('shows the title, the subtitle and the stepper on step 3, with the builder closed', async () => {
+    it('shows the title, the subtitle and the stepper on step 4, with the builder closed', async () => {
       const { el } = await open();
       expect(el.querySelector('h1')?.textContent).toBe(t().sch.title);
       expect(el.querySelector('.page-head p')?.textContent).toBe(t().sch.sub);
-      expect(el.querySelector('a.step[aria-current="step"] .num')?.textContent?.trim()).toBe('3');
+      expect(el.querySelector('a.step[aria-current="step"] .num')?.textContent?.trim()).toBe('4');
       expect(builder(el)).toBeNull();
     });
 
@@ -276,7 +278,7 @@ describe('SchedulesPageComponent', () => {
       const { el } = await open({ connected: false });
       const note = el.querySelector('.callout')!;
       expect(note.textContent).toContain(t().api.flow.needDevice);
-      expect(note.querySelector('a')?.getAttribute('href')).toBe('/app/team');
+      expect(note.querySelector('a')?.getAttribute('href')).toBe('/app/team?pair=1');
     });
 
     it('has no such notice when a browser is paired', async () => {
@@ -429,6 +431,69 @@ describe('SchedulesPageComponent', () => {
     });
   });
 
+  describe('rename', () => {
+    const renameButton = (el: HTMLElement) =>
+      rowsOf(el)[0].querySelector<HTMLButtonElement>('.btns .ibtn')!;
+
+    it('renames a schedule through the dialog and keeps everything else', async () => {
+      const { fixture, el } = await open();
+      renameButton(el).click();
+      fixture.detectChanges();
+      await settle();
+      const input = el.querySelector<HTMLInputElement>('app-rename-modal input')!;
+      expect(input.value).toBe('Morning posts');
+      input.value = '  Evening posts ';
+      input.dispatchEvent(new Event('input'));
+      el.querySelector<HTMLFormElement>('#rename-form')!.requestSubmit();
+      await settle();
+      const req = http.expectOne(`${SCHEDULES_URL}/sc1/name`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ name: 'Evening posts' });
+      req.flush({ ...MORNING, name: 'Evening posts' });
+      await settle();
+      fixture.detectChanges();
+      expect(rowsOf(el)[0].querySelector('.fw6')?.textContent?.trim()).toBe('Evening posts');
+      expect(rowsOf(el)[0].querySelector('.status')?.textContent?.trim()).toBe(t().sch.active);
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).toBeNull();
+      expect(toasts().map((x) => x.message)).toContain(t().api.itemRenamed);
+    });
+
+    it('does not call the API when the name did not change', async () => {
+      const { fixture, el } = await open();
+      renameButton(el).click();
+      fixture.detectChanges();
+      await settle();
+      el.querySelector<HTMLFormElement>('#rename-form')!.requestSubmit();
+      await settle();
+      http.expectNone(`${SCHEDULES_URL}/sc1/name`);
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).toBeNull();
+    });
+
+    it('keeps the dialog open when the name is refused', async () => {
+      const { fixture, el } = await open();
+      renameButton(el).click();
+      fixture.detectChanges();
+      await settle();
+      const input = el.querySelector<HTMLInputElement>('app-rename-modal input')!;
+      input.value = 'New';
+      input.dispatchEvent(new Event('input'));
+      el.querySelector<HTMLFormElement>('#rename-form')!.requestSubmit();
+      await settle();
+      http
+        .expectOne(`${SCHEDULES_URL}/sc1/name`)
+        .flush({ title: 'no' }, { status: 422, statusText: 'Unprocessable' });
+      await settle();
+      fixture.detectChanges();
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).not.toBeNull();
+      expect(rowsOf(el)[0].querySelector('.fw6')?.textContent?.trim()).toBe('Morning posts');
+    });
+
+    it('is off for a viewer', async () => {
+      const { el } = await open({ role: 'viewer' });
+      expect(renameButton(el).disabled).toBe(true);
+    });
+  });
+
   describe('permissions', () => {
     it.each([
       ['viewer', true],
@@ -480,7 +545,7 @@ describe('SchedulesPageComponent', () => {
       for (const r of http.match((x) => x.url.endsWith('/best-times'))) r.flush([]);
     });
 
-    it('starts with the five basic fields, today as the start date and an empty summary', async () => {
+    it('starts with the six basic fields, today as the start date and an empty summary', async () => {
       const { fixture, el } = await open();
       await openBuilder(el, fixture);
       const labels = [...builder(el)!.querySelectorAll('.grid:first-of-type label')].map((l) =>
@@ -491,6 +556,7 @@ describe('SchedulesPageComponent', () => {
         t().sch.collection,
         t().sch.set,
         t().sch.mode,
+        t().api.flow.schStartLabel,
         t().sch.start,
       ]);
       expect(input(el, t().sch.start).value).toBe(TestBed.inject(PostsStore).todayKey());
@@ -836,6 +902,8 @@ describe('SchedulesPageComponent', () => {
       autoDeleteDays: 0,
       overrides: {},
       utcOffsetMinutes: utcOffsetMinutes(),
+      startNow: false,
+      repeat: 'recent',
       ...over,
     });
     const NEW = apiSchedule({ id: 'new', name: 'Condo posts → Condo groups' });
@@ -864,6 +932,76 @@ describe('SchedulesPageComponent', () => {
       // The form starts over for the next schedule.
       expect(builder(el)).toBeNull();
       expect(rowsOf(el)).toHaveLength(2);
+    });
+
+    it('starts right away when asked: no date, startNow true, and a note about the first round', async () => {
+      const { fixture, el } = await open();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      pick(select(el, t().api.flow.schStartLabel), 'now');
+      fixture.detectChanges();
+      expect(builder(el)!.textContent).toContain(t().api.flow.schStartNowNote);
+      // The date has nothing to say any more.
+      expect(builder(el)!.querySelector('input[type="date"]')).toBeNull();
+      create(el).click();
+      await settle();
+      const req = http.expectOne(SCHEDULES_URL);
+      expect(req.request.body).toEqual(body({ startDate: null, startNow: true }));
+      req.flush(apiScheduleCreated(NEW, { created: 28, firstAt: '2026-10-06T02:00:00Z' }));
+      await settle();
+      answerChangeRefresh(http);
+      await settle();
+      expect(navigate).toHaveBeenCalled();
+    });
+
+    it('sends the chosen repeat of a post to a group, and explains each choice', async () => {
+      const { fixture, el } = await open({ simple: false });
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      const f = t().api.flow;
+      const note = () => builder(el)!.textContent;
+      expect(select(el, f.repeatLabel).value).toBe('recent');
+      expect(note()).toContain(f.repeatRecentNote);
+      pick(select(el, f.repeatLabel), 'any');
+      fixture.detectChanges();
+      expect(note()).toContain(f.repeatAnyNote);
+      pick(select(el, f.repeatLabel), 'never');
+      fixture.detectChanges();
+      expect(note()).toContain(f.repeatNeverNote);
+      // Rotating in order does not pick at random: the choice is off and says so.
+      pick(select(el, t().sch.order), 'rotate');
+      fixture.detectChanges();
+      expect(select(el, f.repeatLabel).disabled).toBe(true);
+      expect(note()).toContain(f.repeatRotateNote);
+      pick(select(el, t().sch.order), 'shuffle');
+      fixture.detectChanges();
+      create(el).click();
+      await settle();
+      const req = http.expectOne(SCHEDULES_URL);
+      expect(req.request.body).toEqual(body({ repeat: 'never' }));
+      req.flush(apiScheduleCreated(NEW, { created: 0 }));
+      await settle();
+      answerChangeRefresh(http);
+      await settle();
+    });
+
+    it('hides the time of a once schedule that starts now and says what it does', async () => {
+      const { fixture, el } = await open();
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      pick(select(el, t().sch.mode), 'once');
+      fixture.detectChanges();
+      button(builder(el)!, t().common.more)!.click();
+      fixture.detectChanges();
+      const labels = () =>
+        [...builder(el)!.querySelectorAll('label')].map((l) => l.textContent?.trim());
+      expect(labels()).toContain(t().sch.onceTime);
+      pick(select(el, t().api.flow.schStartLabel), 'now');
+      fixture.detectChanges();
+      expect(labels()).not.toContain(t().sch.onceTime);
+      expect(builder(el)!.textContent).toContain(t().api.flow.schStartNowOnceNote);
+      expect(summary(el)).toBe(fmt(t().api.flow.schSummaryNow, { m: 3, a: 3, b: 12 }));
     });
 
     it('sends everything that was changed: name, pattern, times, order, per-group times, bump and delete', async () => {
@@ -1123,6 +1261,14 @@ describe('SchedulesPageComponent', () => {
       create(el).click();
       http.expectNone(SCHEDULES_URL);
     });
+
+    it('says so in the builder and leads to pairing that opens the dialog', async () => {
+      const { fixture, el } = await open({ connected: false });
+      await openBuilder(el, fixture);
+      const need = el.querySelector('.builder .need')!;
+      expect(need.textContent).toContain(t().api.flow.needDevice);
+      expect(need.querySelector('a')?.getAttribute('href')).toBe('/app/team?pair=1');
+    });
   });
 
   describe('opened from the address', () => {
@@ -1210,6 +1356,7 @@ describe('SchedulesPageComponent', () => {
     TestBed.inject(SchedulesStore);
     TestBed.inject(AccountsStore);
     TestBed.inject(SettingsStore);
+    TestBed.inject(DevicesStore);
     await signIn(http, { schedules: [MORNING], collections: [C1], linkSets: [S1] });
     const fixture = TestBed.createComponent(SchedulesPageComponent);
     fixture.detectChanges();

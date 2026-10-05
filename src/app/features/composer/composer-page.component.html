@@ -213,6 +213,7 @@
         [removable]="perm.canEdit()"
         (removed)="toggleMedia($event)"
         [settings]="target()?.settings ?? null"
+        [postSettings]="postSettings()"
       />
     </div>
   </div>

@@ -9,6 +9,7 @@ import { ApiCollection, ApiCollectionPost } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
+import '../../core/i18n/i18n.flow';
 
 const DOT: Record<ApiCollectionPost['approval'], string> = {
   approved: 'var(--color-success)',
@@ -71,16 +72,22 @@ export class CollectionPostRowComponent {
     );
   });
 
+  /** The post sits in more than this collection: an edit applies to all of them. */
+  protected readonly shared = computed(() => this.post().collectionIds.length > 1);
+  protected readonly sharedLabel = computed(() =>
+    fmt(this.t().api.flow.colInN, { n: this.post().collectionIds.length }),
+  );
+
   protected request(): void {
-    void this.store.setApproval(this.post(), 'request');
+    void this.store.setApproval(this.collection().id, this.post(), 'request');
   }
 
   protected approve(): void {
-    void this.store.setApproval(this.post(), 'approve');
+    void this.store.setApproval(this.collection().id, this.post(), 'approve');
   }
 
   protected reject(): void {
-    void this.store.setApproval(this.post(), 'reject');
+    void this.store.setApproval(this.collection().id, this.post(), 'reject');
   }
 
   protected edit(): void {
@@ -88,8 +95,12 @@ export class CollectionPostRowComponent {
     void this.router.navigate([COMPOSER_PATH], { queryParams: composerParams(this.draft.draft()) });
   }
 
-  /** Deletes at once (no confirmation, as in the design); the post comes back if the API refuses. */
+  /**
+   * Takes the post out of THIS collection at once (nothing is lost: it stays in the post library and in its other
+   * collections, so there is no confirmation); it comes back if the API refuses.
+   */
   protected async remove(): Promise<void> {
-    if (await this.store.deletePost(this.post())) this.notify.info(this.t().col.deleted);
+    if (await this.store.removePost(this.collection().id, this.post().id))
+      this.notify.info(this.t().col.deleted);
   }
 }

@@ -21,6 +21,7 @@ import { NextStepComponent } from '../../shared/components/next-step/next-step.c
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { ScheduleBuilderComponent } from './schedule-builder.component';
 import { ScheduleFormService } from './schedule-form.service';
+import { ScheduleDispatchComponent } from './schedule-dispatch.component';
 import { ScheduleListComponent } from './schedule-list.component';
 
 // "Schedules" (step 3 of the flow): pair a collection with a link set and choose when it posts. The builder
@@ -36,6 +37,7 @@ import { ScheduleListComponent } from './schedule-list.component';
     NextStepComponent,
     PermNoteComponent,
     ScheduleBuilderComponent,
+    ScheduleDispatchComponent,
     ScheduleListComponent,
   ],
   providers: [ScheduleFormService],

@@ -45,6 +45,9 @@ import { ModalComponent } from '../../shared/components/modal/modal.component';
             <li>
               {{ line(t().api.engine.restoreSumCollections, { n: s.collections, p: s.posts }) }}
             </li>
+            @if (s.libraryPosts) {
+              <li>{{ line(t().api.engine.restoreSumLibrary, { n: s.libraryPosts }) }}</li>
+            }
             <li>{{ line(t().api.engine.restoreSumLinkSets, { n: s.linkSets, l: s.links }) }}</li>
             <li>{{ line(t().api.engine.restoreSumSchedules, { n: s.schedules }) }}</li>
             @if (s.advanced) {

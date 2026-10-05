@@ -14,7 +14,14 @@ import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
 import { lookup } from '../../core/services/title.strategy';
 import { UiPrefsService } from '../../core/services/ui-prefs.service';
-import { ACCOUNTS, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  ACCOUNTS,
+  WS,
+  answerWorkspaceLoads,
+  provideApiTesting,
+  settle,
+  signIn,
+} from '../../testing/api-testing';
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import { FB_CONNECTED, SET_URL, apiLink, apiLinkSet } from '../../testing/link-sets.fixtures';
 import { TargetsPageComponent } from './targets-page.component';
@@ -136,11 +143,11 @@ describe('TargetsPageComponent', () => {
   });
 
   describe('page', () => {
-    it('shows the title, the subtitle, the stepper on step 2 and the code explainer', async () => {
+    it('shows the title, the subtitle, the stepper on step 3 and the code explainer', async () => {
       const { el } = await open();
       expect(el.querySelector('h1')?.textContent).toBe(t().ts.title);
       expect(el.querySelector('.page-head p')?.textContent).toBe(t().ts.sub);
-      expect(el.querySelector('a.step[aria-current="step"] .num')?.textContent?.trim()).toBe('2');
+      expect(el.querySelector('a.step[aria-current="step"] .num')?.textContent?.trim()).toBe('3');
       expect(el.querySelector('.code .fw6')?.textContent).toBe(t().ts.codeTitle);
       expect(el.querySelector('.code p')?.textContent).toBe(t().ts.codeBody);
     });
@@ -955,6 +962,52 @@ describe('TargetsPageComponent', () => {
       const input = modalBody()!.querySelector<HTMLInputElement>('input[type=file]')!;
       await choose(fixture, new File(['a'], 'a.csv'));
       expect(input.value).toBe('');
+    });
+  });
+
+  describe('rename and switch a set on or off', () => {
+    const head = (el: HTMLElement) => cards(el)[0].querySelector<HTMLElement>('.head')!;
+
+    it('renames a set through the dialog and shows the new name', async () => {
+      const { fixture, el } = await open();
+      head(el).querySelector<HTMLButtonElement>('.ibtn')!.click();
+      fixture.detectChanges();
+      await settle();
+      const input = el.querySelector<HTMLInputElement>('app-rename-modal input')!;
+      expect(input.value).toBe('Condo groups');
+      type(input, ' Condo VIP ');
+      el.querySelector<HTMLFormElement>('#rename-form')!.requestSubmit();
+      await settle();
+      const put = http.expectOne({ method: 'PUT', url: SET_URL('s1') });
+      expect(put.request.body).toMatchObject({ name: 'Condo VIP' });
+      put.flush({ ...SET, name: 'Condo VIP' });
+      await settle();
+      fixture.detectChanges();
+      expect(cards(el)[0].querySelector('.title .fw6')!.textContent).toBe('Condo VIP');
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).toBeNull();
+    });
+
+    it('switches a set off and says what that means for its schedules', async () => {
+      const { fixture, el } = await open();
+      expect(cards(el)[0].querySelector('.off-note')).toBeNull();
+      head(el).querySelector<HTMLInputElement>('app-checkbox input')!.click();
+      await settle();
+      const req = http.expectOne({ method: 'PUT', url: `${SET_URL('s1')}/active` });
+      expect(req.request.body).toEqual({ active: false });
+      req.flush({ ...SET, active: false });
+      await settle();
+      fixture.detectChanges();
+      answerWorkspaceLoads(http);
+      await settle();
+      fixture.detectChanges();
+      expect(cards(el)[0].querySelector('section')!.classList.contains('off-item')).toBe(true);
+      expect(cards(el)[0].querySelector('.off-note')!.textContent).toBe(t().api.setOffHint);
+    });
+
+    it('is off for a viewer', async () => {
+      const { el } = await open({ role: 'viewer' });
+      expect(head(el).querySelector<HTMLButtonElement>('.ibtn')!.disabled).toBe(true);
+      expect(head(el).querySelector<HTMLInputElement>('app-checkbox input')!.disabled).toBe(true);
     });
   });
 

@@ -1,4 +1,4 @@
-<div class="post">
+<div class="post" [class.off-item]="!post().active">
   <div class="thumbs" aria-hidden="true">
     @for (m of thumbs(); track m.id) {
       <span class="thumb">
@@ -21,6 +21,16 @@
       }
       @if (flags().hasSpin) {
         <span class="chip"><i class="ph ph-shuffle"></i>{{ t().col.hasSpin }}</span>
+      }
+      @if (shared()) {
+        <span class="chip" [title]="t().api.flow.colInNHint"
+          ><i class="ph ph-folders"></i>{{ sharedLabel() }}</span
+        >
+      }
+      @if (!post().active) {
+        <span class="chip off" [title]="t().api.flow.colPostOffHint"
+          ><i class="ph ph-pause-circle"></i>{{ t().api.flow.colPostOff }}</span
+        >
       }
       @if (approvalOn()) {
         <span class="status"
@@ -74,10 +84,10 @@
       type="button"
       class="su-btn su-btn-sm su-btn-ghost"
       [disabled]="!perm.canEdit()"
-      [attr.title]="perm.editHint() || null"
+      [attr.title]="perm.editHint() || t().api.flow.colTakeOutHint"
       (click)="remove()"
     >
-      {{ t().common.remove }}
+      {{ t().api.flow.colTakeOut }}
     </button>
   </div>
 </div>

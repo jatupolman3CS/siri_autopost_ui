@@ -32,13 +32,27 @@
       [value]="form.mode()"
       (valueChange)="form.pickMode($event)"
     />
-    <app-input-field
-      [label]="startLabel()"
-      type="date"
+    <app-select-field
+      [label]="t().api.flow.schStartLabel"
+      [options]="startOptions()"
       [disabled]="perm.readOnly()"
-      [(value)]="form.start"
+      [value]="form.startMode()"
+      (valueChange)="form.pickStartMode($event)"
     />
+    @if (!form.isNow()) {
+      <app-input-field
+        [label]="startLabel()"
+        type="date"
+        [disabled]="perm.readOnly()"
+        [(value)]="form.start"
+      />
+    }
   </div>
+  @if (form.isNow()) {
+    <p class="note">
+      {{ form.isOnce() ? t().api.flow.schStartNowOnceNote : t().api.flow.schStartNowNote }}
+    </p>
+  }
 
   <div>
     <button
@@ -61,6 +75,18 @@
         [value]="form.order()"
         (valueChange)="form.order.set($event === 'rotate' ? 'rotate' : 'shuffle')"
       />
+      <div>
+        <app-select-field
+          [label]="t().api.flow.repeatLabel"
+          [options]="repeatOptions()"
+          [disabled]="perm.readOnly() || form.order() === 'rotate'"
+          [value]="form.repeat()"
+          (valueChange)="
+            form.repeat.set($event === 'any' || $event === 'never' ? $event : 'recent')
+          "
+        />
+        <p class="su-field-help"><i class="ph ph-info" aria-hidden="true"></i>{{ repeatNote() }}</p>
+      </div>
       <div>
         <app-select-field
           [label]="t().sch.bump"
@@ -111,7 +137,17 @@
       </button>
     </div>
   </div>
-  @if (form.error()) {
+  @if (!perm.readOnly() && !canPost()) {
+    <div class="need" role="alert">
+      <span class="err">{{ t().api.flow.needDevice }}</span>
+      <a
+        class="su-btn su-btn-sm su-btn-primary"
+        routerLink="/app/team"
+        [queryParams]="{ pair: 1 }"
+        >{{ t().ov.pair }}</a
+      >
+    </div>
+  } @else if (form.error()) {
     <span class="err" role="alert">{{ form.error() }}</span>
   }
 </section>

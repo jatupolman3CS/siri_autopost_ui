@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { DevicesStore } from '../../core/data/devices.store';
 import { PermissionsService } from '../../core/data/permissions.service';
@@ -40,6 +49,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   styleUrl: './team-page.component.scss',
 })
 export class TeamPageComponent {
+  /** ?pair=1 (from a page that cannot work without a paired browser): opens the pairing dialog at once. */
+  readonly pair = input<string>();
+
+  private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   protected readonly perm = inject(PermissionsService);
   protected readonly team = inject(TeamStore);
@@ -270,6 +283,20 @@ export class TeamPageComponent {
   }
 
   /** The new device brings its Facebook account and puts the extension online. */
+  constructor() {
+    effect(() => {
+      if (this.pair() === undefined || !this.devices.loaded()) return;
+      untracked(() => {
+        if (this.perm.canAdmin() && !this.devicesFull()) this.modal.set('pair');
+        void this.router.navigate([], {
+          queryParams: { pair: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+      });
+    });
+  }
+
   protected onPaired(): void {
     this.syncAfterDeviceChange();
   }

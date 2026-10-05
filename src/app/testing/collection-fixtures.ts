@@ -2,6 +2,7 @@ import {
   ApiCollection,
   ApiCollectionPost,
   ApiCollectionSettings,
+  ApiPostSettings,
   ApiLinkSet,
   ApiSetLink,
 } from '../core/http/api.service';
@@ -20,17 +21,45 @@ export const COLLECTION_SETTINGS: ApiCollectionSettings = {
   requireApproval: false,
 };
 
+/** A post that follows its collection in everything and has no schedule limits of its own. */
+export const POST_SETTINGS: ApiPostSettings = {
+  hashtags: null,
+  footer: null,
+  footerPos: null,
+  validFrom: null,
+  validUntil: null,
+  weekdays: [],
+  timeFrom: null,
+  timeTo: null,
+  maxPerDay: 0,
+};
+
+export function apiPostSettings(over: Partial<ApiPostSettings> = {}): ApiPostSettings {
+  return { ...POST_SETTINGS, ...over };
+}
+
+/** A post of the library. `collectionIds` is filled in by apiCollection() for the collection that holds it. */
 export function apiCollectionPost(
-  over: Partial<ApiCollectionPost> & { id: string; collectionId: string },
+  over: Partial<Omit<ApiCollectionPost, 'settings'>> & {
+    id: string;
+    settings?: Partial<ApiPostSettings>;
+  },
 ): ApiCollectionPost {
   return {
     text: 'โพสต์ ' + over.id,
     mediaIds: [],
     approval: 'approved',
+    active: true,
+    collectionIds: [],
     postedCount: 0,
+    queuedCount: 0,
+    failedCount: 0,
+    lastPostedAt: null,
+    nextAt: null,
     createdAt: '2026-10-01T00:00:00Z',
     updatedAt: '2026-10-01T00:00:00Z',
     ...over,
+    settings: apiPostSettings(over.settings),
   };
 }
 
@@ -44,9 +73,15 @@ export function apiCollection(
     name: 'ชุด ' + over.id,
     description: '',
     icon: 'ph-folder',
-    posts: [],
     scheduleCount: 0,
+    active: true,
     ...over,
+    // The server lists the collections a post sits in on the post itself.
+    posts: (over.posts ?? []).map((p) =>
+      p.collectionIds.includes(over.id)
+        ? p
+        : { ...p, collectionIds: [...p.collectionIds, over.id] },
+    ),
     settings: { ...COLLECTION_SETTINGS, ...over.settings },
   };
 }
@@ -73,6 +108,7 @@ export function apiLinkSet(over: Partial<ApiLinkSet> & { id: string }): ApiLinkS
     accountIds: [],
     links: [],
     scheduleCount: 0,
+    active: true,
     ...over,
   };
 }

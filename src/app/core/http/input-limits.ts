@@ -5,6 +5,9 @@ export const INPUT_LIMITS = {
   postText: 5000,
   /** SchedulePostsCommandValidator.MaxMedia */
   postMedia: 20,
+  /** The collections one post may sit in, and its own per-day cap (CollectionPostSettings) */
+  postCollections: 50,
+  postMaxPerDay: 50,
   /** Snippet.MaxTitleLength / MaxTextLength */
   snippetTitle: 120,
   snippetText: 2000,

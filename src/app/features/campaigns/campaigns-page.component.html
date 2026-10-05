@@ -3,6 +3,10 @@
     <div class="w720">
       <h1>{{ x().title }}</h1>
       <p>{{ x().sub }}</p>
+      <p class="small muted separate">
+        {{ x().separateNote }}
+        <a routerLink="/app/schedules">{{ x().scheduleLink }}</a>
+      </p>
     </div>
     @if (store.device()) {
       <div class="actions">

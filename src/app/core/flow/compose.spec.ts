@@ -4,6 +4,7 @@ import {
   hasCodeTag,
   hasSpin,
   MAX_SPIN_ROUNDS,
+  postComposeSettings,
   postFlags,
   seededRandom,
   spin,
@@ -405,5 +406,44 @@ describe('spinVariants', () => {
 
   it('uses the random source it is given', () => {
     expect(spinVariants('{a|b}', 2, sequence(0, 0.99))).toEqual(['a', 'b']);
+  });
+});
+
+describe('postComposeSettings', () => {
+  const col = { hashtags: '#col', footer: 'Col footer', footerPos: 'end' as const };
+
+  it('follows the collection for every value the post leaves null', () => {
+    expect(postComposeSettings(col, { hashtags: null, footer: null, footerPos: null })).toEqual(
+      col,
+    );
+    expect(postComposeSettings(col, null)).toEqual(col);
+    expect(postComposeSettings(col, undefined)).toEqual(col);
+  });
+
+  it("lets the post's own values win, field by field", () => {
+    expect(postComposeSettings(col, { hashtags: '#own', footer: null, footerPos: 'top' })).toEqual({
+      hashtags: '#own',
+      footer: 'Col footer',
+      footerPos: 'top',
+    });
+  });
+
+  it('treats an empty string as an own value: no footer or tags for this post', () => {
+    const s = postComposeSettings(col, { hashtags: '', footer: '', footerPos: null });
+    expect(s).toEqual({ hashtags: '', footer: '', footerPos: 'end' });
+    expect(composeFull('Hello', '', s, first)).toBe('Hello');
+  });
+
+  it('feeds composeFull the same way the server writes the post', () => {
+    const s = postComposeSettings(col, { hashtags: '#own', footer: null, footerPos: 'top' });
+    expect(composeFull('Hello', '', s, first)).toBe('Col footer\nHello\n#own');
+  });
+
+  it('copes with no collection', () => {
+    expect(postComposeSettings(null, { hashtags: '#own', footer: null, footerPos: null })).toEqual({
+      hashtags: '#own',
+      footer: undefined,
+      footerPos: undefined,
+    });
   });
 });

@@ -1,0 +1,153 @@
+<section class="panel card" [class.off-item]="!post().active">
+  <div class="head">
+    <app-checkbox
+      class="sel"
+      [ariaLabel]="t().api.flow.plSelectOne"
+      [checked]="selected()"
+      (checkedChange)="select.emit($event)"
+    />
+    <div class="thumbs" aria-hidden="true">
+      @for (m of thumbs(); track m.id) {
+        <span class="thumb">
+          @if (m.src) {
+            <img [src]="m.src" alt="" />
+          } @else {
+            <i class="ph" [class]="m.icon"></i>
+          }
+        </span>
+      } @empty {
+        <span class="thumb"><i class="ph ph-text-aa"></i></span>
+      }
+    </div>
+    <div class="body">
+      <div class="text">{{ post().text }}</div>
+      <div class="meta">
+        <span class="small muted">{{ mediaLine() }}</span>
+        @if (flags().hasCode) {
+          <span class="chip"><i class="ph ph-hash"></i>{{ t().col.hasCode }}</span>
+        }
+        @if (flags().hasSpin) {
+          <span class="chip"><i class="ph ph-shuffle"></i>{{ t().col.hasSpin }}</span>
+        }
+        @if (ownMessage()) {
+          <span class="chip"><i class="ph ph-text-aa"></i>{{ t().api.flow.plOwnMsg }}</span>
+        }
+        @if (ownSchedule()) {
+          <span class="chip"><i class="ph ph-clock"></i>{{ t().api.flow.plOwnSched }}</span>
+        }
+        @if (showStatus()) {
+          <span class="status"
+            ><span class="dot" [style.background]="dot()"></span>{{ statusLabel() }}</span
+          >
+        }
+      </div>
+    </div>
+    <app-checkbox
+      class="sw"
+      [label]="t().api.itemActive"
+      [checked]="post().active"
+      [disabled]="!perm.canEdit()"
+      (checkedChange)="setActive($event)"
+    />
+  </div>
+
+  <div class="where">
+    @for (c of inCollections(); track c.id) {
+      <span class="chip"><i class="ph ph-folder"></i>{{ c.name }}</span>
+    } @empty {
+      <span class="small muted">{{ t().api.flow.plNoCollection }}</span>
+    }
+  </div>
+
+  <div class="stats small">
+    <span>{{ stats().posted }}</span>
+    <span>{{ stats().queued }}</span>
+    <span [class.bad]="post().failedCount > 0">{{ stats().failed }}</span>
+    @if (stats().last; as l) {
+      <span class="muted">{{ l }}</span>
+    } @else {
+      <span class="muted">{{ t().api.flow.plNeverPosted }}</span>
+    }
+    @if (stats().next; as n) {
+      <span class="muted">{{ n }}</span>
+    }
+  </div>
+
+  @if (!post().active) {
+    <div class="small off-note">{{ t().api.flow.plOffHint }}</div>
+  }
+
+  <div class="btns">
+    @if (approvalOn() && post().approval === 'draft') {
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+        (click)="request()"
+      >
+        {{ t().col.requestApproval }}
+      </button>
+    }
+    @if (post().approval === 'pending') {
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        [disabled]="!perm.canAdmin()"
+        [attr.title]="perm.adminHint() || null"
+        (click)="approve()"
+      >
+        {{ t().col.approve }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="!perm.canAdmin()"
+        [attr.title]="perm.adminHint() || null"
+        (click)="reject()"
+      >
+        {{ t().col.reject }}
+      </button>
+    }
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-ghost"
+      [disabled]="!perm.canEdit()"
+      [attr.title]="perm.editHint() || null"
+      [attr.aria-expanded]="editing()"
+      (click)="editing.set(!editing())"
+    >
+      <i class="ph ph-pencil-simple"></i>{{ t().common.edit }}
+    </button>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-ghost"
+      [attr.aria-expanded]="resultsOpen()"
+      (click)="resultsOpen.set(!resultsOpen())"
+    >
+      <i class="ph ph-chart-bar"></i
+      >{{ resultsOpen() ? t().api.flow.plHideResults : t().api.flow.plResults }}
+    </button>
+    <button
+      type="button"
+      class="ibtn"
+      [disabled]="!perm.canEdit()"
+      [attr.title]="perm.editHint() || t().api.flow.plDelete"
+      [attr.aria-label]="t().api.flow.plDelete"
+      (click)="remove.emit(post())"
+    >
+      <i class="ph ph-trash"></i>
+    </button>
+  </div>
+
+  @if (editing()) {
+    <app-post-editor
+      [post]="post()"
+      (saved)="editing.set(false)"
+      (cancelled)="editing.set(false)"
+    />
+  }
+  @if (resultsOpen()) {
+    <app-post-activity [postId]="post().id" />
+  }
+</section>

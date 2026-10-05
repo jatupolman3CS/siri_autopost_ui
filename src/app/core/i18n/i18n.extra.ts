@@ -342,6 +342,73 @@ export const AP_I18N_EXTRA = {
     'Letters and digits only, {min}–{max} characters, no spaces or symbols',
   ],
   planAudit: ['การเปลี่ยนแปลงแผนและโค้ดส่วนลด', 'Plan and promo code changes'],
-  extNav: ['ชุดโพสต์ (ส่วนขยาย)', 'Campaigns (extension)'],
+  // The extension's own settings page (/app/campaigns). Not "ชุดโพสต์": that is step 1 of the posting flow
+  // (collections), and the two were mistaken for each other.
+  extNav: ['ตั้งค่าส่วนขยาย', 'Extension settings'],
   nothingToRetry: ['ไม่มีงานที่ล้มเหลวให้ลองใหม่', 'No failed jobs to retry'],
+
+  // Rename / delete / switch on-off of the items in the lists (library, collections, link sets, schedules).
+  itemActive: ['เปิดใช้งาน', 'Active'],
+  itemInactive: ['ปิดใช้งาน', 'Inactive'],
+  itemRename: ['เปลี่ยนชื่อ', 'Rename'],
+  itemEdit: ['แก้ไข', 'Edit'],
+  itemDelete: ['ลบ', 'Delete'],
+  itemName: ['ชื่อ', 'Name'],
+  itemErrName: ['กรุณาใส่ชื่อ', 'Please enter a name'],
+  itemSaveFailed: [
+    'บันทึกไม่ได้ (ชื่ออาจยาวเกินไปหรือซ้ำกับรายการอื่น)',
+    'Could not save (the name may be too long or taken)',
+  ],
+  itemActionFailed: ['ทำรายการไม่สำเร็จ ลองใหม่อีกครั้ง', 'That did not work. Please try again.'],
+  itemRenamed: ['เปลี่ยนชื่อแล้ว', 'Renamed'],
+  itemDeleted: ['ลบแล้ว', 'Deleted'],
+  itemSwitchedOn: ['เปิดใช้งานแล้ว', 'Switched on'],
+  itemSwitchedOff: ['ปิดใช้งานแล้ว', 'Switched off'],
+  itemOffUnusable: [
+    'ปิดใช้งานอยู่ เปิดก่อนจึงจะใช้ได้',
+    'It is switched off. Switch it on to use it.',
+  ],
+  mediaRename: ['เปลี่ยนชื่อไฟล์', 'Rename file'],
+  mediaDelete: ['ลบไฟล์', 'Delete file'],
+  mediaDeleteBody: [
+    'ลบไฟล์ “{name}” ออกจากคลัง? รูปนี้จะถูกถอดออกจากโพสต์ในชุดโพสต์ที่ใช้อยู่ ข้อความของโพสต์ยังอยู่ ลบแล้วกู้คืนไม่ได้',
+    'Delete “{name}” from the library? It is taken off the collection posts that use it (their text stays). This cannot be undone.',
+  ],
+  mediaDeleteManyBody: [
+    'ลบ {n} ไฟล์ที่เลือกออกจากคลัง? ไฟล์จะถูกถอดออกจากโพสต์ในชุดโพสต์ที่ใช้อยู่ ลบแล้วกู้คืนไม่ได้',
+    'Delete the {n} selected files from the library? They are taken off the collection posts that use them. This cannot be undone.',
+  ],
+  mediaDeletedN: ['ลบแล้ว {n} ไฟล์', 'Deleted {n} file(s)'],
+  mediaSwitchedN: ['อัปเดต {n} ไฟล์แล้ว', 'Updated {n} file(s)'],
+  mediaDeleteSel: ['ลบที่เลือก', 'Delete selected'],
+  mediaOnSel: ['เปิดที่เลือก', 'Switch selected on'],
+  mediaOffSel: ['ปิดที่เลือก', 'Switch selected off'],
+  snippetEdit: ['แก้ไขข้อความ', 'Edit snippet'],
+  snippetDelete: ['ลบข้อความ', 'Delete snippet'],
+  snippetDeleteBody: [
+    'ลบข้อความ “{name}”? ลบแล้วกู้คืนไม่ได้ (โพสต์ที่เคยใช้ข้อความนี้ไม่ได้รับผลกระทบ)',
+    'Delete the snippet “{name}”? This cannot be undone (posts that used it are not affected).',
+  ],
+  colRename: ['เปลี่ยนชื่อชุดโพสต์', 'Rename collection'],
+  colDelete: ['ลบชุดโพสต์', 'Delete collection'],
+  colDeleteBody: [
+    'ลบชุดโพสต์ “{name}”? โพสต์ในชุดไม่ถูกลบ ยังอยู่ในคลังโพสต์ ลบชุดไม่ได้ถ้ายังมีตารางโพสต์ใช้อยู่',
+    'Delete the collection “{name}”? Its posts are not deleted: they stay in the post library. Not possible while a schedule uses it.',
+  ],
+  colOffHint: [
+    'ปิดอยู่: ตารางที่ใช้ชุดนี้จะไม่สร้างโพสต์ใหม่จนกว่าจะเปิด',
+    'Off: schedules that use it queue nothing until it is switched on',
+  ],
+  setRename: ['เปลี่ยนชื่อชุดลิงก์', 'Rename link set'],
+  setOffHint: [
+    'ปิดอยู่: ตารางที่ใช้ชุดนี้จะไม่โพสต์ไปกลุ่มเหล่านี้จนกว่าจะเปิด',
+    'Off: schedules that use it post to none of these groups until it is switched on',
+  ],
+  schRename: ['เปลี่ยนชื่อตาราง', 'Rename schedule'],
+
+  // The post library (step 1 of the flow): the sidebar item, the route title and the stepper.
+  postsNav: ['คลังโพสต์', 'Post library'],
+  flowPosts: ['เขียนและจัดการโพสต์', 'Write and manage posts'],
+  flowPostsB: ['เปิด/ปิด ตั้งเวลาเอง ดูผลทีละโพสต์', 'On/off, own timing, results post by post'],
+  nextToCollections: ['จัดโพสต์เข้าชุดโพสต์', 'Put the posts into a collection'],
 } as const;

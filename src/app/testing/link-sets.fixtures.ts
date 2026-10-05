@@ -27,6 +27,7 @@ export function apiLinkSet(over: Partial<ApiLinkSet> & { id: string }): ApiLinkS
     accountIds: [],
     links: [],
     scheduleCount: 0,
+    active: true,
     ...over,
   };
 }

@@ -737,7 +737,10 @@ export const AP_I18N = {
     fDeleted: ['ลบโฟลเดอร์แล้ว', 'Folder deleted'],
     fName: ['ชื่อโฟลเดอร์', 'Folder name'],
     fErrName: ['กรุณาใส่ชื่อโฟลเดอร์', 'Please enter a folder name'],
-    fErrSave: ['บันทึกไม่ได้ (อาจมีชื่อนี้อยู่แล้ว)', 'Could not save (the name may already exist)'],
+    fErrSave: [
+      'บันทึกไม่ได้ (อาจมีชื่อนี้อยู่แล้ว)',
+      'Could not save (the name may already exist)',
+    ],
     fSelectPage: ['เลือกทั้งหน้า', 'Select this page'],
     fSelectOne: ['เลือกไฟล์นี้', 'Select this file'],
     fSelected: ['ไฟล์ที่เลือก', 'selected'],

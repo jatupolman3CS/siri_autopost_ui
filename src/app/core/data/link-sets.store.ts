@@ -227,6 +227,17 @@ export class LinkSetsStore {
     this.sets.update((list) => list.filter((s) => s.id !== id));
   }
 
+  /**
+   * Switches a set on or off (waits for the server). Off: the schedules that use it post to none of its groups, so
+   * the caller reads the schedules again afterwards.
+   */
+  async setActive(id: string, active: boolean): Promise<void> {
+    const wsId = this.requireWs();
+    const saved = await this.api.setLinkSetActive(wsId, id, active);
+    if (this.ws.id() !== wsId) return;
+    this.sets.update((l) => l.map((s) => (s.id === id ? { ...s, active: saved.active } : s)));
+  }
+
   /** The Facebook account whose browser posts the set (null = the first connected one). */
   setPostAs(id: string, accountId: string | null): Promise<boolean> {
     return this.updateSet(id, { postAsAccountId: accountId });

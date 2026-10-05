@@ -40,7 +40,9 @@ export class OverviewHubComponent {
   protected readonly steps = computed(() => {
     const ov = this.t().ov;
     const ready = this.ready();
-    const posts = this.collections.collections().reduce((n, c) => n + c.posts.length, 0);
+    // A post may sit in several collections: it counts once.
+    const posts = new Set(this.collections.collections().flatMap((c) => c.posts.map((p) => p.id)))
+      .size;
     const defs: { id: HubStep; done: boolean; title: string; detail: string; action: string }[] = [
       {
         id: 'links',

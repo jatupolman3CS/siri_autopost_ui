@@ -115,3 +115,19 @@ export function spinVariants(
   }
   return [...found];
 }
+
+/**
+ * The composing settings a post is written with: its own hashtags, footer and footer position win, and a value
+ * it leaves null follows its collection (`""` is an own value: no footer / no tags for this post). Mirrors the
+ * server's `CollectionPostSettings.Apply`.
+ */
+export function postComposeSettings(
+  collection: ComposeSettings | null | undefined,
+  post: ComposeSettings | null | undefined,
+): ComposeSettings {
+  return {
+    hashtags: post?.hashtags ?? collection?.hashtags,
+    footer: post?.footer ?? collection?.footer,
+    footerPos: post?.footerPos ?? collection?.footerPos,
+  };
+}

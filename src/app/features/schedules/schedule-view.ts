@@ -68,6 +68,8 @@ export function scheduleView(
     when,
     fmt(t.sch.perDay, { n: s.perDay }),
     s.order === 'rotate' ? t.sch.oRotate : t.sch.oShuffle,
+    ...(s.order !== 'rotate' && s.repeat === 'any' ? [t.api.flow.repeatShortAny] : []),
+    ...(s.order !== 'rotate' && s.repeat === 'never' ? [t.api.flow.repeatShortNever] : []),
     ...(own ? [fmt(t.sch.overridesN, { n: own })] : []),
   ].join(' · ');
 

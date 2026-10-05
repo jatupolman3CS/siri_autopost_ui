@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
@@ -7,6 +7,8 @@ import { SchedulesStore } from '../../core/data/schedules.store';
 import {
   AUTO_DELETE_DAY_OPTIONS,
   BUMP_HOUR_OPTIONS,
+  POST_REPEATS,
+  PostRepeat,
   SCHEDULE_MODES,
   localDateKey,
 } from '../../core/flow/schedule-math';
@@ -31,6 +33,7 @@ import { SchedulePatternComponent } from './schedule-pattern.component';
 @Component({
   selector: 'app-schedule-builder',
   imports: [
+    RouterLink,
     InputFieldComponent,
     SelectFieldComponent,
     SchedulePatternComponent,
@@ -56,11 +59,18 @@ export class ScheduleBuilderComponent {
   protected readonly nameMax = SCHEDULE_NAME_MAX;
 
   protected readonly collectionOptions = computed<SelectOption[]>(() =>
-    this.collections.collections().map((c) => ({ value: c.id, label: c.name })),
+    this.collections
+      .collections()
+      .map((c) => ({ value: c.id, label: this.offLabel(c.name, c.active) })),
   );
   protected readonly setOptions = computed<SelectOption[]>(() =>
-    this.linkSets.sets().map((s) => ({ value: s.id, label: s.name })),
+    this.linkSets.sets().map((s) => ({ value: s.id, label: this.offLabel(s.name, s.active) })),
   );
+  /** A switched-off collection or set stays in the list, marked: a schedule cannot be made from it. */
+  private offLabel(name: string, active: boolean): string {
+    return active ? name : `${name} · ${this.t().api.itemInactive}`;
+  }
+
   protected readonly modeOptions = computed<SelectOption[]>(() => {
     const s = this.t().sch;
     const label = {
@@ -77,6 +87,26 @@ export class ScheduleBuilderComponent {
     { value: 'shuffle', label: this.t().sch.oShuffle },
     { value: 'rotate', label: this.t().sch.oRotate },
   ]);
+  protected readonly repeatOptions = computed<SelectOption[]>(() => {
+    const f = this.t().api.flow;
+    const label: Record<PostRepeat, string> = {
+      recent: f.repeatRecent,
+      any: f.repeatAny,
+      never: f.repeatNever,
+    };
+    return POST_REPEATS.map((r) => ({ value: r, label: label[r] }));
+  });
+  /** What the chosen repeat option does (or why it does not apply: only the shuffle picks posts at random). */
+  protected readonly repeatNote = computed(() => {
+    const f = this.t().api.flow;
+    if (this.form.order() === 'rotate') return f.repeatRotateNote;
+    const note: Record<PostRepeat, string> = {
+      recent: f.repeatRecentNote,
+      any: f.repeatAnyNote,
+      never: f.repeatNeverNote,
+    };
+    return note[this.form.repeat()];
+  });
   protected readonly bumpOptions = computed<SelectOption[]>(() =>
     BUMP_HOUR_OPTIONS.map((h) => ({
       value: String(h),
@@ -89,6 +119,10 @@ export class ScheduleBuilderComponent {
       label: d ? fmt(this.t().sch.autoDelD, { d }) : this.t().sch.autoDelOff,
     })),
   );
+  protected readonly startOptions = computed<SelectOption[]>(() => [
+    { value: 'time', label: this.t().api.flow.schStartAtTime },
+    { value: 'now', label: this.t().api.flow.schStartNow },
+  ]);
   protected readonly startLabel = computed(() =>
     this.form.isOnce() ? this.t().sch.onceDate : this.t().sch.start,
   );

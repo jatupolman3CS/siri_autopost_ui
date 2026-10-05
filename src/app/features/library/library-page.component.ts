@@ -14,15 +14,26 @@ import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
+import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
+import { ConfirmModalComponent } from '../../shared/components/confirm-modal/confirm-modal.component';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { Pager } from '../../shared/components/pager/pager';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
+import { RenameModalComponent } from '../../shared/components/rename-modal/rename-modal.component';
 
 @Component({
   selector: 'app-library-page',
-  imports: [ModalComponent, InputFieldComponent, PermNoteComponent, PagerComponent],
+  imports: [
+    ModalComponent,
+    InputFieldComponent,
+    PermNoteComponent,
+    PagerComponent,
+    CheckboxComponent,
+    ConfirmModalComponent,
+    RenameModalComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './library-page.component.html',
   styleUrl: './library-page.component.scss',
@@ -44,6 +55,27 @@ export class LibraryPageComponent {
   protected readonly formErr = signal('');
 
   protected readonly uploading = signal(false);
+
+  /** The snippet being edited in the snippet dialog (null = a new one). */
+  private readonly editingSnippet = signal<string | null>(null);
+  protected readonly snippetModalTitle = computed(() =>
+    this.editingSnippet() ? this.t().api.snippetEdit : this.t().lib.newSnippet,
+  );
+  /** The file being renamed, the files being deleted and the snippet being deleted (null = no dialog). */
+  protected readonly renaming = signal<{ id: string; name: string } | null>(null);
+  protected readonly deletingMedia = signal<{ ids: string[]; name: string } | null>(null);
+  protected readonly deletingSnippet = signal<{ id: string; title: string } | null>(null);
+  protected readonly mediaDeleteBody = computed(() => {
+    const d = this.deletingMedia();
+    if (!d) return '';
+    const a = this.t().api;
+    return d.ids.length > 1
+      ? fmt(a.mediaDeleteManyBody, { n: d.ids.length })
+      : fmt(a.mediaDeleteBody, { name: d.name });
+  });
+  protected readonly snippetDeleteBody = computed(() =>
+    fmt(this.t().api.snippetDeleteBody, { name: this.deletingSnippet()?.title ?? '' }),
+  );
 
   /** The composer's draft in numbers, for the bar that leads back to it. */
   protected readonly draftBar = computed(() => {
@@ -105,6 +137,7 @@ export class LibraryPageComponent {
       video: m.kind === 'video',
       videoSrc: videos[m.id] ?? null,
       videoLoading: !!loading[m.id],
+      active: m.active !== false,
       icon: m.kind === 'video' ? 'ph-video' : 'ph-image',
       src: thumbs[m.id] ?? null,
       label: m.name,
@@ -116,7 +149,7 @@ export class LibraryPageComponent {
   protected readonly snippetRows = computed(() =>
     this.snippetPager
       .slice(this.library.snippets())
-      .map((s) => ({ id: s.id, title: s.title, text: s.text })),
+      .map((s) => ({ id: s.id, title: s.title, text: s.text, active: s.active !== false })),
   );
 
   constructor() {
@@ -213,8 +246,18 @@ export class LibraryPageComponent {
 
   protected openSnippet(): void {
     if (!this.perm.canEdit()) return;
+    this.editingSnippet.set(null);
     this.formTitle.set('');
     this.formText.set('');
+    this.formErr.set('');
+    this.modal.set(true);
+  }
+
+  protected editSnippet(s: { id: string; title: string; text: string }): void {
+    if (!this.perm.canEdit()) return;
+    this.editingSnippet.set(s.id);
+    this.formTitle.set(s.title);
+    this.formText.set(s.text);
     this.formErr.set('');
     this.modal.set(true);
   }
@@ -227,10 +270,69 @@ export class LibraryPageComponent {
       this.formErr.set(this.t().lib.errTitle);
       return;
     }
-    await this.library.addSnippet(title, text);
+    const editing = this.editingSnippet();
+    try {
+      if (editing) await this.library.updateSnippet(editing, title, text);
+      else await this.library.addSnippet(title, text);
+    } catch {
+      this.formErr.set(this.t().api.itemSaveFailed);
+      return;
+    }
     this.modal.set(false);
     this.tab.set('text');
-    this.notify.success(this.t().lib.added);
+    this.notify.success(editing ? this.t().api.itemRenamed : this.t().lib.added);
+  }
+
+  protected async toggleSnippet(id: string, active: boolean): Promise<void> {
+    if (!this.perm.canEdit()) return;
+    try {
+      await this.library.setSnippetActive(id, active);
+      this.notify.success(active ? this.t().api.itemSwitchedOn : this.t().api.itemSwitchedOff);
+    } catch {
+      // The interceptor tells the user; the switch stays where the server has it.
+    }
+  }
+
+  protected readonly removeSnippet = async (): Promise<void> => {
+    const s = this.deletingSnippet();
+    if (!s) return;
+    await this.library.deleteSnippet(s.id);
+    this.notify.success(this.t().api.itemDeleted);
+  };
+
+  protected readonly saveMediaName = async (name: string): Promise<void> => {
+    const r = this.renaming();
+    if (!r) return;
+    await this.library.renameMedia(r.id, name);
+    this.notify.success(this.t().api.itemRenamed);
+  };
+
+  protected readonly removeMedia = async (): Promise<void> => {
+    const d = this.deletingMedia();
+    if (!d) return;
+    await this.library.deleteMedia(d.ids);
+    this.selected.update((s) => new Set([...s].filter((id) => !d.ids.includes(id))));
+    this.notify.success(fmt(this.t().api.mediaDeletedN, { n: d.ids.length }));
+  };
+
+  protected selectedIds(): string[] {
+    return [...this.selected()];
+  }
+
+  protected askDeleteSelected(): void {
+    const ids = [...this.selected()];
+    if (!ids.length || !this.perm.canEdit()) return;
+    this.deletingMedia.set({ ids, name: '' });
+  }
+
+  protected async toggleMedia(ids: readonly string[], active: boolean): Promise<void> {
+    if (!this.perm.canEdit() || !ids.length) return;
+    try {
+      await this.library.setMediaActive(ids, active);
+      this.notify.success(fmt(this.t().api.mediaSwitchedN, { n: ids.length }));
+    } catch {
+      // The interceptor tells the user.
+    }
   }
 
   protected async upload(input: HTMLInputElement): Promise<void> {

@@ -27,6 +27,7 @@ describe('summarizeBackup', () => {
     expect(summarizeBackup(FILE)).toEqual({
       collections: 3,
       posts: 4,
+      libraryPosts: 0,
       linkSets: 2,
       links: 3,
       schedules: 2,
@@ -52,6 +53,7 @@ describe('summarizeBackup', () => {
     ).toEqual({
       collections: 0,
       posts: 0,
+      libraryPosts: 0,
       linkSets: 0,
       links: 0,
       schedules: 0,
@@ -72,6 +74,7 @@ describe('summarizeBackup', () => {
     expect(s).toEqual({
       collections: 5,
       posts: 2,
+      libraryPosts: 0,
       linkSets: 0,
       links: 0,
       schedules: 0,
@@ -80,6 +83,49 @@ describe('summarizeBackup', () => {
       autoReplyRules: null,
     });
     expect(summarizeBackup({})).toMatchObject({ collections: 0, schedules: 0 });
+  });
+});
+
+describe('summarizeBackup, shared posts', () => {
+  const keyed = (text: string, key?: string) => ({ ...post(text), ...(key ? { key } : {}) });
+
+  it('counts a post that sits in several collections once (same key)', () => {
+    const s = summarizeBackup({
+      collections: [
+        { posts: [keyed('1', 'k1'), keyed('2', 'k2')] },
+        { posts: [keyed('1', 'k1'), keyed('3', 'k3')] },
+      ],
+      linkSets: [],
+      schedules: [],
+    } as unknown as ApiBackup);
+    expect(s.collections).toBe(2);
+    expect(s.posts).toBe(3);
+    expect(s.libraryPosts).toBe(0);
+  });
+
+  it('counts posts of an old file (no key) one by one', () => {
+    const s = summarizeBackup({
+      collections: [{ posts: [post('1'), post('1')] }, { posts: [post('1')] }],
+      linkSets: [],
+      schedules: [],
+    } as unknown as ApiBackup);
+    expect(s.posts).toBe(3);
+  });
+
+  it('counts the posts that are in no collection apart, and not again when a collection has them', () => {
+    const s = summarizeBackup({
+      collections: [{ posts: [keyed('1', 'k1')] }],
+      posts: [keyed('1', 'k1'), keyed('lonely', 'k9'), { ...post('off'), active: false }],
+      linkSets: [],
+      schedules: [],
+    } as unknown as ApiBackup);
+    expect(s.posts).toBe(1);
+    expect(s.libraryPosts).toBe(2);
+  });
+
+  it('is not fooled by a top-level posts that is not a list or holds junk', () => {
+    expect(summarizeBackup({ posts: 'x' as never }).libraryPosts).toBe(0);
+    expect(summarizeBackup({ posts: [1, null, { key: 7 }] as never }).libraryPosts).toBe(3);
   });
 });
 

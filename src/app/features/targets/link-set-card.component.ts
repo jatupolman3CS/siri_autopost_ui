@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   effect,
+  Injector,
   inject,
   input,
   output,
@@ -10,7 +11,8 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
-import { LinkSetsStore, firstCodedLink } from '../../core/data/link-sets.store';
+import { SchedulesStore } from '../../core/data/schedules.store';
+import { LINK_LIMITS, LinkSetsStore, firstCodedLink } from '../../core/data/link-sets.store';
 import { SocialAccount, accountKind } from '../../core/data/models';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PLATFORMS } from '../../core/data/platforms';
@@ -26,6 +28,8 @@ import {
   SelectFieldComponent,
   SelectOption,
 } from '../../shared/components/select-field/select-field.component';
+import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
+import { RenameModalComponent } from '../../shared/components/rename-modal/rename-modal.component';
 import { LinkRowComponent } from './link-row.component';
 import { Pager } from '../../shared/components/pager/pager';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
@@ -35,7 +39,13 @@ import { PagerComponent } from '../../shared/components/pager/pager.component';
 // account that posts, an example of what is written to a group with a code and the other accounts.
 @Component({
   selector: 'app-link-set-card',
-  imports: [PagerComponent, LinkRowComponent, SelectFieldComponent],
+  imports: [
+    PagerComponent,
+    LinkRowComponent,
+    SelectFieldComponent,
+    CheckboxComponent,
+    RenameModalComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './link-set-card.component.html',
   styleUrl: './link-set-card.component.scss',
@@ -49,11 +59,16 @@ export class LinkSetCardComponent {
 
   private readonly store = inject(LinkSetsStore);
   private readonly accounts = inject(AccountsStore);
+  // Looked up when needed: the schedules are only read again after a switch.
+  private readonly injector = inject(Injector);
   private readonly prefs = inject(UiPrefsService);
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   protected readonly perm = inject(PermissionsService);
   protected readonly t = inject(I18nService).t;
+
+  protected readonly nameLimit = LINK_LIMITS.setName;
+  protected readonly renameOpen = signal(false);
 
   /** The row that was just added: its address field takes the cursor. */
   protected readonly newId = signal<string | null>(null);
@@ -139,6 +154,23 @@ export class LinkSetCardComponent {
       after: at < 0 ? '' : full.slice(at + body.length),
     };
   });
+
+  protected readonly saveName = async (name: string): Promise<void> => {
+    if (!(await this.store.updateSet(this.set().id, { name }))) throw new Error('rename refused');
+    this.notify.success(this.t().api.itemRenamed);
+  };
+
+  /** Switches the set on or off; the schedules that use it change with it, so they are read again. */
+  protected async setActive(on: boolean): Promise<void> {
+    if (this.perm.readOnly()) return;
+    try {
+      await this.store.setActive(this.set().id, on);
+      this.notify.success(on ? this.t().api.itemSwitchedOn : this.t().api.itemSwitchedOff);
+    } catch {
+      // The interceptor tells the user.
+    }
+    void this.injector.get(SchedulesStore).refresh();
+  }
 
   protected toggleMore(): void {
     this.store.setMore(this.set().id, !this.more());

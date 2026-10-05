@@ -105,6 +105,16 @@ export class DevicesStore {
     this.list.update((l) => l.map((x) => (x.id === id ? d : x)));
   }
 
+  /**
+   * Tells a browser to take the due post of the web app's schedules now, not at its next 30-second round. The
+   * command is answered at once by the extension (the post itself takes minutes), so nothing waits for it.
+   */
+  async takeJobs(id: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    await this.api.sendDeviceCommand(wsId, id, 'takeJobs');
+  }
+
   async revoke(id: string): Promise<void> {
     const wsId = this.ws.id();
     if (!wsId) return;

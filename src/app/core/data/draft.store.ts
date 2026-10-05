@@ -89,7 +89,7 @@ export class DraftStore {
     const d = this.draft();
     if (postId) {
       if (d.postId === postId) return 'kept';
-      const found = this.collections.postById(postId);
+      const found = this.collections.postById(postId, collectionId);
       if (found) {
         this.edit(found.collection, found.post);
         return 'loaded';
@@ -145,6 +145,13 @@ export class DraftStore {
     if (this.draft().media.length >= INPUT_LIMITS.postMedia) return false;
     this.draft.update((d) => ({ ...d, media: [...d.media, id] }));
     return true;
+  }
+
+  /** Takes library files that were deleted off the draft. */
+  dropMedia(ids: readonly string[]): void {
+    const gone = new Set(ids);
+    if (!this.draft().media.some((m) => gone.has(m))) return;
+    this.draft.update((d) => ({ ...d, media: d.media.filter((m) => !gone.has(m)) }));
   }
 
   /** Attaches the file, or takes it off when it is attached; false when it could not be attached (the limit). */

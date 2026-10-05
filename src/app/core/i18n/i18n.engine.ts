@@ -152,6 +152,10 @@ export const AP_I18N_ENGINE = {
   ],
   restoreSumTitle: ['ไฟล์นี้มี', 'This file contains'],
   restoreSumCollections: ['{n} ชุดโพสต์ (รวม {p} โพสต์)', '{n} collection(s), {p} post(s) in all'],
+  restoreSumLibrary: [
+    '{n} โพสต์ในคลังโพสต์ที่ไม่อยู่ในชุดใด',
+    '{n} post(s) in the post library that are in no collection',
+  ],
   restoreSumLinkSets: ['{n} ชุดลิงก์ (รวม {l} ลิงก์)', '{n} link set(s), {l} link(s) in all'],
   restoreSumSchedules: ['{n} ตารางโพสต์', '{n} schedule(s)'],
   restoreSumAdvanced: ['ค่า anti-ban ขั้นสูง', 'Advanced anti-ban settings'],
