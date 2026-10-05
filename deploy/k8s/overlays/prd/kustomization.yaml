@@ -4,7 +4,7 @@ kind: Kustomization
 # PRD: https://siriautopost.siristudiophoto.com
 # Applied by Jenkinsfile (Jenkins job SIRIAUTOPOST-WEB-PRD). Separate from DEV (namespace siriautopost-dev, NodePort 30908).
 # Exposed on NodePort 30907; the Cloudflare tunnel routes the public host there (see deploy/k8s/base/ui.yaml).
-namespace: siriautopost
+namespace: siriautopost-prd
 
 resources:
   - ../../base
