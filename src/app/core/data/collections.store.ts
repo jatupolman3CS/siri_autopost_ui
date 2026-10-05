@@ -186,6 +186,32 @@ export class CollectionsStore {
     return created;
   }
 
+  /**
+   * Switches a collection on or off (waits for the server). Off: the schedules that use it queue nothing from it,
+   * so the caller reads the schedules again afterwards.
+   */
+  async setActive(id: string, active: boolean): Promise<void> {
+    const wsId = this.requireWs();
+    const saved = await this.api.setCollectionActive(wsId, id, active);
+    if (this.ws.id() !== wsId) return;
+    this.collections.update((l) =>
+      l.map((c) => (c.id === id ? { ...c, active: saved.active } : c)),
+    );
+  }
+
+  /** Deletes a collection and its posts. The API refuses (422, naming the schedules) while a schedule uses it. */
+  async remove(id: string): Promise<void> {
+    const wsId = this.requireWs();
+    await this.api.deleteCollection(wsId, id);
+    if (this.ws.id() !== wsId) return;
+    const pending = this.pending.get(id);
+    if (pending?.timer) clearTimeout(pending.timer);
+    this.pending.delete(id);
+    this.collections.update((l) => l.filter((c) => c.id !== id));
+    if (this.openId() === id) this.openId.set(null);
+    if (this.lastId() === id) this.lastId.set(null);
+  }
+
   /** Renames a collection. */
   rename(id: string, name: string, description?: string): void {
     this.edit(id, { name, ...(description === undefined ? {} : { description }) });

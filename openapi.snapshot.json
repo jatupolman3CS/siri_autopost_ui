@@ -1475,6 +1475,65 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/collections/{id}/active": {
+      "put": {
+        "tags": [
+          "Collections"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/collections/{id}/posts": {
       "post": {
         "tags": [
@@ -3490,6 +3549,315 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/snippets/{snippetId}": {
+      "put": {
+        "tags": [
+          "Library"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "snippetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSnippetRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSnippetRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSnippetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnippetDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Library"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "snippetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/snippets/{snippetId}/active": {
+      "put": {
+        "tags": [
+          "Library"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "snippetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActiveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActiveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnippetDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/media/{mediaId}": {
+      "put": {
+        "tags": [
+          "Library"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaNameRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaNameRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaNameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/media/active": {
+      "post": {
+        "tags": [
+          "Library"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaActiveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaActiveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaActiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MediaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/media/delete": {
+      "post": {
+        "tags": [
+          "Library"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaIdsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaIdsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaIdsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/link-sets": {
       "get": {
         "tags": [
@@ -3658,6 +4026,65 @@
             "description": "No Content",
             "content": {
               "application/json": { }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/link-sets/{id}/active": {
+      "put": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkSetDto"
+                }
+              }
             }
           }
         }
@@ -4860,6 +5287,65 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/SetActiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/schedules/{id}/name": {
+      "put": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameRequest"
               }
             }
           },
@@ -6380,7 +6866,8 @@
           "icon",
           "settings",
           "posts",
-          "scheduleCount"
+          "scheduleCount",
+          "active"
         ],
         "type": "object",
         "properties": {
@@ -6409,6 +6896,9 @@
           "scheduleCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "active": {
+            "type": "boolean"
           }
         }
       },
@@ -7854,7 +8344,8 @@
           "postAsAccountId",
           "accountIds",
           "links",
-          "scheduleCount"
+          "scheduleCount",
+          "active"
         ],
         "type": "object",
         "properties": {
@@ -7888,6 +8379,9 @@
           "scheduleCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "active": {
+            "type": "boolean"
           }
         }
       },
@@ -7906,6 +8400,25 @@
           }
         }
       },
+      "MediaActiveRequest": {
+        "required": [
+          "mediaIds",
+          "active"
+        ],
+        "type": "object",
+        "properties": {
+          "mediaIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
       "MediaDto": {
         "required": [
           "id",
@@ -7915,7 +8428,8 @@
           "size",
           "usedCount",
           "createdAt",
-          "folderId"
+          "folderId",
+          "active"
         ],
         "type": "object",
         "properties": {
@@ -7950,6 +8464,9 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "active": {
+            "type": "boolean"
           }
         }
       },
@@ -7974,11 +8491,37 @@
           }
         }
       },
+      "MediaIdsRequest": {
+        "required": [
+          "mediaIds"
+        ],
+        "type": "object",
+        "properties": {
+          "mediaIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "MediaKind": {
         "enum": [
           "image",
           "video"
         ]
+      },
+      "MediaNameRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
       },
       "MemberDto": {
         "required": [
@@ -8856,6 +9399,17 @@
           }
         }
       },
+      "RenameRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "ReportDto": {
         "required": [
           "days",
@@ -9675,7 +10229,8 @@
           "id",
           "title",
           "text",
-          "usedCount"
+          "usedCount",
+          "active"
         ],
         "type": "object",
         "properties": {
@@ -9692,6 +10247,9 @@
           "usedCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "active": {
+            "type": "boolean"
           }
         }
       },
@@ -10090,6 +10648,21 @@
               "type": "string",
               "format": "uuid"
             }
+          }
+        }
+      },
+      "UpdateSnippetRequest": {
+        "required": [
+          "title",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
           }
         }
       },

@@ -163,6 +163,42 @@ export const AP_I18N_FLOW = {
     'เริ่มทันที: {m} ปลายทาง ทีละกลุ่ม เว้น {a}–{b} นาทีระหว่างกลุ่ม',
     'Starts now: {m} targets one by one, {a}–{b} min apart',
   ],
+
+  // Hand-over to the extension: the panel of the schedules page. A schedule hands its posts to the extension one
+  // at a time (the extension asks every 30 s); nothing has to be set up in the extension's own campaigns.
+  dispTitle: ['การส่งงานให้ส่วนขยาย', 'Hand-over to the extension'],
+  dispSub: [
+    'ตารางโพสต์ส่งงานให้ส่วนขยายเองทีละโพสต์ พร้อมข้อความและลิงก์กลุ่ม ส่วนขยายมารับงานทุก 30 วินาที ไม่ต้องตั้งชุดโพสต์หรือกลุ่มในส่วนขยายอีก',
+    'A schedule hands its posts to the extension one at a time, with the text and the group link. The extension asks for work every 30 seconds, so nothing has to be set up in the extension itself',
+  ],
+  dispReady: ['พร้อมรับงาน', 'Ready for jobs'],
+  dispOffline: [
+    'ออฟไลน์ เปิด Chrome ที่ติดตั้งส่วนขยายค้างไว้ งานรออยู่ในคิวและจะส่งให้เมื่อกลับมา',
+    'Offline. Keep the Chrome that has the extension open: the jobs wait in the queue and are handed over when it is back',
+  ],
+  dispPaused: ['พักรับงาน (สั่งจากเว็บ)', 'Paused from the web (takes no jobs)'],
+  dispResume: ['กลับมารับงาน', 'Resume'],
+  dispQueue: ['คิววันนี้ {n} โพสต์ · ถัดไป {t}', 'Queued today: {n} · next at {t}'],
+  dispPosting: ['กำลังโพสต์ลง {g}', 'Posting to {g}'],
+  dispQueueEmpty: ['วันนี้ไม่มีโพสต์รอคิว', 'Nothing is queued for today'],
+  dispTake: ['ให้รับงานเดี๋ยวนี้', 'Take jobs now'],
+  dispTakeHint: [
+    'สั่งให้ส่วนขยายมารับโพสต์ที่ถึงเวลาทันที ไม่ต้องรอรอบ 30 วินาที (ยังคงเว้นระยะตามค่าความปลอดภัยของบัญชี)',
+    'Tell the extension to take the due post now instead of waiting for its 30-second round (the account-safety gap still applies)',
+  ],
+  dispTaken: [
+    'สั่งส่วนขยายรับงานแล้ว โพสต์ที่ถึงเวลาจะเริ่มทันที',
+    'The extension was told to take its jobs. A due post starts at once',
+  ],
+  dispTakeFailed: [
+    'สั่งส่วนขยายรับงานไม่สำเร็จ ลองใหม่อีกครั้ง',
+    'Could not tell the extension to take its jobs. Try again',
+  ],
+  dispConfigNote: [
+    'ค่าของตัวส่วนขยายเอง (ชุดโพสต์ในส่วนขยาย เวลา Telegram) แยกไว้ในหน้า “ตั้งค่าส่วนขยาย” ตารางโพสต์ไม่ใช้ค่าเหล่านั้น',
+    'The extension’s own settings (its campaigns, timing, Telegram) are on a separate “Extension settings” page. Schedules do not use them',
+  ],
+  dispConfigLink: ['ตั้งค่าส่วนขยาย', 'Extension settings'],
 } as const;
 
 registerPack('flow', AP_I18N_FLOW);

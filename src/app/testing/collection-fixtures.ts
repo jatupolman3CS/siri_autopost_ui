@@ -46,6 +46,7 @@ export function apiCollection(
     icon: 'ph-folder',
     posts: [],
     scheduleCount: 0,
+    active: true,
     ...over,
     settings: { ...COLLECTION_SETTINGS, ...over.settings },
   };
@@ -73,6 +74,7 @@ export function apiLinkSet(over: Partial<ApiLinkSet> & { id: string }): ApiLinkS
     accountIds: [],
     links: [],
     scheduleCount: 0,
+    active: true,
     ...over,
   };
 }

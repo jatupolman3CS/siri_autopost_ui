@@ -80,15 +80,14 @@ describe('the sidebar of the app shell', () => {
         ['/app/calendar', t.calendar],
         ['/app/errors', t.errors],
       ]);
-      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team']);
+      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team', '/app/campaigns']);
     });
 
-    it('has no item for the composer, the campaigns page or the engine pages', async () => {
+    it('has no item for the composer or the engine pages', async () => {
       await render();
       const all = groups().flatMap((g) => g.links.map((l) => l.path));
       for (const gone of [
         '/app/composer',
-        '/app/campaigns',
         '/app/library',
         '/app/reports',
         '/app/test',
@@ -136,7 +135,7 @@ describe('the sidebar of the app shell', () => {
         '/app/offline',
         '/app/errors',
       ]);
-      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team']);
+      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team', '/app/campaigns']);
       expect(paths(t.gPreview)).toEqual(['/app/extension']);
     });
 

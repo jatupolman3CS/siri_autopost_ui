@@ -1,0 +1,43 @@
+@if (devices.loaded() && devices.list().length) {
+  <section class="panel" [attr.aria-label]="t().api.flow.dispTitle">
+    <h2 class="h2">{{ t().api.flow.dispTitle }}</h2>
+    <p class="small muted sub">{{ t().api.flow.dispSub }}</p>
+    @for (r of rows(); track r.id) {
+      <div class="dev">
+        <span class="dot" [style.background]="dot(r.state)" aria-hidden="true"></span>
+        <div class="grow">
+          <div class="fw6">{{ r.name }}</div>
+          <div class="small muted" role="status">{{ r.line }}</div>
+        </div>
+        @if (r.state === 'paused') {
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-secondary"
+            [disabled]="!perm.canAdmin() || busy() !== null"
+            [attr.title]="perm.adminHint() || null"
+            (click)="resume(r.id)"
+          >
+            <i class="ph ph-play"></i>{{ t().api.flow.dispResume }}
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-secondary"
+            [disabled]="r.state !== 'ready' || !perm.canEdit() || busy() !== null"
+            [attr.title]="perm.editHint() || t().api.flow.dispTakeHint"
+            (click)="take(r.id)"
+          >
+            <i class="ph ph-paper-plane-tilt"></i>{{ t().api.flow.dispTake }}
+          </button>
+        }
+      </div>
+    }
+    <div class="small queue">
+      <i class="ph ph-queue" aria-hidden="true"></i><span>{{ queue() }}</span>
+    </div>
+    <div class="small muted note">
+      <span>{{ t().api.flow.dispConfigNote }}</span>
+      <a routerLink="/app/campaigns">{{ t().api.flow.dispConfigLink }}</a>
+    </div>
+  </section>
+}

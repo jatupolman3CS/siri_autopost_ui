@@ -138,6 +138,23 @@
         </button>
         @if (selected().size) {
           <span class="small">{{ selected().size }} {{ t().lib.fSelected }}</span>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-ghost"
+            (click)="toggleMedia(selectedIds(), true)"
+          >
+            <i class="ph ph-toggle-right"></i>{{ t().api.mediaOnSel }}
+          </button>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-ghost"
+            (click)="toggleMedia(selectedIds(), false)"
+          >
+            <i class="ph ph-toggle-left"></i>{{ t().api.mediaOffSel }}
+          </button>
+          <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="askDeleteSelected()">
+            <i class="ph ph-trash"></i>{{ t().api.mediaDeleteSel }}
+          </button>
           <label class="small muted">
             {{ t().lib.fMoveTo }}
             <select (change)="moveSelected($any($event.target))">
@@ -153,7 +170,7 @@
     }
     <div class="grid g180">
       @for (m of mediaRows(); track m.id) {
-        <div class="panel panel-hover card" [class.sel]="m.selected">
+        <div class="panel panel-hover card" [class.sel]="m.selected" [class.off]="!m.active">
           @if (perm.canEdit()) {
             <label class="pick" [attr.title]="t().lib.fSelectOne">
               <input type="checkbox" [checked]="m.selected" (change)="toggleSelect(m.id)" />
@@ -183,6 +200,35 @@
           <div class="fw5 fs14 ellipsis">{{ m.label }}</div>
           <div class="small muted">{{ m.meta }}</div>
           <div class="small muted">{{ m.used }}</div>
+          <div class="rowtools">
+            <app-checkbox
+              [label]="t().api.itemActive"
+              [checked]="m.active"
+              [disabled]="!perm.canEdit()"
+              (checkedChange)="toggleMedia([m.id], $event)"
+            />
+            @if (perm.canEdit()) {
+              <span class="grow"></span>
+              <button
+                type="button"
+                class="ibtn"
+                [attr.title]="t().api.itemRename"
+                [attr.aria-label]="t().api.itemRename + ': ' + m.label"
+                (click)="renaming.set({ id: m.id, name: m.label })"
+              >
+                <i class="ph ph-pencil-simple"></i>
+              </button>
+              <button
+                type="button"
+                class="ibtn"
+                [attr.title]="t().api.itemDelete"
+                [attr.aria-label]="t().api.itemDelete + ': ' + m.label"
+                (click)="deletingMedia.set({ ids: [m.id], name: m.label })"
+              >
+                <i class="ph ph-trash"></i>
+              </button>
+            }
+          </div>
           @if (perm.canEdit() && moveOptions().length) {
             <select
               class="move"
@@ -198,8 +244,8 @@
           <button
             type="button"
             class="su-btn su-btn-sm su-btn-ghost su-btn-full"
-            [disabled]="!perm.canEdit()"
-            [attr.title]="perm.editHint() || null"
+            [disabled]="!perm.canEdit() || !m.active"
+            [attr.title]="!m.active ? t().api.itemOffUnusable : perm.editHint() || null"
             (click)="useMedia(m.id)"
           >
             {{ t().lib.use }}
@@ -211,15 +257,44 @@
   } @else {
     <div class="grid g280">
       @for (s of snippetRows(); track s.id) {
-        <div class="panel panel-hover card snip">
+        <div class="panel panel-hover card snip" [class.off]="!s.active">
           <div class="fs14 fw6">{{ s.title }}</div>
           <p class="fs14 muted grow-p">{{ s.text }}</p>
+          <div class="rowtools">
+            <app-checkbox
+              [label]="t().api.itemActive"
+              [checked]="s.active"
+              [disabled]="!perm.canEdit()"
+              (checkedChange)="toggleSnippet(s.id, $event)"
+            />
+            @if (perm.canEdit()) {
+              <span class="grow"></span>
+              <button
+                type="button"
+                class="ibtn"
+                [attr.title]="t().api.itemEdit"
+                [attr.aria-label]="t().api.itemEdit + ': ' + s.title"
+                (click)="editSnippet(s)"
+              >
+                <i class="ph ph-pencil-simple"></i>
+              </button>
+              <button
+                type="button"
+                class="ibtn"
+                [attr.title]="t().api.itemDelete"
+                [attr.aria-label]="t().api.itemDelete + ': ' + s.title"
+                (click)="deletingSnippet.set({ id: s.id, title: s.title })"
+              >
+                <i class="ph ph-trash"></i>
+              </button>
+            }
+          </div>
           <div class="foot">
             <button
               type="button"
               class="su-btn su-btn-sm su-btn-ghost"
-              [disabled]="!perm.canEdit()"
-              [attr.title]="perm.editHint() || null"
+              [disabled]="!perm.canEdit() || !s.active"
+              [attr.title]="!s.active ? t().api.itemOffUnusable : perm.editHint() || null"
               (click)="useSnippet(s.text)"
             >
               {{ t().lib.use }}
@@ -281,7 +356,32 @@
   </div>
 </app-modal>
 
-<app-modal [open]="modal()" [title]="t().lib.newSnippet" (closed)="modal.set(false)">
+<app-rename-modal
+  [open]="renaming() !== null"
+  [title]="t().api.mediaRename"
+  [value]="renaming()?.name ?? ''"
+  [maxlength]="200"
+  [save]="saveMediaName"
+  (closed)="renaming.set(null)"
+/>
+
+<app-confirm-modal
+  [open]="deletingMedia() !== null"
+  [title]="t().api.mediaDelete"
+  [body]="mediaDeleteBody()"
+  [action]="removeMedia"
+  (closed)="deletingMedia.set(null)"
+/>
+
+<app-confirm-modal
+  [open]="deletingSnippet() !== null"
+  [title]="t().api.snippetDelete"
+  [body]="snippetDeleteBody()"
+  [action]="removeSnippet"
+  (closed)="deletingSnippet.set(null)"
+/>
+
+<app-modal [open]="modal()" [title]="snippetModalTitle()" (closed)="modal.set(false)">
   <div class="form">
     <app-input-field
       [label]="t().lib.snippetTitle"

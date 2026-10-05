@@ -7,6 +7,7 @@ import { routes } from '../../app.routes';
 import { assistStorage } from '../../core/auth/token';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { DeviceEventsService } from '../../core/data/device-events.service';
+import { DevicesStore } from '../../core/data/devices.store';
 import { PostsStore } from '../../core/data/posts.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
 import { SettingsStore } from '../../core/data/settings.store';
@@ -116,6 +117,7 @@ describe('SchedulesPageComponent', () => {
     TestBed.inject(AccountsStore);
     TestBed.inject(SettingsStore);
     TestBed.inject(SchedulesStore);
+    TestBed.inject(DevicesStore);
     await signIn(http, {
       workspace: { role: opts.role ?? 'owner' },
       schedules: opts.holdSchedules ? [] : (opts.schedules ?? [MORNING]),
@@ -426,6 +428,69 @@ describe('SchedulesPageComponent', () => {
       expect(rowsOf(el)[0].querySelector('.status')?.textContent?.trim()).toBe(t().sch.active);
       expect(toasts()).toHaveLength(0);
       expect(button(rowsOf(el)[0], t().sch.pause)!.disabled).toBe(false);
+    });
+  });
+
+  describe('rename', () => {
+    const renameButton = (el: HTMLElement) =>
+      rowsOf(el)[0].querySelector<HTMLButtonElement>('.btns .ibtn')!;
+
+    it('renames a schedule through the dialog and keeps everything else', async () => {
+      const { fixture, el } = await open();
+      renameButton(el).click();
+      fixture.detectChanges();
+      await settle();
+      const input = el.querySelector<HTMLInputElement>('app-rename-modal input')!;
+      expect(input.value).toBe('Morning posts');
+      input.value = '  Evening posts ';
+      input.dispatchEvent(new Event('input'));
+      el.querySelector<HTMLFormElement>('#rename-form')!.requestSubmit();
+      await settle();
+      const req = http.expectOne(`${SCHEDULES_URL}/sc1/name`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ name: 'Evening posts' });
+      req.flush({ ...MORNING, name: 'Evening posts' });
+      await settle();
+      fixture.detectChanges();
+      expect(rowsOf(el)[0].querySelector('.fw6')?.textContent?.trim()).toBe('Evening posts');
+      expect(rowsOf(el)[0].querySelector('.status')?.textContent?.trim()).toBe(t().sch.active);
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).toBeNull();
+      expect(toasts().map((x) => x.message)).toContain(t().api.itemRenamed);
+    });
+
+    it('does not call the API when the name did not change', async () => {
+      const { fixture, el } = await open();
+      renameButton(el).click();
+      fixture.detectChanges();
+      await settle();
+      el.querySelector<HTMLFormElement>('#rename-form')!.requestSubmit();
+      await settle();
+      http.expectNone(`${SCHEDULES_URL}/sc1/name`);
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).toBeNull();
+    });
+
+    it('keeps the dialog open when the name is refused', async () => {
+      const { fixture, el } = await open();
+      renameButton(el).click();
+      fixture.detectChanges();
+      await settle();
+      const input = el.querySelector<HTMLInputElement>('app-rename-modal input')!;
+      input.value = 'New';
+      input.dispatchEvent(new Event('input'));
+      el.querySelector<HTMLFormElement>('#rename-form')!.requestSubmit();
+      await settle();
+      http
+        .expectOne(`${SCHEDULES_URL}/sc1/name`)
+        .flush({ title: 'no' }, { status: 422, statusText: 'Unprocessable' });
+      await settle();
+      fixture.detectChanges();
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).not.toBeNull();
+      expect(rowsOf(el)[0].querySelector('.fw6')?.textContent?.trim()).toBe('Morning posts');
+    });
+
+    it('is off for a viewer', async () => {
+      const { el } = await open({ role: 'viewer' });
+      expect(renameButton(el).disabled).toBe(true);
     });
   });
 
@@ -1251,6 +1316,7 @@ describe('SchedulesPageComponent', () => {
     TestBed.inject(SchedulesStore);
     TestBed.inject(AccountsStore);
     TestBed.inject(SettingsStore);
+    TestBed.inject(DevicesStore);
     await signIn(http, { schedules: [MORNING], collections: [C1], linkSets: [S1] });
     const fixture = TestBed.createComponent(SchedulesPageComponent);
     fixture.detectChanges();

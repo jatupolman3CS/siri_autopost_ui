@@ -59,6 +59,8 @@
     <app-schedule-builder [canPost]="canPost()" />
   }
 
+  <app-schedule-dispatch />
+
   <app-schedule-list />
 
   <app-next-step [label]="t().flow.n3" (go)="next()" />

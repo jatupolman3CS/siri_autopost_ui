@@ -354,6 +354,7 @@ export class ScheduleFormService {
     if (!collection || !set || !times.length) return this.fail(t.sch.errForm);
     const overrides = overridesFromInput(this.overrides());
     if (overrides.bad) return this.fail(t.sch.errTime);
+    if (!collection.active || !set.active) return this.fail(t.api.itemOffUnusable);
     if (this.usablePosts() === 0) {
       return this.fail(
         collection.settings.requireApproval && collection.posts.length

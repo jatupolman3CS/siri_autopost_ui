@@ -1,0 +1,41 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.h2 {
+  margin-bottom: 4px;
+}
+.sub {
+  margin: 0 0 8px;
+}
+.dev {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+  > .grow {
+    min-width: 200px;
+  }
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.queue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+.note {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}

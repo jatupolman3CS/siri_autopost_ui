@@ -147,6 +147,13 @@ export class DraftStore {
     return true;
   }
 
+  /** Takes library files that were deleted off the draft. */
+  dropMedia(ids: readonly string[]): void {
+    const gone = new Set(ids);
+    if (!this.draft().media.some((m) => gone.has(m))) return;
+    this.draft.update((d) => ({ ...d, media: d.media.filter((m) => !gone.has(m)) }));
+  }
+
   /** Attaches the file, or takes it off when it is attached; false when it could not be attached (the limit). */
   toggleMedia(id: string): boolean {
     if (this.draft().media.includes(id)) {

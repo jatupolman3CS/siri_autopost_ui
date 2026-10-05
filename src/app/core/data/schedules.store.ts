@@ -210,6 +210,19 @@ export class SchedulesStore {
     }
   }
 
+  /** Renames a schedule; nothing else about it changes. Rejects when the API refuses. */
+  async rename(id: string, name: string): Promise<void> {
+    const wsId = this.requireWs();
+    this.mark(id, true);
+    try {
+      const saved = await this.api.renameSchedule(wsId, id, name);
+      if (this.ws.id() !== wsId) return;
+      this.schedules.update((l) => l.map((s) => (s.id === id ? saved : s)));
+    } finally {
+      this.mark(id, false);
+    }
+  }
+
   /** Deletes a schedule and its future queued posts (posts already sent stay in the history). */
   async remove(id: string): Promise<void> {
     const wsId = this.requireWs();

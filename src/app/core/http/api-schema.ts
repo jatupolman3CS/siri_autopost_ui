@@ -1547,6 +1547,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/collections/{id}/active': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SetActiveRequest'];
+          'text/json': components['schemas']['SetActiveRequest'];
+          'application/*+json': components['schemas']['SetActiveRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['CollectionDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/collections/{id}/posts': {
     parameters: {
       query?: never;
@@ -3302,6 +3346,246 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/snippets/{snippetId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          snippetId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['UpdateSnippetRequest'];
+          'text/json': components['schemas']['UpdateSnippetRequest'];
+          'application/*+json': components['schemas']['UpdateSnippetRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['SnippetDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          snippetId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/snippets/{snippetId}/active': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          snippetId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ActiveRequest'];
+          'text/json': components['schemas']['ActiveRequest'];
+          'application/*+json': components['schemas']['ActiveRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['SnippetDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/media/{mediaId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          mediaId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['MediaNameRequest'];
+          'text/json': components['schemas']['MediaNameRequest'];
+          'application/*+json': components['schemas']['MediaNameRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MediaDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/media/active': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['MediaActiveRequest'];
+          'text/json': components['schemas']['MediaActiveRequest'];
+          'application/*+json': components['schemas']['MediaActiveRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['MediaDto'][];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/media/delete': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['MediaIdsRequest'];
+          'text/json': components['schemas']['MediaIdsRequest'];
+          'application/*+json': components['schemas']['MediaIdsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/link-sets': {
     parameters: {
       query?: never;
@@ -3427,6 +3711,50 @@ export interface paths {
         };
       };
     };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/link-sets/{id}/active': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SetActiveRequest'];
+          'text/json': components['schemas']['SetActiveRequest'];
+          'application/*+json': components['schemas']['SetActiveRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['LinkSetDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -4456,6 +4784,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/schedules/{id}/name': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['RenameRequest'];
+          'text/json': components['schemas']['RenameRequest'];
+          'application/*+json': components['schemas']['RenameRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ScheduleDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/schedules/{id}': {
     parameters: {
       query?: never;
@@ -5173,6 +5545,7 @@ export interface components {
       posts: components['schemas']['CollectionPostDto'][];
       /** Format: int32 */
       scheduleCount: number;
+      active: boolean;
     };
     CollectionPostDto: {
       /** Format: uuid */
@@ -5566,10 +5939,15 @@ export interface components {
       links: components['schemas']['SetLinkDto'][];
       /** Format: int32 */
       scheduleCount: number;
+      active: boolean;
     };
     LogInCommand: {
       email: string;
       password: string;
+    };
+    MediaActiveRequest: {
+      mediaIds: string[];
+      active: boolean;
     };
     MediaDto: {
       /** Format: uuid */
@@ -5585,6 +5963,7 @@ export interface components {
       createdAt: string;
       /** Format: uuid */
       folderId: null | string;
+      active: boolean;
     };
     MediaFolderDto: {
       /** Format: uuid */
@@ -5593,8 +5972,14 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
     };
+    MediaIdsRequest: {
+      mediaIds: string[];
+    };
     /** @enum {unknown} */
     MediaKind: 'image' | 'video';
+    MediaNameRequest: {
+      name: string;
+    };
     MemberDto: {
       /** Format: uuid */
       id: null | string;
@@ -5829,6 +6214,9 @@ export interface components {
       discount: string;
       /** Format: date-time */
       expiresAt: null | string;
+    };
+    RenameRequest: {
+      name: string;
     };
     ReportDto: {
       /** Format: int32 */
@@ -6070,6 +6458,7 @@ export interface components {
       text: string;
       /** Format: int32 */
       usedCount: number;
+      active: boolean;
     };
     StatusRequest: {
       status: components['schemas']['CustomerStatus'];
@@ -6162,6 +6551,10 @@ export interface components {
       /** Format: uuid */
       postAsAccountId: null | string;
       accountIds: null | string[];
+    };
+    UpdateSnippetRequest: {
+      title: string;
+      text: string;
     };
     UrlDto: {
       url: string;

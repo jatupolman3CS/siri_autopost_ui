@@ -22,6 +22,16 @@
           ><span class="dot" [style.background]="r.dot"></span>{{ r.statusLabel }}</span
         >
         <div class="btns">
+          <button
+            type="button"
+            class="ibtn"
+            [disabled]="perm.readOnly() || store.isBusy(r.id)"
+            [attr.title]="perm.editHint() || t().api.itemRename"
+            [attr.aria-label]="t().api.schRename + ': ' + r.name"
+            (click)="renaming.set({ id: r.id, name: r.name })"
+          >
+            <i class="ph ph-pencil-simple"></i>
+          </button>
           <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="viewCalendar(r)">
             {{ t().sch.viewCal }}
           </button>
@@ -57,3 +67,12 @@
     <app-pager [pager]="pager" />
   }
 </section>
+
+<app-rename-modal
+  [open]="renaming() !== null"
+  [title]="t().api.schRename"
+  [value]="renaming()?.name ?? ''"
+  [maxlength]="nameLimit"
+  [save]="saveName"
+  (closed)="renaming.set(null)"
+/>

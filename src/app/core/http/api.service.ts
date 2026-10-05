@@ -217,11 +217,36 @@ export class ApiService {
       }),
     );
   }
+  /** Changes the display name of a file (the bytes stay). */
+  renameMedia(ws: string, id: string, name: string) {
+    return run(this.http.put<ApiMedia>(`/api/workspaces/${ws}/media/${id}`, { name }, quiet));
+  }
+  /** Switches files on or off: an off file stays in the library but is not offered for new posts. */
+  setMediaActive(ws: string, mediaIds: string[], active: boolean) {
+    return run(
+      this.http.post<ApiMedia[]>(`/api/workspaces/${ws}/media/active`, { mediaIds, active }),
+    );
+  }
+  /** Deletes files from the library (at most 500 at a time). */
+  deleteMedia(ws: string, mediaIds: string[]) {
+    return run(this.http.post<void>(`/api/workspaces/${ws}/media/delete`, { mediaIds }));
+  }
   snippets(ws: string) {
     return run(this.http.get<ApiSnippet[]>(`/api/workspaces/${ws}/snippets`));
   }
   createSnippet(ws: string, title: string, text: string) {
     return run(this.http.post<ApiSnippet>(`/api/workspaces/${ws}/snippets`, { title, text }));
+  }
+  updateSnippet(ws: string, id: string, title: string, text: string) {
+    return run(this.http.put<ApiSnippet>(`/api/workspaces/${ws}/snippets/${id}`, { title, text }));
+  }
+  setSnippetActive(ws: string, id: string, active: boolean) {
+    return run(
+      this.http.put<ApiSnippet>(`/api/workspaces/${ws}/snippets/${id}/active`, { active }),
+    );
+  }
+  deleteSnippet(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/snippets/${id}`));
   }
 
   /** background: periodic refreshes do not toast when the server is unreachable. */
@@ -428,6 +453,12 @@ export class ApiService {
   updateCollection(ws: string, id: string, body: S['UpdateCollectionRequest']) {
     return run(this.http.put<ApiCollection>(`/api/workspaces/${ws}/collections/${id}`, body));
   }
+  /** Off: schedules that use it queue nothing from it. */
+  setCollectionActive(ws: string, id: string, active: boolean) {
+    return run(
+      this.http.put<ApiCollection>(`/api/workspaces/${ws}/collections/${id}/active`, { active }),
+    );
+  }
   deleteCollection(ws: string, id: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/collections/${id}`));
   }
@@ -494,6 +525,12 @@ export class ApiService {
   createLinkSet(ws: string, name: string, postAsAccountId?: string | null) {
     const body: S['CreateLinkSetRequest'] = { name, postAsAccountId: postAsAccountId ?? null };
     return run(this.http.post<ApiLinkSet>(`/api/workspaces/${ws}/link-sets`, body));
+  }
+  /** Off: schedules that use it queue nothing to it. */
+  setLinkSetActive(ws: string, id: string, active: boolean) {
+    return run(
+      this.http.put<ApiLinkSet>(`/api/workspaces/${ws}/link-sets/${id}/active`, { active }),
+    );
   }
   updateLinkSet(ws: string, id: string, body: S['UpdateLinkSetRequest']) {
     return run(this.http.put<ApiLinkSet>(`/api/workspaces/${ws}/link-sets/${id}`, body));
@@ -628,6 +665,9 @@ export class ApiService {
   setScheduleActive(ws: string, id: string, active: boolean) {
     const body: S['SetActiveRequest'] = { active };
     return run(this.http.put<ApiSchedule>(`/api/workspaces/${ws}/schedules/${id}/active`, body));
+  }
+  renameSchedule(ws: string, id: string, name: string) {
+    return run(this.http.put<ApiSchedule>(`/api/workspaces/${ws}/schedules/${id}/name`, { name }));
   }
   deleteSchedule(ws: string, id: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/schedules/${id}`));

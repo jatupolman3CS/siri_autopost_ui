@@ -617,6 +617,88 @@ describe('CollectionsPageComponent', () => {
     });
   });
 
+  describe('rename, switch on/off and delete a collection', () => {
+    const NO_CONTENT = { status: 204, statusText: 'No Content' };
+    const head = (i = 0) => cards()[i].querySelector<HTMLElement>('.head')!;
+    const iconButtons = (i = 0) => [...head(i).querySelectorAll<HTMLButtonElement>('.ibtn')];
+    const answerSchedules = () =>
+      http.match((r) => r.url.endsWith('/schedules')).forEach((r) => r.flush([]));
+    // Every card has its own dialogs: the one that is open has a panel.
+    const openConfirm = () =>
+      [...el.querySelectorAll<HTMLElement>('app-confirm-modal')].find((m) =>
+        m.querySelector('.su-modal-panel'),
+      )!;
+    const confirm = async () => {
+      btn(t().common.confirm, openConfirm()).click();
+      await settle();
+    };
+
+    it('renames through the dialog: the new name shows at once and is saved', async () => {
+      await open();
+      iconButtons()[0].click();
+      await rerender();
+      const input = el.querySelector<HTMLInputElement>('app-rename-modal input')!;
+      expect(input.value).toBe('Condo');
+      input.value = 'Condo 2';
+      input.dispatchEvent(new Event('input'));
+      el.querySelector<HTMLFormElement>('#rename-form')!.requestSubmit();
+      await settle();
+      const put = http.expectOne((r) => r.method === 'PUT' && r.url === `${BASE}/a`);
+      expect(put.request.body).toMatchObject({ name: 'Condo 2' });
+      put.flush({ ...DATA[0], name: 'Condo 2' });
+      await rerender();
+      expect(cards()[0].querySelector('.info .fw6')!.textContent).toBe('Condo 2');
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).toBeNull();
+    });
+
+    it('switches a collection off, says what that means, and reads the schedules again', async () => {
+      await open();
+      expect(cards()[0].querySelector('.off-note')).toBeNull();
+      head().querySelector<HTMLInputElement>('app-checkbox input')!.click();
+      await rerender();
+      const req = http.expectOne((r) => r.method === 'PUT' && r.url === `${BASE}/a/active`);
+      expect(req.request.body).toEqual({ active: false });
+      req.flush({ ...DATA[0], active: false });
+      await rerender();
+      answerSchedules();
+      await rerender();
+      expect(cards()[0].querySelector('section')!.classList.contains('off-item')).toBe(true);
+      expect(cards()[0].querySelector('.off-note')!.textContent).toBe(t().api.colOffHint);
+      expect(cards()[1].querySelector('.off-note')).toBeNull();
+    });
+
+    it('deletes a collection after a confirmation', async () => {
+      await open();
+      iconButtons(1)[1].click();
+      await rerender();
+      expect(openConfirm().textContent).toContain('Tickets');
+      await confirm();
+      http.expectOne((r) => r.method === 'DELETE' && r.url === `${BASE}/b`).flush(null, NO_CONTENT);
+      await rerender();
+      expect(cards().map((c) => c.querySelector('.info .fw6')!.textContent)).toEqual(['Condo']);
+      expect(el.querySelector('app-confirm-modal .su-modal-panel')).toBeNull();
+    });
+
+    it('keeps the collection and the dialog when a schedule still uses it', async () => {
+      await open();
+      iconButtons()[1].click();
+      await rerender();
+      await confirm();
+      http
+        .expectOne((r) => r.method === 'DELETE' && r.url === `${BASE}/a`)
+        .flush({ title: 'ลบไม่ได้' }, { status: 422, statusText: 'Unprocessable' });
+      await rerender();
+      expect(cards().length).toBe(2);
+      expect(openConfirm().textContent).toContain(t().api.itemActionFailed);
+    });
+
+    it('is off for a viewer', async () => {
+      await open(DATA, 'viewer');
+      expect(iconButtons().every((b) => b.disabled)).toBe(true);
+      expect(head().querySelector<HTMLInputElement>('app-checkbox input')!.disabled).toBe(true);
+    });
+  });
+
   describe('roles', () => {
     it.each([
       ['viewer', true],

@@ -174,6 +174,167 @@ describe('LibraryPageComponent and the composer draft', () => {
     });
   });
 
+  describe('rename, switch on/off and delete', () => {
+    const API = '/api/workspaces/ws-1';
+    const NO_CONTENT = { status: 204, statusText: 'No Content' };
+    const apiMedia = (id: string, name: string, active = true) => ({
+      id,
+      name,
+      contentType: 'image/png',
+      kind: 'image' as const,
+      size: 1024,
+      usedCount: 0,
+      createdAt: '2026-10-01T00:00:00Z',
+      folderId: null,
+      active,
+    });
+    const cardOf = (id: string) => el.querySelectorAll<HTMLElement>('.card')[id === 'm1' ? 0 : 1];
+    const click = async (node: Element | null) => {
+      (node as HTMLElement).click();
+      await rerender();
+    };
+    const submitRename = async (name: string) => {
+      const input = el.querySelector<HTMLInputElement>('app-rename-modal input')!;
+      input.value = name;
+      input.dispatchEvent(new Event('input'));
+      el.querySelector<HTMLFormElement>('#rename-form')!.requestSubmit();
+      await settle();
+    };
+    const confirm = async () => {
+      const buttons = [...el.querySelectorAll<HTMLButtonElement>('app-confirm-modal button')];
+      buttons.find((b) => b.textContent!.trim() === t().common.confirm)!.click();
+      await settle();
+    };
+
+    it('renames a file through the dialog and shows the new name', async () => {
+      await open();
+      await click(cardOf('m1').querySelector('.rowtools .ibtn'));
+      expect(el.querySelector<HTMLInputElement>('app-rename-modal input')!.value).toBe('a.png');
+      await submitRename('  poster  ');
+      const req = http.expectOne((r) => r.method === 'PUT' && r.url === `${API}/media/m1`);
+      expect(req.request.body).toEqual({ name: 'poster' });
+      req.flush(apiMedia('m1', 'poster'));
+      await rerender();
+      expect(cardOf('m1').textContent).toContain('poster');
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).toBeNull();
+    });
+
+    it('keeps the dialog open with a message when the name is refused', async () => {
+      await open();
+      await click(cardOf('m1').querySelector('.rowtools .ibtn'));
+      await submitRename('x');
+      http
+        .expectOne((r) => r.method === 'PUT' && r.url === `${API}/media/m1`)
+        .flush({ title: 'no' }, { status: 422, statusText: 'Unprocessable' });
+      await rerender();
+      expect(el.querySelector('app-rename-modal .su-modal-panel')).not.toBeNull();
+      expect(el.querySelector('app-rename-modal')!.textContent).toContain(t().api.itemSaveFailed);
+    });
+
+    it('switches a file off: the card dims and "use" is off until it is switched on again', async () => {
+      await open();
+      await click(cardOf('m1').querySelector('app-checkbox input'));
+      const req = http.expectOne((r) => r.method === 'POST' && r.url === `${API}/media/active`);
+      expect(req.request.body).toEqual({ mediaIds: ['m1'], active: false });
+      req.flush([apiMedia('m1', 'a.png', false)]);
+      await rerender();
+      expect(cardOf('m1').classList.contains('off')).toBe(true);
+      expect(useButtons()[0].disabled).toBe(true);
+      expect(useButtons()[0].title).toBe(t().api.itemOffUnusable);
+      expect(useButtons()[1].disabled).toBe(false);
+    });
+
+    it('deletes a file after a confirmation, takes it off the draft and reads the collections again', async () => {
+      await open();
+      draft().addMedia('m1');
+      await click(cardOf('m1').querySelectorAll('.rowtools .ibtn')[1]);
+      expect(el.querySelector('app-confirm-modal')!.textContent).toContain('a.png');
+      await confirm();
+      const req = http.expectOne((r) => r.method === 'POST' && r.url === `${API}/media/delete`);
+      expect(req.request.body).toEqual({ mediaIds: ['m1'] });
+      req.flush(null, NO_CONTENT);
+      await settle();
+      http.expectOne((r) => r.method === 'GET' && r.url === `${API}/collections`).flush([]);
+      await rerender();
+      expect(
+        TestBed.inject(LibraryStore)
+          .media()
+          .map((m) => m.id),
+      ).toEqual(['m2']);
+      expect(el.querySelectorAll('.card').length).toBe(1);
+      expect(draft().draft().media).toEqual([]);
+    });
+
+    it('deletes the selected files in one request', async () => {
+      await open();
+      await click(el.querySelectorAll('.card .pick input')[0]);
+      await click(el.querySelectorAll('.card .pick input')[1]);
+      const del = [...el.querySelectorAll<HTMLButtonElement>('.selbar button')].find((b) =>
+        b.textContent!.includes(t().api.mediaDeleteSel),
+      )!;
+      await click(del);
+      await confirm();
+      const req = http.expectOne((r) => r.method === 'POST' && r.url === `${API}/media/delete`);
+      expect(req.request.body).toEqual({ mediaIds: ['m1', 'm2'] });
+      req.flush(null, NO_CONTENT);
+      await settle();
+      http.expectOne((r) => r.method === 'GET' && r.url === `${API}/collections`).flush([]);
+      await rerender();
+      expect(el.querySelectorAll('.card').length).toBe(0);
+    });
+
+    it('edits a snippet in the same dialog as a new one', async () => {
+      await open();
+      await tab(1);
+      await click(el.querySelector('.snip .rowtools .ibtn'));
+      const fields = el.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        'app-modal input, app-modal textarea',
+      );
+      expect([...fields].map((f) => f.value)).toEqual(['Hello', 'สวัสดีค่ะ']);
+      fields[0].value = 'Hi';
+      fields[0].dispatchEvent(new Event('input'));
+      const save = [...el.querySelectorAll<HTMLButtonElement>('app-modal button')].find(
+        (b) => b.textContent!.trim() === t().common.save,
+      )!;
+      await click(save);
+      const req = http.expectOne((r) => r.method === 'PUT' && r.url === `${API}/snippets/s1`);
+      expect(req.request.body).toEqual({ title: 'Hi', text: 'สวัสดีค่ะ' });
+      req.flush({ id: 's1', title: 'Hi', text: 'สวัสดีค่ะ', usedCount: 0, active: true });
+      await rerender();
+      expect(el.querySelector('.snip .fw6')!.textContent).toBe('Hi');
+    });
+
+    it('switches a snippet off and deletes it', async () => {
+      await open();
+      await tab(1);
+      await click(el.querySelector('.snip app-checkbox input'));
+      const off = http.expectOne(
+        (r) => r.method === 'PUT' && r.url === `${API}/snippets/s1/active`,
+      );
+      expect(off.request.body).toEqual({ active: false });
+      off.flush({ id: 's1', title: 'Hello', text: 'สวัสดีค่ะ', usedCount: 0, active: false });
+      await rerender();
+      expect(el.querySelector('.snip')!.classList.contains('off')).toBe(true);
+      expect(useButtons()[0].disabled).toBe(true);
+
+      await click(el.querySelectorAll('.snip .rowtools .ibtn')[1]);
+      await confirm();
+      http
+        .expectOne((r) => r.method === 'DELETE' && r.url === `${API}/snippets/s1`)
+        .flush(null, NO_CONTENT);
+      await rerender();
+      expect(el.querySelectorAll('.snip').length).toBe(0);
+    });
+
+    it('shows no rename or delete buttons to a viewer, and the switches are off', async () => {
+      await open('viewer');
+      expect(el.querySelector('.rowtools .ibtn')).toBeNull();
+      expect(el.querySelector<HTMLInputElement>('.rowtools app-checkbox input')!.disabled).toBe(
+        true,
+      );
+    });
+  });
+
   describe('roles', () => {
     it.each([
       ['viewer', true],

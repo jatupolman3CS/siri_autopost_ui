@@ -4,11 +4,16 @@ import { registerExt } from './i18n.service';
 // feature reads them, so they live apart from the first bundle. Importing this module registers them in
 // the dictionary as t().api.ext; every file that reads t().api.ext imports it.
 export const AP_I18N_EXT = {
-  title: ['ชุดโพสต์ของส่วนขยาย', 'Extension campaigns'],
+  title: ['ตั้งค่าส่วนขยาย', 'Extension settings'],
   sub: [
-    'ทุกอย่างในหน้าตั้งค่าของส่วนขยาย: ชุดโพสต์ กลุ่ม เนื้อหา รูป/วิดีโอ เวลา พฤติกรรมสุ่ม Telegram แก้ที่นี่แล้วเครื่องได้ของใหม่ภายใน ~30 วินาที',
-    'Everything on the extension’s settings page: campaigns, groups, posts, media, timing, randomness and Telegram. Edits reach the browser within ~30 s.',
+    'ค่าการทำงานของตัวส่วนขยายเอง: ชุดโพสต์ในส่วนขยาย กลุ่ม เนื้อหา รูป/วิดีโอ เวลา พฤติกรรมสุ่ม Telegram แก้ที่นี่แล้วเครื่องได้ของใหม่ภายใน ~30 วินาที',
+    'The extension’s own settings: its campaigns, groups, posts, media, timing, randomness and Telegram. Edits reach the browser within ~30 s.',
   ],
+  separateNote: [
+    'หน้านี้ไม่เกี่ยวกับตารางโพสต์ ตารางโพสต์ (ชุดโพสต์ → ชุดลิงก์ → ตาราง) ส่งงานให้ส่วนขยายเองโดยไม่ต้องตั้งอะไรที่นี่ ใช้หน้านี้เมื่ออยากให้ส่วนขยายโพสต์ตามที่ตั้งไว้ในตัวเองเท่านั้น',
+    'This page is separate from the schedules. A schedule (collection → link set → schedule) hands its posts to the extension without anything set here. Use this page only when you want the extension to post by its own campaigns.',
+  ],
+  scheduleLink: ['ไปที่ตารางโพสต์', 'Go to schedules'],
   device: ['เครื่อง', 'Browser'],
   campaigns: ['ชุดโพสต์', 'Campaigns'],
   noDeviceTitle: ['ยังไม่มีเครื่องที่จับคู่ไว้', 'No paired browser yet'],

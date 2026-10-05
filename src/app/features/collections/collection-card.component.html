@@ -1,11 +1,40 @@
-<section class="panel card">
+<section class="panel card" [class.off-item]="!collection().active">
   <div class="head">
     <span class="ico"><i class="ph" [class]="collection().icon"></i></span>
     <div class="grow info">
       <div class="fw6">{{ collection().name }}</div>
       <div class="small muted">{{ meta() }}</div>
+      @if (!collection().active) {
+        <div class="small off-note">{{ t().api.colOffHint }}</div>
+      }
     </div>
     <div class="btns">
+      <app-checkbox
+        [label]="t().api.itemActive"
+        [checked]="collection().active"
+        [disabled]="!perm.canEdit()"
+        (checkedChange)="setActive($event)"
+      />
+      <button
+        type="button"
+        class="ibtn"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || t().api.itemRename"
+        [attr.aria-label]="t().api.colRename"
+        (click)="renameOpen.set(true)"
+      >
+        <i class="ph ph-pencil-simple"></i>
+      </button>
+      <button
+        type="button"
+        class="ibtn"
+        [disabled]="!perm.canEdit()"
+        [attr.title]="perm.editHint() || t().api.itemDelete"
+        [attr.aria-label]="t().api.colDelete"
+        (click)="deleteOpen.set(true)"
+      >
+        <i class="ph ph-trash"></i>
+      </button>
       <button
         type="button"
         class="su-btn su-btn-sm su-btn-ghost"
@@ -51,3 +80,21 @@
     </div>
   }
 </section>
+
+<app-rename-modal
+  [open]="renameOpen()"
+  [title]="t().api.colRename"
+  [label]="t().col.colName"
+  [value]="collection().name"
+  [maxlength]="nameLimit"
+  [save]="saveName"
+  (closed)="renameOpen.set(false)"
+/>
+
+<app-confirm-modal
+  [open]="deleteOpen()"
+  [title]="t().api.colDelete"
+  [body]="deleteBody()"
+  [action]="remove"
+  (closed)="deleteOpen.set(false)"
+/>

@@ -1,11 +1,30 @@
-<section class="panel card" [attr.aria-label]="set().name">
+<section class="panel card" [class.off-item]="!set().active" [attr.aria-label]="set().name">
   <div class="head">
     <span class="ico" aria-hidden="true"><i class="ph ph-link"></i></span>
     <div class="title">
       <div class="fw6">{{ set().name }}</div>
       <div class="small muted">{{ meta() }}</div>
+      @if (!set().active) {
+        <div class="small off-note">{{ t().api.setOffHint }}</div>
+      }
     </div>
     <div class="btns">
+      <app-checkbox
+        [label]="t().api.itemActive"
+        [checked]="set().active"
+        [disabled]="perm.readOnly()"
+        (checkedChange)="setActive($event)"
+      />
+      <button
+        type="button"
+        class="ibtn"
+        [disabled]="perm.readOnly()"
+        [attr.title]="perm.editHint() || t().api.itemRename"
+        [attr.aria-label]="t().api.setRename"
+        (click)="renameOpen.set(true)"
+      >
+        <i class="ph ph-pencil-simple"></i>
+      </button>
       <button
         type="button"
         class="su-btn su-btn-sm su-btn-ghost"
@@ -133,3 +152,12 @@
 
   <div class="small muted">{{ usedBy() }}</div>
 </section>
+
+<app-rename-modal
+  [open]="renameOpen()"
+  [title]="t().api.setRename"
+  [value]="set().name"
+  [maxlength]="nameLimit"
+  [save]="saveName"
+  (closed)="renameOpen.set(false)"
+/>

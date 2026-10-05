@@ -1,5 +1,7 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, Injector, inject, signal } from '@angular/core';
 import { ApiMedia, ApiMediaFolder, ApiService, ApiSnippet } from '../http/api.service';
+import { CollectionsStore } from './collections.store';
+import { DraftStore } from './draft.store';
 import { loadWithRetry } from './loading';
 import { MediaFolder, MediaItem, Snippet } from './models';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
@@ -12,6 +14,7 @@ function toMedia(m: ApiMedia): MediaItem {
     kind: m.kind,
     used: m.usedCount,
     folderId: m.folderId ?? null,
+    active: m.active,
   };
 }
 
@@ -20,7 +23,7 @@ function toFolder(f: ApiMediaFolder): MediaFolder {
 }
 
 function toSnippet(s: ApiSnippet): Snippet {
-  return { id: s.id, title: s.title, text: s.text, used: s.usedCount };
+  return { id: s.id, title: s.title, text: s.text, used: s.usedCount, active: s.active };
 }
 
 export function fileSize(bytes: number): string {
@@ -29,12 +32,20 @@ export function fileSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function without<T>(map: Record<string, T>, gone: ReadonlySet<string>): Record<string, T> {
+  const next: Record<string, T> = {};
+  for (const [k, v] of Object.entries(map)) if (!gone.has(k)) next[k] = v;
+  return next;
+}
+
 // Uploaded media and text snippets of the current workspace. Image thumbnails are fetched
 // with the bearer token and shown through object URLs (an <img src> cannot send the token).
 @Injectable({ providedIn: 'root' })
 export class LibraryStore {
   private readonly api = inject(ApiService);
   private readonly ws = inject(WorkspaceStore);
+  // Looked up when files are deleted, so reading the library never starts these stores.
+  private readonly injector = inject(Injector);
 
   readonly media = signal<MediaItem[]>([]);
   readonly snippets = signal<Snippet[]>([]);
@@ -91,6 +102,73 @@ export class LibraryStore {
     if (!wsId) return;
     const s = await this.api.createSnippet(wsId, title, text);
     this.snippets.update((list) => [toSnippet(s), ...list]);
+  }
+
+  /** Changes a snippet's title and text (waits for the server). */
+  async updateSnippet(id: string, title: string, text: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    const s = toSnippet(await this.api.updateSnippet(wsId, id, title, text));
+    this.snippets.update((list) => list.map((x) => (x.id === id ? s : x)));
+  }
+
+  async setSnippetActive(id: string, active: boolean): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    const s = toSnippet(await this.api.setSnippetActive(wsId, id, active));
+    this.snippets.update((list) => list.map((x) => (x.id === id ? s : x)));
+  }
+
+  async deleteSnippet(id: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    await this.api.deleteSnippet(wsId, id);
+    this.snippets.update((list) => list.filter((x) => x.id !== id));
+  }
+
+  /** Renames a file (the display name only). */
+  async renameMedia(id: string, name: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    const m = toMedia(await this.api.renameMedia(wsId, id, name));
+    this.media.update((list) => list.map((x) => (x.id === id ? m : x)));
+  }
+
+  /** Switches files on or off, a request at a time of at most 500. */
+  async setMediaActive(ids: readonly string[], active: boolean): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId || !ids.length) return;
+    for (let i = 0; i < ids.length; i += 500) {
+      const changed = await this.api.setMediaActive(wsId, ids.slice(i, i + 500), active);
+      const done = new Set(changed.map((m) => m.id));
+      this.media.update((list) => list.map((m) => (done.has(m.id) ? { ...m, active } : m)));
+    }
+  }
+
+  /**
+   * Deletes files from the library, a request at a time of at most 500. The server takes them off the collection
+   * posts that used them, so those collections (and the composer's draft, via `removed`) are told afterwards.
+   */
+  async deleteMedia(ids: readonly string[]): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId || !ids.length) return;
+    for (let i = 0; i < ids.length; i += 500) {
+      const chunk = ids.slice(i, i + 500);
+      await this.api.deleteMedia(wsId, chunk);
+      const gone = new Set(chunk);
+      for (const id of chunk) {
+        const t = this.thumbs()[id];
+        if (t) URL.revokeObjectURL(t);
+        const v = this.videos()[id];
+        if (v) URL.revokeObjectURL(v);
+        this.thumbAsked.delete(id);
+      }
+      this.thumbs.update((t) => without(t, gone));
+      this.videos.update((v) => without(v, gone));
+      this.media.update((list) => list.filter((m) => !gone.has(m.id)));
+    }
+    this.injector.get(DraftStore).dropMedia(ids);
+    void this.injector.get(CollectionsStore).refresh();
   }
 
   /** Uploads files one by one; returns the ids of the ones the server accepted (the composer attaches them). */

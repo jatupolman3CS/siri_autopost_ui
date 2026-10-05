@@ -56,11 +56,18 @@ export class ScheduleBuilderComponent {
   protected readonly nameMax = SCHEDULE_NAME_MAX;
 
   protected readonly collectionOptions = computed<SelectOption[]>(() =>
-    this.collections.collections().map((c) => ({ value: c.id, label: c.name })),
+    this.collections
+      .collections()
+      .map((c) => ({ value: c.id, label: this.offLabel(c.name, c.active) })),
   );
   protected readonly setOptions = computed<SelectOption[]>(() =>
-    this.linkSets.sets().map((s) => ({ value: s.id, label: s.name })),
+    this.linkSets.sets().map((s) => ({ value: s.id, label: this.offLabel(s.name, s.active) })),
   );
+  /** A switched-off collection or set stays in the list, marked: a schedule cannot be made from it. */
+  private offLabel(name: string, active: boolean): string {
+    return active ? name : `${name} · ${this.t().api.itemInactive}`;
+  }
+
   protected readonly modeOptions = computed<SelectOption[]>(() => {
     const s = this.t().sch;
     const label = {

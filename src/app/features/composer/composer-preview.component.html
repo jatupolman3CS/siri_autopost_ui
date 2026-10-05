@@ -29,7 +29,13 @@
             <i class="ph" [class]="m.icon"></i>
           }
           @if (removable()) {
-            <button type="button" class="del" [title]="t().cmp.removeMedia" [attr.aria-label]="t().cmp.removeMedia" (click)="remove(m.id)">
+            <button
+              type="button"
+              class="del"
+              [title]="t().cmp.removeMedia"
+              [attr.aria-label]="t().cmp.removeMedia"
+              (click)="remove(m.id)"
+            >
               <i class="ph ph-x"></i>
             </button>
           }

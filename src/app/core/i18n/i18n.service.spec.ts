@@ -209,7 +209,7 @@ describe('lazy dictionary packs', () => {
     const { registerExt } = await import('./i18n.service');
     const { AP_I18N_EXT } = await import('./i18n.ext');
     registerExt(AP_I18N_EXT);
-    expect(service.t().api.ext.title).toBe('ชุดโพสต์ของส่วนขยาย');
+    expect(service.t().api.ext.title).toBe('ตั้งค่าส่วนขยาย');
   });
 
   it('gives every leaf of the packs and of the fixes both languages with the same {placeholders}', async () => {

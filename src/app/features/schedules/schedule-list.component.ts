@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
@@ -11,6 +11,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ScheduleView, scheduleView } from './schedule-view';
 import { Pager } from '../../shared/components/pager/pager';
+import { RenameModalComponent } from '../../shared/components/rename-modal/rename-modal.component';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 // "All schedules": one row per schedule with its pairing, cadence, today's posts and next run, and the buttons
@@ -19,7 +20,7 @@ import { PagerComponent } from '../../shared/components/pager/pager.component';
 // change something are an editor's.
 @Component({
   selector: 'app-schedule-list',
-  imports: [PagerComponent, EmptyStateComponent],
+  imports: [PagerComponent, EmptyStateComponent, RenameModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './schedule-list.component.html',
   styleUrl: './schedule-list.component.scss',
@@ -34,6 +35,17 @@ export class ScheduleListComponent {
   protected readonly store = inject(SchedulesStore);
   protected readonly perm = inject(PermissionsService);
   protected readonly t = this.i18n.t;
+
+  /** The schedule whose rename dialog is open. */
+  protected readonly renaming = signal<{ id: string; name: string } | null>(null);
+  protected readonly nameLimit = 120;
+
+  protected readonly saveName = async (name: string): Promise<void> => {
+    const r = this.renaming();
+    if (!r) return;
+    await this.store.rename(r.id, name);
+    this.notify.success(this.t().api.itemRenamed);
+  };
 
   protected readonly pager = new Pager(20);
   protected readonly page = computed(() => this.pager.slice(this.rows()));

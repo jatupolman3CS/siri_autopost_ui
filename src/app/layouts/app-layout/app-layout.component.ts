@@ -89,7 +89,12 @@ export class AppLayoutComponent {
     });
     const account: NavGroup = {
       label: t.gAccount,
-      items: [item('billing', 'billing', 'ph-credit-card'), item('team', 'team', 'ph-users-three')],
+      items: [
+        item('billing', 'billing', 'ph-credit-card'),
+        item('team', 'team', 'ph-users-three'),
+        // The extension's own settings, apart from the posting flow (schedules hand it its work by themselves).
+        item('campaigns', 'extension', 'ph-sliders-horizontal', { label: this.t().api.extNav }),
+      ],
     };
     const owner: NavGroup[] = this.session.isAdmin()
       ? [
