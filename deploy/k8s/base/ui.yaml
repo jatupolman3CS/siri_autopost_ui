@@ -41,7 +41,7 @@ spec:
               memory: 128Mi
 ---
 # Public entry point. The Cloudflare tunnel `siri-monitor` (locally managed, cloudflared on the host) routes
-# siriautopost.siristudiophoto.com -> http://172.17.0.1:30907, like the other apps on this host.
+# siriautopost.siristudiophoto.com -> http://172.17.0.1:30907 (PRD) and siriautopost-dev.siristudiophoto.com -> :30908 (DEV, patched by overlays/dev), like the other apps on this host.
 # nginx in this pod serves the dashboard and proxies /api to Service `api` (siri_autopost_backend).
 apiVersion: v1
 kind: Service

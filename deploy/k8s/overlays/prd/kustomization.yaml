@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # PRD: https://siriautopost.siristudiophoto.com
-# Applied by the Jenkinsfile at the repo root (Jenkins job SIRIAUTOPOST-WEB).
+# Applied by Jenkinsfile (Jenkins job SIRIAUTOPOST-WEB-PRD). Separate from DEV (namespace siriautopost-dev, NodePort 30908).
 # Exposed on NodePort 30907; the Cloudflare tunnel routes the public host there (see deploy/k8s/base/ui.yaml).
 namespace: siriautopost
 
