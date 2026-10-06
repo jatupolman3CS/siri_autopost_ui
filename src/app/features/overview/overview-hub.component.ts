@@ -7,7 +7,7 @@ import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
 import { SettingsStore } from '../../core/data/settings.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
-import { COMPOSER_PATH } from '../composer/composer-link';
+import { POSTS_PATH, newPostParams } from '../posts/posts-link';
 
 type HubStep = 'links' | 'posts' | 'schedule';
 
@@ -100,10 +100,12 @@ export class OverviewHubComponent {
   protected go(id: HubStep): void {
     if (id === 'links') void this.router.navigateByUrl('/app/targets');
     else if (id === 'posts') {
-      // The composer starts a post in the collection that was last used (or is open), if there is one.
+      // The post library's editor starts a post in the collection that was last used (or is open), if there is one.
       const collection = this.collections.lastId() ?? this.collections.openId();
-      void this.router.navigate([COMPOSER_PATH], {
-        queryParams: collection && this.collections.byId(collection) ? { collection } : {},
+      void this.router.navigate([POSTS_PATH], {
+        queryParams: newPostParams(
+          collection && this.collections.byId(collection) ? collection : null,
+        ),
       });
     } else void this.router.navigate(['/app/schedules'], { queryParams: { new: 1 } });
   }

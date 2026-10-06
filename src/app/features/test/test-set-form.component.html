@@ -1,0 +1,81 @@
+<section class="panel form" data-testid="test-set-form">
+  <div class="selects">
+    <app-select-field
+      [label]="t().test.set"
+      [options]="setOptions()"
+      [value]="store.setId()"
+      [disabled]="!canPick()"
+      (valueChange)="store.pickSet($event)"
+    />
+    <app-select-field
+      [label]="t().test.group"
+      [placeholder]="t().test.groupPh"
+      [options]="groupOptions()"
+      [value]="store.member()?.key ?? ''"
+      [disabled]="!canPick()"
+      (valueChange)="store.pickGroup($event)"
+    />
+    <app-select-field
+      [label]="t().test.col"
+      [options]="colOptions()"
+      [value]="store.collectionId()"
+      [disabled]="!canPick()"
+      (valueChange)="store.pickCollection($event)"
+    />
+    <app-select-field
+      [label]="t().test.post"
+      [options]="postOptions()"
+      [value]="store.postId()"
+      [disabled]="!canPick()"
+      (valueChange)="store.pickPost($event)"
+    />
+  </div>
+
+  <div>
+    <label class="su-field-label" for="test-text">{{ t().test.override }}</label>
+    <textarea
+      id="test-text"
+      class="su-textarea ta"
+      rows="3"
+      [value]="store.text()"
+      [placeholder]="t().test.overridePh"
+      [readOnly]="!canPick()"
+      [attr.maxlength]="maxText"
+      [attr.aria-describedby]="'test-text-hint'"
+      (input)="onText($event)"
+    ></textarea>
+    <p id="test-text-hint" class="small muted hint">{{ t().api.engine.testOverrideHint }}</p>
+  </div>
+
+  <div class="pv">
+    <div class="pv-head">
+      <span class="small muted">{{ t().test.preview }} · {{ filesLabel() }}</span>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="!canPick()"
+        (click)="store.reshuffle()"
+      >
+        <i class="ph ph-shuffle"></i>{{ t().cmp.respin }}
+      </button>
+    </div>
+    <p class="box">{{ preview() }}</p>
+  </div>
+
+  <div class="foot">
+    @if (error()) {
+      <span class="err" role="alert">{{ error() }}</span>
+    } @else {
+      <span class="small muted">{{ t().test.confirmBody }}</span>
+    }
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      [disabled]="!canRun()"
+      [attr.title]="perm.editHint() || null"
+      (click)="store.run()"
+    >
+      <i class="ph ph-paper-plane-right"></i>{{ runLabel() }}
+    </button>
+  </div>
+</section>

@@ -1,11 +1,19 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { utcOffsetMinutes } from '../core/flow/schedule-math';
-import { ApiSaveSchedule, ApiSchedule, ApiScheduleCreated } from '../core/http/api.service';
+import {
+  ApiBumpPlan,
+  ApiSaveSchedule,
+  ApiSchedule,
+  ApiScheduleCreated,
+} from '../core/http/api.service';
 import { WS } from './api-testing';
 
 // Fixtures of the schedule specs (store and pages): rows as the API answers them.
 
 export const SCHEDULES_URL = `/api/workspaces/${WS}/schedules`;
+
+/** What a schedule that does not bump carries (the API always sends the plan, whatever `bumpHours` says). */
+export const NO_BUMP: ApiBumpPlan = { rounds: 1, text: '', mediaIds: [], imagesEach: 0 };
 
 export function apiSchedule(over: Partial<ApiSchedule> & { id: string }): ApiSchedule {
   return {
@@ -35,6 +43,7 @@ export function apiSchedule(over: Partial<ApiSchedule> & { id: string }): ApiSch
     nextRunAt: null,
     startNow: false,
     repeat: 'recent',
+    bump: NO_BUMP,
     ...over,
   };
 }

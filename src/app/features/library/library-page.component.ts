@@ -13,7 +13,7 @@ import { PermissionsService } from '../../core/data/permissions.service';
 import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
+import { POSTS_PATH, newPostParams } from '../posts/posts-link';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
 import { ConfirmModalComponent } from '../../shared/components/confirm-modal/confirm-modal.component';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
@@ -77,7 +77,7 @@ export class LibraryPageComponent {
     fmt(this.t().api.snippetDeleteBody, { name: this.deletingSnippet()?.title ?? '' }),
   );
 
-  /** The composer's draft in numbers, for the bar that leads back to it. */
+  /** The post in progress in numbers, for the bar that leads back to it. */
   protected readonly draftBar = computed(() => {
     const d = this.draft.draft();
     return fmt(this.t().lib.draftBar, { n: d.media.length, c: d.text.length });
@@ -358,16 +358,16 @@ export class LibraryPageComponent {
       this.notify.error(fmt(this.t().api.mediaMax, { n: INPUT_LIMITS.postMedia }));
       return;
     }
-    this.goComposer();
+    this.goPost();
   }
 
   protected useSnippet(text: string): void {
     this.draft.appendText(text);
-    this.goComposer();
+    this.goPost();
   }
 
-  /** Back to the post being written (the draft bar), or the composer with what was just added. */
-  protected goComposer(): void {
-    void this.router.navigate([COMPOSER_PATH], { queryParams: composerParams(this.draft.draft()) });
+  /** Back to the post being written in the post library's editor (the draft bar), or there with what was just added. */
+  protected goPost(): void {
+    void this.router.navigate([POSTS_PATH], { queryParams: newPostParams() });
   }
 }

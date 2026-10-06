@@ -3,7 +3,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { assistStorage } from '../../core/auth/token';
 import { ApiDevice, ApiMember, ApiRole } from '../../core/http/api.service';
+import { DevicesStore } from '../../core/data/devices.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
+import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import { NotificationService } from '../../core/services/notification.service';
 import {
   WS,
   answerWorkspaceLoads,
@@ -66,7 +69,14 @@ describe('TeamPageComponent', () => {
     await signIn(http, {
       workspace: {
         role,
-        limits: { accounts: null, posts: null, ...(opts.limits ?? { seats: 3, devices: 3 }) },
+        limits: {
+          accounts: null,
+          posts: null,
+          groups: null,
+          images: null,
+          libraryPosts: null,
+          ...(opts.limits ?? { seats: 3, devices: 3 }),
+        },
       },
     });
     const fixture = TestBed.createComponent(TeamPageComponent);
@@ -237,12 +247,129 @@ describe('TeamPageComponent', () => {
     for (const r of http.match((r) => r.url.startsWith('/api/workspaces/ws-2/'))) r.flush([]);
   });
 
-  it('renames a device in a dialog that stops at 80 characters', async () => {
+  it('renames a device in a dialog that stops at 80 characters, and says names must be unique', async () => {
     const { fixture, el } = await open('admin', { devices: [device('d1')] });
     el.querySelector<HTMLButtonElement>('.dev-actions button:nth-of-type(1)')!.click();
     fixture.detectChanges();
     const input = document.querySelector<HTMLInputElement>('.su-modal-body input')!;
     expect(input.value).toBe('PC d1');
     expect(input.getAttribute('maxlength')).toBe('80');
+    expect(document.querySelector('.su-modal-body')!.textContent).toContain(
+      TestBed.inject(I18nService).t().api.engine.renameHint,
+    );
+  });
+
+  it('has no "campaigns" button on a device any more, only rename, pause and unbind', async () => {
+    const { el } = await open('admin', { devices: [device('d1')] });
+    expect(el.querySelector('a[href="/app/campaigns"]')).toBeNull();
+    expect(el.querySelectorAll('.dev-actions a')).toHaveLength(0);
+    expect(el.querySelectorAll('.dev-actions button')).toHaveLength(3);
+    expect(el.textContent).not.toContain('ชุดโพสต์ในส่วนขยาย');
+  });
+
+  describe('renaming to a name another extension has', () => {
+    const rename = (fixture: { detectChanges(): void }, el: HTMLElement, name: string) => {
+      el.querySelector<HTMLButtonElement>('.dev-actions button:nth-of-type(1)')!.click();
+      fixture.detectChanges();
+      const input = document.querySelector<HTMLInputElement>('.su-modal-body input')!;
+      input.value = name;
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      document.querySelector<HTMLButtonElement>('.su-modal-foot .su-btn-primary')!.click();
+    };
+    const url = `/api/workspaces/${WS}/devices/d1`;
+
+    it("shows the server's refusal under the field, keeps the dialog open and the old name", async () => {
+      const { fixture, el } = await open('admin', { devices: [device('d1'), device('d2')] });
+      rename(fixture, el, 'PC d2');
+      await settle();
+      const put = http.expectOne({ method: 'PUT', url });
+      expect(put.request.body).toEqual({ name: 'PC d2', jobsPaused: null });
+      put.flush(
+        { title: 'มีส่วนขยายชื่อ “PC d2” อยู่แล้วในเวิร์กสเปซนี้', status: 422 },
+        { status: 422, statusText: 'Unprocessable' },
+      );
+      await settle();
+      fixture.detectChanges();
+      const err = document.querySelector('.su-modal-body .su-field-err');
+      expect(err!.textContent).toBe('มีส่วนขยายชื่อ “PC d2” อยู่แล้วในเวิร์กสเปซนี้');
+      // The dialog is still open, the name on the page is the old one and nothing was toasted.
+      expect(document.querySelector('.su-modal-body input')).not.toBeNull();
+      expect(el.textContent).toContain('PC d1');
+      expect(el.querySelectorAll('.dev')[0].textContent).not.toContain('PC d2 ');
+      expect(
+        TestBed.inject(DevicesStore)
+          .list()
+          .find((d) => d.id === 'd1')!.name,
+      ).toBe('PC d1');
+      expect(TestBed.inject(NotificationService).toasts()).toEqual([]);
+      // The save button is usable again (another name can be tried).
+      expect(
+        document.querySelector<HTMLButtonElement>('.su-modal-foot .su-btn-primary')!.disabled,
+      ).toBe(false);
+    });
+
+    it('closes and says the new name when the server accepts it', async () => {
+      const { fixture, el } = await open('admin', { devices: [device('d1'), device('d2')] });
+      rename(fixture, el, 'Shop laptop');
+      await settle();
+      http.expectOne({ method: 'PUT', url }).flush({ ...device('d1'), name: 'Shop laptop' });
+      // The account follows the device: the lists are read again.
+      await settle();
+      http.match((r) => r.method === 'GET');
+      fixture.detectChanges();
+      expect(document.querySelector('.su-modal-body input')).toBeNull();
+      expect(el.querySelectorAll('.dev')[0].textContent).toContain('Shop laptop');
+      expect(
+        TestBed.inject(NotificationService)
+          .toasts()
+          .map((x) => x.message),
+      ).toContain(fmt(TestBed.inject(I18nService).t().api.renamed, { d: 'Shop laptop' }));
+    });
+
+    it('does not send a name that is empty or unchanged', async () => {
+      const { fixture, el } = await open('admin', { devices: [device('d1')] });
+      rename(fixture, el, '   ');
+      await settle();
+      fixture.detectChanges();
+      http.expectNone({ method: 'PUT', url });
+      expect(document.querySelector('.su-modal-body .su-field-err')!.textContent).toBe(
+        TestBed.inject(I18nService).t().api.renameEmpty,
+      );
+    });
+  });
+
+  describe('several extensions', () => {
+    const badge = (el: HTMLElement) => el.querySelector('[data-testid=devices-online]');
+
+    it('counts how many are online beside the title of the devices', async () => {
+      const { el } = await open('admin', {
+        devices: [
+          { ...device('d1'), online: true },
+          { ...device('d2'), online: false },
+          { ...device('d3'), online: true },
+        ],
+        limits: { seats: 3, devices: 5 },
+      });
+      expect(badge(el)!.textContent!.trim()).toBe(
+        fmt(TestBed.inject(I18nService).t().api.extCount, { n: 2, m: 3 }),
+      );
+    });
+
+    it('shows no count for a single extension', async () => {
+      const { el } = await open('admin', { devices: [device('d1')] });
+      expect(badge(el)).toBeNull();
+    });
+
+    it('lists each extension by its own name', async () => {
+      const { el } = await open('admin', {
+        devices: [device('d1'), device('d2')],
+        limits: { seats: 3, devices: 5 },
+      });
+      expect([...el.querySelectorAll('.dev .fs14')].map((n) => n.textContent!.trim())).toEqual([
+        'PC d1',
+        'PC d2',
+      ]);
+    });
   });
 });

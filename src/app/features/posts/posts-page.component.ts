@@ -1,6 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
+import { Params, Router } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
+import { DraftStore } from '../../core/data/draft.store';
 import { MasterPostsStore } from '../../core/data/master-posts.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { ApiBulkPostAction, ApiCollectionPost } from '../../core/http/api.service';
@@ -11,7 +25,6 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { FlowStepsComponent } from '../../shared/components/flow-steps/flow-steps.component';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
-import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { NextStepComponent } from '../../shared/components/next-step/next-step.component';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { Pager } from '../../shared/components/pager/pager';
@@ -19,6 +32,7 @@ import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.c
 import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 import { MasterPostCardComponent } from './master-post-card.component';
 import { PostEditorComponent } from './post-editor.component';
+import { POSTS_PATH, editPostParams, newPostParams } from './posts-link';
 import '../../core/i18n/i18n.flow';
 
 export type PostFilter = 'all' | 'on' | 'off' | 'pending' | 'loose';
@@ -39,9 +53,14 @@ export function matchesFilter(p: ApiCollectionPost, filter: PostFilter): boolean
   }
 }
 
+/** The editor panel at the top of the page: a new post, or one of the library (`key` makes a fresh editor). */
+type Panel = { kind: 'new'; key: number } | { kind: 'edit'; post: ApiCollectionPost; key: number };
+
 // Step 1 of the flow: the post library. Every post of the workspace, each managing itself (on/off, own message
 // and timing, results, approval), found by search, state and collection and shown a page at a time; a bulk bar
-// acts on the selected posts. A post is only later put into collections, and may sit in several.
+// acts on the selected posts. A post is only later put into collections, and may sit in several. Writing a post
+// is here too: ONE editor panel above the list serves "new post" and "edit" (`?new=1&collection=<id>` and
+// `?post=<id>`, which is also what the links of the other pages and the old composer address lead to).
 @Component({
   selector: 'app-posts-page',
   imports: [
@@ -51,7 +70,6 @@ export function matchesFilter(p: ApiCollectionPost, filter: PostFilter): boolean
     FlowStepsComponent,
     InputFieldComponent,
     MasterPostCardComponent,
-    ModalComponent,
     NextStepComponent,
     PagerComponent,
     PermNoteComponent,
@@ -65,10 +83,19 @@ export function matchesFilter(p: ApiCollectionPost, filter: PostFilter): boolean
 export class PostsPageComponent {
   protected readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
+  private readonly injector = inject(Injector);
   protected readonly store = inject(MasterPostsStore);
   protected readonly collections = inject(CollectionsStore);
+  protected readonly draft = inject(DraftStore);
   protected readonly perm = inject(PermissionsService);
   protected readonly t = inject(I18nService).t;
+
+  /** `?new=1`: the editor opens on a new post (the draft in progress, or a blank one). */
+  readonly openNew = input<string | undefined>(undefined, { alias: 'new' });
+  /** `?collection=`: the collection a new post starts in. */
+  readonly collection = input<string | undefined>(undefined);
+  /** `?post=`: the post to edit. */
+  readonly post = input<string | undefined>(undefined);
 
   protected readonly search = signal('');
   protected readonly filter = signal<PostFilter>('all');
@@ -81,7 +108,9 @@ export class PostsPageComponent {
   protected readonly bulkCollection = signal('');
   protected readonly bulkBusy = signal(false);
 
-  protected readonly newOpen = signal(false);
+  protected readonly panel = signal<Panel | null>(null);
+  private panelKey = 0;
+  private readonly panelEl = viewChild<ElementRef<HTMLElement>>('panelEl');
   protected readonly deleting = signal<ApiCollectionPost | null>(null);
   protected readonly bulkDeleteOpen = signal(false);
 
@@ -89,6 +118,103 @@ export class PostsPageComponent {
     // Counts and times move when schedules run: read both lists again when the page opens.
     void this.store.refresh();
     void this.collections.refresh();
+    // The address says what the editor shows (a link, a reload, the back button): `?post=` opens that post once
+    // the posts have arrived, `?new=1` a new one, and nothing closes it.
+    effect(() => {
+      const post = this.post();
+      const isNew = this.openNew();
+      const collection = this.collection();
+      // Only a post to edit waits for the library (reading it only then keeps the effect off its changes otherwise).
+      const loaded = post ? this.store.loaded() : true;
+      untracked(() => {
+        if (post) {
+          if (!loaded) return;
+          const found = this.store.byId(post);
+          if (found) this.showEdit(found);
+          else {
+            this.notify.info(this.t().api.flow.edPostGone);
+            this.panel.set(null);
+            this.go({ post: null });
+          }
+        } else if (isNew !== undefined) {
+          this.draft.open(collection);
+          this.showNew();
+        } else this.panel.set(null);
+      });
+    });
+    // A panel that opens is brought into view (the list below may be long).
+    effect(() => {
+      if (!this.panel()) return;
+      afterNextRender(
+        () =>
+          this.panelEl()?.nativeElement.scrollIntoView?.({ behavior: 'smooth', block: 'start' }),
+        { injector: this.injector },
+      );
+    });
+  }
+
+  protected readonly panelTitle = computed(() =>
+    this.panel()?.kind === 'edit' ? this.t().api.flow.plEditTitle : this.t().api.flow.plNewTitle,
+  );
+  /** The post being edited, as the library holds it now (the copy it was opened with if it is gone meanwhile). */
+  protected readonly editPost = computed(() => {
+    const p = this.panel();
+    return p?.kind === 'edit' ? (this.store.byId(p.post.id) ?? p.post) : null;
+  });
+  protected readonly editingId = computed(() => {
+    const p = this.panel();
+    return p?.kind === 'edit' ? p.post.id : null;
+  });
+  /** The post in progress, for the bar that leads back to it while the panel is closed. */
+  protected readonly draftLine = computed(() => {
+    const d = this.draft.draft();
+    return fmt(this.t().lib.draftBar, { n: d.media.length, c: d.text.length });
+  });
+
+  private showNew(): void {
+    if (this.panel()?.kind !== 'new') this.panel.set({ kind: 'new', key: ++this.panelKey });
+  }
+
+  private showEdit(post: ApiCollectionPost): void {
+    if (this.editingId() !== post.id) this.panel.set({ kind: 'edit', post, key: ++this.panelKey });
+  }
+
+  /** Writes the editor's state into the address (what the panel shows can be bookmarked and reloaded). */
+  private go(params: Params): void {
+    void this.router.navigate([POSTS_PATH], { queryParams: params, queryParamsHandling: 'merge' });
+  }
+
+  /** "New post": the draft in progress continues, in the collection the list is narrowed to if there is one. */
+  protected startNew(): void {
+    if (!this.perm.canEdit()) return;
+    const c = this.collectionFilter() || null;
+    this.draft.open(c);
+    this.showNew();
+    this.go({ ...newPostParams(c), collection: c, post: null });
+  }
+
+  /** The bar's "back to the post": the draft as it is. */
+  protected continueDraft(): void {
+    this.showNew();
+    this.go({ ...newPostParams(null), collection: null, post: null });
+  }
+
+  protected edit(post: ApiCollectionPost): void {
+    if (!this.perm.canEdit()) return;
+    this.showEdit(post);
+    this.go({ ...editPostParams(post.id), new: null, collection: null });
+  }
+
+  /** Closes the panel; the draft of a new post stays (the bar above the list leads back to it). */
+  protected closePanel(): void {
+    this.panel.set(null);
+    this.go({ new: null, collection: null, post: null });
+  }
+
+  /** "Save and add another": the post is saved, and the panel starts the next blank one. */
+  protected nextPost(): void {
+    this.panel.set({ kind: 'new', key: ++this.panelKey });
+    this.go({ ...newPostParams(null), collection: null, post: null });
   }
 
   protected readonly filters = computed(() => {
@@ -192,12 +318,6 @@ export class PostsPageComponent {
     this.collectionFilter.set(id);
     this.pager.go(1);
   }
-
-  /** What a new post starts in: the collection the list is narrowed to. */
-  protected readonly startIn = computed(() => {
-    const c = this.collectionFilter();
-    return c ? [c] : [];
-  });
 
   /** Runs a bulk action on the selected posts and says how many it changed. */
   protected async bulk(action: ApiBulkPostAction, collectionId?: string): Promise<void> {

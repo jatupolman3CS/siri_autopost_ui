@@ -1,0 +1,58 @@
+// Shared by the two forms of the test page (from a collection, by hand).
+:host {
+  display: block;
+  min-width: 0;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.selects {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.ta {
+  min-height: 0;
+  font-size: 14px;
+}
+.hint {
+  margin: 4px 0 0;
+}
+.pv {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.box {
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text);
+}
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.err {
+  font-size: 14px;
+  color: var(--color-danger);
+}

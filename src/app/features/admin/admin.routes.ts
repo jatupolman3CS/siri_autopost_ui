@@ -52,6 +52,12 @@ export const ADMIN_ROUTES: Routes = [
         title: 'nav.adminJobs',
         loadComponent: () => import('./jobs-page.component').then((m) => m.JobsPageComponent),
       },
+      {
+        path: 'payment-test',
+        title: 'api.ptestNav',
+        loadComponent: () =>
+          import('./payment-test-page.component').then((m) => m.PaymentTestPageComponent),
+      },
     ],
   },
 ];

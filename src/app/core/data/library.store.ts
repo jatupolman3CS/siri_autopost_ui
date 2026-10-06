@@ -1,5 +1,6 @@
 import { Injectable, Injector, inject, signal } from '@angular/core';
 import { ApiMedia, ApiMediaFolder, ApiService, ApiSnippet } from '../http/api.service';
+import { problemMessage } from '../http/problem-details';
 import { CollectionsStore } from './collections.store';
 import { DraftStore } from './draft.store';
 import { loadWithRetry } from './loading';
@@ -148,7 +149,7 @@ export class LibraryStore {
 
   /**
    * Deletes files from the library, a request at a time of at most 500. The server takes them off the collection
-   * posts that used them, so those collections (and the post library, and the composer's draft) are told afterwards.
+   * posts that used them, so those collections (and the post library, and the new post's draft) are told afterwards.
    */
   async deleteMedia(ids: readonly string[]): Promise<void> {
     const wsId = this.ws.id();
@@ -174,8 +175,16 @@ export class LibraryStore {
     void this.injector.get(PostsSync).afterMediaDeleted();
   }
 
-  /** Uploads files one by one; returns the ids of the ones the server accepted (the composer attaches them). */
-  async upload(files: File[], folderId: string | null = null): Promise<string[]> {
+  /**
+   * Uploads files one by one; returns the ids of the ones the server accepted (the post editor attaches them). A caller
+   * that wants to say why a file was refused (the plan's image limit, a wrong type) passes `refusals`, which gets the
+   * server's reason of each refused file that came with one.
+   */
+  async upload(
+    files: File[],
+    folderId: string | null = null,
+    refusals?: string[],
+  ): Promise<string[]> {
     const wsId = this.ws.id();
     if (!wsId) return [];
     const ids: string[] = [];
@@ -185,8 +194,10 @@ export class LibraryStore {
         this.media.update((list) => [toMedia(m), ...list]);
         if (m.kind === 'image') this.askThumb(wsId, m.id);
         ids.push(m.id);
-      } catch {
+      } catch (e) {
         // Counted as failed; the interceptor or the caller tells the user.
+        const why = problemMessage(e);
+        if (why) refusals?.push(why);
       }
     }
     return ids;

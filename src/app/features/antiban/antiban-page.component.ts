@@ -1,33 +1,42 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
-import { AntiBanSettings, SettingsStore } from '../../core/data/settings.store';
-import { PlatformKey } from '../../core/data/models';
+import {
+  AntiBanSettings,
+  SettingsStore,
+  TYPING_SPEEDS,
+  TypingSpeed,
+} from '../../core/data/settings.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
 import { PLATFORMS } from '../../core/data/platforms';
 import { WorkspaceStore } from '../../core/data/workspace.store';
+import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { hm } from '../../core/i18n/format';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
+import { SelectFieldComponent } from '../../shared/components/select-field/select-field.component';
 import { AntibanAdvancedComponent } from './antiban-advanced.component';
 import { AntibanLockComponent } from './antiban-lock.component';
 import '../../core/i18n/i18n.engine';
 
 type HumanKey = 'typing' | 'scroll' | 'shuffle' | 'autopause' | 'warmup';
 
-/**
- * Typing and scrolling are done by the extension, the automatic pause and the warm-up caps by the server.
- * Only the shuffle is saved without effect for now (it is shown with that note).
- */
-const STORED_ONLY: HumanKey[] = ['shuffle'];
-/** The API's range for a platform's daily limit (AntiBanSettings.MaxDailyLimit). */
-const MAX_LIMIT = 200;
+/** The API's range for the Facebook daily limit (AntiBanSettings.MaxDailyLimit). */
+const MAX_LIMIT = INPUT_LIMITS.platformDailyLimit;
 
 @Component({
   selector: 'app-antiban-page',
-  imports: [CheckboxComponent, PermNoteComponent, AntibanAdvancedComponent, AntibanLockComponent],
+  imports: [
+    CheckboxComponent,
+    PermNoteComponent,
+    RouterLink,
+    SelectFieldComponent,
+    AntibanAdvancedComponent,
+    AntibanLockComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './antiban-page.component.html',
   styleUrl: './antiban-page.component.scss',
@@ -42,6 +51,7 @@ export class AntibanPageComponent {
   protected readonly settings = inject(SettingsStore);
   protected readonly t = this.i18n.t;
   protected readonly ab = this.settings.ab;
+  protected readonly maxLimit = MAX_LIMIT;
 
   /** Advanced anti-ban needs the owner's plan to be Pro or above (the API says so on the workspace). */
   protected readonly locked = computed(
@@ -96,32 +106,29 @@ export class AntibanPageComponent {
         const at = Math.max(p.dt.getTime(), earliest);
         last.set(p.accountId, at);
         const late = Math.round((at - p.dt.getTime()) / 60000);
-        const platform = PLATFORMS[p.platform];
         return {
           time: hm(new Date(at)),
-          icon: platform.icon,
-          target: `${platform.name} · ${p.target}`,
+          icon: PLATFORMS.fb.icon,
+          target: `${PLATFORMS.fb.name} · ${p.target}`,
           wait: late > 0 ? `+${late} ${this.t().common.min}` : '',
         };
       });
   });
 
-  protected readonly limitRows = computed(() => {
-    const ab = this.ab();
+  /** The one daily limit: Facebook posts in the last 24 hours against what the workspace allows. */
+  protected readonly limit = computed(() => {
+    const limit = this.ab().limits.fb;
     const used = this.settings.used24h();
     const ready = this.posts.loaded() && this.accounts.loaded();
-    return (Object.keys(PLATFORMS) as PlatformKey[]).map((k) => {
-      const r = used[k] / ab.limits[k];
-      return {
-        k,
-        icon: PLATFORMS[k].icon,
-        name: PLATFORMS[k].name,
-        limit: ab.limits[k],
-        usedLabel: `${this.t().ab.usedToday} ${ready ? used[k] : '—'}/${ab.limits[k]}`,
-        pct: ready ? Math.min(100, Math.round(r * 100)) : 0,
-        color: r >= 0.8 ? 'var(--color-warning)' : 'var(--color-primary)',
-      };
-    });
+    const r = used / limit;
+    return {
+      icon: PLATFORMS.fb.icon,
+      name: PLATFORMS.fb.name,
+      limit,
+      usedLabel: `${this.t().ab.usedToday} ${ready ? used : '—'}/${limit}`,
+      pct: ready ? Math.min(100, Math.round(r * 100)) : 0,
+      color: r >= 0.8 ? 'var(--color-warning)' : 'var(--color-primary)',
+    };
   });
 
   protected readonly humanRows = computed(() => {
@@ -134,7 +141,17 @@ export class AntibanPageComponent {
       ['autopause', t.hPause],
       ['warmup', t.hWarm],
     ];
-    return rows.map(([k, label]) => ({ k, label, on: ab[k], storedOnly: STORED_ONLY.includes(k) }));
+    return rows.map(([k, label]) => ({ k, label, on: ab[k] }));
+  });
+
+  protected readonly speedOptions = computed(() => {
+    const a = this.t().api.engine;
+    const labels: Record<TypingSpeed, string> = {
+      slow: a.abSpeedSlow,
+      normal: a.abSpeedNormal,
+      fast: a.abSpeedFast,
+    };
+    return TYPING_SPEEDS.map((value) => ({ value, label: labels[value] }));
   });
 
   protected setMin(v: string): void {
@@ -147,10 +164,16 @@ export class AntibanPageComponent {
     this.settings.patchAb({ max, min: Math.min(max - 1, this.ab().min) });
   }
 
-  protected setLimit(k: PlatformKey, v: string): void {
-    this.settings.patchAb({
-      limits: { ...this.ab().limits, [k]: Math.min(MAX_LIMIT, Math.max(1, parseInt(v, 10) || 1)) },
-    });
+  /** Keeps the number the API accepts and shows it (also when the typed one was out of range). */
+  protected setLimit(input: HTMLInputElement): void {
+    const fb = Math.min(MAX_LIMIT, Math.max(1, parseInt(input.value, 10) || 1));
+    input.value = String(fb);
+    this.settings.patchAb({ limits: { fb } });
+  }
+
+  protected setSpeed(v: string): void {
+    const speed = TYPING_SPEEDS.find((s) => s === v);
+    if (speed) this.settings.patchAb({ typingSpeed: speed });
   }
 
   protected setHuman(k: HumanKey, on: boolean): void {

@@ -89,12 +89,7 @@ export class AppLayoutComponent {
     });
     const account: NavGroup = {
       label: t.gAccount,
-      items: [
-        item('billing', 'billing', 'ph-credit-card'),
-        item('team', 'team', 'ph-users-three'),
-        // The extension's own settings, apart from the posting flow (schedules hand it its work by themselves).
-        item('campaigns', 'extension', 'ph-sliders-horizontal', { label: this.t().api.extNav }),
-      ],
+      items: [item('billing', 'billing', 'ph-credit-card'), item('team', 'team', 'ph-users-three')],
     };
     const owner: NavGroup[] = this.session.isAdmin()
       ? [
@@ -106,14 +101,14 @@ export class AppLayoutComponent {
               item('admin/finance', 'adminFinance', 'ph-coins'),
               item('admin/plans', 'adminPlans', 'ph-tag'),
               item('admin/jobs', 'adminJobs', 'ph-pulse'),
+              item('admin/payment-test', 'adminJobs', 'ph-flask', { label: this.t().api.ptestNav }),
             ],
           },
         ]
       : [];
-    // The post library comes first; the post editor (the composer) is not a menu item of its own: it writes a
-    // post into a collection, so it belongs to the collections.
+    // The post library comes first and holds the post editor (a panel above its list), so writing a post is
+    // not a menu item of its own (`/app/composer` redirects here).
     const posts = item('posts', 'composer', 'ph-note-pencil', { label: this.t().api.postsNav });
-    const composer = ['/app/composer'];
     if (simple)
       return [
         {
@@ -121,7 +116,7 @@ export class AppLayoutComponent {
           items: [
             item('overview', 'overview', 'ph-squares-four'),
             posts,
-            item('collections', 'collections', 'ph-folders', { also: composer }),
+            item('collections', 'collections', 'ph-folders'),
             item('targets', 'targets', 'ph-users-four'),
             item('schedules', 'schedules', 'ph-calendar-check'),
             item('calendar', 'calendar', 'ph-calendar-blank'),
@@ -137,7 +132,7 @@ export class AppLayoutComponent {
         items: [
           item('overview', 'overview', 'ph-squares-four'),
           posts,
-          item('collections', 'collections', 'ph-folders', { also: composer }),
+          item('collections', 'collections', 'ph-folders'),
           item('targets', 'targets', 'ph-users-four'),
           item('schedules', 'schedules', 'ph-calendar-check'),
           item('calendar', 'calendar', 'ph-calendar-blank'),
@@ -158,8 +153,29 @@ export class AppLayoutComponent {
       },
       account,
       ...owner,
-      { label: t.gPreview, items: [item('extension', 'extension', 'ph-puzzle-piece')] },
     ];
+  });
+
+  /**
+   * What the top bar says about the browsers: one dot and label for a single extension, "n/m extensions online" with
+   * several (green: all of them, amber: some, red: none). A simulated outage always reads as offline.
+   */
+  protected readonly extStatus = computed(() => {
+    const t = this.t();
+    const total = this.settings.devices();
+    const online = this.settings.devicesOnline();
+    const many = total > 1 && !this.ext.simulated();
+    const color = !this.ext.online()
+      ? 'var(--color-danger)'
+      : many && online < total
+        ? 'var(--color-warning)'
+        : 'var(--color-success)';
+    const label = many
+      ? fmt(t.api.extCount, { n: online, m: total })
+      : this.ext.online()
+        ? t.top.extOnline
+        : t.top.extOffline;
+    return { color, label, title: many ? t.api.extCountHint : label };
   });
 
   protected readonly simpleLabel = computed(() =>

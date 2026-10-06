@@ -15,7 +15,7 @@ import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 
-// "Paste links": one group per line, `url | code`. The server reads the lines the same way (a repeated
+// "Paste links": one Facebook group or page per line, `url | code`. The server reads the lines the same way (a repeated
 // address is skipped and its code updated) and answers the counts the toast reports.
 @Component({
   selector: 'app-bulk-links-modal',

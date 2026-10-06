@@ -3,8 +3,8 @@ import { RouterLink } from '@angular/router';
 import { I18nService } from '../../../core/i18n/i18n.service';
 
 // The four-step stepper shown above the pages of the flow: 1 the post library, 2 post collections, 3 link sets,
-// 4 schedules (the composer, which writes a post, shows step 1). Each step links to its page and the current one
-// is marked. Usage: <app-flow-steps [current]="2" />
+// 4 schedules (the post editor, a panel of the post library, belongs to step 1). Each step links to its page
+// and the current one is marked. Usage: <app-flow-steps [current]="2" />
 @Component({
   selector: 'app-flow-steps',
   imports: [RouterLink],

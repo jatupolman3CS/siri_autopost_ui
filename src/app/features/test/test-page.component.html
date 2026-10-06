@@ -10,6 +10,11 @@
   @if (banner(); as text) {
     <div class="panel alert" role="alert">
       <i class="ph ph-wifi-slash"></i><span>{{ text }}</span>
+      @if (noDevice()) {
+        <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/team">{{
+          t().api.engine.testNoDeviceLink
+        }}</a>
+      }
     </div>
   } @else if (store.paused()) {
     <div class="callout warn" role="note">
@@ -22,88 +27,70 @@
     ><span>{{ t().api.engine.testReal }}</span>
   </div>
 
+  <p class="proves small muted" data-testid="test-proves">
+    <i class="ph ph-seal-check" aria-hidden="true"></i>
+    <span>{{ t().api.engine.testProves }}</span>
+    <a routerLink="/app/schedules">{{ t().api.engine.testProvesLink }}</a>
+  </p>
+
+  <section
+    class="panel device"
+    [attr.aria-label]="t().api.engine.testDevice"
+    data-testid="test-device"
+  >
+    @if (several()) {
+      <app-select-field
+        [label]="t().api.engine.testDevice"
+        [options]="deviceOptions()"
+        [value]="store.deviceId()"
+        [disabled]="!canPick()"
+        (valueChange)="store.pickDevice($event)"
+      />
+      @if (chosen(); as c) {
+        <p class="small state" data-testid="test-device-state">
+          <span class="dot" [style.background]="c.dot" aria-hidden="true"></span>{{ c.name }}
+          <span class="muted">· {{ c.state }}</span>
+        </p>
+      }
+      <p class="small muted hint">{{ t().api.engine.testDeviceHint }}</p>
+    } @else if (chosen(); as c) {
+      <p class="one" data-testid="test-device-one">
+        <span class="su-field-label lbl">{{ t().api.engine.testDeviceOne }}</span>
+        <span class="dot" [style.background]="c.dot" aria-hidden="true"></span>
+        <span class="fw6">{{ c.name }}</span>
+        <span class="small muted">· {{ c.state }}</span>
+      </p>
+    } @else {
+      <p class="one small muted" data-testid="test-device-none">
+        {{ t().api.engine.testNoDevice }}
+      </p>
+    }
+  </section>
+
+  <div
+    class="seg"
+    role="group"
+    [attr.aria-label]="t().api.engine.testPanels"
+    data-testid="test-panels"
+  >
+    @for (p of panels(); track p.key) {
+      <button
+        type="button"
+        [class.on]="store.panel() === p.key"
+        [attr.aria-pressed]="store.panel() === p.key"
+        (click)="store.pickPanel(p.key)"
+      >
+        {{ p.label }}
+      </button>
+    }
+  </div>
+
   <div class="grid-2eq">
-    <section class="panel form">
-      <div class="selects">
-        <app-select-field
-          [label]="t().test.set"
-          [options]="setOptions()"
-          [value]="store.setId()"
-          [disabled]="!canPick()"
-          (valueChange)="store.pickSet($event)"
-        />
-        <app-select-field
-          [label]="t().test.group"
-          [placeholder]="t().test.groupPh"
-          [options]="groupOptions()"
-          [value]="store.member()?.key ?? ''"
-          [disabled]="!canPick()"
-          (valueChange)="store.pickGroup($event)"
-        />
-        <app-select-field
-          [label]="t().test.col"
-          [options]="colOptions()"
-          [value]="store.collectionId()"
-          [disabled]="!canPick()"
-          (valueChange)="store.pickCollection($event)"
-        />
-        <app-select-field
-          [label]="t().test.post"
-          [options]="postOptions()"
-          [value]="store.postId()"
-          [disabled]="!canPick()"
-          (valueChange)="store.pickPost($event)"
-        />
-      </div>
-
-      <div>
-        <label class="su-field-label" for="test-text">{{ t().test.override }}</label>
-        <textarea
-          id="test-text"
-          class="su-textarea ta"
-          rows="3"
-          [value]="store.text()"
-          [placeholder]="t().test.overridePh"
-          [readOnly]="!canPick()"
-          [attr.maxlength]="maxText"
-          [attr.aria-describedby]="'test-text-hint'"
-          (input)="onText($event)"
-        ></textarea>
-        <p id="test-text-hint" class="small muted hint">{{ t().api.engine.testOverrideHint }}</p>
-      </div>
-
-      <div class="pv">
-        <div class="pv-head">
-          <span class="small muted">{{ t().test.preview }} · {{ filesLabel() }}</span>
-          <button
-            type="button"
-            class="su-btn su-btn-sm su-btn-ghost"
-            [disabled]="!canPick()"
-            (click)="store.reshuffle()"
-          >
-            <i class="ph ph-shuffle"></i>{{ t().cmp.respin }}
-          </button>
-        </div>
-        <p class="box">{{ preview() }}</p>
-      </div>
-
-      <div class="foot">
-        @if (error()) {
-          <span class="err" role="alert">{{ error() }}</span>
-        } @else {
-          <span class="small muted">{{ t().test.confirmBody }}</span>
-        }
-        <button
-          type="button"
-          class="su-btn su-btn-sm su-btn-primary"
-          [disabled]="!canRun()"
-          [attr.title]="perm.editHint() || null"
-          (click)="store.run()"
-        >
-          <i class="ph ph-paper-plane-right"></i>{{ runLabel() }}
-        </button>
-      </div>
-    </section>
+    @if (store.panel() === 'set') {
+      <app-test-set-form />
+    } @else {
+      <app-test-manual-form />
+    }
 
     <div class="side">
       <section class="panel log" aria-live="polite">

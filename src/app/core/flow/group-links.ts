@@ -1,14 +1,124 @@
-// Mirrors the server's group-link rules (backend `FacebookGroupUrl.Normalize`, `SetLink` name
-// derivation, the bulk `url | code` lines of POST link-sets/{id}/links/bulk and the CSV rows of
-// POST link-sets/import-csv). The server repeats every check, these helpers only give the web
-// app the same answer before it sends anything.
+// Mirrors the server's link rules (backend `FacebookGroupUrl`, which the extension's `facebookTarget()` follows,
+// `SetLink` name derivation, the bulk `url | code` lines of POST link-sets/{id}/links/bulk and the CSV rows of
+// POST link-sets/import-csv). A link points to a Facebook GROUP or PAGE: the system posts to nothing else for now.
+// The server repeats every check, these helpers only give the web app the same answer before it sends anything.
 import { CSV_BOM, csvText, parseCsvRecords, unescapeFormulaCell } from './csv';
 
-/** Same pattern as the server: a Facebook group address, any host spelling, any trailing path. */
-const GROUP_URL =
-  /^(?:https?:\/\/)?(?:www\.|m\.|web\.|mbasic\.)?(?:facebook|fb)\.com\/groups\/([A-Za-z0-9._-]+)/i;
+/** What a link points to: a Facebook group or a Facebook page. */
+export type LinkKind = 'group' | 'page';
+
+const HOST = String.raw`^(?:https?://)?(?:www\.|m\.|web\.|mbasic\.)?(?:facebook|fb)\.com`;
+const pattern = (path: string) => new RegExp(HOST + path, 'i');
+
+/** A group: `/groups/<slug>`, any host spelling, any trailing path. */
+const GROUP_URL = pattern(String.raw`/groups/([A-Za-z0-9._-]+)`);
+/** A page by its number: `/profile.php?id=<digits>` (the id may come after other query parameters). */
+const PROFILE_ID_URL = pattern(String.raw`/profile\.php\?(?:[^#]*&)?id=(\d{5,})`);
+/** An older page address: `/pages/<name>/<digits>`. */
+const PAGES_URL = pattern(String.raw`/pages/([^/?#\s]+)/(\d{5,})`);
+/** A page with the `/p/<name-id>` spelling. */
+const PREFIXED_URL = pattern(String.raw`/p/([A-Za-z0-9._%-]+)(?=[/?#]|$)`);
+/** A page by its vanity name: `facebook.com/baandee.shop` (5 or more letters, digits or dots). */
+const VANITY_URL = pattern(String.raw`/([A-Za-z0-9.]{5,})(?=[/?#]|$)`);
+
+/** First path segments that are Facebook's own screens, never a page (the server's list). */
+const RESERVED_SEGMENTS: ReadonlySet<string> = new Set([
+  'groups',
+  'pages',
+  'watch',
+  'marketplace',
+  'events',
+  'share',
+  'sharer',
+  'reel',
+  'reels',
+  'stories',
+  'story.php',
+  'photo',
+  'photos',
+  'photo.php',
+  'video',
+  'videos',
+  'login',
+  'login.php',
+  'home.php',
+  'settings',
+  'help',
+  'policies',
+  'privacy',
+  'ads',
+  'business',
+  'gaming',
+  'people',
+  'permalink.php',
+  'hashtag',
+  'search',
+  'friends',
+  'messages',
+  'notifications',
+  'bookmarks',
+  'fundraisers',
+  'jobs',
+  'offers',
+  'public',
+  'dialog',
+  'plugins',
+  'profile.php',
+  'checkpoint',
+  'recover',
+  'r.php',
+  'l.php',
+  'composer',
+  'feeds',
+  'saved',
+  'memories',
+  'campaign',
+  'careers',
+  'directory',
+  'legal',
+  'about',
+  'support',
+  'tr',
+  'flx',
+]);
 
 export const GROUP_URL_PREFIX = 'https://www.facebook.com/groups/';
+const FACEBOOK = 'https://www.facebook.com/';
+
+/** What an address points to: its kind, the readable id (a slug, a page name or a number) and the canonical address. */
+export interface FacebookTarget {
+  kind: LinkKind;
+  slug: string;
+  url: string;
+}
+
+const hasLetterOrDigit = (s: string) => /[A-Za-z0-9]/.test(s);
+
+/**
+ * The kind, slug and canonical address of a Facebook group or page address, or null when the text is neither.
+ * A group is `/groups/<slug>`; a page is a vanity address (`facebook.com/baandee.shop`), `profile.php?id=<id>`,
+ * `/pages/<name>/<id>` or `/p/<name-id>`. Reserved first segments (watch, marketplace, login...) are never a page.
+ */
+export function facebookTarget(raw: string | null | undefined): FacebookTarget | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  let m = s.match(GROUP_URL);
+  // A slug needs at least one letter or digit: `.` and `..` (and `-`, `_`) are no group (the server refuses them too).
+  if (m)
+    return hasLetterOrDigit(m[1])
+      ? { kind: 'group', slug: m[1], url: GROUP_URL_PREFIX + m[1] }
+      : null;
+  m = s.match(PROFILE_ID_URL);
+  if (m) return { kind: 'page', slug: m[1], url: `${FACEBOOK}profile.php?id=${m[1]}` };
+  m = s.match(PAGES_URL);
+  if (m) return { kind: 'page', slug: m[1], url: `${FACEBOOK}pages/${m[1]}/${m[2]}` };
+  m = s.match(PREFIXED_URL);
+  if (m && hasLetterOrDigit(m[1])) return { kind: 'page', slug: m[1], url: `${FACEBOOK}p/${m[1]}` };
+  m = s.match(VANITY_URL);
+  if (m && !RESERVED_SEGMENTS.has(m[1].toLowerCase()) && /[A-Za-z]/.test(m[1]))
+    return { kind: 'page', slug: m[1], url: FACEBOOK + m[1] };
+  return null;
+}
 
 export interface LinkLike {
   name?: string | null;
@@ -23,7 +133,7 @@ export interface BulkLink {
 
 export interface BulkParseResult {
   links: BulkLink[];
-  /** The trimmed lines that are not a Facebook group address. */
+  /** The trimmed lines that are not a Facebook group or page address. */
   invalid: string[];
 }
 
@@ -36,7 +146,7 @@ export interface CsvLinkRow {
 
 export interface CsvParseResult {
   rows: CsvLinkRow[];
-  /** Records that were skipped: fewer than 3 columns, an empty set name or not a group address. */
+  /** Records that were skipped: fewer than 3 columns, an empty set name or not a group or page address. */
   invalid: number;
 }
 
@@ -64,23 +174,26 @@ export interface ExportCollection {
   posts: readonly ExportCollectionPost[];
 }
 
-/** `https://www.facebook.com/groups/<slug>`, or '' when the text is not a Facebook group address. */
+/** The canonical address of a Facebook group or page (`https://www.facebook.com/groups/<slug>`, ...), or '' when the text is neither. */
 export function normalizeGroupUrl(raw: string | null | undefined): string {
-  const m = String(raw ?? '')
-    .trim()
-    .match(GROUP_URL);
-  // A slug of dots and dashes only (`.`, `..`) is no group (the server refuses it too).
-  return m && /[A-Za-z0-9]/.test(m[1]) ? GROUP_URL_PREFIX + m[1] : '';
+  return facebookTarget(raw)?.url ?? '';
 }
 
-/** The key two addresses are compared by: group slugs are not case sensitive, so `ABC` and `abc` are one group. */
+/** 'group' or 'page'; a text that is neither counts as a group, as the server's `kind` does for an invalid address. */
+export function linkKindOf(raw: string | null | undefined): LinkKind {
+  return facebookTarget(raw)?.kind ?? 'group';
+}
+
+/** The key two addresses are compared by: slugs are not case sensitive, so `ABC` and `abc` are one group. */
 export function groupUrlKey(raw: string | null | undefined): string {
   return normalizeGroupUrl(raw).toLowerCase();
 }
 
-/** The group name or number of an address (the text after `groups/`), else the text itself. */
+/** The name or number of a group or page address (a group's text after `groups/`, a page's name), else the text itself. */
 export function groupSlug(url: string | null | undefined): string {
   const s = String(url ?? '');
+  const t = facebookTarget(s);
+  if (t) return t.slug;
   const m = s.match(/groups\/([^/?#]+)/);
   return m ? m[1] : s;
 }
@@ -92,12 +205,14 @@ export function linkLabel(link: LinkLike): string {
 
 /** The name a link gets when none is given: the slug with `.`, `_` and `-` read as spaces. */
 export function defaultLinkName(url: string): string {
-  return groupSlug(url).replace(/[._-]+/g, ' ');
+  return groupSlug(url)
+    .replace(/[._-]+/g, ' ')
+    .trim();
 }
 
 /**
  * Reads pasted lines `url | code`. Blank lines are skipped, a line whose address is not a Facebook
- * group goes to `invalid`, the code is optional (text after a second `|` is ignored).
+ * group or page goes to `invalid`, the code is optional (text after a second `|` is ignored).
  */
 export function parseBulkLinks(text: string | null | undefined): BulkParseResult {
   const links: BulkLink[] = [];

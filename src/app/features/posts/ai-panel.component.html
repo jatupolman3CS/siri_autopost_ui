@@ -1,0 +1,185 @@
+<section class="ai" data-testid="ai-panel" aria-labelledby="ai-panel-title">
+  <header class="ai-head">
+    <i class="ph ph-sparkle" aria-hidden="true"></i>
+    <h3 id="ai-panel-title" class="ai-title">{{ t().ai.title }}</h3>
+    @if (leftLine()) {
+      <span class="small muted" data-testid="ai-left">{{ leftLine() }}</span>
+    }
+    <span class="grow"></span>
+    <button
+      type="button"
+      class="ibtn"
+      [title]="t().api.flow.edAiClose"
+      [attr.aria-label]="t().api.flow.edAiClose"
+      (click)="closed.emit()"
+    >
+      <i class="ph ph-x"></i>
+    </button>
+  </header>
+  <p class="small muted none">{{ t().api.flow.edAiSub }}</p>
+
+  <form class="ai-form" novalidate (submit)="$event.preventDefault(); write()">
+    <app-input-field
+      [label]="t().ai.topic + ' *'"
+      [placeholder]="t().ai.topicPh"
+      [maxlength]="limits.aiTopic"
+      [disabled]="!perm.canEdit()"
+      [error]="errTopic()"
+      [(value)]="topic"
+    />
+
+    <div class="field">
+      <label class="su-field-label" for="ai-point">{{ t().ai.points }}</label>
+      @if (points().length) {
+        <ul class="points" data-testid="ai-points">
+          @for (p of points(); track p) {
+            <li class="point">
+              <span>{{ p }}</span>
+              <button
+                type="button"
+                class="ibtn"
+                [title]="t().api.flow.edAiPointRemove"
+                [attr.aria-label]="t().api.flow.edAiPointRemove + ': ' + p"
+                (click)="removePoint($index)"
+              >
+                <i class="ph ph-x"></i>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+      <input
+        id="ai-point"
+        class="su-input"
+        type="text"
+        data-testid="ai-point-input"
+        [placeholder]="pointsHint()"
+        [disabled]="pointsFull() || !perm.canEdit()"
+        [attr.maxlength]="limits.aiPointLength"
+        [value]="pointDraft()"
+        (input)="pointDraft.set($any($event.target).value)"
+        (keydown.enter)="$event.preventDefault(); addPoint()"
+      />
+    </div>
+
+    <div class="opts">
+      <div>
+        <span class="su-field-label" id="ai-tone-label">{{ t().ai.tone }}</span>
+        <div class="seg tone" role="radiogroup" aria-labelledby="ai-tone-label">
+          @for (k of tones; track k) {
+            <button
+              type="button"
+              role="radio"
+              [attr.data-tone]="k"
+              [class.on]="tone() === k"
+              [attr.aria-checked]="tone() === k"
+              (click)="tone.set(k)"
+            >
+              {{ toneLabels()[k] }}
+            </button>
+          }
+        </div>
+      </div>
+      <div>
+        <span class="su-field-label" id="ai-count-label">{{ t().ai.count }}</span>
+        <div class="seg" role="radiogroup" aria-labelledby="ai-count-label">
+          @for (n of counts; track n) {
+            <button
+              type="button"
+              role="radio"
+              [attr.data-count]="n"
+              [class.on]="count() === n"
+              [attr.aria-checked]="count() === n"
+              (click)="setCount(n)"
+            >
+              {{ n }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="go">
+      <button
+        type="submit"
+        class="su-btn su-btn-sm su-btn-primary"
+        data-testid="ai-write"
+        [disabled]="busy() || !ai.canWrite()"
+        [attr.title]="ai.reason() || null"
+      >
+        <i class="ph ph-sparkle"></i>{{ t().ai.generate }}
+      </button>
+      @if (ai.reason()) {
+        <span class="small muted" role="status" data-testid="ai-reason">{{ ai.reason() }}</span>
+      }
+    </div>
+  </form>
+
+  @if (error()) {
+    <p class="su-field-err" role="alert" data-testid="ai-error">{{ error() }}</p>
+  }
+
+  @if (busy()) {
+    <div class="cards" aria-busy="true" [attr.aria-label]="t().api.flow.edAiWriting">
+      @for (i of placeholders(); track i) {
+        <div class="card skeleton" data-testid="ai-skeleton">
+          <span class="line"></span><span class="line"></span><span class="line short"></span>
+        </div>
+      }
+    </div>
+  } @else if (results().length) {
+    <div class="cards" data-testid="ai-results">
+      @for (r of results(); track $index) {
+        <article class="card" data-testid="ai-card" [attr.aria-label]="draftLabel($index)">
+          <div class="small muted">{{ draftLabel($index) }}</div>
+          <p class="draft">{{ r }}</p>
+          <div class="acts">
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-primary"
+              data-testid="ai-use"
+              [disabled]="!perm.canEdit()"
+              [attr.title]="perm.editHint() || t().api.flow.edAiUseTip"
+              (click)="use.emit(r)"
+            >
+              {{ t().api.flow.edAiUse }}
+            </button>
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-secondary"
+              data-testid="ai-append"
+              [disabled]="!perm.canEdit()"
+              [attr.title]="perm.editHint() || t().api.flow.edAiAppendTip"
+              (click)="append.emit(r)"
+            >
+              {{ t().api.flow.edAiAppend }}
+            </button>
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-ghost"
+              data-testid="ai-separate"
+              [disabled]="!perm.canEdit() || isSaving(r)"
+              [attr.title]="perm.editHint() || t().api.flow.edAiSeparateTip"
+              (click)="separate.emit(r)"
+            >
+              {{ t().api.flow.edAiSeparate }}
+            </button>
+          </div>
+        </article>
+      }
+      <div>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          data-testid="ai-regenerate"
+          [disabled]="busy() || !ai.canWrite()"
+          [attr.title]="ai.reason() || null"
+          (click)="write()"
+        >
+          <i class="ph ph-arrows-clockwise"></i>{{ t().api.flow.edAiRegenerate }}
+        </button>
+      </div>
+    </div>
+    <p class="small muted none">{{ t().api.flow.edAiCheck }}</p>
+  }
+</section>

@@ -393,8 +393,21 @@ $narrow: 1023px;
 // Card grid of plans (billing + landing).
 .tiers {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
+}
+
+// Text for screen readers only (a dash that means "not included", a lock that means "premium").
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 // Small icon-only button of a list item (rename / edit / delete) and the row that holds it with the on/off switch.

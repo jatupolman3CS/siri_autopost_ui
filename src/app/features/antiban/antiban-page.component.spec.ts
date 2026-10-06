@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { assistStorage } from '../../core/auth/token';
+import { PLATFORMS } from '../../core/data/platforms';
 import { SettingsStore, defaultAdvanced } from '../../core/data/settings.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { ApiRole } from '../../core/http/api.service';
@@ -72,11 +73,12 @@ describe('AntibanPageComponent', () => {
   /** The numeric inputs of the advanced section: the seven rules, then the block pause min and max. */
   const nums = () => [...adv().querySelectorAll<HTMLInputElement>('input[type=number]')];
   const values = () => nums().map((i) => i.value);
-  const enter = async (input: HTMLInputElement, value: string) => {
+  const enter = async (input: HTMLInputElement | HTMLSelectElement, value: string) => {
     input.value = value;
     input.dispatchEvent(new Event('change'));
     await rerender();
   };
+  const enterSelect = enter;
   const button = (root: ParentNode, text: string) =>
     [...root.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
       b.textContent!.includes(text),
@@ -169,6 +171,17 @@ describe('AntibanPageComponent', () => {
       });
     });
 
+    it('lets a platform take up to 500 posts a day (72 groups three times a day is 216)', async () => {
+      const fb = el.querySelector<HTMLInputElement>(`input[aria-label="${PLATFORMS.fb.name}"]`)!;
+      expect(fb.max).toBe('500');
+      await enter(fb, '216');
+      expect(settings().ab().limits.fb).toBe(216);
+      expect(fb.value).toBe('216');
+      await enter(fb, '9999');
+      expect(settings().ab().limits.fb).toBe(500);
+      expect(fb.value).toBe('500');
+    });
+
     it('keeps the shortest block pause at or below the longest', async () => {
       const [, , , , , , , min, max] = nums();
       await enter(min, '60');
@@ -183,13 +196,19 @@ describe('AntibanPageComponent', () => {
       expect(settings().ab().advanced.blockMin).toBe(1);
     });
 
-    it('turns the focus window off and says it is only saved', async () => {
+    it('turns the focus window off, and says the browser applies it (it is not "saved only" any more)', async () => {
       adv().querySelector<HTMLInputElement>('app-checkbox input')!.click();
       await rerender();
       expect(settings().ab().advanced.focus).toBe(false);
       expect([...adv().querySelectorAll('.stored')].map((p) => p.textContent)).toContain(
-        t().api.engine.storedOnly,
+        t().api.engine.abFocusApplied,
       );
+      expect(adv().textContent).not.toContain(t().api.engine.storedOnly);
+    });
+
+    it('says the extension in the browser takes the rest after a Facebook block', () => {
+      expect(adv().textContent).toContain(t().api.engine.abBlockApplied);
+      expect(adv().textContent).not.toContain(t().api.engine.storedOnly);
     });
 
     it('says the block pause needs the automatic pause', async () => {
@@ -227,16 +246,15 @@ describe('AntibanPageComponent', () => {
   });
 
   describe('the human-like behaviour switches', () => {
-    it('lets an admin change all five; only the shuffle says it is saved without effect', async () => {
+    it('lets an admin change all five, and none of them says it is saved without effect', async () => {
       await open({ role: 'admin' });
       const boxes = [...el.querySelectorAll<HTMLInputElement>('.human input[type=checkbox]')];
       expect(boxes).toHaveLength(5);
       expect(boxes.map((b) => b.disabled)).toEqual([false, false, false, false, false]);
-      const notes = [...el.querySelectorAll('.human .not-yet')].map((n) => n.textContent);
-      expect(notes).toEqual([t().api.engine.storedOnly]);
-      // The note sits under the shuffle (third) row.
-      expect(el.querySelectorAll('.human > div')[2].querySelector('.not-yet')).not.toBeNull();
+      // The server applies the shuffle now, the browser the rest of what it can: nothing is "saved only".
+      expect(el.textContent).not.toContain(t().api.engine.storedOnly);
       expect(el.textContent).not.toContain(t().api.notYet);
+      expect(el.querySelector('.human .not-yet')).toBeNull();
     });
 
     it('saves the automatic pause and the warm-up like the others', async () => {
@@ -259,6 +277,139 @@ describe('AntibanPageComponent', () => {
         devicesOnline: 0,
       });
       await settle();
+    });
+  });
+
+  describe('typing speed', () => {
+    const speed = () => el.querySelector<HTMLSelectElement>('.human app-select-field select')!;
+    const speedBox = () => el.querySelector<HTMLElement>('.human .speed')!;
+    const typingBox = () => el.querySelector<HTMLInputElement>('.human input[type=checkbox]')!;
+
+    it('is a three-way choice beside the typing switch, on normal by default', async () => {
+      await open({ role: 'admin' });
+      // Sits in the first row, the one of the typing switch.
+      expect(el.querySelectorAll('.human > div')[0].contains(speedBox())).toBe(true);
+      expect(speedBox().querySelector('label')!.textContent!.trim()).toBe(
+        t().api.engine.abTypingSpeed,
+      );
+      expect([...speed().options].map((o) => [o.value, o.textContent!.trim()])).toEqual([
+        ['slow', t().api.engine.abSpeedSlow],
+        ['normal', t().api.engine.abSpeedNormal],
+        ['fast', t().api.engine.abSpeedFast],
+      ]);
+      expect(speed().value).toBe('normal');
+      expect(speed().disabled).toBe(false);
+      expect(speedBox().textContent).toContain(t().api.engine.abSpeedHint);
+    });
+
+    it('saves the speed with the other settings and shows what the server stored', async () => {
+      await open({ role: 'admin' });
+      await enterSelect(speed(), 'fast');
+      expect(settings().ab().typingSpeed).toBe('fast');
+      saveBtn().click();
+      await settle();
+      const req = http.expectOne((r) => r.method === 'PUT' && r.url === ANTI_BAN_URL);
+      expect(req.request.body.typingSpeed).toBe('fast');
+      req.flush({
+        antiBan: antiBan({ typingSpeed: 'fast' }),
+        offline: { policy: 'queue', window: '2h', line: true, email: true, push: false },
+        extensionOnline: true,
+        simulatedOffline: false,
+        devices: 0,
+        devicesOnline: 0,
+      });
+      await rerender();
+      expect(speed().value).toBe('fast');
+    });
+
+    it('shows the speed the workspace has', async () => {
+      await open({ role: 'admin' });
+      settings().patchAb({ typingSpeed: 'slow' });
+      await rerender();
+      expect(speed().value).toBe('slow');
+    });
+
+    it('is off while typing is off, like the choice it belongs to', async () => {
+      await open({ role: 'admin' });
+      typingBox().click();
+      await rerender();
+      expect(settings().ab().typing).toBe(false);
+      expect(speed().disabled).toBe(true);
+      typingBox().click();
+      await rerender();
+      expect(speed().disabled).toBe(false);
+    });
+
+    it('is locked below Pro like the other behaviour switches, and for a viewer', async () => {
+      await open({ role: 'owner', advanced: false });
+      expect(speed().disabled).toBe(true);
+      TestBed.resetTestingModule();
+      await open({ role: 'viewer' });
+      expect(speed().disabled).toBe(true);
+    });
+  });
+
+  describe('the daily limit', () => {
+    const rows = () => el.querySelectorAll('.limits .row');
+    const input = () => el.querySelector<HTMLInputElement>('.limits input[type=number]')!;
+
+    it('is one Facebook limit, with no row for another platform and no "Facebook only" note', async () => {
+      await open({ role: 'admin' });
+      expect(rows()).toHaveLength(1);
+      expect(rows()[0].textContent).toContain(PLATFORMS.fb.name);
+      expect(input().value).toBe('40');
+      expect(input().getAttribute('aria-label')).toBe(PLATFORMS.fb.name);
+      expect(el.querySelector('.limits')!.textContent).not.toMatch(/Instagram|TikTok|LINE|Threads/);
+      expect(t().api).not.toHaveProperty('limitsFbOnly');
+    });
+
+    it('counts the Facebook posts of the last 24 hours against it', async () => {
+      await open({ role: 'admin' });
+      await rerender();
+      expect(rows()[0].textContent).toContain(`${t().ab.usedToday} 0/40`);
+    });
+  });
+
+  describe('what the extension uses', () => {
+    const card = () => el.querySelector<HTMLElement>('section.uses')!;
+
+    it('is a card at the top that lists what the browser applies when it posts', async () => {
+      await open({ role: 'admin' });
+      const a = t().api.engine;
+      expect(card().querySelector('h2')!.textContent).toBe(a.abExtTitle);
+      expect([...card().querySelectorAll('li')].map((l) => l.textContent)).toEqual([
+        a.abExtTyping,
+        a.abExtScroll,
+        a.abExtFocus,
+        a.abExtBlock,
+        a.abExtPause,
+      ]);
+      // First thing under the page title, before the risk meter.
+      const order = [...el.querySelectorAll('.page > *')];
+      expect(order.indexOf(card())).toBeLessThan(order.indexOf(el.querySelector('.risk')!));
+    });
+
+    it('says what it posts and where comes from the schedule, with links to the pages that hold it', async () => {
+      await open({ role: 'admin' });
+      const a = t().api.engine;
+      expect(card().textContent).toContain(a.abExtWhatTitle);
+      expect(card().textContent).toContain(a.abExtWhat);
+      expect(
+        [...card().querySelectorAll('a')].map((l) => [
+          l.getAttribute('href'),
+          l.textContent!.trim(),
+        ]),
+      ).toEqual([
+        ['/app/schedules', t().nav.schedules],
+        ['/app/posts', t().api.postsNav],
+        ['/app/targets', t().nav.targets],
+        ['/app/team', a.abExtLinkTeam],
+      ]);
+    });
+
+    it('is plain information, so it is there for a viewer as well', async () => {
+      await open({ role: 'viewer' });
+      expect(card()).not.toBeNull();
     });
   });
 

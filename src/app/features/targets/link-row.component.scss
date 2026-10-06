@@ -29,6 +29,24 @@
   gap: 8px;
 }
 
+// The address field carries the small "group" / "page" chip at its right end.
+.urlwrap {
+  position: relative;
+  min-width: 0;
+  .cell.has-kind {
+    padding-right: 76px;
+  }
+  .kind {
+    position: absolute;
+    top: 11px;
+    right: 8px;
+    pointer-events: none;
+    .ph {
+      font-size: 13px;
+    }
+  }
+}
+
 .cell {
   height: 44px;
   width: 100%;

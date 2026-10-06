@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { ApiDevice, ApiPairingCode, ApiService } from '../http/api.service';
+import { INPUT_LIMITS } from '../http/input-limits';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
@@ -97,7 +98,48 @@ export class DevicesStore {
     return wsId ? this.api.createPairingCode(wsId) : null;
   }
 
-  /** Renames a browser (its Facebook account follows) or pauses the posts it takes from the web. */
+  /** The key two device names are compared by: the server treats names that differ in case or spaces only as one. */
+  private static nameKey(name: string): string {
+    return name.trim().toLowerCase();
+  }
+
+  /** Another browser of the workspace already has this name (the server refuses a rename to it, and numbers a new one). */
+  nameTaken(name: string, exceptId?: string): boolean {
+    const key = DevicesStore.nameKey(name);
+    return (
+      !!key && this.list().some((d) => d.id !== exceptId && DevicesStore.nameKey(d.name) === key)
+    );
+  }
+
+  /**
+   * The name a browser gets when it pairs as `desired`, worked out the way the server does it: the name itself when no
+   * other browser has it, else "name (2)", "name (3)"... (cut to the longest name the API takes).
+   */
+  freeName(desired: string): string {
+    const max = INPUT_LIMITS.deviceName;
+    const used = new Set(this.list().map((d) => DevicesStore.nameKey(d.name)));
+    const name = desired.trim().slice(0, max);
+    if (!name || !used.has(DevicesStore.nameKey(name))) return name;
+    for (let i = 2; ; i++) {
+      const suffix = ` (${i})`;
+      const candidate = name.slice(0, max - suffix.length) + suffix;
+      if (!used.has(DevicesStore.nameKey(candidate))) return candidate;
+    }
+  }
+
+  /**
+   * Renames a browser (its Facebook account follows). Names are unique in a workspace: a taken name is refused by
+   * the server (422 with a Thai reason, read with `problemMessage`), the error reaches the caller without a toast
+   * and the list keeps the old name until the server has accepted the new one.
+   */
+  async rename(id: string, name: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    const d = await this.api.updateDevice(wsId, id, { name }, true);
+    this.list.update((l) => l.map((x) => (x.id === id ? d : x)));
+  }
+
+  /** Pauses or resumes the posts a browser takes from the web (a rename goes through `rename`). */
   async update(id: string, patch: { name?: string; jobsPaused?: boolean }): Promise<void> {
     const wsId = this.ws.id();
     if (!wsId) return;

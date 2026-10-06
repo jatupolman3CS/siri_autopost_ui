@@ -8,7 +8,7 @@ const RANK: Record<ApiRole, number> = { viewer: 0, editor: 1, admin: 2, owner: 3
 
 // What the signed-in person may do in the current workspace: the single source for every `[disabled]`
 // that mirrors a server check. The API's minimums: Editor = posts (schedule, delete, retry, dismiss),
-// library, reconnect, skip waiting, campaigns and extension commands; Admin = anti-ban and offline
+// library, reconnect, skip waiting and extension commands; Admin = anti-ban and offline
 // settings, the offline simulation, devices and members. An admin seeing the app as a customer (assist
 // mode) can read everything and change nothing: the API refuses every non-GET for that token.
 @Injectable({ providedIn: 'root' })
@@ -21,7 +21,7 @@ export class PermissionsService {
   readonly role = computed<ApiRole>(() => this.workspaces.current()?.role ?? 'viewer');
   /** A platform admin is looking at this customer's app. */
   readonly assist = computed(() => this.session.assist() !== null);
-  /** Posts, library, reconnect, campaigns and extension commands. */
+  /** Posts, library, reconnect, skip waiting and extension commands. */
   readonly canEdit = computed(() => !this.assist() && RANK[this.role()] >= RANK.editor);
   /** Anti-ban and offline settings, simulation, devices and members. */
   readonly canAdmin = computed(() => !this.assist() && RANK[this.role()] >= RANK.admin);

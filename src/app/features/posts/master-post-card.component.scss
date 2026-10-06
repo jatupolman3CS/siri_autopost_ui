@@ -4,6 +4,11 @@
   gap: 10px;
 }
 
+// The post open in the editor panel at the top of the page.
+.editing {
+  border-color: var(--color-primary);
+}
+
 .head {
   display: flex;
   align-items: flex-start;

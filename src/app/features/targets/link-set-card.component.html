@@ -45,15 +45,6 @@
       </button>
       <button
         type="button"
-        class="su-btn su-btn-sm su-btn-ghost"
-        [disabled]="perm.readOnly()"
-        [attr.title]="perm.editHint() || null"
-        (click)="importGroups.emit()"
-      >
-        <i class="ph ph-download-simple"></i>{{ t().ts.fromAccount }}
-      </button>
-      <button
-        type="button"
         class="su-btn su-btn-sm su-btn-secondary"
         [disabled]="perm.readOnly()"
         [attr.title]="perm.editHint() || null"
@@ -119,35 +110,6 @@
         </p>
       </div>
     }
-    <div class="accs">
-      <span class="small muted">{{ t().ts.accounts }}</span>
-      <div class="chips">
-        @for (a of otherAccounts(); track a.id) {
-          <button
-            type="button"
-            class="chip"
-            [disabled]="perm.readOnly()"
-            [attr.aria-label]="t().common.remove + ': ' + a.label"
-            [attr.title]="perm.editHint() || t().common.remove"
-            (click)="removeAccount(a.id)"
-          >
-            <i class="ph" [class]="a.icon" aria-hidden="true"></i>
-            <span>{{ a.label }}</span>
-            <i class="ph ph-x x" aria-hidden="true"></i>
-          </button>
-        }
-        <div class="add" [attr.title]="perm.editHint() || null">
-          <app-select-field
-            [label]="t().ts.addAccount"
-            [placeholder]="t().ts.addAccountPh"
-            [options]="accountOptions()"
-            [resetAfterChange]="true"
-            [disabled]="perm.readOnly()"
-            (valueChange)="addAccount($event)"
-          />
-        </div>
-      </div>
-    </div>
   }
 
   <div class="small muted">{{ usedBy() }}</div>

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5311/"
+      "url": "http://127.0.0.1:5288/"
     }
   ],
   "paths": {
@@ -769,6 +769,142 @@
         }
       }
     },
+    "/api/admin/payment-override": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOverrideDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentOverrideRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentOverrideRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentOverrideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOverrideDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/ai/status": {
+      "get": {
+        "tags": [
+          "Ai"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/ai/posts": {
+      "post": {
+        "tags": [
+          "Ai"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteAiPostsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteAiPostsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteAiPostsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDraftsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/signup": {
       "post": {
         "tags": [
@@ -1283,6 +1419,103 @@
         }
       }
     },
+    "/api/billing/payment-config": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentConfigDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/payments": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartPaymentRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartPaymentRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartPaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentIntentDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/payments/{id}/confirm": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/billing/portal": {
       "post": {
         "tags": [
@@ -1469,7 +1702,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -1818,7 +2051,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -2029,7 +2262,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -2085,6 +2318,52 @@
         }
       }
     },
+    "/api/device/bumps/{bumpId}/result": {
+      "post": {
+        "tags": [
+          "DeviceApi"
+        ],
+        "parameters": [
+          {
+            "name": "bumpId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BumpResultRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BumpResultRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BumpResultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
     "/api/device/media/{mediaId}": {
       "get": {
         "tags": [
@@ -2105,8 +2384,8 @@
           "200": {
             "description": "OK",
             "content": {
-              "application/json": { },
-              "application/octet-stream": { }
+              "application/json": {},
+              "application/octet-stream": {}
             }
           }
         }
@@ -2312,7 +2591,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -2358,7 +2637,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -2513,7 +2792,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -2805,7 +3084,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "text/event-stream": { }
+              "text/event-stream": {}
             }
           }
         }
@@ -2935,8 +3214,8 @@
           "200": {
             "description": "OK",
             "content": {
-              "application/json": { },
-              "application/octet-stream": { }
+              "application/json": {},
+              "application/octet-stream": {}
             }
           }
         }
@@ -2988,7 +3267,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -3169,7 +3448,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -3294,8 +3573,8 @@
           "200": {
             "description": "OK",
             "content": {
-              "application/json": { },
-              "application/octet-stream": { }
+              "application/json": {},
+              "application/octet-stream": {}
             }
           }
         }
@@ -3468,7 +3747,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -3694,7 +3973,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -3911,7 +4190,7 @@
           "200": {
             "description": "OK",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -4084,7 +4363,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -4312,7 +4591,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -4794,7 +5073,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -5304,7 +5583,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -5572,7 +5851,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -5845,7 +6124,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -5924,6 +6203,56 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/TestPostRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/test-post/manual": {
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualTestPostRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualTestPostRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualTestPostRequest"
               }
             }
           },
@@ -6105,7 +6434,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -6138,7 +6467,7 @@
           "204": {
             "description": "No Content",
             "content": {
-              "application/json": { }
+              "application/json": {}
             }
           }
         }
@@ -6528,6 +6857,47 @@
           }
         }
       },
+      "AiDraftsDto": {
+        "required": [
+          "variants"
+        ],
+        "type": "object",
+        "properties": {
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AiStatusDto": {
+        "required": [
+          "enabled",
+          "allowed",
+          "model",
+          "draftsLeftToday"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "allowed": {
+            "type": "boolean"
+          },
+          "model": {
+            "type": "string"
+          },
+          "draftsLeftToday": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "AntiBanDto": {
         "required": [
           "min",
@@ -6570,6 +6940,10 @@
           },
           "advanced": {
             "$ref": "#/components/schemas/AdvancedAntiBanDto"
+          },
+          "typingSpeed": {
+            "type": "string",
+            "default": "normal"
           }
         }
       },
@@ -6606,7 +6980,9 @@
           "plan_settings_changed",
           "promo_created",
           "promo_toggled",
-          "impersonated"
+          "impersonated",
+          "payment_override_changed",
+          "payment_override_used"
         ]
       },
       "AuditEntryDto": {
@@ -7156,6 +7532,16 @@
           },
           "repeat": {
             "$ref": "#/components/schemas/PostRepeat"
+          },
+          "bump": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BumpPlanDto"
+              }
+            ]
           }
         }
       },
@@ -7347,6 +7733,61 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "BumpPlanDto": {
+        "required": [
+          "rounds",
+          "text",
+          "mediaIds",
+          "imagesEach"
+        ],
+        "type": "object",
+        "properties": {
+          "rounds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "text": {
+            "type": "string"
+          },
+          "mediaIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "imagesEach": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "BumpResultRequest": {
+        "required": [
+          "ok",
+          "needsLogin",
+          "blocked",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "needsLogin": {
+            "type": "boolean"
+          },
+          "blocked": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8928,6 +9369,20 @@
           },
           "antiBan": {
             "$ref": "#/components/schemas/AntiBanDto"
+          },
+          "kind": {
+            "type": "string",
+            "default": "post"
+          },
+          "targetKind": {
+            "type": "string",
+            "default": "group"
+          },
+          "pageTags": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8951,13 +9406,16 @@
           }
         }
       },
-      "JsonElement": { },
+      "JsonElement": {},
       "LimitOverridesDto": {
         "required": [
           "accounts",
           "posts",
           "devices",
-          "seats"
+          "seats",
+          "groups",
+          "images",
+          "libraryPosts"
         ],
         "type": "object",
         "properties": {
@@ -8983,6 +9441,27 @@
             "format": "int32"
           },
           "seats": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "groups": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "images": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "libraryPosts": {
             "type": [
               "null",
               "integer"
@@ -8996,7 +9475,10 @@
           "accounts",
           "posts",
           "devices",
-          "seats"
+          "seats",
+          "groups",
+          "images",
+          "libraryPosts"
         ],
         "type": "object",
         "properties": {
@@ -9022,6 +9504,27 @@
             "format": "int32"
           },
           "seats": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "groups": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "images": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "libraryPosts": {
             "type": [
               "null",
               "integer"
@@ -9035,7 +9538,10 @@
           "accounts",
           "posts",
           "devices",
-          "seats"
+          "seats",
+          "groups",
+          "images",
+          "libraryPosts"
         ],
         "type": "object",
         "properties": {
@@ -9061,6 +9567,27 @@
             "format": "int32"
           },
           "seats": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "groups": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "images": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "libraryPosts": {
             "type": [
               "null",
               "integer"
@@ -9162,6 +9689,40 @@
           },
           "password": {
             "type": "string"
+          }
+        }
+      },
+      "ManualTestPostRequest": {
+        "required": [
+          "url",
+          "text",
+          "mediaIds",
+          "deviceId"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "mediaIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "deviceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -9637,6 +10198,190 @@
           }
         }
       },
+      "PaymentAttemptState": {
+        "enum": [
+          "pending",
+          "succeeded",
+          "failed"
+        ]
+      },
+      "PaymentConfigDto": {
+        "required": [
+          "publishableKey",
+          "currency"
+        ],
+        "type": "object",
+        "properties": {
+          "publishableKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "PaymentFlow": {
+        "enum": [
+          "subscription",
+          "prepaid"
+        ]
+      },
+      "PaymentIntentDto": {
+        "required": [
+          "id",
+          "clientSecret",
+          "amount",
+          "currency",
+          "flow",
+          "method"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "clientSecret": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "flow": {
+            "$ref": "#/components/schemas/PaymentFlow"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethodKind"
+          }
+        }
+      },
+      "PaymentMethodKind": {
+        "enum": [
+          "card",
+          "apple_pay",
+          "google_pay",
+          "link",
+          "promptpay"
+        ]
+      },
+      "PaymentOverrideDto": {
+        "required": [
+          "enabled",
+          "amount",
+          "emails",
+          "updatedAt",
+          "minAmount",
+          "paymentsConnected"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "emails": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "minAmount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paymentsConnected": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PaymentOverrideRequest": {
+        "required": [
+          "enabled",
+          "amount",
+          "emails"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "emails": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PaymentStatusDto": {
+        "required": [
+          "id",
+          "status",
+          "method",
+          "failureMessage",
+          "amount",
+          "flow",
+          "user"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentAttemptState"
+          },
+          "method": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PaymentMethodKind"
+              }
+            ]
+          },
+          "failureMessage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "flow": {
+            "$ref": "#/components/schemas/PaymentFlow"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserDto"
+          }
+        }
+      },
       "PlanChangeDto": {
         "required": [
           "user",
@@ -9662,7 +10407,11 @@
           "accounts",
           "posts",
           "devices",
-          "seats"
+          "seats",
+          "groups",
+          "images",
+          "libraryPosts",
+          "features"
         ],
         "type": "object",
         "properties": {
@@ -9700,6 +10449,33 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "groups": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "images": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "libraryPosts": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -9728,7 +10504,10 @@
           "accounts",
           "posts",
           "devices",
-          "seats"
+          "seats",
+          "groups",
+          "images",
+          "libraryPosts"
         ],
         "type": "object",
         "properties": {
@@ -9763,17 +10542,33 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "groups": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "images": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "libraryPosts": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },
       "Platform": {
         "enum": [
-          "fb",
-          "x",
-          "ig",
-          "tt",
-          "line",
-          "th"
+          "fb"
         ]
       },
       "PlatformHealthDto": {
@@ -9903,36 +10698,11 @@
       },
       "PlatformLimitsDto": {
         "required": [
-          "fb",
-          "x",
-          "ig",
-          "tt",
-          "line",
-          "th"
+          "fb"
         ],
         "type": "object",
         "properties": {
           "fb": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "x": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "ig": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "tt": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "line": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "th": {
             "type": "integer",
             "format": "int32"
           }
@@ -10416,6 +11186,12 @@
               "null",
               "string"
             ]
+          },
+          "postUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -10590,6 +11366,16 @@
           },
           "repeat": {
             "$ref": "#/components/schemas/PostRepeat"
+          },
+          "bump": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BumpPlanDto"
+              }
+            ]
           }
         }
       },
@@ -10764,6 +11550,16 @@
           },
           "repeat": {
             "$ref": "#/components/schemas/PostRepeat"
+          },
+          "bump": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BumpPlanDto"
+              }
+            ]
           }
         }
       },
@@ -10899,6 +11695,10 @@
           },
           "duplicate": {
             "type": "boolean"
+          },
+          "kind": {
+            "type": "string",
+            "default": "group"
           }
         }
       },
@@ -11051,6 +11851,39 @@
           },
           "active": {
             "type": "boolean"
+          }
+        }
+      },
+      "StartPaymentRequest": {
+        "required": [
+          "plan",
+          "cycle",
+          "promoCode",
+          "method"
+        ],
+        "type": "object",
+        "properties": {
+          "plan": {
+            "$ref": "#/components/schemas/PlanKey"
+          },
+          "cycle": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BillingCycle"
+              }
+            ]
+          },
+          "promoCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethodKind"
           }
         }
       },
@@ -11230,6 +12063,13 @@
               "null",
               "string"
             ]
+          },
+          "deviceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -11526,7 +12366,10 @@
         "required": [
           "accounts",
           "postsLast24h",
-          "devices"
+          "devices",
+          "groups",
+          "images",
+          "libraryPosts"
         ],
         "type": "object",
         "properties": {
@@ -11539,6 +12382,18 @@
             "format": "int32"
           },
           "devices": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "groups": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "images": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "libraryPosts": {
             "type": "integer",
             "format": "int32"
           }
@@ -11650,7 +12505,9 @@
           "advancedAntiBan",
           "notifications",
           "autoReply",
-          "clientReports"
+          "clientReports",
+          "ai",
+          "bump"
         ],
         "type": "object",
         "properties": {
@@ -11686,6 +12543,12 @@
           },
           "clientReports": {
             "type": "boolean"
+          },
+          "ai": {
+            "type": "boolean"
+          },
+          "bump": {
+            "type": "boolean"
           }
         }
       },
@@ -11696,12 +12559,48 @@
           "admin",
           "owner"
         ]
+      },
+      "WriteAiPostsRequest": {
+        "required": [
+          "topic",
+          "points",
+          "tone",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string"
+          },
+          "points": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "tone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       }
     }
   },
   "tags": [
     {
       "name": "Admin"
+    },
+    {
+      "name": "Ai"
     },
     {
       "name": "Auth"

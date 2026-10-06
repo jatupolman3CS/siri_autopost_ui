@@ -1,0 +1,112 @@
+.pv {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pv-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.none {
+  margin: 0;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+
+  .ph {
+    font-size: 18px;
+  }
+}
+
+.box {
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text);
+
+  &.muted {
+    color: var(--color-text-muted);
+  }
+}
+
+// The words spintax picked.
+mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: inherit;
+}
+
+.variant {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.len.bad,
+.bad {
+  color: var(--color-danger);
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 20px;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.chip .del {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 60%);
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgb(0 0 0 / 85%);
+  }
+}

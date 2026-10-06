@@ -11,9 +11,10 @@ import { registerPack } from './i18n.service';
 // files of different features never collide. A string of the design that is wrong for the real system is
 // corrected in i18n.fixes.ts instead, with a comment saying what the design got wrong.
 export const AP_I18N_ENGINE = {
-  // A setting that is saved but not applied yet (anti-ban image shuffle and "bring the window to the front",
-  // notification screenshots and offline alerts). Keep the design's label and add this hint. It says plainly that
-  // nothing applies the value (neither the extension nor the server), so a switch that is on does not read as active.
+  // A setting that is saved but not applied yet (notification screenshots and offline alerts, page tags...). The
+  // anti-ban page has none left: the focus window and the rest after a block are applied by the extension, shuffle
+  // by the server. Keep the design's label and add this hint. It says plainly that nothing applies the value (neither
+  // the extension nor the server), so a switch that is on does not read as active.
   storedOnly: [
     'บันทึกไว้เท่านั้น ยังไม่มีส่วนใดนำค่านี้ไปใช้',
     'Saved only: nothing applies this setting yet',
@@ -62,8 +63,8 @@ export const AP_I18N_ENGINE = {
     'No post from a collection went out in this period',
   ],
   reportsScope: [
-    'นับเฉพาะโพสต์จริงของบัญชีที่ผูกกับส่วนขยาย ไม่รวมโพสต์ทดสอบและบัญชีตัวอย่าง',
-    'Counts real posts of accounts paired with the extension only. Test posts and sample accounts are left out',
+    'นับเฉพาะโพสต์จริงของส่วนขยายที่ผูกไว้ ไม่รวมโพสต์ทดสอบ',
+    'Counts the real posts of the paired extensions only. Test posts are left out',
   ],
   reportsFailed: ['โหลดรายงานไม่สำเร็จ', 'Could not load the report'],
   reportsRetry: ['ลองอีกครั้ง', 'Try again'],
@@ -191,8 +192,8 @@ export const AP_I18N_ENGINE = {
   // Test post: it is a real post to a real group (never a simulation), and the typed text is composed like a
   // scheduled post's ({a|b} spintax, {{code}} and the collection's footer and hashtags).
   testReal: [
-    'นี่ไม่ใช่การจำลอง: ระบบจะโพสต์จริง 1 โพสต์ลงกลุ่ม Facebook ที่เลือกด้วยบัญชีของคุณ สมาชิกกลุ่มมองเห็นได้ และโพสต์นี้นับรวมในเพดานต่อวันของกลุ่ม',
-    'This is not a simulation: one real post is made in the Facebook group you choose, from your account. The group’s members can see it, and it counts toward the group’s daily limit',
+    'นี่ไม่ใช่การจำลอง: ระบบจะโพสต์จริง 1 โพสต์ทันทีลงกลุ่มหรือเพจ Facebook ที่เลือก ผ่านส่วนขยายที่เลือก สมาชิกกลุ่มหรือผู้ติดตามเพจมองเห็นได้ และโพสต์นี้นับรวมในเพดานต่อวัน',
+    'This is not a simulation: one real post is made right now in the Facebook group or page you choose, through the extension you choose. Members of the group or followers of the page can see it, and it counts toward the daily limit',
   ],
   testOverrideHint: [
     'Spintax {a|b} และ {{code}} (หรือ {{รหัส}}) ถูกแปลงเหมือนโพสต์จากตาราง: สุ่มเลือกคำ ใส่รหัสกลุ่ม และเพิ่มข้อความท้ายกับแฮชแท็กของชุดโพสต์ ตัวอย่างด้านล่างเป็นแค่ตัวอย่างหนึ่ง โพสต์จริงอาจสุ่มได้คำอื่น',
@@ -216,18 +217,14 @@ export const AP_I18N_ENGINE = {
     'The extension has not answered yet. The test post stays queued and goes out when the extension picks it up. See the result in the list below',
   ],
   testPaused: [
-    'เครื่องที่ผูกไว้พักรับงานอยู่ (พักเองหรือพักอัตโนมัติ) โพสต์ทดสอบจะรอจนกว่าจะเริ่มรับงานอีกครั้ง',
-    'The paired browser has its jobs paused (by hand or automatically), so the test post waits until it takes jobs again',
-  ],
-  testNoAccount: [
-    'ยังไม่มีบัญชี Facebook ที่ผูกกับเครื่อง จับคู่เครื่องในหน้าทีมก่อนจึงจะทดลองโพสต์ได้',
-    'No Facebook account is bound to a browser yet. Pair a computer on the Team page before a test post',
+    'ส่วนขยายที่เลือกพักรับงานอยู่ (พักเองหรือพักอัตโนมัติ) โพสต์ทดสอบจะรอจนกว่าจะเริ่มรับงานอีกครั้ง',
+    'The chosen extension has its jobs paused (by hand or automatically), so the test post waits until it takes jobs again',
   ],
 
   // Anti-ban: the block pause only runs with the automatic pause switched on; the file could not be saved.
   blockNeedsAuto: [
-    'ใช้เมื่อเปิด “หยุดอัตโนมัติเมื่อแพลตฟอร์มแสดงคำเตือน” ด้านบนเท่านั้น',
-    'Applies only while “Pause automatically when the platform shows a warning” above is on',
+    'ใช้เมื่อเปิด “หยุดอัตโนมัติเมื่อ Facebook แสดงคำเตือน” ด้านบนเท่านั้น',
+    'Applies only while “Pause automatically when Facebook shows a warning” above is on',
   ],
   backupFailed: [
     'ดาวน์โหลดไฟล์สำรองไม่สำเร็จ เบราว์เซอร์ไม่ให้ดาวน์โหลด',
@@ -239,6 +236,153 @@ export const AP_I18N_ENGINE = {
   devAutoPaused: ['พักอัตโนมัติถึง {t}: {r}', 'Paused automatically until {t}: {r}'],
   devAutoPausedNoReason: ['พักอัตโนมัติถึง {t}', 'Paused automatically until {t}'],
   devAutoPausedTag: ['พักอัตโนมัติ', 'Paused automatically'],
+
+  // Anti-ban page: what the extension in the browser uses when it posts (the card at the top), the typing speed,
+  // and who applies the focus window and the rest after a block (the extension; they are no longer "saved only").
+  abExtTitle: ['ส่วนขยายใช้ค่าเหล่านี้', 'The extension uses these settings'],
+  abExtBody: [
+    'ตอนที่ส่วนขยายในเบราว์เซอร์ของคุณโพสต์ มันทำตามค่าในหน้านี้:',
+    'When the extension in your browser posts, it follows the settings on this page:',
+  ],
+  abExtTyping: [
+    'พิมพ์ข้อความทีละตัวอักษรเหมือนคนพิมพ์ ด้วยความเร็วที่เลือก (ช้า ปกติ เร็ว)',
+    'Types the text character by character like a person, at the speed you choose (slow, normal, fast)',
+  ],
+  abExtScroll: ['เลื่อนดูฟีดสักครู่ก่อนโพสต์', 'Scrolls the feed for a moment before it posts'],
+  abExtFocus: [
+    'ดึงหน้าต่าง Chrome ขึ้นมาไว้ด้านหน้าขณะโพสต์ (หน้าต่างโฟกัส)',
+    'Brings its Chrome window to the front while it posts (focus window)',
+  ],
+  abExtBlock: [
+    'พักตามจำนวนชั่วโมงที่ตั้งไว้หลัง Facebook เตือนหรือบล็อก',
+    'Rests for the number of hours you set after Facebook warns or blocks it',
+  ],
+  abExtPause: [
+    'เว้นระยะระหว่างโพสต์ และหยุดพักเองเมื่อโพสต์ล้มเหลวติดกัน',
+    'Waits between posts, and pauses itself when posts keep failing',
+  ],
+  abExtWhatTitle: ['โพสต์อะไร และโพสต์ที่ไหน:', 'What it posts, and where:'],
+  abExtWhat: [
+    'มาจากตารางโพสต์ ซึ่งผูกข้อความ รูป และกลุ่มหรือเพจปลายทางไว้ครบแล้ว (ชุดโพสต์ + ชุดลิงก์) ส่วนขยายไม่มีชุดโพสต์หรือกลุ่มของตัวเองให้ตั้งอีก',
+    'It comes from the schedule, which already ties the text, the images and the target groups or pages together (a collection and a link set). The extension has no posts or groups of its own to set up any more',
+  ],
+  abExtLinkTeam: ['ส่วนขยายที่เชื่อมต่อ', 'Connected extensions'],
+  abTypingSpeed: ['ความเร็วในการพิมพ์', 'Typing speed'],
+  abSpeedSlow: ['ช้า', 'Slow'],
+  abSpeedNormal: ['ปกติ', 'Normal'],
+  abSpeedFast: ['เร็ว', 'Fast'],
+  abSpeedHint: [
+    'ใช้เมื่อเปิดการจำลองการพิมพ์ ส่วนขยายใช้ความเร็วนี้กับทุกโพสต์ที่รับงานไป',
+    'Used while typing simulation is on. The extension applies it to every post it takes',
+  ],
+  abBlockApplied: [
+    'ส่วนขยายในเบราว์เซอร์เป็นผู้พัก โดยสุ่มจำนวนชั่วโมงระหว่างค่าต่ำสุดถึงสูงสุด',
+    'The extension in the browser takes this rest, a random number of hours between the shortest and the longest',
+  ],
+  abFocusApplied: [
+    'ส่วนขยายในเบราว์เซอร์เป็นผู้ใช้ค่านี้ทุกครั้งที่โพสต์',
+    'The extension in the browser applies this every time it posts',
+  ],
+
+  // Test post page: two panels (from a collection, by hand), the extension that receives the test, and what it proves.
+  testPanels: ['วิธีทดสอบ', 'How to test'],
+  testPanelSet: ['ทดสอบจากชุดโพสต์', 'Test from a collection'],
+  testPanelManual: ['ทดสอบเอง', 'Test by hand'],
+  testDevice: ['ส่งผ่านส่วนขยาย', 'Send through this extension'],
+  testDeviceHint: [
+    'มีส่วนขยายหลายเครื่อง เลือกเครื่องที่จะรับงานทดสอบนี้ไปโพสต์',
+    'Several extensions are connected: choose the one that takes this test and posts it',
+  ],
+  testDeviceOne: ['ส่งผ่านส่วนขยาย:', 'Sent through the extension:'],
+  testDeviceOnline: ['ออนไลน์', 'Online'],
+  testDeviceOffline: ['ออฟไลน์', 'Offline'],
+  testDevicePaused: ['พักรับงาน', 'Jobs paused'],
+  testNoDevice: [
+    'ยังไม่มีส่วนขยายที่เชื่อมต่อ จับคู่เครื่องในหน้าทีมและเวิร์กสเปซก่อนจึงจะทดลองโพสต์ได้',
+    'No extension is connected yet. Pair one on the Team & workspaces page before a test post',
+  ],
+  testNoDeviceLink: ['ไปที่ทีมและเวิร์กสเปซ', 'Go to Team & workspaces'],
+  testDeviceDown: [
+    'ส่วนขยาย “{d}” ออฟไลน์ เลือกส่วนขยายอื่นที่ออนไลน์ หรือเปิด Chrome ของเครื่องนั้นก่อน',
+    'The extension “{d}” is offline. Choose one that is online, or open the Chrome of that machine first',
+  ],
+  testProves: [
+    'การทดสอบนี้พิสูจน์อะไร: ส่งโพสต์จริงไปที่ที่เลือกตอนนี้เลย ผ่านส่วนขยายที่เลือก ถ้าออกได้ แปลว่างานของตารางโพสต์ก็ออกได้เช่นกัน',
+    'What this proves: it sends a real post to the place you pick right now, through the extension you pick. If it goes out, the jobs of a schedule can go out too',
+  ],
+  testProvesLink: ['ไปที่ตารางโพสต์', 'Go to the schedules'],
+
+  // Test post, by hand: a group or page link, a text and images, without any collection or link set.
+  testKindGroup: ['กลุ่ม', 'Group'],
+  testKindPage: ['เพจ', 'Page'],
+  testManualUrl: ['ลิงก์กลุ่มหรือเพจ Facebook', 'Facebook group or page link'],
+  testManualUrlPh: [
+    'https://www.facebook.com/groups/ชื่อกลุ่ม',
+    'https://www.facebook.com/groups/group-name',
+  ],
+  testManualUrlHint: [
+    'วางที่อยู่ของกลุ่มหรือเพจที่ต้องการทดสอบ ระบบจะแปลงเป็นรูปแบบมาตรฐานให้',
+    'Paste the address of the group or page to test. It is turned into the standard form for you',
+  ],
+  testManualBadUrl: [
+    'ไม่ใช่ลิงก์กลุ่มหรือเพจ Facebook เช่น https://www.facebook.com/groups/ชื่อกลุ่ม',
+    'Not a Facebook group or page link, e.g. https://www.facebook.com/groups/group-name',
+  ],
+  testManualWillPost: ['จะโพสต์ที่', 'Will post to'],
+  testManualText: ['ข้อความที่จะโพสต์', 'Text to post'],
+  testManualTextPh: ['พิมพ์ข้อความทดสอบ', 'Type the test text'],
+  testManualTextHint: [
+    'ใส่ Spintax {a|b} ได้ (สุ่มเลือกคำหนึ่งคำ) ส่วน {{code}} จะว่างไว้เพราะไม่มีรหัสกลุ่ม และไม่มีข้อความท้ายหรือแฮชแท็กเพิ่มให้ ยาวได้ไม่เกิน {n} ตัวอักษร',
+    'Spintax {a|b} works (one word is picked at random). {{code}} stays empty because there is no group code, and no footer or hashtags are added. Up to {n} characters',
+  ],
+  testManualNeedText: ['ใส่ข้อความที่ต้องการทดสอบ', 'Type the text to test'],
+  testManualNeedUrl: [
+    'ใส่ลิงก์กลุ่มหรือเพจที่ต้องการทดสอบ',
+    'Enter the group or page link to test',
+  ],
+  testManualImages: ['รูปภาพ (ไม่บังคับ)', 'Images (optional)'],
+  testManualImagesHint: [
+    'เลือกจากคลังสื่อ หรืออัปโหลดจากเครื่อง (รูปที่อัปโหลดเข้าคลังและนับรวมในจำนวนรูปที่แผนของคุณเก็บได้) แนบได้ไม่เกิน {n} รูป',
+    'Pick from the media library, or upload from your computer (an uploaded image goes into the library and counts toward the images your plan can keep). At most {n} images',
+  ],
+  testManualPicked: ['เลือกแล้ว {n}/{m} รูป', '{n} of {m} images picked'],
+  testManualUpload: ['อัปโหลดจากเครื่อง', 'Upload from my computer'],
+  testManualUploadRefused: ['อัปโหลดไม่สำเร็จ: {r}', 'Upload did not go through: {r}'],
+  testManualNoImages: [
+    'ยังไม่มีรูปในคลัง อัปโหลดจากเครื่องได้ที่ปุ่มด้านบน',
+    'The library has no images yet. Upload some with the button above',
+  ],
+  testManualSend: ['ส่งตอนนี้', 'Send now'],
+  testManualPickOpen: ['เลือกจากคลังสื่อ', 'Pick from the library'],
+  testManualPickClose: ['ซ่อนคลังสื่อ', 'Hide the library'],
+  testManualGone: ['ไฟล์ถูกลบจากคลังแล้ว', 'File was deleted from the library'],
+
+  // Pairing and renaming extensions: names are unique in a workspace, the connect link works from any browser.
+  pairCopy: ['คัดลอกลิงก์เชื่อมต่อ', 'Copy connect link'],
+  pairCopyHint: [
+    'ลิงก์นี้ใช้ได้ครั้งเดียวและมีอายุ 10 นาที ส่งให้เครื่องที่จะโพสต์ แล้วเปิดใน Chrome ที่ติดตั้งส่วนขยาย',
+    'The link works once and for 10 minutes. Send it to the machine that will post and open it in the Chrome that has the extension',
+  ],
+  pairNameHint: [
+    'ชื่อต้องไม่ซ้ำกับส่วนขยายอื่นในเวิร์กสเปซนี้ ถ้าซ้ำ ระบบจะเติม (2) (3) ต่อท้ายให้เอง',
+    'The name must be unique among the extensions of this workspace. If it is taken, (2), (3)… is added for you',
+  ],
+  pairNameTaken: [
+    'ชื่อนี้มีส่วนขยายอื่นใช้อยู่แล้ว ส่วนขยายนี้จะได้ชื่อ “{d}”',
+    'Another extension already has this name. This one will be named “{d}”',
+  ],
+  pairedRenamed: [
+    'จับคู่แล้วในชื่อ “{d}” เพราะชื่อ “{w}” มีส่วนขยายอื่นใช้อยู่แล้ว',
+    'Paired as “{d}” because another extension already uses “{w}”',
+  ],
+  connectNoLogin: [
+    'Chrome นี้ไม่ต้องล็อกอิน AutoPost ส่วนขยายจะแสดงแค่ “เชื่อมต่อสำเร็จ”',
+    'This Chrome does not need to be signed in to AutoPost. The extension only shows “connected successfully”',
+  ],
+  renameHint: [
+    'ชื่อต้องไม่ซ้ำกับส่วนขยายอื่นในเวิร์กสเปซนี้ (ตัวพิมพ์เล็กใหญ่ถือว่าเหมือนกัน)',
+    'The name must differ from the other extensions of this workspace (upper and lower case count as the same)',
+  ],
 } as const;
 
 registerPack('engine', AP_I18N_ENGINE);

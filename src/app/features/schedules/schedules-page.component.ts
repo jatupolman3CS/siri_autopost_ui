@@ -65,9 +65,7 @@ export class SchedulesPageComponent {
   protected readonly t = inject(I18nService).t;
 
   /** A Facebook account with a paired browser: without one the API refuses every new schedule. */
-  protected readonly canPost = computed(() =>
-    this.accounts.list().some((a) => a.platform === 'fb' && a.connected),
-  );
+  protected readonly canPost = computed(() => this.accounts.connected().length > 0);
   /** Known to have no browser to post from (the list has arrived and has none). */
   protected readonly needDevice = computed(() => this.accounts.loaded() && !this.canPost());
   protected readonly needCollection = computed(

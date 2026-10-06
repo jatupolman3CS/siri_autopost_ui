@@ -1,302 +1,417 @@
-<form class="editor" novalidate (submit)="$event.preventDefault(); save()">
-  <div>
-    <label class="su-field-label" [attr.for]="'pe-text-' + (post()?.id ?? 'new')">{{
-      t().api.flow.plText
-    }}</label>
-    <textarea
-      class="su-textarea text"
-      [id]="'pe-text-' + (post()?.id ?? 'new')"
-      rows="6"
-      [class.su-input-error]="!!errText()"
-      [placeholder]="t().cmp.placeholder"
-      [value]="text()"
-      [readOnly]="!perm.canEdit()"
-      [attr.maxlength]="limits.postText"
-      [attr.aria-invalid]="errText() ? true : null"
-      (input)="setText($any($event.target).value)"
-    ></textarea>
-    <div class="counter">
-      <span class="err" role="alert">{{ errText() }}</span>
-      <span class="muted small"
-        >{{ text().length }} / {{ limits.postText }} {{ t().cmp.chars }}</span
-      >
+<div class="pe">
+  <form
+    class="editor"
+    novalidate
+    (submit)="$event.preventDefault(); save()"
+    (keydown.control.enter)="save()"
+    (keydown.meta.enter)="save()"
+  >
+    <div class="field">
+      <label class="su-field-label" [attr.for]="'pe-text-' + (post()?.id ?? 'new')">{{
+        t().api.flow.plText
+      }}</label>
+      <app-post-toolbar
+        [selection]="selectedText()"
+        [aiOpen]="aiOpen()"
+        (code)="insertCode()"
+        (snippet)="insertText($event)"
+        (spin)="insertText($event)"
+        (wrap)="wrapSelection()"
+        (example)="insertText($event)"
+        (aiToggle)="toggleAi()"
+      />
+      @if (aiEver()) {
+        <app-ai-panel
+          [hidden]="!aiOpen()"
+          [saving]="aiSaving()"
+          (use)="aiUse($event)"
+          (append)="aiAppend($event)"
+          (separate)="aiSeparate($event)"
+          (closed)="aiOpen.set(false)"
+        />
+      }
+      <textarea
+        #ta
+        class="su-textarea text"
+        [id]="'pe-text-' + (post()?.id ?? 'new')"
+        rows="8"
+        [class.su-input-error]="!!errText()"
+        [placeholder]="t().cmp.placeholder"
+        [value]="text()"
+        [readOnly]="!perm.canEdit()"
+        [attr.maxlength]="limits.postText"
+        [attr.aria-invalid]="errText() ? true : null"
+        (input)="setText(ta.value); track(ta)"
+        (select)="track(ta)"
+        (keyup)="track(ta)"
+        (mouseup)="track(ta)"
+        (blur)="track(ta)"
+      ></textarea>
+      <div class="counter">
+        <span class="err" role="alert">{{ errText() }}</span>
+        <span class="muted small" data-testid="counter"
+          >{{ text().length }} / {{ limits.postText }} {{ t().cmp.chars }}</span
+        >
+      </div>
+      <app-post-status [text]="text()" />
     </div>
-  </div>
 
-  <section class="block">
-    <div class="block-head">
-      <span class="fw5">{{ t().api.flow.plMediaTitle }}</span>
-      <span class="small muted"> · {{ mediaSelLabel() }}</span>
-      <span class="grow"></span>
-      <button
-        type="button"
-        class="su-btn su-btn-sm su-btn-ghost"
-        [disabled]="!perm.canEdit()"
-        [attr.title]="perm.editHint() || null"
-        [attr.aria-expanded]="pickerOpen()"
-        (click)="pickerOpen.set(!pickerOpen())"
-      >
-        <i class="ph ph-images"></i
-        >{{ pickerOpen() ? t().api.flow.plMediaHide : t().api.flow.plMediaPick }}
-      </button>
-    </div>
-    @if (attached().length) {
-      <div class="media">
-        @for (m of attached(); track m.id) {
-          <div class="m on" [title]="m.label">
-            <span class="thumb">
-              @if (m.src) {
-                <img [src]="m.src" alt="" />
-              } @else {
-                <i class="ph" [class]="m.icon"></i>
-              }
-            </span>
-            <span class="small ellipsis">{{ m.label }}</span>
+    <section class="block">
+      <div class="block-head">
+        <span class="fw5">{{ t().api.flow.plMediaTitle }}</span>
+        <span class="small muted"> · {{ mediaSelLabel() }}</span>
+        <span class="grow"></span>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          data-testid="media-upload"
+          [disabled]="uploading() || !perm.canEdit()"
+          [attr.title]="perm.editHint() || null"
+          (click)="picker.click()"
+        >
+          <i class="ph ph-upload-simple"></i>{{ t().cmp.upload }}
+        </button>
+        <input
+          #picker
+          type="file"
+          accept="image/*,video/*"
+          multiple
+          hidden
+          (change)="upload(picker)"
+        />
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          data-testid="media-pick"
+          [disabled]="!perm.canEdit()"
+          [attr.title]="perm.editHint() || null"
+          [attr.aria-expanded]="pickerOpen()"
+          (click)="pickerOpen.set(!pickerOpen())"
+        >
+          <i class="ph ph-images"></i
+          >{{ pickerOpen() ? t().api.flow.plMediaHide : t().api.flow.plMediaPick }}
+        </button>
+      </div>
+      @if (attached().length) {
+        <div class="media" data-testid="attached">
+          @for (m of attached(); track m.id) {
+            <div class="m on" [title]="m.label">
+              <span class="thumb">
+                @if (m.src) {
+                  <img [src]="m.src" alt="" />
+                } @else {
+                  <i class="ph" [class]="m.icon"></i>
+                }
+              </span>
+              <span class="small ellipsis">{{ m.label }}</span>
+              <button
+                type="button"
+                class="ibtn x"
+                [disabled]="!perm.canEdit()"
+                [attr.aria-label]="t().common.remove + ' ' + m.label"
+                (click)="toggleMedia(m.id)"
+              >
+                <i class="ph ph-x"></i>
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="small muted none">{{ t().api.flow.plMediaNone }}</p>
+      }
+      @if (pickerOpen()) {
+        <div class="media picker">
+          @for (m of picks(); track m.id) {
             <button
               type="button"
-              class="ibtn x"
-              [disabled]="!perm.canEdit()"
-              [attr.aria-label]="t().common.remove + ' ' + m.label"
+              class="m"
+              [class.on]="m.selected"
+              [title]="m.off ? t().api.flow.edMediaOff : m.label"
+              [disabled]="!perm.canEdit() || m.off"
+              [attr.aria-pressed]="m.selected"
               (click)="toggleMedia(m.id)"
             >
-              <i class="ph ph-x"></i>
+              <span class="thumb">
+                @if (m.src) {
+                  <img [src]="m.src" alt="" />
+                } @else {
+                  <i class="ph" [class]="m.icon"></i>
+                }
+                @if (m.selected) {
+                  <i class="ph-fill ph-check-circle tick"></i>
+                }
+              </span>
+              <span class="small ellipsis">{{ m.label }}</span>
             </button>
+          } @empty {
+            <a class="small" routerLink="/app/library">{{ t().api.noMedia }}</a>
+          }
+        </div>
+        <app-pager [pager]="mediaPager" />
+      }
+      <p class="small muted none">
+        {{ t().cmp.mediaHint }}
+        <a routerLink="/app/library">{{ t().cmp.openLibrary }}</a>
+      </p>
+    </section>
+
+    <section class="block">
+      <div class="block-head">
+        <span class="fw5">{{ t().api.flow.plColTitle }}</span>
+        <span class="small muted"> · {{ collectionIds().length }}</span>
+        <span class="grow"></span>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          data-testid="new-collection"
+          [disabled]="!perm.canEdit()"
+          [attr.title]="perm.editHint() || null"
+          (click)="colModal.set(true)"
+        >
+          <i class="ph ph-plus"></i>{{ t().api.flow.edColNew }}
+        </button>
+      </div>
+      @if (collectionOptions().length) {
+        <div class="chips" role="group" [attr.aria-label]="t().api.flow.plColTitle">
+          @for (c of collectionOptions(); track c.id) {
+            <button
+              type="button"
+              class="pick"
+              [class.on]="c.on"
+              [disabled]="!perm.canEdit()"
+              [attr.aria-pressed]="c.on"
+              (click)="toggleCollection(c.id)"
+            >
+              @if (c.on) {
+                <i class="ph-bold ph-check"></i>
+              }
+              {{ c.name }}
+            </button>
+          }
+        </div>
+        <p class="small muted none">{{ colHint() }}</p>
+      } @else {
+        <p class="small muted none">{{ t().api.flow.plColNone }}</p>
+      }
+    </section>
+
+    <section class="block">
+      <div class="block-head">
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost more"
+          data-testid="more-toggle"
+          [attr.aria-expanded]="moreOpen()"
+          (click)="moreOpen.set(!moreOpen())"
+        >
+          <i class="ph" [class]="moreOpen() ? 'ph-caret-up' : 'ph-caret-down'"></i
+          >{{ t().api.flow.edMore }}
+        </button>
+        <span class="small muted">{{ t().api.flow.edMoreHint }}</span>
+      </div>
+      @if (moreOpen()) {
+        <div class="inner">
+          <div class="sub">
+            <div class="block-head">
+              <span class="fw5">{{ t().api.flow.plMsgTitle }}</span>
+            </div>
+            <p class="small muted none">{{ t().api.flow.plMsgHint }}</p>
+            <div class="own">
+              <div class="own-head">
+                <span class="su-field-label">{{ t().api.flow.plHashtags }}</span>
+                <app-checkbox
+                  [label]="t().api.flow.plFollowCol"
+                  [checked]="!tagsOwn()"
+                  [disabled]="!perm.canEdit()"
+                  (checkedChange)="tagsOwn.set(!$event)"
+                />
+              </div>
+              <app-input-field
+                [placeholder]="t().col.hashtagsPh"
+                [maxlength]="limits.hashtags"
+                [disabled]="!tagsOwn() || !perm.canEdit()"
+                [(value)]="tags"
+              />
+            </div>
+            <div class="own">
+              <div class="own-head">
+                <span class="su-field-label">{{ t().api.flow.plFooter }}</span>
+                <app-checkbox
+                  [label]="t().api.flow.plFollowCol"
+                  [checked]="!footerOwn()"
+                  [disabled]="!perm.canEdit()"
+                  (checkedChange)="footerOwn.set(!$event)"
+                />
+              </div>
+              <textarea
+                class="su-textarea foot"
+                rows="3"
+                [attr.aria-label]="t().api.flow.plFooter"
+                [placeholder]="t().col.footerPh"
+                [value]="footer()"
+                [disabled]="!footerOwn() || !perm.canEdit()"
+                [attr.maxlength]="limits.footer"
+                (input)="footer.set($any($event.target).value)"
+              ></textarea>
+            </div>
+            <div class="own">
+              <span class="su-field-label">{{ t().api.flow.plFooterPos }}</span>
+              <div class="seg" role="radiogroup" [attr.aria-label]="t().api.flow.plFooterPos">
+                <button
+                  type="button"
+                  role="radio"
+                  [class.on]="footerPos() === 'follow'"
+                  [attr.aria-checked]="footerPos() === 'follow'"
+                  [disabled]="!perm.canEdit()"
+                  (click)="footerPos.set('follow')"
+                >
+                  {{ t().api.flow.plFollowCol }}
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  [class.on]="footerPos() === 'top'"
+                  [attr.aria-checked]="footerPos() === 'top'"
+                  [disabled]="!perm.canEdit()"
+                  (click)="footerPos.set('top')"
+                >
+                  {{ t().col.posTop }}
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  [class.on]="footerPos() === 'end'"
+                  [attr.aria-checked]="footerPos() === 'end'"
+                  [disabled]="!perm.canEdit()"
+                  (click)="footerPos.set('end')"
+                >
+                  {{ t().col.posEnd }}
+                </button>
+              </div>
+            </div>
           </div>
-        }
-      </div>
-    } @else {
-      <p class="small muted none">{{ t().api.flow.plMediaNone }}</p>
+
+          <div class="sub">
+            <div class="block-head">
+              <span class="fw5">{{ t().api.flow.plSchedTitle }}</span>
+            </div>
+            <p class="small muted none">{{ t().api.flow.plSchedHint }}</p>
+            <div class="grid">
+              <app-input-field
+                type="date"
+                [label]="t().api.flow.plValidFrom"
+                [disabled]="!perm.canEdit()"
+                [error]="errDates()"
+                [(value)]="validFrom"
+              />
+              <app-input-field
+                type="date"
+                [label]="t().api.flow.plValidUntil"
+                [disabled]="!perm.canEdit()"
+                [(value)]="validUntil"
+              />
+            </div>
+            <div>
+              <span class="su-field-label">{{ t().api.flow.plWeekdays }}</span>
+              <div class="chips" role="group" [attr.aria-label]="t().api.flow.plWeekdays">
+                @for (d of days(); track d.value) {
+                  <button
+                    type="button"
+                    class="pick day"
+                    [class.on]="d.on"
+                    [disabled]="!perm.canEdit()"
+                    [attr.aria-pressed]="d.on"
+                    (click)="toggleDay(d.value)"
+                  >
+                    {{ d.label }}
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="grid">
+              <app-input-field
+                type="time"
+                [label]="t().api.flow.plTimeFrom"
+                [disabled]="!perm.canEdit()"
+                [error]="errTime()"
+                [(value)]="timeFrom"
+              />
+              <app-input-field
+                type="time"
+                [label]="t().api.flow.plTimeTo"
+                [disabled]="!perm.canEdit()"
+                [(value)]="timeTo"
+              />
+            </div>
+            <p class="small muted none">{{ t().api.flow.plTimeHint }}</p>
+            <div class="max">
+              <app-input-field
+                type="number"
+                [label]="t().api.flow.plMaxPerDay"
+                [disabled]="!perm.canEdit()"
+                [error]="errMax()"
+                [(value)]="maxPerDay"
+              />
+              <p class="small muted none">{{ maxHint() }}</p>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+
+    @if (isNew()) {
+      <app-checkbox
+        [label]="t().api.flow.plActiveNew"
+        [disabled]="!perm.canEdit()"
+        [(checked)]="activeNew"
+      />
     }
-    @if (pickerOpen()) {
-      <div class="media picker">
-        @for (m of picks(); track m.id) {
-          <button
-            type="button"
-            class="m"
-            [class.on]="m.selected"
-            [title]="m.label"
-            [disabled]="!perm.canEdit()"
-            [attr.aria-pressed]="m.selected"
-            (click)="toggleMedia(m.id)"
-          >
-            <span class="thumb">
-              @if (m.src) {
-                <img [src]="m.src" alt="" />
-              } @else {
-                <i class="ph" [class]="m.icon"></i>
-              }
-              @if (m.selected) {
-                <i class="ph-fill ph-check-circle tick"></i>
-              }
-            </span>
-            <span class="small ellipsis">{{ m.label }}</span>
-          </button>
-        } @empty {
-          <a class="small" routerLink="/app/library">{{ t().api.noMedia }}</a>
-        }
-      </div>
-      <app-pager [pager]="mediaPager" />
+    @if (editResets()) {
+      <p class="small muted none">{{ t().api.flow.plApprovalResets }}</p>
     }
-  </section>
-
-  <section class="block">
-    <div class="block-head">
-      <span class="fw5">{{ t().api.flow.plColTitle }}</span>
-      <span class="small muted"> · {{ collectionIds().length }}</span>
-    </div>
-    @if (collectionOptions().length) {
-      <div class="chips" role="group" [attr.aria-label]="t().api.flow.plColTitle">
-        @for (c of collectionOptions(); track c.id) {
-          <button
-            type="button"
-            class="pick"
-            [class.on]="c.on"
-            [disabled]="!perm.canEdit()"
-            [attr.aria-pressed]="c.on"
-            (click)="toggleCollection(c.id)"
-          >
-            @if (c.on) {
-              <i class="ph-bold ph-check"></i>
-            }
-            {{ c.name }}
-          </button>
-        }
-      </div>
-      <p class="small muted none">{{ colHint() }}</p>
-    } @else {
-      <p class="small muted none">{{ t().api.flow.plColNone }}</p>
+    @if (errForm()) {
+      <p class="su-field-err" role="alert">{{ errForm() }}</p>
     }
-  </section>
+    <div class="foot-btns">
+      <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="cancel()">
+        {{ t().common.cancel }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary"
+        data-testid="save-another"
+        [disabled]="busy() || !perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+        (click)="save(true)"
+      >
+        {{ t().cmp.saveNew }}
+      </button>
+      <button
+        type="submit"
+        class="su-btn su-btn-sm su-btn-primary"
+        data-testid="save"
+        [disabled]="busy() || !perm.canEdit()"
+        [attr.title]="perm.editHint() || null"
+      >
+        {{ t().api.flow.plSave }}
+      </button>
+    </div>
+  </form>
 
-  <section class="block">
-    <div class="block-head">
-      <span class="fw5">{{ t().api.flow.plMsgTitle }}</span>
-    </div>
-    <p class="small muted none">{{ t().api.flow.plMsgHint }}</p>
-    <div class="own">
-      <div class="own-head">
-        <span class="su-field-label">{{ t().api.flow.plHashtags }}</span>
-        <app-checkbox
-          [label]="t().api.flow.plFollowCol"
-          [checked]="!tagsOwn()"
-          [disabled]="!perm.canEdit()"
-          (checkedChange)="tagsOwn.set(!$event)"
-        />
-      </div>
-      <app-input-field
-        [placeholder]="t().col.hashtagsPh"
-        [maxlength]="limits.hashtags"
-        [disabled]="!tagsOwn() || !perm.canEdit()"
-        [(value)]="tags"
-      />
-    </div>
-    <div class="own">
-      <div class="own-head">
-        <span class="su-field-label">{{ t().api.flow.plFooter }}</span>
-        <app-checkbox
-          [label]="t().api.flow.plFollowCol"
-          [checked]="!footerOwn()"
-          [disabled]="!perm.canEdit()"
-          (checkedChange)="footerOwn.set(!$event)"
-        />
-      </div>
-      <textarea
-        class="su-textarea foot"
-        rows="3"
-        [attr.aria-label]="t().api.flow.plFooter"
-        [placeholder]="t().col.footerPh"
-        [value]="footer()"
-        [disabled]="!footerOwn() || !perm.canEdit()"
-        [attr.maxlength]="limits.footer"
-        (input)="footer.set($any($event.target).value)"
-      ></textarea>
-    </div>
-    <div class="own">
-      <span class="su-field-label">{{ t().api.flow.plFooterPos }}</span>
-      <div class="seg" role="radiogroup" [attr.aria-label]="t().api.flow.plFooterPos">
-        <button
-          type="button"
-          role="radio"
-          [class.on]="footerPos() === 'follow'"
-          [attr.aria-checked]="footerPos() === 'follow'"
-          [disabled]="!perm.canEdit()"
-          (click)="footerPos.set('follow')"
-        >
-          {{ t().api.flow.plFollowCol }}
-        </button>
-        <button
-          type="button"
-          role="radio"
-          [class.on]="footerPos() === 'top'"
-          [attr.aria-checked]="footerPos() === 'top'"
-          [disabled]="!perm.canEdit()"
-          (click)="footerPos.set('top')"
-        >
-          {{ t().col.posTop }}
-        </button>
-        <button
-          type="button"
-          role="radio"
-          [class.on]="footerPos() === 'end'"
-          [attr.aria-checked]="footerPos() === 'end'"
-          [disabled]="!perm.canEdit()"
-          (click)="footerPos.set('end')"
-        >
-          {{ t().col.posEnd }}
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <section class="block">
-    <div class="block-head">
-      <span class="fw5">{{ t().api.flow.plSchedTitle }}</span>
-    </div>
-    <p class="small muted none">{{ t().api.flow.plSchedHint }}</p>
-    <div class="grid">
-      <app-input-field
-        type="date"
-        [label]="t().api.flow.plValidFrom"
-        [disabled]="!perm.canEdit()"
-        [error]="errDates()"
-        [(value)]="validFrom"
-      />
-      <app-input-field
-        type="date"
-        [label]="t().api.flow.plValidUntil"
-        [disabled]="!perm.canEdit()"
-        [(value)]="validUntil"
-      />
-    </div>
-    <div>
-      <span class="su-field-label">{{ t().api.flow.plWeekdays }}</span>
-      <div class="chips" role="group" [attr.aria-label]="t().api.flow.plWeekdays">
-        @for (d of days(); track d.value) {
-          <button
-            type="button"
-            class="pick day"
-            [class.on]="d.on"
-            [disabled]="!perm.canEdit()"
-            [attr.aria-pressed]="d.on"
-            (click)="toggleDay(d.value)"
-          >
-            {{ d.label }}
-          </button>
-        }
-      </div>
-    </div>
-    <div class="grid">
-      <app-input-field
-        type="time"
-        [label]="t().api.flow.plTimeFrom"
-        [disabled]="!perm.canEdit()"
-        [error]="errTime()"
-        [(value)]="timeFrom"
-      />
-      <app-input-field
-        type="time"
-        [label]="t().api.flow.plTimeTo"
-        [disabled]="!perm.canEdit()"
-        [(value)]="timeTo"
-      />
-    </div>
-    <p class="small muted none">{{ t().api.flow.plTimeHint }}</p>
-    <div class="max">
-      <app-input-field
-        type="number"
-        [label]="t().api.flow.plMaxPerDay"
-        [disabled]="!perm.canEdit()"
-        [error]="errMax()"
-        [(value)]="maxPerDay"
-      />
-      <p class="small muted none">{{ maxHint() }}</p>
-    </div>
-  </section>
-
-  @if (isNew()) {
-    <app-checkbox
-      [label]="t().api.flow.plActiveNew"
-      [disabled]="!perm.canEdit()"
-      [(checked)]="activeNew"
+  <aside class="side">
+    <app-post-preview
+      [text]="text()"
+      [media]="mediaIds()"
+      [removable]="perm.canEdit()"
+      [collections]="previewCollections()"
+      [postSettings]="ownMessage()"
+      (removed)="toggleMedia($event)"
     />
-  }
-  @if (editResets()) {
-    <p class="small muted none">{{ t().api.flow.plApprovalResets }}</p>
-  }
-  @if (errForm()) {
-    <p class="su-field-err" role="alert">{{ errForm() }}</p>
-  }
-  <div class="foot-btns">
-    <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="cancelled.emit()">
-      {{ t().common.cancel }}
-    </button>
-    <button
-      type="submit"
-      class="su-btn su-btn-sm su-btn-primary"
-      [disabled]="busy() || !perm.canEdit()"
-      [attr.title]="perm.editHint() || null"
-    >
-      {{ t().api.flow.plSave }}
-    </button>
-  </div>
-</form>
+  </aside>
+</div>
+
+<app-new-collection-modal
+  [open]="colModal()"
+  (created)="collectionCreated($event.id)"
+  (closed)="colModal.set(false)"
+/>

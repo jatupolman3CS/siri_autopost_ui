@@ -10,20 +10,23 @@ import {
 } from '@angular/core';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { LINK_LIMITS, LinkSetsStore } from '../../core/data/link-sets.store';
+import { LINK_KIND_ICONS } from '../../core/data/platforms';
 import { ApiSetLink } from '../../core/http/api.service';
-import { linkLabel } from '../../core/flow/group-links';
+import { LinkKind, linkLabel } from '../../core/flow/group-links';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
+import { ChipComponent } from '../../shared/components/chip/chip.component';
 
-// One link of a set (the prototype's row): switch, name, address, group code and daily cap on a grid of
-// up to four columns, a remove button, then the notes under it (not a Facebook group / repeated address)
-// and the health line (waiting for approval, switched off, "enable again"). Every edit goes straight to the
+// One link of a set (the prototype's row): switch, name, address (with a small "group" or "page" chip: the
+// server tells them apart by the address), group code and daily cap on a grid of up to four columns, a remove
+// button, then the notes under it (not a Facebook group or page / repeated address) and the health line (waiting for approval, switched off, "enable again"). Every edit goes straight to the
 // store, which saves the whole row shortly after the last keystroke. The address and its notes come from
 // the row (`valid`/`duplicate`: the server's answer, worked out again locally while it is being edited).
 @Component({
   selector: 'app-link-row',
-  imports: [CheckboxComponent],
+  imports: [CheckboxComponent, ChipComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './link-row.component.html',
   styleUrl: './link-row.component.scss',
@@ -39,11 +42,29 @@ export class LinkRowComponent {
   protected readonly perm = inject(PermissionsService);
   protected readonly t = inject(I18nService).t;
   protected readonly limits = LINK_LIMITS;
+  protected readonly kindIcons = LINK_KIND_ICONS;
   private readonly urlInput = viewChild<ElementRef<HTMLInputElement>>('urlInput');
 
   /** What the row is called for a screen reader: its name, else the group in its address. */
   protected readonly label = computed(() => linkLabel(this.link()));
-  /** The note under the row: an address that is not a group, or one the set already has. */
+  /** Group or page, from the address (the row's `kind`, kept in step with the text while it is typed). */
+  protected readonly kind = computed<LinkKind>(() =>
+    this.link().kind === 'page' ? 'page' : 'group',
+  );
+  /** The chip says what the address is only when it is one: an empty or wrong address has no kind to show. */
+  protected readonly showKind = computed(() => {
+    const l = this.link();
+    return l.valid && l.url.trim() !== '';
+  });
+  protected readonly kindLabel = computed(() => {
+    const f = this.t().api.flow;
+    return this.kind() === 'page' ? f.linkKindPage : f.linkKindGroup;
+  });
+  protected readonly kindHint = computed(() => {
+    const f = this.t().api.flow;
+    return this.kind() === 'page' ? f.linkKindPageHint : f.linkKindGroupHint;
+  });
+  /** The note under the row: an address that is not a group or page, or one the set already has. */
   protected readonly note = computed(() => {
     const l = this.link();
     if (l.url.trim() && !l.valid) return this.t().ts.invalidUrl;

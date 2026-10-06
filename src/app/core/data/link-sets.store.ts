@@ -3,14 +3,13 @@ import {
   ApiBulkLinksResult,
   ApiCsvImportResult,
   ApiCsvLinkRow,
-  ApiGroupLink,
   ApiLinkSet,
   ApiService,
   ApiSetLink,
 } from '../http/api.service';
 import { ComposeSettings } from '../flow/compose';
 import { EXPORT_FILES, downloadCsv } from '../flow/download';
-import { duplicateUrlFlags, linksToCsv, normalizeGroupUrl } from '../flow/group-links';
+import { duplicateUrlFlags, linkKindOf, linksToCsv, normalizeGroupUrl } from '../flow/group-links';
 import { CollectionsStore } from './collections.store';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
@@ -29,22 +28,20 @@ const FALLBACK_POLL_MS = 60_000;
 
 /** The fields of a link row the page edits; the server takes the complete row every time. */
 export type LinkEdit = Partial<Pick<ApiSetLink, 'name' | 'url' | 'code' | 'dailyMax' | 'enabled'>>;
-/** What the set's header line counts: all links, enabled valid ones, those with a code, other accounts. */
+/** What the set's header line counts: all links, enabled valid ones, and those with a code. */
 export interface SetStats {
   links: number;
   on: number;
   codes: number;
-  accounts: number;
 }
 /** The fields of a set that can be changed after it was created. */
 export interface SetEdit {
   name?: string;
-  /** null = the workspace's first connected Facebook account. */
+  /** null = the first connected extension's Facebook account. */
   postAsAccountId?: string | null;
-  accountIds?: string[];
 }
 
-/** A link the engine would post to: switched on and a real group address. */
+/** A link the engine would post to: switched on and a real Facebook group or page address. */
 export const isActiveLink = (l: Pick<ApiSetLink, 'enabled' | 'valid'>): boolean =>
   l.enabled && l.valid;
 
@@ -54,7 +51,6 @@ export function statsOf(set: ApiLinkSet): SetStats {
     links: set.links.length,
     on: on.length,
     codes: on.filter((l) => l.code.trim() !== '').length,
-    accounts: set.accountIds.length,
   };
 }
 
@@ -64,14 +60,18 @@ export function firstCodedLink(set: ApiLinkSet): ApiSetLink | undefined {
 }
 
 /**
- * The address checks the server answers with (`valid`, `duplicate`) worked out again from the addresses, so a
- * row edited here is flagged before its save comes back. Rows that did not change keep their identity.
+ * The address checks the server answers with (`valid`, `duplicate`, `kind`) worked out again from the addresses,
+ * so a row edited here is flagged (and called a group or a page) before its save comes back. Rows that did not
+ * change keep their identity.
  */
 function withFlags(links: ApiSetLink[]): ApiSetLink[] {
   const dup = duplicateUrlFlags(links);
   return links.map((l, i) => {
     const valid = normalizeGroupUrl(l.url) !== '';
-    return l.valid === valid && l.duplicate === dup[i] ? l : { ...l, valid, duplicate: dup[i] };
+    const kind = linkKindOf(l.url);
+    return l.valid === valid && l.duplicate === dup[i] && l.kind === kind
+      ? l
+      : { ...l, valid, duplicate: dup[i], kind };
   });
 }
 
@@ -101,8 +101,8 @@ interface PendingEdit {
   confirmed: ApiSetLink;
 }
 
-// Link sets ("ชุดลิงก์กลุ่ม") of the current workspace: Facebook group addresses with a group code and a daily
-// cap, and the accounts that post them. Reading is for every role; every change is an editor's.
+// Link sets ("ชุดลิงก์") of the current workspace: Facebook group and page addresses with a group code and a daily
+// cap, and the extension (account) that posts them. Reading is for every role; every change is an editor's.
 //
 // Link rows are edited inline: `editLink` changes the row at once and saves the complete row 600 ms after the
 // last change (a toggle saves at once), one request per row at a time. A refused save puts the row back to what
@@ -130,7 +130,7 @@ export class LinkSetsStore {
   readonly moreOpen = signal<Record<string, boolean>>({});
 
   readonly setCount = computed(() => this.sets().length);
-  /** Links the engine would post to, in every set: switched on and a real group address. */
+  /** Links the engine would post to, in every set: switched on and a real group or page address. */
   readonly linkCount = computed(() =>
     this.sets().reduce((n, s) => n + s.links.filter(isActiveLink).length, 0),
   );
@@ -142,7 +142,7 @@ export class LinkSetsStore {
   });
 
   private readonly pending = new Map<string, PendingEdit>();
-  /** Set updates (post-as, other accounts) sent or waiting, per set: they go one after the other. */
+  /** Set updates (name, post-as) sent or waiting, per set: they go one after the other. */
   private readonly setOps = new Map<string, Promise<void>>();
   private readonly setOpCount = new Map<string, number>();
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -243,18 +243,6 @@ export class LinkSetsStore {
     return this.updateSet(id, { postAsAccountId: accountId });
   }
 
-  addAccount(id: string, accountId: string): Promise<boolean> {
-    const set = this.byId(id);
-    if (!set || set.accountIds.includes(accountId)) return Promise.resolve(false);
-    return this.updateSet(id, { accountIds: [...set.accountIds, accountId] });
-  }
-
-  removeAccount(id: string, accountId: string): Promise<boolean> {
-    const set = this.byId(id);
-    if (!set || !set.accountIds.includes(accountId)) return Promise.resolve(false);
-    return this.updateSet(id, { accountIds: set.accountIds.filter((a) => a !== accountId) });
-  }
-
   /**
    * Changes the set's own fields at once and saves them; a refused save puts the old values back. Updates of one
    * set go one after the other, each sending the set as it is then, so quick clicks cannot overwrite each other.
@@ -267,17 +255,17 @@ export class LinkSetsStore {
     const previous: SetEdit = {};
     if (patch.name !== undefined) previous.name = before.name;
     if (patch.postAsAccountId !== undefined) previous.postAsAccountId = before.postAsAccountId;
-    if (patch.accountIds !== undefined) previous.accountIds = before.accountIds;
     this.patchSet(id, patch);
     this.setOpCount.set(id, (this.setOpCount.get(id) ?? 0) + 1);
     const run = async (): Promise<boolean> => {
       const set = this.byId(id);
       if (this.ws.id() !== wsId || !set) return false;
       try {
+        // The set's "other accounts" were sample data and are gone from the web app: nothing is posted to them.
         const saved = await this.api.updateLinkSet(wsId, id, {
           name: set.name,
           postAsAccountId: set.postAsAccountId,
-          accountIds: set.accountIds,
+          accountIds: [],
         });
         if (this.ws.id() === wsId && (this.setOpCount.get(id) ?? 0) <= 1) this.mergeSet(saved);
         return true;
@@ -378,7 +366,7 @@ export class LinkSetsStore {
     return link;
   }
 
-  /** Lines of `url | code` pasted into a set; answers how many were added, repeated, re-coded and invalid. */
+  /** Lines of `url | code` (a group or page address) pasted into a set; answers how many were added, repeated, re-coded and invalid. */
   async bulkAdd(setId: string, text: string): Promise<ApiBulkLinksResult> {
     const wsId = this.requireWs();
     const result = await this.api.bulkLinks(wsId, setId, text);
@@ -386,20 +374,7 @@ export class LinkSetsStore {
     return result;
   }
 
-  /** The groups of a connected account (name + address) as its browser last synced them. */
-  accountGroups(accountId: string): Promise<ApiGroupLink[]> {
-    return this.api.accountGroups(this.requireWs(), accountId);
-  }
-
-  /** Adds groups of a connected account (by address) to a set; the ones it already has are skipped by the server. */
-  async importGroups(setId: string, accountId: string, urls: string[]): Promise<ApiLinkSet> {
-    const wsId = this.requireWs();
-    const set = await this.api.importGroups(wsId, setId, accountId, urls);
-    if (this.ws.id() === wsId) this.mergeSet(set);
-    return set;
-  }
-
-  /** CSV rows `set, name, url, code`: missing sets are created by name. Reads the sets again afterwards. */
+  /** CSV rows `set, name, url, code` (group or page addresses): missing sets are created by name. Reads the sets again afterwards. */
   async importCsv(rows: ApiCsvLinkRow[]): Promise<ApiCsvImportResult> {
     const wsId = this.requireWs();
     const result = await this.api.importLinksCsv(wsId, rows);
@@ -551,7 +526,6 @@ export class LinkSetsStore {
       ...server,
       name: own.name,
       postAsAccountId: own.postAsAccountId,
-      accountIds: own.accountIds,
       links: edited ? withFlags(links) : links,
     };
   }

@@ -6,12 +6,12 @@ import { PermissionsService } from '../../core/data/permissions.service';
 import { SchedulesStore } from '../../core/data/schedules.store';
 import {
   AUTO_DELETE_DAY_OPTIONS,
-  BUMP_HOUR_OPTIONS,
   POST_REPEATS,
   PostRepeat,
   SCHEDULE_MODES,
   localDateKey,
 } from '../../core/flow/schedule-math';
+import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { problemMessage } from '../../core/http/problem-details';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
@@ -21,15 +21,17 @@ import {
   SelectFieldComponent,
   SelectOption,
 } from '../../shared/components/select-field/select-field.component';
+import { ScheduleBumpComponent } from './schedule-bump.component';
 import { ScheduleFormService, SCHEDULE_NAME_MAX } from './schedule-form.service';
 import { ScheduleOverridesComponent } from './schedule-overrides.component';
 import { SchedulePatternComponent } from './schedule-pattern.component';
 
 // The "new schedule" card: which collection and link set to pair, the pattern and start date, and under "more"
-// how posts are picked, the times, per-group times and the two settings that are only saved. The state lives in
-// ScheduleFormService (provided by the page). Creating sends the request, then goes to the calendar on the
-// first day that has posts. Everything is an editor's; a workspace without a connected Facebook account cannot
-// create (the API refuses), so the button is off with the reason.
+// how posts are picked, the times, per-group times, the bump section (Premium, `app-schedule-bump`) and the
+// auto-delete setting that is only saved. The state lives in ScheduleFormService (provided by the page).
+// Creating sends the request, then goes to the calendar on the first day that has posts. Everything is an
+// editor's; a workspace without a connected Facebook account cannot create (the API refuses), so the button is
+// off with the reason.
 @Component({
   selector: 'app-schedule-builder',
   imports: [
@@ -38,6 +40,7 @@ import { SchedulePatternComponent } from './schedule-pattern.component';
     SelectFieldComponent,
     SchedulePatternComponent,
     ScheduleOverridesComponent,
+    ScheduleBumpComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './schedule-builder.component.html',
@@ -107,12 +110,6 @@ export class ScheduleBuilderComponent {
     };
     return note[this.form.repeat()];
   });
-  protected readonly bumpOptions = computed<SelectOption[]>(() =>
-    BUMP_HOUR_OPTIONS.map((h) => ({
-      value: String(h),
-      label: h ? fmt(this.t().sch.bumpH, { h }) : this.t().sch.bumpOff,
-    })),
-  );
   protected readonly delOptions = computed<SelectOption[]>(() =>
     AUTO_DELETE_DAY_OPTIONS.map((d) => ({
       value: String(d),
@@ -129,6 +126,13 @@ export class ScheduleBuilderComponent {
   protected readonly orderNote = computed(() =>
     this.form.order() === 'rotate' ? this.t().sch.rotateNote : this.t().sch.shuffleNote,
   );
+  /** More Facebook posts a day than the anti-ban limit lets out: the rest would fail, so it says where to raise it. */
+  protected readonly overLimitText = computed(() => {
+    const over = this.form.overLimit();
+    return over
+      ? fmt(this.t().api.flow.schOverLimit, { ...over, max: INPUT_LIMITS.platformDailyLimit })
+      : '';
+  });
   /** Why "create" is off, if it is: no role, or no computer to post from. */
   protected readonly blocked = computed(() =>
     this.perm.readOnly()

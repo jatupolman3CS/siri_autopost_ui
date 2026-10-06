@@ -1,0 +1,33 @@
+<div class="pm" role="radiogroup" [attr.aria-label]="label() || null">
+  @for (m of methods(); track m.id) {
+    <div class="pm-item" [class.open]="selected() === m.id" [class.off]="m.disabled">
+      <button
+        #row
+        type="button"
+        class="pm-row"
+        role="radio"
+        [attr.aria-checked]="selected() === m.id"
+        [attr.aria-controls]="selected() === m.id && panel() ? uid + '-' + m.id : null"
+        [attr.data-method]="m.id"
+        [tabindex]="stop() === m.id ? 0 : -1"
+        [disabled]="m.disabled"
+        (click)="pick(m)"
+        (keydown)="onKey($event, m.id)"
+      >
+        <app-payment-method-icon [method]="m.id" />
+        <span class="pm-text">
+          <span class="pm-label">{{ m.label }}</span>
+          @if (m.hint) {
+            <span class="pm-hint">{{ m.hint }}</span>
+          }
+        </span>
+        <span class="pm-dot" aria-hidden="true"></span>
+      </button>
+      @if (selected() === m.id && panel(); as tpl) {
+        <div class="pm-panel" role="group" [id]="uid + '-' + m.id" [attr.aria-label]="m.label">
+          <ng-container [ngTemplateOutlet]="tpl" [ngTemplateOutletContext]="{ $implicit: m.id }" />
+        </div>
+      }
+    </div>
+  }
+</div>

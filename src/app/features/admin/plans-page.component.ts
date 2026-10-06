@@ -1,6 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AdminStore } from '../../core/data/admin.store';
-import { DiscountKey, PLAN_ORDER, PlanKey, PlanLimits, Promo } from '../../core/data/models';
+import {
+  DiscountKey,
+  PLAN_FEATURES,
+  PLAN_ORDER,
+  PlanField,
+  PlanKey,
+  Promo,
+} from '../../core/data/models';
 import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
@@ -50,19 +57,32 @@ export class PlansPageComponent {
   protected readonly planRows = computed(() => {
     const t = this.t();
     const plans = this.admin.plans();
-    const fields: [keyof PlanLimits, string][] = [
+    // The seven numbers of a package (empty or 0 = unlimited); the functions it includes are fixed by the API.
+    const fields: [PlanField, string][] = [
       ['price', t.adm.price],
-      ['accounts', t.adm.limAccounts],
+      ['groups', t.api.planLimit.groups],
+      ['images', t.api.planLimit.images],
+      ['libraryPosts', t.api.planLimit.libraryPosts],
       ['posts', t.adm.limPosts],
+      ['accounts', t.adm.limAccounts],
       ['devices', t.adm.limDevices],
       ['seats', t.adm.limSeats],
     ];
-    return PLAN_ORDER.map((k) => ({
-      k,
-      name: t.plans[k].name,
-      tag: t.plans[k].tag,
-      fields: fields.map(([key, label]) => ({ key, label, value: plans[k][key] || 0 })),
-    }));
+    return PLAN_ORDER.map((k) => {
+      const included = PLAN_FEATURES.filter((f) => plans[k].features.includes(f));
+      return {
+        k,
+        name: t.plans[k].name,
+        tag: t.plans[k].tag,
+        fields: fields.map(([key, label]) => ({ key, label, value: plans[k][key] || 0 })),
+        // A read-only list: what a plan includes is decided in the API, not by an admin's edit.
+        features: PLAN_FEATURES.map((f) => ({
+          key: f,
+          label: t.api.planFeature[f],
+          included: included.includes(f),
+        })),
+      };
+    });
   });
 
   protected readonly promoRows = computed(() => {
@@ -103,7 +123,7 @@ export class PlansPageComponent {
     }));
   });
 
-  protected setField(plan: PlanKey, field: keyof PlanLimits, v: string): void {
+  protected setField(plan: PlanKey, field: PlanField, v: string): void {
     void this.admin.setPlanField(plan, field, parseInt(v, 10));
   }
 

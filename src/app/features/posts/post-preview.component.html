@@ -1,0 +1,117 @@
+<section class="panel pv" data-testid="post-preview">
+  <div class="panel-head">
+    <h2 class="h2">{{ t().cmp.previewTitle }}</h2>
+    <div class="pv-tools">
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        data-testid="pv-variants"
+        [attr.aria-pressed]="showVariants()"
+        [disabled]="!canVary()"
+        [attr.title]="canVary() ? null : t().api.flow.edSpinOff"
+        (click)="toggleVariants()"
+      >
+        <i class="ph ph-copy"></i
+        >{{ showVariants() ? t().api.flow.edPvSingle : t().api.flow.edPvVariants }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        data-testid="pv-respin"
+        (click)="respin()"
+      >
+        <i class="ph ph-shuffle"></i>{{ t().cmp.respin }}
+      </button>
+    </div>
+  </div>
+
+  @if (collections().length > 1) {
+    <app-select-field
+      [label]="t().api.flow.edPvAs"
+      [options]="collectionOptions()"
+      [value]="collectionId()"
+      (valueChange)="pickCollection($event)"
+    />
+  } @else {
+    <p class="small muted none" data-testid="pv-collection">{{ collectionLine() }}</p>
+  }
+
+  <app-select-field
+    [label]="t().cmp.previewSet"
+    [options]="setOptions()"
+    [value]="setId()"
+    (valueChange)="pickSet($event)"
+  />
+  @if (linkOptions().length) {
+    <app-select-field
+      [label]="t().api.flow.edPvGroup"
+      [options]="linkOptions()"
+      [value]="linkValue()"
+      (valueChange)="pickLink($event)"
+    />
+  }
+  <div class="note">
+    <i class="ph ph-facebook-logo"></i><span>{{ note() }}</span>
+  </div>
+  @if (codeLine()) {
+    <p class="small muted none code-line" data-testid="pv-code">{{ codeLine() }}</p>
+  }
+
+  @if (!filled()) {
+    <p class="box muted">{{ t().cmp.previewEmpty }}</p>
+  } @else if (showVariants()) {
+    @for (v of variantTexts(); track $index) {
+      <div class="variant" data-testid="pv-variant">
+        <span class="small muted">{{ variantLabel($index) }}</span>
+        <p class="box">{{ v }}</p>
+      </div>
+    }
+  } @else {
+    <p class="box" data-testid="pv-text">
+      @for (s of segments(); track $index) {
+        @if (s.spun) {
+          <mark>{{ s.text }}</mark>
+        } @else {
+          <span>{{ s.text }}</span>
+        }
+      }
+    </p>
+    @if (anySpun()) {
+      <p class="small muted none">{{ t().api.flow.edPvSpunHint }}</p>
+    }
+  }
+
+  @if (filled()) {
+    <p class="small none len" [class.bad]="tooLong()" data-testid="pv-length">
+      {{ lengthLine() }}
+    </p>
+    @if (tooLong()) {
+      <p class="small bad none" role="alert">{{ tooLongLine() }}</p>
+    }
+  }
+
+  @if (chips().length) {
+    <div class="chips">
+      @for (m of chips(); track m.id) {
+        <span class="chip" [title]="m.label">
+          @if (m.src) {
+            <img [src]="m.src" alt="" />
+          } @else {
+            <i class="ph" [class]="m.icon"></i>
+          }
+          @if (removable()) {
+            <button
+              type="button"
+              class="del"
+              [title]="t().cmp.removeMedia"
+              [attr.aria-label]="t().cmp.removeMedia"
+              (click)="remove(m.id)"
+            >
+              <i class="ph ph-x"></i>
+            </button>
+          }
+        </span>
+      }
+    </div>
+  }
+</section>

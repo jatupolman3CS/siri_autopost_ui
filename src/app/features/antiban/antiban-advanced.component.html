@@ -52,6 +52,7 @@
           (change)="setBlockMax($any($event.target))"
         />
       </span>
+      <span class="small muted">{{ t().api.engine.abBlockApplied }}</span>
       @if (!autopause()) {
         <span class="small muted">{{ t().api.engine.blockNeedsAuto }}</span>
       }
@@ -65,7 +66,7 @@
       [disabled]="off()"
       (checkedChange)="setFocus($event)"
     />
-    <p class="small muted stored">{{ t().api.engine.storedOnly }}</p>
+    <p class="small muted stored">{{ t().api.engine.abFocusApplied }}</p>
   </div>
 
   <div class="two" [class.dim]="locked()">

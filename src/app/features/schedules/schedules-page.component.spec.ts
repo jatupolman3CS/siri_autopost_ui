@@ -8,6 +8,8 @@ import { assistStorage } from '../../core/auth/token';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { DeviceEventsService } from '../../core/data/device-events.service';
 import { DevicesStore } from '../../core/data/devices.store';
+import { LibraryStore } from '../../core/data/library.store';
+import { MediaItem } from '../../core/data/models';
 import { PostsStore } from '../../core/data/posts.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
 import { SettingsStore } from '../../core/data/settings.store';
@@ -18,7 +20,14 @@ import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
 import { UiPrefsService } from '../../core/services/ui-prefs.service';
-import { ACCOUNTS, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  ACCOUNTS,
+  WS,
+  answerThumbs,
+  provideApiTesting,
+  settle,
+  signIn,
+} from '../../testing/api-testing';
 import {
   apiCollection,
   apiCollectionPost,
@@ -33,6 +42,7 @@ import {
   apiSchedule,
   apiScheduleCreated,
 } from '../../testing/schedules.fixtures';
+import { ScheduleFormService } from './schedule-form.service';
 import { SchedulesPageComponent } from './schedules-page.component';
 
 const POSTS = [1, 2, 3].map((i) => apiCollectionPost({ id: `p${i}` }));
@@ -59,7 +69,6 @@ const S1 = apiLinkSet({
   id: 's1',
   name: 'Condo groups',
   links: [LINK_A, LINK_B, LINK_OFF, LINK_BAD, LINK_DUP],
-  accountIds: ['acc-ig'],
   scheduleCount: 1,
 });
 const S2 = apiLinkSet({ id: 's2', name: 'No groups', links: [LINK_OFF] });
@@ -90,6 +99,8 @@ describe('SchedulesPageComponent', () => {
       url?: string;
       /** Answer the schedules only when the test says so. */
       holdSchedules?: boolean;
+      /** The owner's plan includes bumping (Premium); the default owner is on Pro, which does not. */
+      bump?: boolean;
     } = {},
   ) {
     http = provideApiTesting({
@@ -118,8 +129,9 @@ describe('SchedulesPageComponent', () => {
     TestBed.inject(SettingsStore);
     TestBed.inject(SchedulesStore);
     TestBed.inject(DevicesStore);
+    TestBed.inject(LibraryStore);
     await signIn(http, {
-      workspace: { role: opts.role ?? 'owner' },
+      workspace: { role: opts.role ?? 'owner', bump: opts.bump ?? false },
       schedules: opts.holdSchedules ? [] : (opts.schedules ?? [MORNING]),
       collections: opts.collections ?? [C1, C2, C3],
       linkSets: opts.linkSets ?? [S1, S2],
@@ -337,13 +349,30 @@ describe('SchedulesPageComponent', () => {
       expect(button(row, t().sch.remove)).toBeDefined();
     });
 
-    it('says the bump and auto-delete are only saved', async () => {
-      const kept = apiSchedule({ id: 'sc4', bumpHours: 6, autoDeleteDays: 7 });
+    it('shows the bump as a line of its own and says only the auto-delete is saved', async () => {
+      const kept = apiSchedule({
+        id: 'sc4',
+        bumpHours: 2,
+        bump: { rounds: 2, text: '', mediaIds: ['m1'], imagesEach: 1 },
+        autoDeleteDays: 7,
+      });
       const { el } = await open({ schedules: [kept] });
-      const text = rowsOf(el)[0].querySelector('.info')!.textContent!;
-      expect(text).toContain(fmt(t().sch.bumpH, { h: 6 }));
-      expect(text).toContain(fmt(t().sch.autoDelD, { d: 7 }));
-      expect(text).toContain(t().api.flow.storedOnlyBadge);
+      const info = rowsOf(el)[0].querySelector('.info')!;
+      expect(info.querySelector('.bump-line')!.textContent!.trim()).toBe(
+        `${fmt(t().api.flow.schBumpLine, { h: 2, n: 2 })} · ${fmt(t().api.flow.schBumpLineImg, { k: 1 })}`,
+      );
+      // The bump is real now: it does not carry the "saved only" badge, the auto-delete still does.
+      const stored = info.querySelector('[title]')!;
+      expect(stored.textContent).toContain(fmt(t().sch.autoDelD, { d: 7 }));
+      expect(stored.textContent).toContain(t().api.flow.storedOnlyBadge);
+      expect(info.querySelector('.bump-line')!.textContent).not.toContain(
+        t().api.flow.storedOnlyBadge,
+      );
+    });
+
+    it('has no bump line for a schedule that does not bump', async () => {
+      const { el } = await open();
+      expect(rowsOf(el)[0].querySelector('.bump-line')).toBeNull();
     });
 
     it('opens the calendar on the day of the next run', async () => {
@@ -618,16 +647,35 @@ describe('SchedulesPageComponent', () => {
       const { fixture, el } = await open();
       await openBuilder(el, fixture);
       await pair(el, fixture);
-      // Two groups that are on and valid (the repeated address is left out) and one other account, at two times,
-      // from three usable posts, with the workspace's wait of 3-12 minutes.
-      expect(summary(el)).toBe(fmt(t().sch.summary, { n: 6, m: 3, p: 3, a: 3, b: 12 }));
+      // Two groups that are on and valid (the repeated address is left out), at two times, from three usable
+      // posts, with the workspace's wait of 3-12 minutes.
+      expect(summary(el)).toBe(fmt(t().sch.summary, { n: 4, m: 2, p: 3, a: 3, b: 12 }));
+    });
+
+    it('warns when the Facebook posts of a day go over the daily limit, which the server would fail', async () => {
+      const { fixture, el } = await open();
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      const over = () => builder(el)!.querySelector<HTMLElement>('.over');
+      expect(over()).toBeNull(); // 4 Facebook posts a day under the default 40
+
+      const settings = TestBed.inject(SettingsStore);
+      expect(settings.loaded()).toBe(true);
+      settings.patchAb({ limits: { ...settings.ab().limits, fb: 3 } });
+      await settle();
+      fixture.detectChanges();
+      // Two groups at two times.
+      expect(over()!.querySelector('span')!.textContent).toBe(
+        fmt(t().api.flow.schOverLimit, { n: 4, limit: 3, max: 500 }),
+      );
+      expect(over()!.querySelector('a')!.getAttribute('href')).toBe('/app/antiban');
     });
 
     it('counts only the approved posts of a collection that needs approval', async () => {
       const { fixture, el } = await open();
       await openBuilder(el, fixture);
       await pair(el, fixture, 'c3');
-      expect(summary(el)).toBe(fmt(t().sch.summary, { n: 6, m: 3, p: 0, a: 3, b: 12 }));
+      expect(summary(el)).toBe(fmt(t().sch.summary, { n: 4, m: 2, p: 0, a: 3, b: 12 }));
     });
 
     it('says "once" in the summary, with the date and the time', async () => {
@@ -640,16 +688,17 @@ describe('SchedulesPageComponent', () => {
       fixture.detectChanges();
       button(builder(el)!, t().common.more)!.click();
       fixture.detectChanges();
-      expect(summary(el)).toBe(fmt(t().sch.summaryOnce, { n: 3, m: 3, d: '25 ธ.ค.', t: '14:00' }));
+      expect(summary(el)).toBe(fmt(t().sch.summaryOnce, { n: 2, m: 2, d: '25 ธ.ค.', t: '14:00' }));
     });
 
-    it('says the bump and the auto-delete are only saved', async () => {
+    it('says the auto-delete is only saved (the bump is real and has its own section)', async () => {
       const { fixture, el } = await open({ simple: false });
       await openBuilder(el, fixture);
       const hints = [...builder(el)!.querySelectorAll('.stored')].map((n) => n.textContent?.trim());
-      expect(hints).toEqual([t().api.flow.storedOnly, t().api.flow.storedOnly]);
-      expect(field(el, t().sch.bump)!.parentElement?.querySelector('.stored')).not.toBeNull();
+      expect(hints).toEqual([t().api.flow.storedOnly]);
       expect(field(el, t().sch.autoDel)!.parentElement?.querySelector('.stored')).not.toBeNull();
+      // No "saved only" hint inside the bump section.
+      expect(builder(el)!.querySelector('app-schedule-bump .stored')).toBeNull();
     });
 
     it('explains how posts are picked for each order', async () => {
@@ -832,14 +881,13 @@ describe('SchedulesPageComponent', () => {
       expect(rows(el)).toHaveLength(0);
     });
 
-    it("has a row for every group that is on and valid, then the set's other accounts", async () => {
+    it('has a row for every group or page that is on and valid, and no other accounts', async () => {
       const { fixture, el } = await open({ simple: false });
       await openBuilder(el, fixture);
       await pair(el, fixture);
       expect(rows(el).map((r) => r.querySelector('.ellipsis')?.textContent)).toEqual([
         'Condo BKK',
         'Condo rent',
-        '@baandee · ฟีด',
       ]);
       // The group with a code shows it, and the note counts the coded groups.
       expect(rows(el)[0].querySelector('.small')?.textContent).toBe(`${t().cal.code} #Jan24`);
@@ -850,14 +898,33 @@ describe('SchedulesPageComponent', () => {
       expect(rows(el)[0].querySelector('input')!.placeholder).toBe(t().sch.followSchedule);
     });
 
+    it('lists a Facebook page next to the groups, with its own icon, and counts it', async () => {
+      const page = apiSetLink({
+        id: 'p',
+        name: 'Baan Dee page',
+        url: 'https://www.facebook.com/baandee.shop',
+      });
+      const set = apiLinkSet({ id: 's3', name: 'Groups and a page', links: [LINK_A, page] });
+      const { fixture, el } = await open({ simple: false, linkSets: [S1, S2, set] });
+      await openBuilder(el, fixture);
+      await pair(el, fixture, 'c1', 's3');
+      expect(rows(el).map((r) => r.querySelector('.ellipsis')?.textContent)).toEqual([
+        'Condo BKK',
+        'Baan Dee page',
+      ]);
+      expect(rows(el)[0].querySelector('.ph-users-three')).not.toBeNull();
+      expect(rows(el)[1].querySelector('.ph-flag')).not.toBeNull();
+      expect(summary(el)).toBe(fmt(t().sch.summary, { n: 4, m: 2, p: 3, a: 3, b: 12 }));
+    });
+
     it("counts the posts of a group with its own times, not the schedule's", async () => {
       const { fixture, el } = await open({ simple: false });
       await openBuilder(el, fixture);
       await pair(el, fixture);
       type(rows(el)[0].querySelector('input')!, '08:00, 12:00, 20:00');
       fixture.detectChanges();
-      // Three for the first group, two each for the other two.
-      expect(summary(el)).toBe(fmt(t().sch.summary, { n: 7, m: 3, p: 3, a: 3, b: 12 }));
+      // Three for the first group, two for the other.
+      expect(summary(el)).toBe(fmt(t().sch.summary, { n: 5, m: 2, p: 3, a: 3, b: 12 }));
     });
 
     it('forgets the typed times when another link set is chosen', async () => {
@@ -1001,10 +1068,10 @@ describe('SchedulesPageComponent', () => {
       fixture.detectChanges();
       expect(labels()).not.toContain(t().sch.onceTime);
       expect(builder(el)!.textContent).toContain(t().api.flow.schStartNowOnceNote);
-      expect(summary(el)).toBe(fmt(t().api.flow.schSummaryNow, { m: 3, a: 3, b: 12 }));
+      expect(summary(el)).toBe(fmt(t().api.flow.schSummaryNow, { m: 2, a: 3, b: 12 }));
     });
 
-    it('sends everything that was changed: name, pattern, times, order, per-group times, bump and delete', async () => {
+    it('sends everything that was changed: name, pattern, times, order, per-group times and delete', async () => {
       const { fixture, el } = await open({ simple: false });
       await openBuilder(el, fixture);
       await pair(el, fixture);
@@ -1012,7 +1079,6 @@ describe('SchedulesPageComponent', () => {
       pick(select(el, t().sch.mode), 'weekend');
       type(input(el, t().sch.start), '2026-11-06');
       pick(select(el, t().sch.order), 'rotate');
-      pick(select(el, t().sch.bump), '12');
       pick(select(el, t().sch.autoDel), '7');
       chip(el, '12:00').click();
       type(
@@ -1020,12 +1086,6 @@ describe('SchedulesPageComponent', () => {
           .querySelectorAll<HTMLElement>('app-schedule-overrides .member')[1]
           .querySelector('input')!,
         '8:00, 20:00',
-      );
-      type(
-        el
-          .querySelectorAll<HTMLElement>('app-schedule-overrides .member')[2]
-          .querySelector('input')!,
-        '07:15',
       );
       fixture.detectChanges();
       create(el).click();
@@ -1038,9 +1098,8 @@ describe('SchedulesPageComponent', () => {
           startDate: '2026-11-06',
           order: 'rotate',
           times: ['09:00', '12:00', '18:00'],
-          bumpHours: 12,
           autoDeleteDays: 7,
-          overrides: { b: ['08:00', '20:00'], 'account:acc-ig': ['07:15'] },
+          overrides: { b: ['08:00', '20:00'] },
         }),
       );
       req.flush(apiScheduleCreated(NEW, { created: 3 }));
@@ -1271,6 +1330,447 @@ describe('SchedulesPageComponent', () => {
     });
   });
 
+  describe('bump (Premium)', () => {
+    const PHOTOS: MediaItem[] = Array.from({ length: 24 }, (_, i) => ({
+      id: `m${i + 1}`,
+      name: `photo${i + 1}.jpg`,
+      meta: 'image/jpeg · 90 KB',
+      kind: 'image',
+      used: 0,
+      folderId: null,
+      active: true,
+    }));
+    const NEW = apiSchedule({ id: 'new', name: 'Condo posts → Condo groups' });
+    const f = () => t().api.flow;
+    const bumpTitle = () => fmt(f().schBumpTitle, { plan: t().plans.agency.name });
+    const section = (el: HTMLElement) => el.querySelector<HTMLElement>('app-schedule-bump');
+    /** The page provides its own form service, so it is read from the routed page's injector. */
+    const formOf = () => harness.routeDebugElement!.injector.get(ScheduleFormService);
+    const library = () => TestBed.inject(LibraryStore);
+    const switchOf = (el: HTMLElement) =>
+      section(el)!.querySelector<HTMLInputElement>('app-checkbox input')!;
+    const toggle = (el: HTMLElement, on: boolean) => {
+      const box = switchOf(el);
+      box.checked = on;
+      box.dispatchEvent(new Event('change'));
+    };
+    const textarea = (el: HTMLElement) =>
+      section(el)!.querySelector<HTMLTextAreaElement>('textarea')!;
+    const sum = (el: HTMLElement) => section(el)!.querySelector('.sum')?.textContent?.trim();
+    const pickerButton = (el: HTMLElement) =>
+      [...section(el)!.querySelectorAll<HTMLButtonElement>('.img-head button')][0];
+    const chosen = (el: HTMLElement) => [
+      ...section(el)!.querySelectorAll<HTMLElement>('.media:not(.picker) .m'),
+    ];
+    const picks = (el: HTMLElement) => [
+      ...section(el)!.querySelectorAll<HTMLButtonElement>('.media.picker button.m'),
+    ];
+    /** Opens the builder with the library holding photos and a collection + link set chosen. */
+    async function ready(opts: Parameters<typeof open>[0] = {}) {
+      const page = await open({ simple: false, bump: true, ...opts });
+      library().media.set(PHOTOS);
+      await openBuilder(page.el, page.fixture);
+      await pair(page.el, page.fixture);
+      return page;
+    }
+    /** Presses "create" and answers; resolves to the request body. */
+    async function send(el: HTMLElement) {
+      vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      create(el).click();
+      await settle();
+      const req = http.expectOne(SCHEDULES_URL);
+      const sent = req.request.body;
+      req.flush(apiScheduleCreated(NEW));
+      await settle();
+      answerChangeRefresh(http);
+      await settle();
+      answerThumbs(http);
+      return sent;
+    }
+
+    describe('the section', () => {
+      it('sits in the "more options" part where the old bump select was, and starts off', async () => {
+        const { fixture, el } = await open({ bump: true });
+        await openBuilder(el, fixture);
+        // Simple mode: the more section is closed, and the bump section is in it.
+        expect(section(el)).toBeNull();
+        button(builder(el)!, t().common.more)!.click();
+        fixture.detectChanges();
+        expect(section(el)).not.toBeNull();
+        expect(section(el)!.querySelector('.title')!.textContent).toBe(bumpTitle());
+        expect(bumpTitle()).toContain('Premium');
+        expect(section(el)!.textContent).toContain(f().schBumpIntro);
+        // The old select of the design is gone; the switch is off and nothing else shows.
+        expect(builder(el)!.textContent).not.toContain(t().sch.bumpOff);
+        expect(switchOf(el).checked).toBe(false);
+        expect(section(el)!.querySelector('select')).toBeNull();
+        expect(section(el)!.querySelector('app-feature-lock')).toBeNull();
+      });
+
+      it('shows its controls when the switch is on, with 2 hours, 1 bump and a plain summary', async () => {
+        const { fixture, el } = await ready();
+        toggle(el, true);
+        fixture.detectChanges();
+        const hours = select(el, f().schBumpAfter);
+        expect(hours.value).toBe('2');
+        expect([...hours.options].map((o) => o.value)).toEqual(['1', '2', '3', '6', '12', '24']);
+        expect(hours.selectedOptions[0].textContent).toBe(fmt(f().schBumpAfterOpt, { h: 2 }));
+        const rounds = select(el, f().schBumpRounds);
+        expect([...rounds.options].map((o) => o.value)).toEqual(['1', '2', '3']);
+        expect(rounds.value).toBe('1');
+        expect(textarea(el).getAttribute('maxlength')).toBe('1000');
+        expect(section(el)!.textContent).toContain(f().schBumpTextHint);
+        expect(section(el)!.textContent).toContain(f().schBumpNote);
+        expect(sum(el)).toBe(`${fmt(f().schBumpHead1, { h: 2 })} · ${f().schBumpTailText}`);
+        // The text box says a blank text uses a short default phrase.
+        expect(textarea(el).placeholder).toBe(f().schBumpTextPh);
+      });
+
+      it('says the summary the way the person set it: how many, how far apart, how many images', async () => {
+        const { fixture, el } = await ready();
+        toggle(el, true);
+        fixture.detectChanges();
+        pick(select(el, f().schBumpAfter), '6');
+        pick(select(el, f().schBumpRounds), '3');
+        fixture.detectChanges();
+        expect(sum(el)).toBe(`${fmt(f().schBumpHeadN, { n: 3, h: 6 })} · ${f().schBumpTailText}`);
+        formOf().toggleBumpMedia('m1');
+        fixture.detectChanges();
+        expect(sum(el)).toBe(
+          `${fmt(f().schBumpHeadN, { n: 3, h: 6 })} · ${fmt(f().schBumpTailImg, { k: 1 })}`,
+        );
+        answerThumbs(http);
+      });
+
+      it('has a heading the controls are tied to for a screen reader', async () => {
+        const { el } = await ready();
+        const labelled = section(el)!.querySelector('section')!.getAttribute('aria-labelledby')!;
+        expect(section(el)!.querySelector(`#${labelled}`)!.textContent).toBe(bumpTitle());
+      });
+    });
+
+    describe('when the owner plan has no bumping', () => {
+      it('stays visible but locked: a Premium banner with the upgrade link, and the controls off', async () => {
+        const { fixture, el } = await ready({ bump: false });
+        expect(section(el)).not.toBeNull();
+        const lock = section(el)!.querySelector('app-feature-lock')!;
+        expect(lock.textContent).toContain(fmt(f().schBumpLockedTitle, { plan: 'Premium' }));
+        expect(lock.textContent).toContain(fmt(f().schBumpLockedBody, { plan: 'Premium' }));
+        const upgrade = lock.querySelector<HTMLAnchorElement>('a')!;
+        expect(upgrade.textContent!.trim()).toBe(t().common.upgrade);
+        expect(upgrade.getAttribute('href')).toBe('/app/billing');
+        expect(switchOf(el).disabled).toBe(true);
+        expect(switchOf(el).checked).toBe(false);
+        // What Premium adds can be seen, off.
+        const controls = [
+          ...section(el)!.querySelectorAll<HTMLElement>('select, textarea, button'),
+        ];
+        expect(controls.length).toBeGreaterThan(3);
+        expect(controls.every((c) => (c as HTMLButtonElement).disabled)).toBe(true);
+        expect(fixture.componentInstance).toBeTruthy();
+      });
+
+      it('shows no upgrade link to someone who is not the owner (the plan is the owner’s)', async () => {
+        const { el } = await ready({ bump: false, role: 'editor' });
+        const lock = section(el)!.querySelector('app-feature-lock')!;
+        expect(lock).not.toBeNull();
+        expect(lock.querySelector('a')).toBeNull();
+      });
+
+      it('never asks for a bump, even when the switch had been turned on before: the API would answer 403', async () => {
+        const { fixture, el } = await ready({ bump: false });
+        const form = formOf();
+        form.bumpOn.set(true);
+        form.bumpHours.set(6);
+        form.bumpMedia.set(['m1']);
+        fixture.detectChanges();
+        expect(form.bumpActive()).toBe(false);
+        expect(switchOf(el).checked).toBe(false);
+        const sent = await send(el);
+        expect(sent.bumpHours).toBe(0);
+        expect(sent).not.toHaveProperty('bump');
+      });
+
+      it('is open for a plan that has bumping: no banner, the switch can be used', async () => {
+        const { fixture, el } = await ready({ bump: true });
+        expect(section(el)!.querySelector('app-feature-lock')).toBeNull();
+        expect(switchOf(el).disabled).toBe(false);
+        expect(formOf().bumpLocked()).toBe(false);
+      });
+    });
+
+    describe('what is sent', () => {
+      it('sends no bump while the switch is off', async () => {
+        const { el } = await ready();
+        const sent = await send(el);
+        expect(sent.bumpHours).toBe(0);
+        expect(sent).not.toHaveProperty('bump');
+      });
+
+      it('sends the hours and the plan of the bump: how many, the text, no images', async () => {
+        const { fixture, el } = await ready();
+        toggle(el, true);
+        fixture.detectChanges();
+        pick(select(el, f().schBumpAfter), '6');
+        pick(select(el, f().schBumpRounds), '3');
+        const box = textarea(el);
+        box.value = '  {ขึ้นๆ ค่ะ|ดันหน่อยค่ะ}  ';
+        box.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+        const sent = await send(el);
+        expect(sent).toMatchObject({
+          bumpHours: 6,
+          bump: { rounds: 3, text: '{ขึ้นๆ ค่ะ|ดันหน่อยค่ะ}', mediaIds: [], imagesEach: 0 },
+        });
+      });
+
+      it('sends a blank text as blank: the server uses its short default phrase', async () => {
+        const { fixture, el } = await ready();
+        toggle(el, true);
+        fixture.detectChanges();
+        const sent = await send(el);
+        expect(sent.bumpHours).toBe(2);
+        expect(sent.bump).toEqual({ rounds: 1, text: '', mediaIds: [], imagesEach: 0 });
+      });
+
+      it('starts the next schedule with the switch off and the defaults', async () => {
+        const { fixture, el } = await ready();
+        const form = formOf();
+        toggle(el, true);
+        fixture.detectChanges();
+        form.setBumpHours('12');
+        form.setBumpRounds('2');
+        form.bumpText.set('hello');
+        form.toggleBumpMedia('m3');
+        await send(el);
+        expect([form.bumpOn(), form.bumpHours(), form.bumpRounds(), form.bumpText()]).toEqual([
+          false,
+          2,
+          1,
+          '',
+        ]);
+        expect(form.bumpMedia()).toEqual([]);
+      });
+    });
+
+    describe('the images', () => {
+      it('cannot be counted per bump until some are chosen', async () => {
+        const { fixture, el } = await ready();
+        toggle(el, true);
+        fixture.detectChanges();
+        const each = select(el, f().schBumpEach);
+        expect(each.disabled).toBe(true);
+        expect([...each.options].map((o) => o.value)).toEqual(['0']);
+        expect(section(el)!.textContent).toContain(f().schBumpImagesNone);
+        expect(section(el)!.textContent).toContain(fmt(f().schBumpImagesSel, { n: 0, max: 20 }));
+      });
+
+      it('picks library images with thumbnails and then draws a number of them per bump', async () => {
+        const { fixture, el } = await ready();
+        toggle(el, true);
+        fixture.detectChanges();
+        pickerButton(el).click();
+        fixture.detectChanges();
+        expect(pickerButton(el).getAttribute('aria-expanded')).toBe('true');
+        // The first page of the library (12) is offered, each one a toggle button.
+        expect(picks(el)).toHaveLength(12);
+        picks(el)[0].click();
+        picks(el)[1].click();
+        picks(el)[2].click();
+        fixture.detectChanges();
+        answerThumbs(http);
+        await settle();
+        fixture.detectChanges();
+        expect(chosen(el)).toHaveLength(3);
+        expect(picks(el)[0].getAttribute('aria-pressed')).toBe('true');
+        expect(picks(el)[5].getAttribute('aria-pressed')).toBe('false');
+        expect(section(el)!.textContent).toContain(fmt(f().schBumpImagesSel, { n: 3, max: 20 }));
+        const each = select(el, f().schBumpEach);
+        expect(each.disabled).toBe(false);
+        expect([...each.options].map((o) => o.value)).toEqual(['0', '1', '2', '3']);
+        // The first image chosen means "use it": one per bump.
+        expect(each.value).toBe('1');
+        pick(each, '3');
+        fixture.detectChanges();
+        expect(sum(el)).toContain(fmt(f().schBumpTailImg, { k: 3 }));
+        const sent = await send(el);
+        expect(sent.bump).toEqual({
+          rounds: 1,
+          text: '',
+          mediaIds: ['m1', 'm2', 'm3'],
+          imagesEach: 3,
+        });
+      });
+
+      it('shows the thumbnails of the files it picked (fetched with the token, never a bare src)', async () => {
+        const { fixture, el } = await ready();
+        toggle(el, true);
+        fixture.detectChanges();
+        formOf().toggleBumpMedia('m2');
+        fixture.detectChanges();
+        const asked = http.match((r) => r.url === `/api/workspaces/${WS}/media/m2/content`);
+        expect(asked).toHaveLength(1);
+        asked[0].flush(new Blob(['x']));
+        await settle();
+        fixture.detectChanges();
+        expect(chosen(el)[0].querySelector('img')).not.toBeNull();
+        expect(chosen(el)[0].textContent).toContain('photo2.jpg');
+      });
+
+      it('never draws more images per bump than are chosen, and 5 at most', async () => {
+        const { fixture } = await ready();
+        const form = formOf();
+        form.setBumpEach('4');
+        expect(form.bumpEach()).toBe(0); // none chosen
+        form.toggleBumpMedia('m1');
+        form.toggleBumpMedia('m2');
+        expect(form.bumpEach()).toBe(2); // 4 wanted, 2 chosen
+        for (const id of ['m3', 'm4', 'm5', 'm6', 'm7']) form.toggleBumpMedia(id);
+        expect(form.bumpEach()).toBe(4);
+        form.setBumpEach('9');
+        expect(form.bumpEach()).toBe(5); // never more than 5
+        form.toggleBumpMedia('m1'); // take one off: still 5 of 6
+        form.setBumpEach('2');
+        for (const id of ['m2', 'm3', 'm4', 'm5', 'm6']) form.toggleBumpMedia(id);
+        expect(form.bumpMedia()).toEqual(['m7']);
+        expect(form.bumpEach()).toBe(1); // clamped to how many are left
+        answerThumbs(http);
+      });
+
+      it('takes an image off with its remove button', async () => {
+        const { fixture, el } = await ready();
+        toggle(el, true);
+        fixture.detectChanges();
+        formOf().toggleBumpMedia('m1');
+        formOf().toggleBumpMedia('m2');
+        fixture.detectChanges();
+        answerThumbs(http);
+        const remove = chosen(el)[0].querySelector<HTMLButtonElement>('button')!;
+        expect(remove.getAttribute('aria-label')).toContain('photo1.jpg');
+        remove.click();
+        fixture.detectChanges();
+        expect(formOf().bumpMedia()).toEqual(['m2']);
+      });
+
+      it('allows 20 images at most and says so when a 21st is picked', async () => {
+        const { fixture, el } = await ready();
+        const form = formOf();
+        for (const m of PHOTOS.slice(0, 20)) form.toggleBumpMedia(m.id);
+        expect(form.bumpMedia()).toHaveLength(20);
+        form.toggleBumpMedia('m21');
+        expect(form.bumpMedia()).toHaveLength(20);
+        expect(form.bumpMedia()).not.toContain('m21');
+        expect(form.error()).toBe(fmt(f().schBumpMax, { n: 20 }));
+        fixture.detectChanges();
+        expect(err(el)).toBe(fmt(f().schBumpMax, { n: 20 }));
+        // Taking one off clears the message and makes room.
+        form.toggleBumpMedia('m1');
+        expect(form.error()).toBe('');
+        form.toggleBumpMedia('m21');
+        expect(form.bumpMedia()).toHaveLength(20);
+        answerThumbs(http);
+      });
+
+      it('offers only images that are on, and sends none that has left the library since', async () => {
+        const { fixture, el } = await ready();
+        library().media.set([
+          ...PHOTOS.slice(0, 3),
+          { ...PHOTOS[3], active: false },
+          { ...PHOTOS[4], kind: 'video' },
+        ]);
+        toggle(el, true);
+        fixture.detectChanges();
+        pickerButton(el).click();
+        fixture.detectChanges();
+        expect(picks(el).map((p) => p.title)).toEqual(['photo1.jpg', 'photo2.jpg', 'photo3.jpg']);
+        const form = formOf();
+        form.toggleBumpMedia('m1');
+        form.toggleBumpMedia('m2');
+        // m2 is deleted in the library meanwhile: the server refuses an unknown file, so it is not sent.
+        library().media.set(PHOTOS.filter((m) => m.id !== 'm2'));
+        fixture.detectChanges();
+        answerThumbs(http);
+        const sent = await send(el);
+        expect(sent.bump.mediaIds).toEqual(['m1']);
+        expect(sent.bump.imagesEach).toBe(1);
+      });
+
+      it('points to the library when it has no image yet', async () => {
+        const { fixture, el } = await ready();
+        library().media.set([]);
+        toggle(el, true);
+        fixture.detectChanges();
+        pickerButton(el).click();
+        fixture.detectChanges();
+        const link = section(el)!.querySelector<HTMLAnchorElement>('.picker a')!;
+        expect(link.textContent!.trim()).toBe(f().schBumpNoLibrary);
+        expect(link.getAttribute('href')).toBe('/app/library');
+      });
+    });
+
+    describe('the form’s rules', () => {
+      it('keeps the hours to the options the server knows and the number of bumps between 1 and 3', async () => {
+        const { fixture } = await ready();
+        const form = formOf();
+        form.setBumpHours('6');
+        expect(form.bumpHours()).toBe(6);
+        form.setBumpHours('5'); // not an option
+        expect(form.bumpHours()).toBe(2);
+        form.setBumpHours('0'); // 0 would mean "no bump": that is the switch
+        expect(form.bumpHours()).toBe(2);
+        form.setBumpRounds('9');
+        expect(form.bumpRounds()).toBe(3);
+        form.setBumpRounds('0');
+        expect(form.bumpRounds()).toBe(1);
+        form.setBumpRounds('x');
+        expect(form.bumpRounds()).toBe(1);
+      });
+
+      it('says "once" or "N times, H hours apart" in the summary', async () => {
+        const { fixture } = await ready();
+        const form = formOf();
+        form.bumpOn.set(true);
+        expect(form.bumpSummary()).toBe(
+          `${fmt(f().schBumpHead1, { h: 2 })} · ${f().schBumpTailText}`,
+        );
+        form.setBumpRounds('2');
+        form.setBumpHours('1');
+        expect(form.bumpSummary()).toContain(fmt(f().schBumpHeadN, { n: 2, h: 1 }));
+      });
+    });
+
+    describe('permissions', () => {
+      /** A viewer cannot open the builder from its button, but the form may still be open (an address, a draft). */
+      async function viewer() {
+        const page = await open({ simple: false, bump: true, role: 'viewer' });
+        formOf().show();
+        page.fixture.detectChanges();
+        await settle();
+        for (const r of http.match((x) => x.url.endsWith('/best-times'))) r.flush([]);
+        await settle();
+        page.fixture.detectChanges();
+        return page;
+      }
+
+      it('is off for a viewer, who cannot change anything, and not locked by the plan', async () => {
+        const { el } = await viewer();
+        expect(switchOf(el).disabled).toBe(true);
+        expect(section(el)!.querySelector('app-feature-lock')).toBeNull();
+      });
+
+      it('keeps every control off for a viewer even when the switch is on', async () => {
+        const { fixture, el } = await viewer();
+        formOf().bumpOn.set(true);
+        fixture.detectChanges();
+        const controls = [
+          ...section(el)!.querySelectorAll<HTMLElement>('select, textarea, button'),
+        ];
+        expect(controls.length).toBeGreaterThan(3);
+        expect(controls.every((c) => (c as HTMLButtonElement).disabled)).toBe(true);
+      });
+    });
+  });
+
   describe('opened from the address', () => {
     it('opens the builder with the collection, the set and the start date, then clears the address', async () => {
       const { el } = await open({ url: `/app/schedules?collection=c1&set=s1&start=${TOMORROW}` });
@@ -1357,6 +1857,7 @@ describe('SchedulesPageComponent', () => {
     TestBed.inject(AccountsStore);
     TestBed.inject(SettingsStore);
     TestBed.inject(DevicesStore);
+    TestBed.inject(LibraryStore); // the schedule form reads the library (bump images)
     await signIn(http, { schedules: [MORNING], collections: [C1], linkSets: [S1] });
     const fixture = TestBed.createComponent(SchedulesPageComponent);
     fixture.detectChanges();

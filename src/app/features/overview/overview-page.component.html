@@ -4,7 +4,7 @@
       <h1>{{ t().ov.hello }}, {{ userName() }}</h1>
       <p>{{ sub() }}</p>
     </div>
-    <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/composer"
+    <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/posts" [queryParams]="{ new: 1 }"
       ><i class="ph ph-plus"></i>{{ t().ov.newPost }}</a
     >
   </div>
@@ -40,6 +40,8 @@
               ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
             >
           </div>
+        } @empty {
+          <p class="muted fs14 none">{{ stats.ready() ? t().cal.empty : t().api.loading }}</p>
         }
         <div class="mt8">
           <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/calendar"
@@ -70,32 +72,45 @@
     </div>
 
     <div class="stack">
-      <section class="panel">
-        <h2 class="h2 mb4">{{ t().ov.accountsTitle }}</h2>
-        @for (a of accountPage(); track $index) {
-          <div class="row tight">
-            <span class="pico"><i class="ph" [class]="a.icon"></i></span>
-            <div class="grow">
-              <div class="fw5 ellipsis">{{ a.name }}</div>
-              <div class="small muted">
-                {{ a.handle }}
-                @if (a.badge) {
-                  · <span [title]="a.badgeHint">{{ a.badge }}</span>
+      <section class="panel" [attr.aria-label]="t().api.flow.ovExtTitle">
+        <div class="panel-head mb4">
+          <h2 class="h2">{{ t().api.flow.ovExtTitle }}</h2>
+          <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/team">{{
+            t().api.flow.ovExtManage
+          }}</a>
+        </div>
+        @if (!stats.extensionsReady()) {
+          <p class="muted fs14 none" role="status">{{ t().api.loading }}</p>
+        } @else {
+          @for (e of stats.extensionRows(); track e.id) {
+            <a class="row tight extrow" routerLink="/app/team">
+              <span class="pico"><i class="ph ph-desktop" aria-hidden="true"></i></span>
+              <div class="grow">
+                <div class="fw5 ellipsis">{{ e.name }}</div>
+                @if (e.meta) {
+                  <div class="small muted ellipsis">{{ e.meta }}</div>
                 }
               </div>
-              @if (a.deviceLine) {
-                <div class="small muted via">
-                  <i class="ph" [class]="a.deviceIcon" aria-hidden="true"></i>
-                  <span class="ellipsis">{{ a.deviceLine }}</span>
-                </div>
-              }
+              <span class="status"
+                ><span class="dot" [style.background]="e.dot"></span>{{ e.stateLabel }}</span
+              >
+            </a>
+          } @empty {
+            <app-empty-state
+              icon="ph-plugs-connected"
+              [heading]="t().api.flow.ovExtEmptyTitle"
+              [description]="t().api.flow.ovExtEmptyBody"
+            />
+            <div class="add">
+              <a
+                class="su-btn su-btn-sm su-btn-primary"
+                routerLink="/app/team"
+                [queryParams]="{ pair: 1 }"
+                ><i class="ph ph-plus"></i>{{ t().ov.pair }}</a
+              >
             </div>
-            <span class="status"
-              ><span class="dot" [style.background]="a.dot"></span>{{ a.healthLabel }}</span
-            >
-          </div>
+          }
         }
-        <app-pager [pager]="accountPager" />
       </section>
 
       <section class="panel">

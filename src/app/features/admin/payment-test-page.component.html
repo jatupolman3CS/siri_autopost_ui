@@ -1,0 +1,113 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ t().api.ptestNav }}</h1>
+      <p>{{ t().api.ptestSub }}</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <i class="ph ph-warning-circle" style="color: var(--color-warning)"></i>
+    <span
+      ><strong>{{ t().api.ptestWarnTitle }}</strong> {{ t().api.ptestWarnBody }}</span
+    >
+  </div>
+  @if (saved(); as s) {
+    @if (!s.paymentsConnected) {
+      <div class="callout warn">
+        <i class="ph ph-warning-circle" style="color: var(--color-warning)"></i>
+        <span>{{ t().api.ptestNoStripe }}</span>
+      </div>
+    }
+
+    <section class="panel">
+      <div class="status" [class.on]="s.enabled" role="status">
+        <span
+          class="dot"
+          [style.background]="s.enabled ? 'var(--color-warning)' : 'var(--color-border)'"
+        ></span>
+        <span class="fw6">{{ state() }}</span>
+        @if (updated()) {
+          <span class="small muted">· {{ updated() }}</span>
+        }
+      </div>
+
+      <form class="form" (submit)="$event.preventDefault(); save()">
+        <app-checkbox [label]="t().api.ptestOn" [(checked)]="enabled" />
+
+        <div class="field">
+          <app-input-field
+            type="number"
+            [label]="t().api.ptestAmount"
+            [(value)]="amountText"
+            [error]="tried() ? amountError() : ''"
+          />
+          <p class="small muted">{{ amountHint() }}</p>
+        </div>
+
+        <div class="field">
+          <label class="su-field-label" for="ptest-emails">{{ t().api.ptestEmails }}</label>
+          <textarea
+            id="ptest-emails"
+            class="su-textarea"
+            rows="4"
+            spellcheck="false"
+            autocomplete="off"
+            [class.su-input-error]="tried() && !!emailsError()"
+            [attr.aria-invalid]="tried() && emailsError() ? true : null"
+            [placeholder]="t().api.ptestEmailsPh"
+            [value]="emailsText()"
+            (input)="emailsText.set($any($event.target).value)"
+          ></textarea>
+          @if (tried() && emailsError()) {
+            <p class="su-field-err" role="alert">{{ emailsError() }}</p>
+          }
+          <p class="small muted">{{ emailsHint() }}</p>
+        </div>
+
+        <div class="actions">
+          <button
+            type="submit"
+            class="su-btn su-btn-sm su-btn-primary"
+            [disabled]="busy() || !dirty()"
+          >
+            {{ busy() ? t().api.saving : t().api.save }}
+          </button>
+          @if (dirty()) {
+            <span class="small muted">{{ t().api.unsaved }}</span>
+          }
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2 class="h2 mb8">{{ t().api.ptestNotesTitle }}</h2>
+      <ul class="notes">
+        @for (n of notes(); track n) {
+          <li class="fs14">{{ n }}</li>
+        }
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2 class="h2 mb4">{{ t().api.ptestLog }}</h2>
+      @for (a of pageLog(); track a.id) {
+        <div class="row ar">
+          <span class="time">{{ a.time }}</span>
+          <div class="grow min0">
+            <div class="fs14 fw5">{{ a.label }}</div>
+            @if (a.detail) {
+              <div class="small ellipsis">{{ a.detail }}</div>
+            }
+          </div>
+          <span class="small muted ellipsis by">{{ a.by }}</span>
+        </div>
+      } @empty {
+        <p class="fs14 muted">{{ t().api.noAudit }}</p>
+      }
+      <app-pager [pager]="logPager" />
+    </section>
+  } @else {
+    <p class="fs14 muted">{{ t().api.loading }}</p>
+  }
+</div>

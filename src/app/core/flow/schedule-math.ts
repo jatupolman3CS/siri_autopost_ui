@@ -21,7 +21,8 @@ export const SCHEDULE_MODES: readonly ScheduleMode[] = [
 
 /** Days of posts the server keeps queued ahead of today. */
 export const HORIZON_DAYS = 14;
-export const BUMP_HOUR_OPTIONS: readonly number[] = [0, 6, 12, 24];
+/** Hours after a post goes out that its bump is made (Schedule.BumpOptions; 0 = no bump). */
+export const BUMP_HOUR_OPTIONS: readonly number[] = [0, 1, 2, 3, 6, 12, 24];
 export const AUTO_DELETE_DAY_OPTIONS: readonly number[] = [0, 3, 7, 14];
 export const DRIP_MAX_COUNT = 12;
 export const MINUTES_PER_DAY = 1440;
@@ -248,11 +249,6 @@ export function dayMatches(schedule: ScheduleLike, key: string): boolean {
 /** Key of a link in `overrides`: its id as 32 lowercase hex digits (.NET "N" format). */
 export function overrideKeyOfLink(linkId: string): string {
   return linkId.replace(/-/g, '').toLowerCase();
-}
-
-/** Key of one of the set's other accounts in `overrides`. */
-export function overrideKeyOfAccount(accountId: string): string {
-  return 'account:' + accountId;
 }
 
 /** The times one member posts at: its own override when it has one, else the schedule's slots. */

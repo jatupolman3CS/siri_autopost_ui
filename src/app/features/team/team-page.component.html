@@ -102,7 +102,12 @@
 
       <section class="panel">
         <div class="head-row">
-          <h2 class="h2">{{ t().team.devices }}</h2>
+          <h2 class="h2">
+            {{ t().team.devices }}
+            @if (onlineLabel(); as label) {
+              <span class="badge" data-testid="devices-online">{{ label }}</span>
+            }
+          </h2>
           <button
             type="button"
             class="su-btn su-btn-sm su-btn-secondary"
@@ -133,9 +138,6 @@
               }
             </div>
             <div class="dev-actions">
-              <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/campaigns">
-                <i class="ph ph-stack"></i>{{ t().api.manageCampaigns }}
-              </a>
               @if (canManageDevices()) {
                 <button
                   type="button"
@@ -248,6 +250,7 @@
     [error]="formErr()"
     [maxlength]="limits.deviceName"
   />
+  <p class="small muted hint">{{ t().api.engine.renameHint }}</p>
   <div modal-footer>
     <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="close()">
       {{ t().common.cancel }}

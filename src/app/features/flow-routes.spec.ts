@@ -1,6 +1,6 @@
 import { Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Route, provideRouter } from '@angular/router';
+import { RedirectFunction, Route, UrlTree, provideRouter } from '@angular/router';
 import { routes } from '../app.routes';
 import { Dict, I18nService } from '../core/i18n/i18n.service';
 import { lookup } from '../core/services/title.strategy';
@@ -109,12 +109,52 @@ describe('routes of the redesigned app', () => {
     });
   }
 
-  it('keeps the composer and the extension campaigns page as routes, although they have no menu item', () => {
-    for (const path of ['composer', 'campaigns'])
-      expect(
-        app.children!.some((c) => c.path === path),
-        path,
-      ).toBe(true);
+  // The editor is a panel of the post library now; the old composer address still works for bookmarks.
+  describe('/app/composer', () => {
+    const composer = () => app.children!.find((c) => c.path === 'composer')!;
+    const redirect = (queryParams: Record<string, string>) =>
+      TestBed.runInInjectionContext(() =>
+        (composer().redirectTo as RedirectFunction)({ queryParams } as never),
+      ) as UrlTree;
+
+    beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
+
+    it('is a redirect to the post library, not a page of its own', () => {
+      expect(typeof composer().redirectTo).toBe('function');
+      expect(composer().loadComponent).toBeUndefined();
+      expect(composer().component).toBeUndefined();
+    });
+
+    it('opens the post of the address in the post library', () => {
+      expect(redirect({ collection: 'a', post: 'p1' }).toString()).toBe('/app/posts?post=p1');
+      expect(redirect({ post: 'p1' }).toString()).toBe('/app/posts?post=p1');
+    });
+
+    it('starts a new post in the collection of the address', () => {
+      expect(redirect({ collection: 'a' }).toString()).toBe('/app/posts?new=1&collection=a');
+    });
+
+    it('continues the post in progress when the address has nothing', () => {
+      expect(redirect({}).toString()).toBe('/app/posts?new=1');
+    });
+
+    it('keeps nothing else of the old address', () => {
+      expect(redirect({ foo: 'bar', collection: 'a' }).toString()).toBe(
+        '/app/posts?new=1&collection=a',
+      );
+    });
+  });
+
+  // The extension-settings page is gone. Installed extensions of older versions still open /app/campaigns after
+  // pairing, so that address (and the old preview page's) must land on a real page.
+  it('sends the old extension-settings and extension-preview addresses to real pages', () => {
+    const old = (path: string) => app.children!.find((c) => c.path === path)!;
+    expect(old('campaigns').redirectTo).toBe('antiban');
+    expect(old('extension').redirectTo).toBe('team');
+    for (const path of ['campaigns', 'extension']) expect(old(path).loadComponent).toBeUndefined();
+    const targets = new Set(app.children!.filter((c) => c.loadComponent).map((c) => c.path));
+    expect(targets.has('antiban')).toBe(true);
+    expect(targets.has('team')).toBe(true);
   });
 
   describe('the public shared report (/report/:token)', () => {

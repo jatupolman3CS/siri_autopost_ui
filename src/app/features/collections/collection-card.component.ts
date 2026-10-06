@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { Router } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
-import { DraftStore } from '../../core/data/draft.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { ApiCollection } from '../../core/http/api.service';
 import { INPUT_LIMITS } from '../../core/http/input-limits';
@@ -13,7 +12,7 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { RenameModalComponent } from '../../shared/components/rename-modal/rename-modal.component';
 import { Pager } from '../../shared/components/pager/pager';
-import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
+import { POSTS_PATH, newPostParams } from '../posts/posts-link';
 import { AddFromLibraryModalComponent } from './add-from-library-modal.component';
 import { CollectionPostRowComponent } from './collection-post-row.component';
 import { CollectionSettingsComponent } from './collection-settings.component';
@@ -39,7 +38,6 @@ import '../../core/i18n/i18n.flow';
 export class CollectionCardComponent {
   private readonly store = inject(CollectionsStore);
   private readonly schedules = inject(SchedulesStore);
-  private readonly draft = inject(DraftStore);
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   protected readonly perm = inject(PermissionsService);
@@ -102,8 +100,7 @@ export class CollectionCardComponent {
   }
 
   protected add(): void {
-    this.draft.startNew(this.collection().id);
-    void this.router.navigate([COMPOSER_PATH], { queryParams: composerParams(this.draft.draft()) });
+    void this.router.navigate([POSTS_PATH], { queryParams: newPostParams(this.collection().id) });
   }
 
   protected schedule(): void {

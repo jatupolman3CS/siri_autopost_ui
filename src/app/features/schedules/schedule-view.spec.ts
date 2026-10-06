@@ -84,16 +84,69 @@ describe('scheduleView', () => {
       apiSchedule({ id: 'a', overrides: { x: ['08:00'], y: [], z: ['10:00', '12:00'] } }),
       ctx(),
     );
-    expect(v.cadence).toContain('2 groups with their own times');
+    expect(v.cadence).toContain('2 links with their own times');
   });
 
-  it('keeps bump and auto-delete out of the cadence and says they are only saved', () => {
-    const v = scheduleView(apiSchedule({ id: 'a', bumpHours: 12, autoDeleteDays: 3 }), ctx());
-    expect(v.cadence).not.toContain('Bump');
-    expect(v.stored).toBe(
-      `Bump after 12 h · Delete after 3 days (${dict().api.flow.storedOnlyBadge})`,
-    );
+  it('keeps auto-delete out of the cadence and says it is only saved', () => {
+    const v = scheduleView(apiSchedule({ id: 'a', autoDeleteDays: 3 }), ctx());
+    expect(v.cadence).not.toContain('Delete');
+    expect(v.stored).toBe(`Delete after 3 days (${dict().api.flow.storedOnlyBadge})`);
     expect(scheduleView(apiSchedule({ id: 'a' }), ctx()).stored).toBe('');
+  });
+
+  describe('the bump line', () => {
+    it('says how often and how many times, e.g. "bump 2h × 2"', () => {
+      const v = scheduleView(
+        apiSchedule({
+          id: 'a',
+          bumpHours: 2,
+          bump: { rounds: 2, text: '', mediaIds: [], imagesEach: 0 },
+        }),
+        ctx(),
+      );
+      expect(v.bump).toBe('bump 2h × 2');
+    });
+
+    it('adds the images per bump when there are some', () => {
+      const v = scheduleView(
+        apiSchedule({
+          id: 'a',
+          bumpHours: 12,
+          bump: { rounds: 1, text: 'up', mediaIds: ['m1', 'm2'], imagesEach: 2 },
+        }),
+        ctx(),
+      );
+      expect(v.bump).toBe('bump 12h × 1 · 2 image(s) each');
+    });
+
+    it('is real, so it is not in the cadence and does not carry the "saved only" badge', () => {
+      const v = scheduleView(apiSchedule({ id: 'a', bumpHours: 6, autoDeleteDays: 7 }), ctx());
+      expect(v.cadence).not.toContain('bump');
+      expect(v.bump).not.toContain(dict().api.flow.storedOnlyBadge);
+      expect(v.stored).not.toContain('6');
+      expect(v.stored).toContain(dict().api.flow.storedOnlyBadge);
+    });
+
+    it('counts one bump when the API sends no plan, and says nothing without a bump', () => {
+      const none = apiSchedule({ id: 'a', bumpHours: 3 });
+      delete none.bump;
+      expect(scheduleView(none, ctx()).bump).toBe('bump 3h × 1');
+      expect(scheduleView(apiSchedule({ id: 'a' }), ctx()).bump).toBe('');
+    });
+
+    it('speaks Thai in the Thai dictionary', () => {
+      localStorage.setItem('ap-lang', 'th');
+      TestBed.resetTestingModule();
+      const v = scheduleView(
+        apiSchedule({
+          id: 'a',
+          bumpHours: 2,
+          bump: { rounds: 3, text: '', mediaIds: [], imagesEach: 0 },
+        }),
+        ctx({ t: dict(), li: 0 }),
+      );
+      expect(v.bump).toBe('ดัน 2 ชม. × 3');
+    });
   });
 
   it('shows today, the next run and the day the calendar opens on', () => {

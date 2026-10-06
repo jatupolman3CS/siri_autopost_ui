@@ -1,6 +1,6 @@
 <div class="tiers">
   @for (p of cards(); track p.k) {
-    <div class="tier" [class.hl]="p.highlighted">
+    <div class="tier" [class.hl]="p.highlighted" [attr.data-plan]="p.k">
       <div>
         <div class="name">{{ p.name }}</div>
         <div class="small muted">{{ p.tag }}</div>
@@ -10,10 +10,27 @@
         ><span class="per muted">{{ p.per }}</span>
         <div class="small muted billed">{{ p.billed }}</div>
       </div>
-      <ul>
-        @for (f of p.features; track f) {
+      <ul class="limits" [attr.aria-label]="t().api.planCompareLimits + ': ' + p.name">
+        @for (l of p.limits; track l.key) {
           <li>
-            <i class="ph ph-check"></i><span>{{ f }}</span>
+            <span class="lbl">{{ l.label }}</span>
+            <strong class="val" [class.unl]="l.unlimited">{{ l.value }}</strong>
+          </li>
+        }
+      </ul>
+      <ul class="feats" [attr.aria-label]="t().api.planCompareFeatures + ': ' + p.name">
+        @for (f of p.features; track f.key) {
+          <li [class.off]="!f.included">
+            <i
+              class="ph"
+              [class.ph-check]="f.included"
+              [class.ph-minus]="!f.included"
+              aria-hidden="true"
+            ></i>
+            <span>{{ f.label }}</span>
+            <span class="sr-only">{{
+              f.included ? t().api.planIncluded : t().api.planNotIncluded
+            }}</span>
           </li>
         }
       </ul>

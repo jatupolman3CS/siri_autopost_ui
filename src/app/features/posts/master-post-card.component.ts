@@ -19,7 +19,6 @@ import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
 import { PostActivityComponent } from './post-activity.component';
-import { PostEditorComponent } from './post-editor.component';
 import '../../core/i18n/i18n.flow';
 
 const DOT: Record<ApiCollectionPost['approval'], string> = {
@@ -43,11 +42,12 @@ export const hasOwnMessage = (s: ApiPostSettings): boolean =>
 
 // One post of the library: its text (clamped), media thumbnails, the collections it sits in, what came of it
 // (posted, queued, failed, last and next time), the on/off switch (a switched-off post is dimmed with a
-// hint), the approval buttons, and the buttons that open its editor and its results. Deleting asks the page
-// (`remove`), which owns the confirmation, so the dialog outlives the card.
+// hint), the approval buttons, and the buttons that open its editor and its results. The editor is the panel at
+// the top of the page (the card only asks for it with `edit`); deleting asks the page too (`remove`), which owns
+// the confirmation, so the dialog outlives the card.
 @Component({
   selector: 'app-master-post-card',
-  imports: [CheckboxComponent, PostActivityComponent, PostEditorComponent],
+  imports: [CheckboxComponent, PostActivityComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './master-post-card.component.html',
   styleUrl: './master-post-card.component.scss',
@@ -63,10 +63,13 @@ export class MasterPostCardComponent {
 
   readonly post = input.required<ApiCollectionPost>();
   readonly selected = input(false);
+  /** The editor panel is open on this post. */
+  readonly editing = input(false);
   readonly select = output<boolean>();
   readonly remove = output<ApiCollectionPost>();
+  /** Open this post in the editor panel. */
+  readonly edit = output<ApiCollectionPost>();
 
-  protected readonly editing = signal(false);
   protected readonly resultsOpen = signal(false);
 
   constructor() {

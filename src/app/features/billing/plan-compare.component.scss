@@ -1,0 +1,81 @@
+.scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.cmp {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th,
+  td {
+    padding: 10px 12px;
+    text-align: center;
+    border-top: 1px solid var(--color-border);
+  }
+
+  thead th {
+    border-top: 0;
+    font-weight: 600;
+    vertical-align: bottom;
+  }
+
+  .what {
+    text-align: left;
+    font-weight: 500;
+  }
+
+  tbody th.what {
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
+
+  .grp th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    background: var(--color-surface-muted);
+  }
+
+  // The customer's own plan.
+  .cur {
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  }
+  thead .cur {
+    box-shadow: inset 0 3px 0 var(--color-primary);
+  }
+
+  .yours {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--color-primary);
+  }
+
+  td {
+    font-weight: 500;
+  }
+  td.unl {
+    color: var(--color-primary);
+  }
+  td i {
+    font-size: 18px;
+    color: var(--color-primary);
+  }
+  td.off i {
+    color: var(--color-text-muted);
+  }
+}

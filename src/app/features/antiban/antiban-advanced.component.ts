@@ -32,7 +32,7 @@ const clamp = (v: string, min: number, max: number, empty: number) =>
   Math.max(min, Math.min(max, parseInt(v, 10) || empty));
 
 // The advanced anti-ban rules (Pro and above) that the server applies to every schedule: the numbers, the
-// pause after a block, the focus window (saved only: the extension does not use it), the warm-up timetable
+// pause after a block and the focus window (both applied by the extension in the browser), the warm-up timetable
 // and backup / restore. The values are edited in the settings store and go out with the page's Save button.
 @Component({
   selector: 'app-antiban-advanced',

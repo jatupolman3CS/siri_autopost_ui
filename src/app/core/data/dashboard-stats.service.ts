@@ -1,9 +1,8 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { dayNames, dkey, fmtDate, hm } from '../i18n/format';
-import { Dict, I18nService } from '../i18n/i18n.service';
-import { AccountsStore } from './accounts.store';
-import { DevicesStore } from './devices.store';
-import { HEALTH_DOT, accountKind } from './models';
+import { Dict, I18nService, ago } from '../i18n/i18n.service';
+import '../i18n/i18n.flow';
+import { DevicesStore, autoPauseOf } from './devices.store';
 import { PostsStore, QueueItem, postRow } from './posts.store';
 import { PLATFORMS } from './platforms';
 
@@ -13,6 +12,26 @@ export interface Kpi {
   label: string;
   value: string | number;
   note: string;
+}
+
+/** How a paired browser stands: ready, not reachable, paused from the web, or paused by the engine. */
+export type ExtensionState = 'online' | 'offline' | 'paused' | 'auto';
+
+const EXTENSION_DOT: Record<ExtensionState, string> = {
+  online: 'var(--color-success)',
+  offline: 'var(--color-danger)',
+  paused: 'var(--color-warning)',
+  auto: 'var(--color-warning)',
+};
+
+/** One paired browser in the overview's extensions panel. */
+export interface ExtensionRow {
+  id: string;
+  name: string;
+  state: ExtensionState;
+  dot: string;
+  stateLabel: string;
+  meta: string;
 }
 
 /**
@@ -49,12 +68,11 @@ export function queueRowsOf(today: QueueItem[], t: Dict) {
   return today.slice(start, start + 8).map((p) => postRow(p, t));
 }
 
-// Figures shown on the overview, derived from the posts and accounts stores.
+// Figures shown on the overview, derived from the posts and devices stores.
 // The landing page preview uses kpisOf/queueRowsOf on sample posts instead.
 @Injectable({ providedIn: 'root' })
 export class DashboardStatsService {
   private readonly posts = inject(PostsStore);
-  private readonly accounts = inject(AccountsStore);
   private readonly devices = inject(DevicesStore);
   private readonly i18n = inject(I18nService);
 
@@ -95,30 +113,45 @@ export class DashboardStatsService {
     }));
   });
 
-  readonly accountRows = computed(() => {
+  /** The paired browsers have arrived: until then the extensions panel says it is loading. */
+  readonly extensionsReady = this.devices.loaded;
+
+  /**
+   * The paired browsers (extensions) of the workspace for the overview panel: its name, whether it is online,
+   * paused or switched off by the engine, and when it was last seen. Real devices only: a workspace without
+   * one gets an empty list, and the panel says how to add one.
+   */
+  readonly extensionRows = computed<ExtensionRow[]>(() => {
     const t = this.i18n.t();
-    const devices = this.devices.list();
-    return this.accounts.list().map((a) => {
-      const kind = accountKind(a);
-      // The browser that posts for the account (the API gives no address, so none is shown).
-      const device = devices.find((d) => d.accountId === a.id);
+    const f = t.api.flow;
+    const now = this.devices.now();
+    return this.devices.list().map((d) => {
+      const state: ExtensionState = !d.online
+        ? 'offline'
+        : autoPauseOf(d, now)
+          ? 'auto'
+          : d.jobsPaused
+            ? 'paused'
+            : 'online';
+      const seen = d.lastSeenAt ? new Date(d.lastSeenAt) : null;
       return {
-        icon: PLATFORMS[a.platform].icon,
-        name: a.name,
-        handle: a.handle,
-        /** "Sample" for a new workspace's demo accounts, "Unbound" for one whose browser was unpaired. */
-        badge:
-          kind === 'sample' ? t.api.demoAccount : kind === 'unbound' ? t.api.unboundAccount : '',
-        badgeHint: kind === 'sample' ? t.api.demoHint : kind === 'unbound' ? t.api.unboundHint : '',
-        /** "Posts via <computer> · <browser>"; empty until the computers have arrived. */
-        deviceLine: !this.devices.loaded()
-          ? ''
-          : device
-            ? `${t.ov.via} ${device.name} · ${device.browser}`
-            : t.ov.viaNone,
-        deviceIcon: device ? 'ph-desktop' : 'ph-plugs',
-        dot: HEALTH_DOT[a.health],
-        healthLabel: t.health[a.health],
+        id: d.id,
+        name: d.name,
+        state,
+        dot: EXTENSION_DOT[state],
+        stateLabel: {
+          online: t.api.deviceOnline,
+          offline: f.ovExtOffline,
+          paused: f.ovExtPaused,
+          auto: f.ovExtAuto,
+        }[state],
+        /** "Chrome · last seen 5 min ago" (a browser that is reachable is simply "Chrome"). */
+        meta: [
+          d.browser,
+          state !== 'offline' ? '' : seen ? `${f.ovExtSeen} ${ago(t, seen)}` : t.api.deviceNever,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       };
     });
   });

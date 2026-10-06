@@ -16,7 +16,7 @@
       <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="today()">
         {{ t().common.today }}
       </button>
-      <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/composer"
+      <a class="su-btn su-btn-sm su-btn-primary" routerLink="/app/posts" [queryParams]="{ new: 1 }"
         ><i class="ph ph-plus"></i>{{ t().ov.newPost }}</a
       >
     </div>

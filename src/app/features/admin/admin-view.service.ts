@@ -117,6 +117,10 @@ export class AdminViewService {
       refunded: e.to ? baht(Number(e.to)) : '',
       payment_recorded: e.to ? baht(Number(e.to)) : '',
       payment_retried: e.to ? baht(Number(e.to)) : '',
+      payment_override_changed: this.overrideDetail(e.to),
+      payment_override_used: [e.customerEmail, plan(e.from), e.to ? baht(Number(e.to)) : '']
+        .filter(Boolean)
+        .join(' · '),
     };
     const at = new Date(e.at);
     return {
@@ -127,6 +131,18 @@ export class AdminViewService {
       // A change Stripe made on its own has no person behind it.
       by: fmt(t.api.auditBy, { e: e.actorEmail || t.api.auditSystem }),
     };
+  }
+
+  /** "on amount=25 emails=2" (what the API logs for a change of the payment test) as readable text. */
+  private overrideDetail(to: string | null): string {
+    const m = /^(on|off) amount=(\d+) emails=(\d+)$/.exec(to ?? '');
+    if (!m) return to ?? '';
+    const a = this.i18n.t().api;
+    return [
+      m[1] === 'on' ? a.ptestOnShort : a.ptestOffShort,
+      baht(Number(m[2])),
+      fmt(a.ptestAccounts, { n: m[3] }),
+    ].join(' · ');
   }
 
   statusLabel(c: Customer): { label: string; dot: string } {
@@ -144,6 +160,9 @@ export class AdminViewService {
       accounts: pick('accounts'),
       posts: pick('posts'),
       seats: pick('seats'),
+      groups: pick('groups'),
+      images: pick('images'),
+      libraryPosts: pick('libraryPosts'),
     };
   }
 

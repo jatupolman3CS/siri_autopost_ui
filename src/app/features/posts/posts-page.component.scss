@@ -2,6 +2,39 @@
   max-width: 720px;
 }
 
+// The editor: one full-width panel above the list.
+.ed-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-color: var(--color-primary);
+  // Under the sticky bulk bar and the layout's top bar when it is scrolled into view.
+  scroll-margin-top: 16px;
+}
+
+.ed-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  p {
+    margin: 2px 0 0;
+  }
+}
+
+.draft-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  > .ph {
+    font-size: 20px;
+    color: var(--color-primary);
+  }
+}
+
 .loading,
 .nomatch {
   color: var(--color-text-muted);

@@ -44,7 +44,7 @@ describe('the corrections over the design copy', () => {
     const merged = applyFixes(AP_I18N, AP_I18N_FIXES);
     expect(merged.land.heroNote).toEqual(AP_I18N_FIXES.land.heroNote);
     expect(merged.land.heroNote).not.toEqual(AP_I18N.land.heroNote);
-    expect(merged.land.heroTitle).toBe(AP_I18N.land.heroTitle);
+    expect(merged.land.heroBody).toBe(AP_I18N.land.heroBody);
     expect(merged.reasons.quota.title).toEqual(AP_I18N_FIXES.reasons.quota.title);
     expect(merged.reasons.quota.body).toEqual(AP_I18N_FIXES.reasons.quota.body);
     // A branch is merged, not replaced: the other reasons survive.
@@ -87,7 +87,7 @@ describe('the corrections over the design copy', () => {
     expect(t.off.wDay).toMatch(/24/);
   });
 
-  it('describes failures for any platform, not the design samples (TikTok, LINE OA, X video)', () => {
+  it('describes the failures Facebook has, not the design samples (TikTok, LINE OA, X video)', () => {
     const service = i18n();
     for (const lang of ['th', 'en'] as const) {
       service.setLang(lang);
@@ -105,7 +105,64 @@ describe('the corrections over the design copy', () => {
     }
   });
 
-  it('does not call the template-based post writer "AI": there is no language model', () => {
+  // Only Facebook groups and pages are posted to for now; the other platforms are a later phase.
+  it('mentions no other social platform anywhere in the dictionary, in either language', async () => {
+    await import('./i18n.flow');
+    await import('./i18n.engine');
+    const service = i18n();
+    const named: string[] = [];
+    const walk = (node: unknown, path: string): void => {
+      if (typeof node === 'string') {
+        if (/Instagram|TikTok|Threads|อินสตาแกรม|ติ๊กต็อก/i.test(node))
+          named.push(`${path}: ${node}`);
+      } else if (Array.isArray(node)) node.forEach((n, i) => walk(n, `${path}[${i}]`));
+      else if (node && typeof node === 'object')
+        for (const [k, v] of Object.entries(node)) walk(v, `${path}.${k}`);
+    };
+    for (const lang of ['th', 'en'] as const) {
+      service.setLang(lang);
+      walk(service.t(), lang);
+    }
+    expect(named).toEqual([]);
+  });
+
+  it('says the product posts to Facebook groups and pages where it names its targets', async () => {
+    await import('./i18n.flow');
+    const service = i18n();
+    const groupsAndPages = { th: /กลุ่ม.*เพจ|เพจ.*กลุ่ม/, en: /group.*page|page.*group/i };
+    for (const lang of ['th', 'en'] as const) {
+      service.setLang(lang);
+      const t = service.t();
+      for (const [name, text] of Object.entries({
+        'land.platforms': t.land.platforms,
+        'land.heroTitle': t.land.heroTitle,
+        'land.s1b': t.land.s1b,
+        'land.s2b': t.land.s2b,
+        'land.p2b': t.land.p2b,
+        'ts.sub': t.ts.sub,
+        'ts.bulkHint': t.ts.bulkHint,
+        'ts.csvHint': t.ts.csvHint,
+        'ov.s1': t.ov.s1,
+        'flow.n1': t.flow.n1,
+      }))
+        expect(text, `${lang} ${name}`).toMatch(groupsAndPages[lang]);
+      // The address fields ask for one link: a group or a page.
+      expect(t.ts.urlPh).toBe(
+        lang === 'th' ? 'ลิงก์กลุ่มหรือเพจ Facebook' : 'Facebook group or page link',
+      );
+      expect(t.ts.invalidUrl, lang).toMatch(lang === 'th' ? /เพจ/ : /page/);
+      // The plan counts Facebook accounts; nothing is a "social account" any more, and no platform limits.
+      expect(t.common.accounts, lang).not.toMatch(/โซเชียล|social/i);
+      expect(t.adm.accLimit, lang).not.toMatch(/โซเชียล|social/i);
+      expect(t.adm.limAccounts, lang).not.toMatch(/โซเชียล|social/i);
+      expect(t.cmp.summary, lang).not.toMatch(/แพลตฟอร์ม|platforms/i);
+      expect(t.ab.hPause, lang).not.toMatch(/แพลตฟอร์ม|platform/i);
+      expect(t.land.f4b, lang).not.toMatch(/แพลตฟอร์ม|platform/i);
+    }
+  });
+
+  it('calls the post writer "AI" (it is a real model now) and says it needs an AI key from the admin when it is off', async () => {
+    await import('./i18n.flow');
     const service = i18n();
     for (const lang of ['th', 'en'] as const) {
       service.setLang(lang);
@@ -114,48 +171,41 @@ describe('the corrections over the design copy', () => {
         'cmp.ai': t.cmp.ai,
         'cmp.tools': t.cmp.tools,
         'ai.title': t.ai.title,
-        'ar.locked': t.ar.locked,
-        'ai.note': t.ai.note,
+        'flow.edAiNoKey': t.api.flow.edAiNoKey,
+        'flow.edAiNoPlan': t.api.flow.edAiNoPlan,
+        'flow.edAiNoDrafts': t.api.flow.edAiNoDrafts,
       }))
-        expect(text, `${lang} ${name}`).not.toMatch(/\bAI\b/);
+        expect(text, `${lang} ${name}`).toMatch(/\bAI\b/);
+      // The design's note about a prototype that fills in templates is gone.
+      expect(t.ai.note, lang).not.toMatch(/template|แม่แบบ|prototype|ต้นแบบ/i);
+      expect(t.cmp.ai, lang).not.toMatch(/template|แม่แบบ/i);
+      // The auto-reply lock is about auto-reply only.
+      expect(t.ar.locked, lang).not.toMatch(/\bAI\b/);
     }
+    service.setLang('en');
+    expect(service.t().api.flow.edAiNoKey).toMatch(/admin.*AI key/);
     service.setLang('th');
-    expect(service.t().cmp.ai).toBe('ตัวช่วยร่างโพสต์ (แม่แบบ)');
-    expect(service.t().ai.title).toBe(service.t().cmp.ai);
-    service.setLang('en');
-    expect(service.t().cmp.ai).toBe('Post drafts (templates)');
-    expect(service.t().ai.title).toBe('Post drafts (templates)');
+    expect(service.t().api.flow.edAiNoKey).toContain('ผู้ดูแลระบบ');
+    expect(service.t().api.flow.edAiNoKey).toContain('AI Key');
   });
 
-  it('does not show a made-up extension version or pause time', () => {
+  it('explains {{code}} and Spintax where the group code comes from, in both languages', async () => {
+    await import('./i18n.flow');
     const service = i18n();
-    service.setLang('en');
-    const t = service.t();
-    expect(t.ext.version).toContain('{v}');
-    expect(t.ext.version).not.toContain('2.4.1');
-    expect(t.ext.paused).not.toMatch(/11:30/);
-    expect(t.ext.pause).not.toMatch(/1 hour/);
-  });
-
-  it('tells the real wait for a command and how long a late one can still run', async () => {
-    const service = i18n();
-    service.setLang('en');
-    await import('./i18n.ext');
-    const { COMMAND_LIFETIME_MIN, COMMAND_WAIT_MIN } = await import('../data/campaigns.store');
-    const ext = service.t().api.ext;
-    expect(fmt(ext.cmdSent, { n: COMMAND_WAIT_MIN })).toContain(`${COMMAND_WAIT_MIN} minutes`);
-    expect(fmt(ext.cmdSent, { n: COMMAND_WAIT_MIN })).not.toMatch(/a minute\b/);
-    expect(fmt(ext.cmdTimeout, { m: COMMAND_LIFETIME_MIN })).toContain(
-      `${COMMAND_LIFETIME_MIN} minutes`,
-    );
-  });
-
-  it('loads the campaigns page strings only once their module is imported', async () => {
-    const service = i18n();
-    await import('./i18n.ext');
-    expect(service.t().api.ext.start).toBe('เริ่มทำงาน');
-    service.setLang('en');
-    expect(service.t().api.ext.start).toBe('Start');
+    for (const lang of ['th', 'en'] as const) {
+      service.setLang(lang);
+      const f = service.t().api.flow;
+      // Where the code comes from, and that the text differs for every group.
+      expect(f.edHelpCodeB, lang).toContain('{{code}}');
+      expect(f.edHelpCodeB, lang).toMatch(/code|รหัส/);
+      expect(f.edHelpSpinB, lang).toContain('|');
+      // The three examples really are code / spintax / both, so the preview and the helpers read them.
+      expect(f.edEx1Text, lang).toContain('{{code}}');
+      expect(f.edEx2Text, lang).toMatch(/\{[^{}|]+\|[^{}]+\}/);
+      expect(f.edEx3Text, lang).toContain('{{code}}');
+      expect(f.edEx3Text, lang).toMatch(/\{[^{}|]+\|[^{}]+\}/);
+      expect(service.t().cmp.codeHint, lang).toContain('{{code}}');
+    }
   });
 });
 
@@ -194,22 +244,12 @@ describe('lazy dictionary packs', () => {
   it('keeps every pack side by side: registering one does not drop another', async () => {
     localStorage.clear();
     const service = TestBed.inject(I18nService);
-    await Promise.all([import('./i18n.ext'), import('./i18n.flow'), import('./i18n.engine')]);
+    await Promise.all([import('./i18n.flow'), import('./i18n.engine')]);
     const api = service.t().api;
-    expect(api.ext.start).toBe('เริ่มทำงาน');
     expect(api.flow.storedOnly).toBeTruthy();
     expect(api.engine.storedOnly).toBeTruthy();
     // A pack never leaks into the shared strings.
     expect(api.save).toBe('บันทึกการตั้งค่า');
-  });
-
-  it('keeps registerExt working for the campaigns page', async () => {
-    localStorage.clear();
-    const service = TestBed.inject(I18nService);
-    const { registerExt } = await import('./i18n.service');
-    const { AP_I18N_EXT } = await import('./i18n.ext');
-    registerExt(AP_I18N_EXT);
-    expect(service.t().api.ext.title).toBe('ตั้งค่าส่วนขยาย');
   });
 
   it('gives every leaf of the packs and of the fixes both languages with the same {placeholders}', async () => {

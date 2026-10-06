@@ -1,0 +1,64 @@
+<div class="scroll" role="region" tabindex="0" [attr.aria-label]="t().api.planCompareCaption">
+  <table class="cmp">
+    <caption class="sr-only">
+      {{
+        t().api.planCompareCaption
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col" class="what">{{ t().api.planCompareRowHead }}</th>
+        @for (c of columns(); track c.k) {
+          <th
+            scope="col"
+            [class.cur]="c.k === current()"
+            [attr.aria-current]="c.k === current() ? 'true' : null"
+          >
+            {{ c.name }}
+            @if (c.k === current()) {
+              <span class="yours">{{ t().api.planYours }}</span>
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="grp">
+        <th scope="colgroup" [attr.colspan]="columns().length + 1">
+          {{ t().api.planCompareLimits }}
+        </th>
+      </tr>
+      @for (r of rows().limits; track r.key) {
+        <tr>
+          <th scope="row" class="what">{{ r.label }}</th>
+          @for (cell of r.cells; track $index) {
+            <td [class.cur]="columns()[$index].k === current()" [class.unl]="cell.unlimited">
+              {{ cell.value }}
+            </td>
+          }
+        </tr>
+      }
+      <tr class="grp">
+        <th scope="colgroup" [attr.colspan]="columns().length + 1">
+          {{ t().api.planCompareFeatures }}
+        </th>
+      </tr>
+      @for (r of rows().features; track r.key) {
+        <tr>
+          <th scope="row" class="what">{{ r.label }}</th>
+          @for (cell of r.cells; track $index) {
+            <td [class.cur]="columns()[$index].k === current()" [class.off]="!cell.included">
+              <i
+                class="ph"
+                [class.ph-check]="cell.included"
+                [class.ph-minus]="!cell.included"
+                aria-hidden="true"
+              ></i>
+              <span class="sr-only">{{ cell.value }}</span>
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

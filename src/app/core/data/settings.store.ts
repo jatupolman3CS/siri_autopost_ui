@@ -3,15 +3,21 @@ import { ApiAntiBan, ApiEngine, ApiService } from '../http/api.service';
 import { AccountsStore } from './accounts.store';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
-import { PlatformKey } from './models';
 import { PostsStore } from './posts.store';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
+
+/** How fast the extension types a post into Facebook's box (it applies the choice to every job it takes). */
+export type TypingSpeed = 'slow' | 'normal' | 'fast';
+export const TYPING_SPEEDS: readonly TypingSpeed[] = ['slow', 'normal', 'fast'];
 
 export interface AntiBanSettings {
   min: number;
   max: number;
-  limits: Record<PlatformKey, number>;
+  /** Facebook posts per 24 hours (the only platform for now; the API's range is 1 to 500). */
+  limits: Record<'fb', number>;
   typing: boolean;
+  /** Typing speed, a Pro setting like the other behaviour switches (the server keeps the old value below Pro). */
+  typingSpeed: TypingSpeed;
   scroll: boolean;
   shuffle: boolean;
   autopause: boolean;
@@ -38,7 +44,6 @@ export interface BillingSettings {
   cycle: 'month' | 'year';
 }
 
-const PLATFORMS: PlatformKey[] = ['fb', 'x', 'ig', 'tt', 'line', 'th'];
 const PRESENCE_POLL_MS = 60_000;
 const DAY_MS = 864e5;
 /** Events after which the connection state (online, paired devices) is read again. */
@@ -49,8 +54,9 @@ export function defaultAntiBan(): AntiBanSettings {
   return {
     min: 3,
     max: 12,
-    limits: { fb: 40, x: 20, ig: 10, tt: 5, line: 3, th: 10 },
+    limits: { fb: 40 },
     typing: true,
+    typingSpeed: 'normal',
     scroll: true,
     shuffle: true,
     autopause: true,
@@ -103,12 +109,11 @@ export class SettingsStore {
   readonly devicesOnline = signal(0);
 
   /**
-   * Posts that went out in the last 24 hours per platform on the accounts a device posts for: what the
-   * server counts against the daily limits (success and posts waiting for a group admin). The sample
-   * accounts and their history never count.
+   * Facebook posts that went out in the last 24 hours on the accounts a device posts for: what the server counts
+   * against the daily limit (success and posts waiting for a group admin).
    */
   readonly used24h = computed(() => {
-    const used = Object.fromEntries(PLATFORMS.map((p) => [p, 0])) as Record<PlatformKey, number>;
+    let used = 0;
     const connected = new Set(
       this.accounts
         .list()
@@ -120,7 +125,7 @@ export class SettingsStore {
       if (p.status !== 'success' && p.status !== 'pending') continue;
       if (!connected.has(p.accountId) || !p.publishedAt || p.publishedAt.getTime() < since)
         continue;
-      used[p.platform]++;
+      used++;
     }
     return used;
   });
@@ -210,11 +215,13 @@ export class SettingsStore {
   }
 
   private apply(e: ApiEngine): void {
-    const { autoPause, ...rest } = e.antiBan;
-    // The advanced rules always come with the settings; the defaults only guard an answer that lacks them.
+    const { autoPause, typingSpeed, ...rest } = e.antiBan;
+    // The advanced rules always come with the settings; the defaults only guard an answer that lacks them (and
+    // a typing speed this app does not know).
     this.ab.set({
       ...rest,
       autopause: autoPause,
+      typingSpeed: TYPING_SPEEDS.find((s) => s === typingSpeed) ?? 'normal',
       advanced: { ...defaultAdvanced(), ...rest.advanced },
     });
     this.off.set({ ...e.offline, window: e.offline.window as OfflineSettings['window'] });

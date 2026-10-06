@@ -1,3 +1,4 @@
+import { linkKindOf } from '../core/flow/group-links';
 import {
   ApiCollection,
   ApiCollectionPost,
@@ -7,7 +8,7 @@ import {
   ApiSetLink,
 } from '../core/http/api.service';
 
-// Fixtures of the collection → link set → schedule flow for the specs of the collections page, the composer,
+// Fixtures of the collection → link set → schedule flow for the specs of the collections page, the post editor,
 // the library and the stores behind them (the shared signIn() helper answers the list calls with them).
 
 export const COLLECTION_SETTINGS: ApiCollectionSettings = {
@@ -87,9 +88,10 @@ export function apiCollection(
 }
 
 export function apiSetLink(over: Partial<ApiSetLink> & { id: string }): ApiSetLink {
+  const url = over.url ?? 'https://www.facebook.com/groups/' + over.id;
   return {
     name: '',
-    url: 'https://www.facebook.com/groups/' + over.id,
+    url,
     code: '',
     dailyMax: 0,
     enabled: true,
@@ -97,6 +99,7 @@ export function apiSetLink(over: Partial<ApiSetLink> & { id: string }): ApiSetLi
     failStreak: 0,
     valid: true,
     duplicate: false,
+    kind: linkKindOf(url),
     ...over,
   };
 }

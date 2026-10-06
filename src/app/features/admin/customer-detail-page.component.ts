@@ -164,19 +164,31 @@ export class CustomerDetailPageComponent {
     // Accounts and posts are counted over all of the customer's workspaces (and so are the numbers here);
     // devices and seats are limits of each workspace, so with several the totals cannot be compared 1:1.
     // Posts are what went out in the last 24 hours (sent or waiting for a group admin), never the failed ones.
-    const rows: [LimitKey, string, number, boolean][] = [
+    // The API does not count a customer's groups, library images and library posts (the server counts them over
+    // all the customer's workspaces), so those rows show only the limit in force (used = null).
+    const rows: [LimitKey, string, number | null, boolean][] = [
       ['devices', a.devLimit, c.devices.length, true],
       ['accounts', a.accLimit, c.accounts, false],
       ['posts', a.postLimit, c.jobs.ok, false],
       ['seats', a.seatLimit, c.seats, true],
+      ['groups', this.t().api.planLimit.groups, null, false],
+      ['images', this.t().api.planLimit.images, null, false],
+      ['libraryPosts', this.t().api.planLimit.libraryPosts, null, false],
     ];
     return rows.map(([k, label, used, perWorkspace]) => {
-      const vars = { n: used, m: lim[k] ? String(lim[k]) : '∞', w: workspaces };
+      const m = lim[k] ? String(lim[k]) : '∞';
       return {
         k,
         label,
         value: c.limits?.[k] !== undefined ? c.limits[k] : planDef[k] || 0,
-        usedLabel: fmt(perWorkspace && workspaces > 1 ? this.t().api.usedOfPerWs : a.usedOf, vars),
+        usedLabel:
+          used === null
+            ? fmt(this.t().api.limitInForce, { m })
+            : fmt(perWorkspace && workspaces > 1 ? this.t().api.usedOfPerWs : a.usedOf, {
+                n: used,
+                m,
+                w: workspaces,
+              }),
       };
     });
   });

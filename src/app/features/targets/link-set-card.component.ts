@@ -10,12 +10,11 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { AccountsStore } from '../../core/data/accounts.store';
+import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
+import { DevicesStore } from '../../core/data/devices.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
 import { LINK_LIMITS, LinkSetsStore, firstCodedLink } from '../../core/data/link-sets.store';
-import { SocialAccount, accountKind } from '../../core/data/models';
 import { PermissionsService } from '../../core/data/permissions.service';
-import { PLATFORMS } from '../../core/data/platforms';
 import { ApiLinkSet } from '../../core/http/api.service';
 import { composeFull, seededRandom } from '../../core/flow/compose';
 import { linkLabel } from '../../core/flow/group-links';
@@ -35,8 +34,8 @@ import { Pager } from '../../shared/components/pager/pager';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 
 // One link set (the prototype's set card): its name and counts, the actions (add a link, paste several,
-// pick from an account, schedule with it, delete), the link rows, and under the "more options" toggle the
-// account that posts, an example of what is written to a group with a code and the other accounts.
+// schedule with it, delete), the link rows of Facebook groups and pages, and under the "more options" toggle the
+// extension that posts the set and an example of what is written to a group with a code.
 @Component({
   selector: 'app-link-set-card',
   imports: [
@@ -54,11 +53,10 @@ export class LinkSetCardComponent {
   readonly set = input.required<ApiLinkSet>();
   /** "Paste links" was pressed: the page opens its dialog for this set. */
   readonly bulk = output<void>();
-  /** "Pick from my groups" was pressed. */
-  readonly importGroups = output<void>();
 
   private readonly store = inject(LinkSetsStore);
   private readonly accounts = inject(AccountsStore);
+  private readonly devices = inject(DevicesStore);
   // Looked up when needed: the schedules are only read again after a switch.
   private readonly injector = inject(Injector);
   private readonly prefs = inject(UiPrefsService);
@@ -83,7 +81,6 @@ export class LinkSetCardComponent {
       fmt(ts.linksN, { n: stats.links }),
       fmt(ts.onN, { n: stats.on }),
       fmt(ts.codesN, { n: stats.codes }),
-      fmt(ts.accountsN, { n: stats.accounts }),
     ].join(' · ');
   });
 
@@ -97,47 +94,31 @@ export class LinkSetCardComponent {
     () => this.store.moreOpen()[this.set().id] ?? !this.prefs.simple(),
   );
 
-  /** Facebook accounts with a paired browser: the only ones that can post a set. */
-  private readonly connectedFb = computed(() =>
-    this.accounts.list().filter((a) => a.platform === 'fb' && a.connected),
-  );
-  /** The account that posts: the chosen one, else the first connected one (what the engine does). */
-  private readonly postingAccountId = computed(
-    () => this.set().postAsAccountId ?? this.connectedFb()[0]?.id ?? null,
-  );
-
+  /**
+   * The extensions that can post the set, by the name of their browser ("Shop PC"): the paired ones (the API keeps
+   * a Facebook account for each, which is what a set stores), or "automatic" for the first connected one.
+   */
   protected readonly postAsOptions = computed<SelectOption[]>(() => {
     const flow = this.t().api.flow;
+    const devices = this.devices.list();
     const options: SelectOption[] = [
       { value: '', label: flow.postAsAuto },
-      ...this.connectedFb().map((a) => ({ value: a.id, label: a.name })),
+      ...this.accounts
+        .connected()
+        .map((a) => ({ value: a.id, label: extensionNameOf(a, devices) })),
     ];
     const chosen = this.set().postAsAccountId;
-    // An account that is no longer connected (or gone) stays visible instead of silently showing another one.
-    if (chosen && !this.connectedFb().some((a) => a.id === chosen)) {
+    // An extension that is no longer paired (or gone) stays visible instead of silently showing another one.
+    if (chosen && !this.accounts.connected().some((a) => a.id === chosen)) {
       const a = this.accounts.byId(chosen);
-      options.push({ value: chosen, label: a ? this.accountLabel(a) : flow.postAsMissing });
+      options.push({
+        value: chosen,
+        label: a
+          ? `${extensionNameOf(a, devices)} · ${this.t().api.unboundAccount}`
+          : flow.postAsMissing,
+      });
     }
     return options;
-  });
-
-  protected readonly otherAccounts = computed(() =>
-    this.set().accountIds.map((id) => {
-      const a = this.accounts.byId(id);
-      return {
-        id,
-        label: a ? this.accountLabel(a) : this.t().api.flow.postAsMissing,
-        icon: a ? PLATFORMS[a.platform].icon : 'ph-user',
-      };
-    }),
-  );
-
-  protected readonly accountOptions = computed<SelectOption[]>(() => {
-    const taken = new Set([...this.set().accountIds, this.postingAccountId()]);
-    return this.accounts
-      .list()
-      .filter((a) => !taken.has(a.id))
-      .map((a) => ({ value: a.id, label: this.accountLabel(a) }));
   });
 
   /** What is written to a group that has a code: the code, the post text, the collection's footer and tags. */
@@ -207,24 +188,5 @@ export class LinkSetCardComponent {
     const next = value || null;
     if (next === this.set().postAsAccountId) return;
     await this.store.setPostAs(this.set().id, next);
-  }
-
-  protected async addAccount(id: string): Promise<void> {
-    if (id && (await this.store.addAccount(this.set().id, id)))
-      this.notify.success(this.t().ts.added);
-  }
-
-  protected async removeAccount(id: string): Promise<void> {
-    if (await this.store.removeAccount(this.set().id, id)) this.notify.info(this.t().ts.removed);
-  }
-
-  /** "Facebook · Shop PC" as the API names a browser's account; a sample or unbound one says so. */
-  private accountLabel(a: SocialAccount): string {
-    const platform = PLATFORMS[a.platform].name;
-    const base = a.name.startsWith(platform) ? a.name : `${platform} · ${a.name}`;
-    const kind = accountKind(a);
-    if (kind === 'sample') return `${base} · ${this.t().api.demoAccount}`;
-    if (kind === 'unbound') return `${base} · ${this.t().api.unboundAccount}`;
-    return base;
   }
 }

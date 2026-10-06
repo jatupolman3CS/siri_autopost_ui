@@ -6,6 +6,17 @@ import { AdminStore, bangkokParts } from './admin.store';
 import { SessionStore } from './session.store';
 import { promoStatus } from '../../features/admin/plans-page.component';
 
+/** No override of any of the seven numbers: the plan's values apply. */
+const NO_OVERRIDES = {
+  accounts: null,
+  posts: null,
+  devices: null,
+  seats: null,
+  groups: null,
+  images: null,
+  libraryPosts: null,
+};
+
 const customer = (over: Partial<ApiCustomer> = {}): ApiCustomer => ({
   id: 'c1',
   name: 'Mali',
@@ -23,7 +34,7 @@ const customer = (over: Partial<ApiCustomer> = {}): ApiCustomer => ({
   devices: [],
   note: null,
   workspaces: 1,
-  limits: { accounts: null, posts: null, devices: null, seats: null },
+  limits: NO_OVERRIDES,
   hasSubscription: false,
   renewsAt: null,
   cancelAtPeriodEnd: false,
@@ -75,7 +86,20 @@ const SUMMARY = {
   agency: 0,
   revenue: [{ year: 2026, month: 9, amount: 790 }],
 };
-const PLANS = [{ key: 'pro', price: 790, accounts: 10, posts: null, devices: 3, seats: 1 }];
+const PLANS = [
+  {
+    key: 'pro',
+    price: 790,
+    accounts: 10,
+    posts: null,
+    devices: 3,
+    seats: 1,
+    groups: 300,
+    images: 1000,
+    libraryPosts: 1000,
+    features: ['advanced_anti_ban', 'notifications', 'auto_reply', 'ai', 'someday'],
+  },
+];
 
 describe('AdminStore', () => {
   let http: HttpTestingController;
@@ -309,19 +333,64 @@ describe('AdminStore', () => {
     await load([customer()]);
     const done = admin.setPlanField('pro', 'devices', 0);
     const req = http.expectOne('/api/admin/plans/pro');
+    // The body carries the seven numbers and the price, never the functions (the API fixes those).
     expect(req.request.body).toEqual({
       price: 790,
       accounts: 10,
       posts: null,
       devices: null,
       seats: 1,
+      groups: 300,
+      images: 1000,
+      libraryPosts: 1000,
     });
-    req.flush({ key: 'pro', price: 790, accounts: 10, posts: null, devices: null, seats: 1 });
+    req.flush({ ...PLANS[0], devices: null });
     const { served } = await finish(done);
     expect(served).toContain('/api/admin/health');
     expect(served).toContain('/api/admin/audit'); // the platform-wide log, no customer
     expect(admin.plans().pro.devices).toBeNull();
     expect(admin.plans().basic.price).toBeGreaterThan(0); // the other plans are kept
+  });
+
+  it('reads the three new numbers and the functions of every plan, ignoring a function it does not know', async () => {
+    await load([customer()]);
+    expect(admin.plans().pro).toMatchObject({ groups: 300, images: 1000, libraryPosts: 1000 });
+    expect(admin.plans().pro.features).toEqual([
+      'advanced_anti_ban',
+      'notifications',
+      'auto_reply',
+      'ai',
+    ]);
+    // A plan the API did not list keeps the shipped defaults.
+    expect(admin.plans().agency.features).toContain('bump');
+  });
+
+  it('saves a new number of a plan: groups, images and library posts, empty = unlimited', async () => {
+    await load([customer()]);
+    const done = admin.setPlanField('pro', 'groups', 500);
+    const req = http.expectOne('/api/admin/plans/pro');
+    expect(req.request.body).toMatchObject({ groups: 500, images: 1000, libraryPosts: 1000 });
+    req.flush({ ...PLANS[0], groups: 500 });
+    await finish(done);
+    expect(admin.plans().pro.groups).toBe(500);
+
+    const more = admin.setPlanField('pro', 'images', 0);
+    const again = http.expectOne('/api/admin/plans/pro');
+    expect(again.request.body).toMatchObject({ groups: 500, images: null });
+    again.flush({ ...PLANS[0], groups: 500, images: null });
+    await finish(more);
+    expect(admin.plans().pro.images).toBeNull();
+  });
+
+  it('sends all seven overrides of a customer, 0 = unlimited and null keeps the plan', async () => {
+    await load([customer({ limits: { ...NO_OVERRIDES, accounts: 5 } })]);
+    expect(admin.customer('c1')!.limits).toEqual({ accounts: 5 });
+    const done = admin.setLimit('c1', 'libraryPosts', 0);
+    const req = http.expectOne('/api/admin/customers/c1/limits');
+    expect(req.request.body).toEqual({ ...NO_OVERRIDES, accounts: 5, libraryPosts: 0 });
+    req.flush(customer({ limits: { ...NO_OVERRIDES, accounts: 5, libraryPosts: 0 } }));
+    await finish(done);
+    expect(admin.customer('c1')!.limits).toEqual({ accounts: 5, libraryPosts: 0 });
   });
 
   it('switches a promo code off and keeps the instant it expires', async () => {

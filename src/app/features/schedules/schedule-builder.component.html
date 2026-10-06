@@ -89,18 +89,6 @@
       </div>
       <div>
         <app-select-field
-          [label]="t().sch.bump"
-          [options]="bumpOptions()"
-          [disabled]="perm.readOnly()"
-          [value]="'' + form.bump()"
-          (valueChange)="form.bump.set(+$event)"
-        />
-        <p class="su-field-help stored">
-          <i class="ph ph-info" aria-hidden="true"></i>{{ t().api.flow.storedOnly }}
-        </p>
-      </div>
-      <div>
-        <app-select-field
           [label]="t().sch.autoDel"
           [options]="delOptions()"
           [disabled]="perm.readOnly()"
@@ -113,9 +101,21 @@
       </div>
     </div>
 
+    <app-schedule-bump />
+
     <app-schedule-pattern />
     <p class="note">{{ orderNote() }}</p>
     <app-schedule-overrides />
+  }
+
+  @if (overLimitText(); as warn) {
+    <div class="over" role="status">
+      <i class="ph ph-warning" aria-hidden="true"></i>
+      <span>{{ warn }}</span>
+      <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/antiban">{{
+        t().api.flow.schOverLimitLink
+      }}</a>
+    </div>
   }
 
   <div class="foot">

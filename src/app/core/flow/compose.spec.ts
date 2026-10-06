@@ -1,14 +1,23 @@
 import {
+  MAX_COMPOSED_LENGTH,
+  MAX_SPIN_ROUNDS,
+  MAX_VARIANTS,
+  buildSpin,
   compose,
   composeFull,
+  composeSegments,
   hasCodeTag,
   hasSpin,
-  MAX_SPIN_ROUNDS,
+  insertAt,
+  insertCodeTag,
+  lintSpin,
   postComposeSettings,
   postFlags,
   seededRandom,
   spin,
+  spinCount,
   spinVariants,
+  wrapSpin,
 } from './compose';
 
 /** A random source that returns the given values in turn (then the last one forever). */
@@ -140,10 +149,18 @@ describe('spin', () => {
     expect(spin('{a|b} {{code}} {{ รหัส }}', first)).toBe('a {{code}} {{ รหัส }}');
   });
 
-  it('stops after the maximum number of rounds', () => {
-    const groups = MAX_SPIN_ROUNDS + 3;
-    const out = spin('{a|b}'.repeat(groups), first);
-    expect(out).toBe('a'.repeat(MAX_SPIN_ROUNDS) + '{a|b}'.repeat(3));
+  it('resolves any number of groups side by side: each round settles all the innermost ones', () => {
+    const groups = MAX_SPIN_ROUNDS * 4;
+    expect(spin('{a|b}'.repeat(groups), first)).toBe('a'.repeat(groups));
+    expect(spin('{a|b}'.repeat(groups), last)).toBe('b'.repeat(groups));
+  });
+
+  it('stops after the maximum number of rounds: only a nesting that deep stays as written', () => {
+    const depth = MAX_SPIN_ROUNDS + 3;
+    // {a|{a|{a|...{a|z}}}} : each round settles the innermost group, so `depth` rounds are needed.
+    const nested = '{a|'.repeat(depth) + 'z' + '}'.repeat(depth);
+    expect(spin(nested, last)).toBe('{a|'.repeat(3) + 'z' + '}'.repeat(3));
+    expect(spin('{a|'.repeat(MAX_SPIN_ROUNDS) + 'z' + '}'.repeat(MAX_SPIN_ROUNDS), last)).toBe('z');
   });
 
   it('uses Math.random when no source is given', () => {
@@ -185,6 +202,12 @@ describe('compose', () => {
   it('removes the tag when the code is empty', () => {
     expect(compose('a {{code}} b', '')).toBe('a  b');
     expect(compose('{{code}}', null)).toBe('');
+  });
+
+  it('drops a line that holds only the tag when the group has no code', () => {
+    expect(compose('{{code}}\nโปรวันนี้', '')).toBe('โปรวันนี้');
+    expect(compose('  {{ รหัส }}  \r\nโปรวันนี้', null)).toBe('โปรวันนี้');
+    expect(compose('{{code}}\nโปรวันนี้', ' #K1 ')).toBe('#K1\nโปรวันนี้');
   });
 
   it('does not add the code again when the tag is used', () => {
@@ -445,5 +468,278 @@ describe('postComposeSettings', () => {
       footer: undefined,
       footerPos: undefined,
     });
+  });
+});
+
+describe('insertAt', () => {
+  it('writes at the caret and puts the caret after what was written', () => {
+    expect(insertAt('hello world', 'big ', 6)).toEqual({ text: 'hello big world', caret: 10 });
+    expect(insertAt('', 'x', 0)).toEqual({ text: 'x', caret: 1 });
+    expect(insertAt('abc', 'X', 3)).toEqual({ text: 'abcX', caret: 4 });
+  });
+
+  it('replaces the selection', () => {
+    expect(insertAt('hello world', 'there', 6, 11)).toEqual({ text: 'hello there', caret: 11 });
+  });
+
+  it('accepts a selection made backwards and indexes out of range', () => {
+    expect(insertAt('abcdef', 'X', 4, 2)).toEqual({ text: 'abXef', caret: 3 });
+    expect(insertAt('abc', 'X', 99)).toEqual({ text: 'abcX', caret: 4 });
+    expect(insertAt('abc', 'X', -5)).toEqual({ text: 'Xabc', caret: 1 });
+    expect(insertAt('abc', 'X', Number.NaN)).toEqual({ text: 'Xabc', caret: 1 });
+  });
+
+  it('refuses (null) when the result would be longer than the most allowed, and never cuts', () => {
+    expect(insertAt('abcde', 'XYZ', 2, 2, 7)).toBeNull();
+    expect(insertAt('abcde', 'XY', 2, 2, 7)).toEqual({ text: 'abXYcde', caret: 4 });
+    // A selection that is replaced makes room.
+    expect(insertAt('abcde', 'XYZ', 0, 3, 5)).toEqual({ text: 'XYZde', caret: 3 });
+  });
+
+  it('counts Thai text by characters like the textarea does', () => {
+    expect(insertAt('สวัสดี', ' ค่ะ', 6)).toEqual({ text: 'สวัสดี ค่ะ', caret: 10 });
+  });
+});
+
+describe('wrapSpin', () => {
+  it('turns the selection into {selection|} with the caret after the pipe', () => {
+    const word = 'มีของใหม่';
+    const edit = wrapSpin(word + ' วันนี้', 0, word.length)!;
+    expect(edit.text).toBe('{' + word + '|} วันนี้');
+    expect(edit.text[edit.caret - 1]).toBe('|');
+    expect(edit.text[edit.caret]).toBe('}');
+  });
+
+  it('wraps in the middle of a text and accepts a backwards selection', () => {
+    expect(wrapSpin('say hello now', 4, 9)).toEqual({ text: 'say {hello|} now', caret: 11 });
+    expect(wrapSpin('say hello now', 9, 4)).toEqual({ text: 'say {hello|} now', caret: 11 });
+  });
+
+  it('puts an empty group with the caret inside when nothing is selected', () => {
+    expect(wrapSpin('ab', 1)).toEqual({ text: 'a{|}b', caret: 2 });
+    expect(wrapSpin('', 0)).toEqual({ text: '{|}', caret: 1 });
+  });
+
+  it('refuses when the group would not fit', () => {
+    expect(wrapSpin('abc', 0, 3, 4)).toBeNull();
+    expect(wrapSpin('abc', 0, 3, 6)).toEqual({ text: '{abc|}', caret: 5 });
+  });
+});
+
+describe('insertCodeTag', () => {
+  it('writes the tag on its own first line of an empty post', () => {
+    expect(insertCodeTag('', 0)).toEqual({ text: '{{code}}\n', caret: 9 });
+    expect(insertCodeTag('  \n', 0)).toEqual({ text: '{{code}}\n  \n', caret: 9 });
+  });
+
+  it('gives the tag a line of its own at the start of a line that has text', () => {
+    expect(insertCodeTag('ขายคอนโด', 0)).toEqual({ text: '{{code}}\nขายคอนโด', caret: 9 });
+    expect(insertCodeTag('a\nb', 2)).toEqual({ text: 'a\n{{code}}\nb', caret: 11 });
+  });
+
+  it('keeps the tag inline in the middle of a line, at the end, and before an empty line', () => {
+    expect(insertCodeTag('ทัก รหัส นี้', 3)).toEqual({ text: 'ทัก{{code}} รหัส นี้', caret: 11 });
+    expect(insertCodeTag('abc', 3)).toEqual({ text: 'abc{{code}}', caret: 11 });
+    expect(insertCodeTag('\nabc', 0)).toEqual({ text: '{{code}}\nabc', caret: 8 });
+  });
+
+  it('replaces the selection and respects the limit', () => {
+    expect(insertCodeTag('xx CODE yy', 3, 7)).toEqual({ text: 'xx {{code}} yy', caret: 11 });
+    expect(insertCodeTag('abc', 1, 1, 5)).toBeNull();
+  });
+
+  it('is read as a code tag by the composer', () => {
+    const edit = insertCodeTag('ขายของ', 0)!;
+    expect(hasCodeTag(edit.text)).toBe(true);
+    expect(compose(edit.text, 'AB1')).toBe('AB1\nขายของ');
+  });
+});
+
+describe('buildSpin', () => {
+  it('joins the options into a group', () => {
+    expect(buildSpin(['สวัสดี', 'หวัดดี', 'ทักทาย'])).toBe('{สวัสดี|หวัดดี|ทักทาย}');
+  });
+
+  it('trims, drops blanks and removes braces and pipes that would break the group', () => {
+    expect(buildSpin(['  a ', '', 'b|c', '{d}', '   '])).toBe('{a|bc|d}');
+  });
+
+  it('needs two options', () => {
+    expect(buildSpin([])).toBeNull();
+    expect(buildSpin(['only'])).toBeNull();
+    expect(buildSpin(['a', ' ', '|'])).toBeNull();
+  });
+
+  it('writes a group the composer resolves', () => {
+    expect(hasSpin(buildSpin(['a', 'b'])!)).toBe(true);
+    expect(spin(buildSpin(['a', 'b'])!, last)).toBe('b');
+  });
+});
+
+describe('lintSpin', () => {
+  const kinds = (text: string) => lintSpin(text).map((i) => i.kind);
+
+  it('has nothing to say about good text', () => {
+    expect(lintSpin('')).toEqual([]);
+    expect(lintSpin(null)).toEqual([]);
+    expect(lintSpin('plain text')).toEqual([]);
+    expect(lintSpin('{a|b} {c|d|e} {{code}}')).toEqual([]);
+    expect(lintSpin('{a|{b|c}} ขาย {{ รหัส }}')).toEqual([]);
+    expect(lintSpin('{{CODE}}\n{สวัสดี|หวัดดี}')).toEqual([]);
+  });
+
+  it('finds a { that is never closed, at the brace', () => {
+    expect(lintSpin('ขาย {a|b')).toEqual([{ kind: 'unclosed', at: 4, text: '{a|b' }]);
+    expect(kinds('{a|{b|c}')).toEqual(['unclosed']);
+    expect(kinds('{{code}')).toEqual(['unclosed', 'noPipe']);
+  });
+
+  it('finds a } that was never opened', () => {
+    expect(lintSpin('a|b}')).toEqual([{ kind: 'unopened', at: 3, text: 'a|b}' }]);
+    expect(kinds('{a|b}}')).toEqual(['unopened']);
+    expect(kinds('{code}}')).toEqual(['noPipe', 'unopened']);
+  });
+
+  it('finds a group with a single option (no pipe): the server leaves it as written', () => {
+    expect(kinds('{only}')).toEqual(['noPipe']);
+    expect(kinds('{a|b} {c}')).toEqual(['noPipe']);
+    expect(kinds('{a {b|c}}')).toEqual(['noPipe']);
+  });
+
+  it('finds empty options, wherever they are', () => {
+    expect(kinds('{a||b}')).toEqual(['emptyOption']);
+    expect(kinds('{|a}')).toEqual(['emptyOption']);
+    expect(kinds('{a|}')).toEqual(['emptyOption']);
+    expect(kinds('{|}')).toEqual(['emptyOption']);
+    expect(kinds('{a|b}{c| |d}')).toEqual([]);
+  });
+
+  it('finds a code tag inside a group, which the server never spins', () => {
+    expect(kinds('{ซื้อ {{code}}|สั่ง {{code}}}')).toEqual(['codeInGroup']);
+    expect(kinds('{x|{a|b} {{code}}}')).toEqual(['codeInGroup']);
+    expect(spin('{ซื้อ {{code}}|สั่ง {{code}}}', last)).toBe('{ซื้อ {{code}}|สั่ง {{code}}}');
+  });
+
+  it('lists the issues in the order of the text', () => {
+    expect(lintSpin('{a} x {b||c} y {d').map((i) => [i.kind, i.at])).toEqual([
+      ['noPipe', 0],
+      ['emptyOption', 6],
+      ['unclosed', 15],
+    ]);
+  });
+
+  it('does not run away on long text and handles a lone brace', () => {
+    expect(kinds('{')).toEqual(['unclosed']);
+    expect(kinds('}')).toEqual(['unopened']);
+    expect(lintSpin('{a|b}'.repeat(2000))).toEqual([]);
+  });
+});
+
+describe('spinCount', () => {
+  it('is one text without spintax', () => {
+    expect(spinCount('')).toEqual({ groups: 0, variants: 1 });
+    expect(spinCount(null)).toEqual({ groups: 0, variants: 1 });
+    expect(spinCount('plain {{code}} {x}')).toEqual({ groups: 0, variants: 1 });
+  });
+
+  it('counts the groups and multiplies the options of groups side by side', () => {
+    expect(spinCount('{a|b|c}')).toEqual({ groups: 1, variants: 3 });
+    expect(spinCount('{a|b|c} x {d|e}')).toEqual({ groups: 2, variants: 6 });
+    expect(spinCount('{a|b} {c|d} {e|f} {g|h}')).toEqual({ groups: 4, variants: 16 });
+  });
+
+  it('adds up the options of a nested group inside its parent', () => {
+    // {a|b|{c|d|e}} : a, b, c, d or e
+    expect(spinCount('{a|b|{c|d|e}}')).toEqual({ groups: 2, variants: 5 });
+    // {{a|b} x|{c|d|e} y}: 2 + 3
+    expect(spinCount('{{a|b} x|{c|d|e} y}')).toEqual({ groups: 3, variants: 5 });
+    // 2 * 3 inside one option, the other option has 1
+    expect(spinCount('{{a|b} {c|d|e}|z}')).toEqual({ groups: 3, variants: 7 });
+  });
+
+  it('counts empty options as options', () => {
+    expect(spinCount('x{|!}y')).toEqual({ groups: 1, variants: 2 });
+  });
+
+  it('does not count a group the server cannot resolve', () => {
+    expect(spinCount('{only}')).toEqual({ groups: 0, variants: 1 });
+    expect(spinCount('{ซื้อ {{code}}|สั่ง {{code}}}')).toEqual({ groups: 0, variants: 1 });
+  });
+
+  it('caps the number of variants', () => {
+    const many = '{a|b|c|d|e|f|g|h|i|j}'.repeat(20);
+    expect(spinCount(many)).toEqual({ groups: 20, variants: MAX_VARIANTS });
+  });
+
+  it('counts every group side by side, and stops at the nesting the server stops at', () => {
+    expect(spinCount('{a|b}'.repeat(200)).groups).toBe(200);
+    const depth = MAX_SPIN_ROUNDS + 5;
+    expect(spinCount('{a|'.repeat(depth) + 'z' + '}'.repeat(depth)).groups).toBe(MAX_SPIN_ROUNDS);
+  });
+
+  it('agrees with the number of distinct texts for small cases', () => {
+    const text = '{a|b|c} {x|y} {1|2|{3|4}}';
+    const real = new Set<string>();
+    for (let seed = 1; seed < 400; seed++) real.add(spin(text, seededRandom(seed)));
+    expect(spinCount(text).variants).toBe(3 * 2 * (1 + 1 + 2));
+    expect(real.size).toBeGreaterThan(10);
+    expect(real.size).toBeLessThanOrEqual(spinCount(text).variants);
+  });
+});
+
+describe('composeSegments', () => {
+  const settings = { hashtags: '#tag', footer: 'F {x|y}', footerPos: 'end' as const };
+  const joined = (s: { text: string }[]) => s.map((x) => x.text).join('');
+
+  it('is the text of composeFull, cut where spintax picked words', () => {
+    const text = 'ขาย {a|b|c} วันนี้ {d|e}';
+    for (let seed = 1; seed <= 12; seed++) {
+      const segments = composeSegments(text, 'AB', settings, seededRandom(seed));
+      expect(joined(segments)).toBe(composeFull(text, 'AB', settings, seededRandom(seed)));
+    }
+  });
+
+  it('marks only the picked words', () => {
+    const segments = composeSegments('สวัสดี {a|b} ค่ะ', '', null, last);
+    expect(segments).toEqual([
+      { text: 'สวัสดี ', spun: false },
+      { text: 'b', spun: true },
+      { text: ' ค่ะ', spun: false },
+    ]);
+  });
+
+  it('marks what a nested group picked, and merges neighbours', () => {
+    const segments = composeSegments('{x|{y|z}}{p|q}', '', null, last);
+    expect(segments).toEqual([{ text: 'zq', spun: true }]);
+  });
+
+  it('is one plain segment without spintax, and nothing for an empty text', () => {
+    expect(composeSegments('plain', '', null, first)).toEqual([{ text: 'plain', spun: false }]);
+    expect(composeSegments('plain', 'C', null, first)).toEqual([{ text: 'C\nplain', spun: false }]);
+    expect(composeSegments('', '', null, first)).toEqual([]);
+  });
+
+  it('does not mark an empty pick', () => {
+    expect(composeSegments('a{|!}b', '', null, first)).toEqual([{ text: 'ab', spun: false }]);
+  });
+
+  it('keeps the footer test the same as composeFull when a pick makes up the footer text', () => {
+    const s = { footer: 'ทักแชท', footerPos: 'end' as const };
+    const text = '{ทัก|ติดต่อ}แชท';
+    for (const rnd of [first, last]) {
+      expect(joined(composeSegments(text, '', s, rnd))).toBe(composeFull(text, '', s, rnd));
+    }
+    // "ทักแชท" is already in the picked text, so the footer is not added twice.
+    expect(joined(composeSegments(text, '', s, first))).toBe('ทักแชท');
+  });
+
+  it('ignores private-use characters a person pasted in', () => {
+    expect(joined(composeSegments('ab{c|d}', '', null, first))).toBe('abc');
+  });
+});
+
+describe('MAX_COMPOSED_LENGTH', () => {
+  it('is the 7,000 characters the server allows for a composed post', () => {
+    expect(MAX_COMPOSED_LENGTH).toBe(7000);
   });
 });

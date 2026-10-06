@@ -21,14 +21,34 @@ export const AP_I18N_FIXES = {
     // There is no trial: the Free plan is permanent and needs no card.
     heroNote: ['ใช้ฟรีได้เลย ไม่ต้องใช้บัตรเครดิต', 'Free to start, no credit card required'],
     trial: ['เริ่มใช้ฟรี', 'Start for free'],
-    // Only Facebook groups can be posted to through the extension today.
-    platforms: [
-      'โพสต์ลงกลุ่ม Facebook ได้แล้ว แพลตฟอร์มอื่นกำลังตามมา',
-      'Posts to Facebook groups now, more platforms coming',
+    // Only Facebook groups and pages are posted to (the design also listed Instagram, X, TikTok, LINE OA and
+    // Threads): the line next to the Facebook mark says exactly that, and nothing else is promised.
+    platforms: ['โพสต์ลงกลุ่มและเพจ Facebook', 'Posts to Facebook groups and pages'],
+    heroTitle: [
+      'โพสต์ขายของลงทุกกลุ่มและเพจ Facebook อัตโนมัติ โดยไม่เสี่ยงโดนแบน',
+      'Post to every Facebook group and page automatically, without risking a ban',
+    ],
+    s1t: [
+      'ติดตั้งส่วนขยายในเบราว์เซอร์ที่คุณล็อกอิน Facebook อยู่แล้ว',
+      'Install the extension in the browser where you are signed in to Facebook',
     ],
     s1b: [
-      'ไม่ต้องให้รหัสผ่านกับเรา บัญชีอยู่ในเบราว์เซอร์ของคุณเสมอ ตอนนี้โพสต์ลงกลุ่ม Facebook ได้ แพลตฟอร์มอื่น (Instagram, X, TikTok, LINE OA, Threads) จะเพิ่มภายหลัง',
-      'No passwords handed to us; your account stays in your browser. Facebook groups work today; Instagram, X, TikTok, LINE OA and Threads come later',
+      'ไม่ต้องให้รหัสผ่านหรือเชื่อมต่อ API กับเรา บัญชีอยู่ในเบราว์เซอร์ของคุณเสมอ ตอนนี้โพสต์ลงกลุ่มและเพจ Facebook',
+      'No passwords or API access handed to us; your account stays in your browser. Posts to Facebook groups and pages',
+    ],
+    s2b: [
+      'เขียนครั้งเดียว เลือกกลุ่มและเพจปลายทาง ตั้งเวลาและทำซ้ำ',
+      'Write once, pick the target groups and pages, set the time and repeat',
+    ],
+    s3b: [
+      'หน่วงเวลาสุ่ม พิมพ์ทีละตัวอักษร และหยุดเองเมื่อ Facebook เตือน',
+      'Random delays, character-by-character typing, and an automatic pause when Facebook warns you',
+    ],
+    f4b: ['ตั้งจำนวนโพสต์ Facebook สูงสุดต่อวัน', 'Cap how many Facebook posts go out per day'],
+    p2t: ['ผู้ดูแลเพจและกลุ่ม Facebook', 'Facebook page and group managers'],
+    p2b: [
+      'ศูนย์กลางตารางคอนเทนต์สำหรับหลายกลุ่มและหลายเพจ',
+      'One content calendar for all your groups and pages',
     ],
     // The Thai text had a stray "แรก" and promised to connect any social account; only Facebook works today.
     ctaBody: [
@@ -51,6 +71,8 @@ export const AP_I18N_FIXES = {
     signupSub: ['ใช้ฟรีได้เลย ไม่ต้องใช้บัตร', 'Free to start, no card needed'],
   },
   common: {
+    // The plan counts Facebook accounts (one for each paired browser), not social accounts of any platform.
+    accounts: ['บัญชี Facebook', 'Facebook accounts'],
     // The limit counts a rolling 24 hours, not the calendar day.
     postsToday: ['โพสต์ใน 24 ชม.', 'Posts, last 24 h'],
     perDay: ['ต่อ 24 ชม.', 'per 24 h'],
@@ -59,6 +81,27 @@ export const AP_I18N_FIXES = {
   flow: {
     s1: ['จัดโพสต์เป็นชุด', 'Put posts into collections'],
     s1b: ['โพสต์หนึ่งอยู่ได้หลายชุด', 'One post can sit in several collections'],
+    // The link sets hold Facebook groups and pages.
+    s2: ['วางลิงก์กลุ่มหรือเพจเป็นชุด', 'Paste group and page links into a set'],
+    n1: ['วางลิงก์กลุ่มหรือเพจที่จะโพสต์', 'Paste the groups and pages to post to'],
+  },
+  // The menu names the posting targets: Facebook groups and pages.
+  nav: {
+    targets: ['ลิงก์กลุ่มและเพจ', 'Group & page links'],
+    groupsShort: ['กลุ่มและเพจที่จะโพสต์', 'Groups and pages to post to'],
+  },
+  ov: {
+    // A link set holds groups and pages, so the first step counts links.
+    s1: ['วางลิงก์กลุ่มหรือเพจที่จะโพสต์', 'Paste the groups and pages to post to'],
+    s1d: ['{n} ลิงก์ ใน {m} ชุด', '{n} links in {m} sets'],
+    s1a: ['เพิ่มลิงก์กลุ่มหรือเพจ', 'Add group or page links'],
+    // The panel lists the paired extensions (the devices), not the sample social accounts of the design; the note
+    // below is no longer shown, and says what is true if it ever is.
+    accountsTitle: ['ส่วนขยายที่เชื่อมต่อ', 'Connected extensions'],
+    accountsNote: [
+      'ระบบไม่เชื่อมต่อ Facebook เอง ส่วนขยายใช้บัญชีที่คุณล็อกอินอยู่ในเบราว์เซอร์ที่ผูกไว้ แล้วโพสต์จากเครื่องนั้น',
+      'We never connect to Facebook ourselves. The extension uses the account you are signed in to on the paired browser and posts from that machine',
+    ],
   },
   col: {
     sub: [
@@ -78,16 +121,23 @@ export const AP_I18N_FIXES = {
       'อัปเดตโพสต์แล้ว งานที่จัดคิวไว้แล้วยังใช้ข้อความเดิม งานที่จัดคิวหลังจากนี้ใช้ข้อความใหม่',
       'Post updated. Tasks already queued keep the old text; tasks queued from now on use the new one',
     ],
-    // "(randomized)" was only true with the smart delay on; the summary adds its own ending.
+    // "(randomized)" was only true with the smart delay on; the summary adds its own ending. Facebook is the
+    // only platform, so {p} counts the targets (groups and pages).
     summary: [
-      'จะสร้าง {n} งานโพสต์ใน {p} แพลตฟอร์ม ระหว่าง {t1}–{t2}',
-      'Creates {n} tasks across {p} platforms between {t1}–{t2}',
+      'จะสร้าง {n} งานโพสต์ไปยัง {p} กลุ่มหรือเพจ ระหว่าง {t1}–{t2}',
+      'Creates {n} tasks to {p} groups and pages between {t1}–{t2}',
     ],
-    // There is no AI: the "write with AI" tool fills text templates in (see ai.note), so it is not called AI.
-    ai: ['ตัวช่วยร่างโพสต์ (แม่แบบ)', 'Post drafts (templates)'],
-    tools: [
-      'เครื่องมือเพิ่มเติม (ข้อความสำเร็จรูป, รหัสกลุ่ม, Spintax, ตัวช่วยร่างโพสต์)',
-      'More tools (snippets, group code, spintax, post drafts)',
+    // The editor's insert toolbar: the buttons say what they put in, and the hints explain {{code}} and
+    // Spintax in plain words (the design only showed the raw braces, which people could not make sense of).
+    insertCode: ['{{code}} รหัสกลุ่ม', '{{code}} Group code'],
+    insertSpin: ['{ } Spintax', '{ } Spintax'],
+    codeHint: [
+      'แทรก {{code}} ตรงเคอร์เซอร์ ตอนโพสต์ระบบแทนด้วยรหัสของแต่ละกลุ่ม ถ้าไม่ใส่ รหัสจะอยู่บรรทัดแรกเอง',
+      'Inserts {{code}} at the cursor. When the post goes out it is replaced by each group’s own code. Without it the code goes on line 1',
+    ],
+    spinHint: [
+      'สุ่มคำให้แต่ละกลุ่มได้ข้อความไม่ซ้ำกัน เช่น {สวัสดี|หวัดดี} กลุ่มหนึ่งได้ “สวัสดี” อีกกลุ่มได้ “หวัดดี”',
+      'Mixes words so every group gets different text, like {Hello|Hi}: one group gets “Hello”, another “Hi”',
     ],
     // The draft only lives in this browser tab.
     toastDraft: [
@@ -96,10 +146,17 @@ export const AP_I18N_FIXES = {
     ],
   },
   ab: {
-    // Facebook rolling 24-hour limit; the server fails the post (quota), it does not roll it over.
+    // Facebook is the only platform: one rolling 24-hour limit; the server fails the post (quota), it does not roll it over.
+    limitsTitle: ['เพดานโพสต์ Facebook ต่อวัน', 'Facebook daily limit'],
     limitsBody: [
-      'จำนวนโพสต์สูงสุดใน 24 ชั่วโมงต่อแพลตฟอร์ม เมื่อถึงเพดาน โพสต์ที่เหลือจะล้มเหลวด้วยสาเหตุโควตา (ลองใหม่ภายหลังได้) ไม่ถูกเลื่อนไปพรุ่งนี้เอง',
-      'Maximum posts per platform in any 24 hours. At the limit the rest fail with a quota error (retry later); nothing rolls over to tomorrow',
+      'จำนวนโพสต์ Facebook สูงสุดใน 24 ชั่วโมง เมื่อถึงเพดาน โพสต์ที่เหลือจะล้มเหลวด้วยสาเหตุโควตา (ลองใหม่ภายหลังได้) ไม่ถูกเลื่อนไปพรุ่งนี้เอง',
+      'Maximum Facebook posts in any 24 hours. At the limit the rest fail with a quota error (retry later); nothing rolls over to tomorrow',
+    ],
+    w4: ['หลังจากนั้น: ตามเพดานโพสต์ Facebook ต่อวัน', 'After that: the Facebook daily limit'],
+    // Facebook is the only platform.
+    hPause: [
+      'หยุดอัตโนมัติเมื่อ Facebook แสดงคำเตือน',
+      'Pause automatically when Facebook shows a warning',
     ],
     usedToday: ['ใช้ไปใน 24 ชม.', 'Used in 24 h'],
     // The random wait is applied when posts are scheduled; the extension only enforces the minimum gap.
@@ -113,11 +170,11 @@ export const AP_I18N_FIXES = {
       'คำนวณจากค่าหน่วงต่ำสุด เพดาน Facebook การพิมพ์ การเลื่อนหน้า การหยุดอัตโนมัติ และกฎขั้นสูงของแผน',
       'Based on the minimum delay, the Facebook daily limit, typing, scrolling, the automatic pause and the plan’s advanced rules',
     ],
-    // The extension types and scrolls; the server enforces the automatic pause and the warm-up caps. Only
-    // "shuffle" is still saved without effect.
+    // The extension types (at the chosen speed), scrolls and brings its window to the front; the server shuffles the
+    // order of the groups of a slot, enforces the automatic pause and the warm-up caps. Nothing is saved without effect.
     humanBody: [
-      'ส่วนขยายใช้การพิมพ์และการเลื่อนหน้า เซิร์ฟเวอร์บังคับใช้การหยุดอัตโนมัติและวอร์มอัพ ส่วนการสุ่มลำดับบันทึกไว้แต่ยังไม่มีผล',
-      'The extension types and scrolls, and the server enforces the automatic pause and the warm-up. Shuffle is saved but has no effect yet',
+      'ส่วนขยายพิมพ์ เลื่อนหน้า และดึงหน้าต่างขึ้นมาไว้ด้านหน้า ส่วนเซิร์ฟเวอร์สุ่มลำดับกลุ่มในแต่ละรอบ หยุดอัตโนมัติ และจำกัดบัญชีใหม่ (วอร์มอัพ)',
+      'The extension types, scrolls and brings its window to the front; the server shuffles the order of the groups in each round, pauses automatically and caps new accounts (warm-up)',
     ],
     // The cap counts a rolling 24 hours (all platforms, this workspace), not the calendar day.
     dailyAll: [
@@ -177,6 +234,26 @@ export const AP_I18N_FIXES = {
     ],
   },
   sch: {
+    // The bump is real now (the extension comments on the posted link again) and a Premium function.
+    bump: ['ดันโพสต์ (Premium)', 'Bump posts (Premium)'],
+    bumpOff: ['ไม่ดัน', 'No bump'],
+    bumpH: ['ดันหลังโพสต์ {h} ชม.', 'Bump {h} h after the post'],
+    // A link set holds groups and pages: the per-link times are called that.
+    set: ['ชุดลิงก์', 'Link set'],
+    perGroup: ['เวลาเฉพาะกลุ่มหรือเพจ', 'Per-group and page times'],
+    perGroupHint: [
+      'ลิงก์ที่เว้นว่างจะใช้เวลาของตาราง ใส่หลายเวลาคั่นด้วยจุลภาค เช่น 09:30, 19:00',
+      'Blank links follow the schedule. Separate several times with commas, e.g. 09:30, 19:00',
+    ],
+    pickSetFirst: [
+      'เลือกชุดลิงก์ก่อน แล้วจึงกำหนดเวลาเฉพาะลิงก์ได้',
+      'Choose a link set first to set per-link times',
+    ],
+    overridesN: ['เวลาเฉพาะ {n} ลิงก์', '{n} links with their own times'],
+    codeNote: [
+      '{n} ลิงก์ในชุดนี้มีรหัสกลุ่ม ระบบจะเขียนรหัสก่อนเนื้อหาให้อัตโนมัติ',
+      '{n} links in this set have a code; it is written before the content automatically',
+    ],
     // The design asks for a name, but the name is optional: without one the API calls the schedule "collection → set".
     errForm: [
       'กรุณาเลือกชุดโพสต์ ชุดลิงก์ และเวลาอย่างน้อย 1 เวลา',
@@ -184,31 +261,62 @@ export const AP_I18N_FIXES = {
     ],
   },
   ts: {
-    // The design's "synced at 10:12" was a fixed sample time: the list is whatever the extension last reported.
-    importHint: [
-      'รายการกลุ่มที่ส่วนขยายซิงก์ไว้ล่าสุดของบัญชีนี้ เลือกกลุ่มที่ต้องการเพิ่มเข้าชุด กลุ่มที่อยู่ในชุดแล้วถูกข้าม',
-      'The groups the extension last synced for this account. Tick the groups to add; groups already in the set are skipped',
+    // A link set holds Facebook groups AND pages (the server tells them apart by the address).
+    title: ['ลิงก์กลุ่มและเพจ', 'Group & page links'],
+    sub: [
+      'วางลิงก์กลุ่มหรือเพจ Facebook ที่ต้องการโพสต์ จัดเป็นชุดตามหัวข้อ และใส่รหัสกลุ่มเพื่อให้ระบบเขียนรหัสก่อนเนื้อหาทุกครั้งที่โพสต์ลงที่นั้น',
+      'Paste the Facebook group or page links you post to, organise them into sets by topic, and add a group code so the engine writes it before the content every time it posts there',
     ],
-    // The design named a sample page and a sample profile. Accounts are picked from the workspace's real accounts
-    // and labelled with their real names, so these are only the generic kinds.
-    postAsPage: ['เพจ Facebook', 'Facebook page'],
-    postAsProfile: ['โปรไฟล์ส่วนตัว', 'Personal profile'],
+    namePh: ['ชื่อกลุ่มหรือเพจ', 'Group or page name'],
+    urlPh: ['ลิงก์กลุ่มหรือเพจ Facebook', 'Facebook group or page link'],
+    bulkTitle: ['วางลิงก์ครั้งละหลายกลุ่มหรือเพจ', 'Paste several group or page links at once'],
+    bulkHint: [
+      'หนึ่งบรรทัดต่อหนึ่งกลุ่มหรือเพจ ใส่รหัสกลุ่มหลังเครื่องหมาย | ได้ ลิงก์ที่มีอยู่แล้วจะถูกข้าม (อัปเดตรหัสให้ถ้าเปลี่ยน)',
+      'One group or page per line. Put the group code after a | sign. Links already in the set are skipped (their code is updated if it changed)',
+    ],
+    bulkPh: [
+      'https://www.facebook.com/groups/condo.bkk | #Jan240015\nhttps://www.facebook.com/groups/condo.rent\nhttps://www.facebook.com/baandee.shop',
+      'https://www.facebook.com/groups/condo.bkk | #Jan240015\nhttps://www.facebook.com/groups/condo.rent\nhttps://www.facebook.com/baandee.shop',
+    ],
+    bulkEmpty: [
+      'ไม่พบลิงก์กลุ่มหรือเพจ Facebook ในข้อความที่วาง',
+      'No Facebook group or page links found in the pasted text',
+    ],
+    invalidUrl: ['ไม่ใช่ลิงก์กลุ่มหรือเพจ Facebook', 'Not a Facebook group or page link'],
+    csvTitle: [
+      'นำเข้าลิงก์กลุ่มและเพจจาก CSV / Excel',
+      'Import group and page links from CSV / Excel',
+    ],
+    reenabled: ['เปิดใช้ลิงก์อีกครั้งแล้ว', 'Link enabled again'],
+    // The extension (a paired browser) that posts the set; the select lists the browsers by name.
+    postAs: ['ส่วนขยายที่โพสต์ชุดนี้', 'Extension that posts this set'],
     // The design used this label both for a group the engine switched off after failures and for one the owner
     // switched off by hand. Only the failure case has its own text (hOffReason, with the count); a link that is
     // off with no failures was switched off on purpose, so "auto-disabled" would be wrong.
     hOff: ['ปิดใช้งานอยู่', 'Switched off'],
     // The file is read as UTF-8 and may be at most 2 MB; the design only talked about pasting.
     csvHint: [
-      'วางข้อมูลจาก Excel หรือเลือกไฟล์ CSV ที่เป็น UTF-8 (ไม่เกิน 2 MB): ชุดลิงก์, ชื่อกลุ่ม, ลิงก์, รหัสกลุ่ม (คั่นด้วยจุลภาคหรือแท็บ) ชุดที่ยังไม่มีจะถูกสร้างให้',
-      'Paste rows from Excel or choose a UTF-8 CSV file (up to 2 MB): set, group name, link, group code (comma or tab separated). Missing sets are created',
+      'วางข้อมูลจาก Excel หรือเลือกไฟล์ CSV ที่เป็น UTF-8 (ไม่เกิน 2 MB): ชุดลิงก์, ชื่อกลุ่มหรือเพจ, ลิงก์กลุ่มหรือเพจ, รหัสกลุ่ม (คั่นด้วยจุลภาคหรือแท็บ) ชุดที่ยังไม่มีจะถูกสร้างให้',
+      'Paste rows from Excel or choose a UTF-8 CSV file (up to 2 MB): set, group or page name, group or page link, group code (comma or tab separated). Missing sets are created',
     ],
   },
   ntf: {
     // The design says the extension sends the messages and the tokens stay on the machine. Our server sends
     // them (Telegram and LINE), and the tokens are stored on the server and never shown again.
     sub: [
-      'รับแจ้งเตือนผ่าน Telegram หรือ LINE OA เลือกเหตุการณ์ที่ต้องการ และตั้งค่าแยกตามชุดลิงก์หรือรายกลุ่มได้ ข้อความส่งจากเซิร์ฟเวอร์ของเรา โทเค็นเก็บไว้ที่เซิร์ฟเวอร์และไม่แสดงให้เห็นอีกหลังบันทึก',
-      'Get alerts on Telegram or LINE OA, choose which events to send, and override the settings per link set or per group. Messages are sent by our server; tokens are stored on the server and never shown again after saving',
+      'รับแจ้งเตือนผ่าน Telegram หรือ LINE OA เลือกเหตุการณ์ที่ต้องการ และตั้งค่าแยกตามชุดลิงก์หรือรายกลุ่มและเพจได้ ข้อความส่งจากเซิร์ฟเวอร์ของเรา โทเค็นเก็บไว้ที่เซิร์ฟเวอร์และไม่แสดงให้เห็นอีกหลังบันทึก',
+      'Get alerts on Telegram or LINE OA, choose which events to send, and override the settings per link set or per group and page. Messages are sent by our server; tokens are stored on the server and never shown again after saving',
+    ],
+    // The links of a set are groups and pages.
+    perSetHint: [
+      'ชุดที่ตั้งเป็น “ตามค่าเริ่มต้น” ใช้ช่องทางและเหตุการณ์ด้านบน ปรับเฉพาะชุดหรือกดดูรายกลุ่มและเพจเพื่อตั้งค่าแยกรายลิงก์',
+      'Sets left on “Workspace default” use the channel and events above. Override a set, or open its groups and pages to set them one by one',
+    ],
+    groups: ['รายกลุ่มและเพจ', 'Groups and pages'],
+    hideGroups: ['ซ่อนรายกลุ่มและเพจ', 'Hide groups and pages'],
+    summary: [
+      '{on} จาก {n} ลิงก์ได้รับการแจ้งเตือน · Telegram {tg} · LINE OA {ln}',
+      '{on} of {n} links send alerts · Telegram {tg} · LINE OA {ln}',
     ],
     // "Near the daily limit" suggests an early warning; the alert goes out when a post fails for hitting the limit.
     eQuota: ['ถึงเพดานการโพสต์', 'Posting limit reached'],
@@ -226,11 +334,16 @@ export const AP_I18N_FIXES = {
     sample: ['โพสต์สำเร็จ · {g} · “{t}”', 'Posted · {g} · “{t}”'],
   },
   ai: {
-    // There is no language model: the drafts are filled in from text templates, so the dialog is not "AI".
-    title: ['ตัวช่วยร่างโพสต์ (แม่แบบ)', 'Post drafts (templates)'],
+    // The writer is a real AI model now (it needs an AI key set up by the admin and the Pro plan or above): the
+    // design's note about a prototype with templates is not true any more, and the selling points are typed one
+    // at a time (Enter adds one), not as a comma-separated list.
     note: [
-      'โพสต์สร้างจากแม่แบบข้อความ ไม่ได้ใช้โมเดลภาษา โปรดตรวจและแก้ก่อนนำไปใช้',
-      'Posts are filled in from text templates, not written by a language model. Review and edit them before use',
+      'AI อาจเขียนผิดพลาดได้ ตรวจและแก้ก่อนโพสต์จริง',
+      'AI can make mistakes. Read and edit the draft before it goes out',
+    ],
+    pointsPh: [
+      'พิมพ์จุดขายแล้วกด Enter เช่น ส่งฟรี',
+      'Type a selling point and press Enter, e.g. Free shipping',
     ],
   },
   ar: {
@@ -239,22 +352,31 @@ export const AP_I18N_FIXES = {
       'ตั้งกฎตอบคอมเมนต์ตามคีย์เวิร์ดและข้อความเข้าแชทไว้ล่วงหน้าได้ แต่ตอนนี้ส่วนขยายยังไม่อ่านคอมเมนต์และยังไม่ตอบ จึงบันทึกกฎไว้เท่านั้น',
       'Set keyword rules for replying to comments and sending a chat message ahead of time. For now the extension does not read comments or reply, so the rules are only saved',
     ],
-    // AI writing is not gated by the plan (and is template based); only the auto-reply page is.
+    // This text is the auto-reply page's own lock (the AI writer has its own note in the post editor).
     locked: ['ตอบกลับอัตโนมัติใช้ได้ในแผน Pro ขึ้นไป', 'Auto-reply is available on Pro and above'],
   },
   rep: {
     // Likes and comments are not collected by the extension.
     sub: [
-      'ดูว่ากลุ่มไหนคุ้ม โพสต์ไหนใช้บ่อย และส่งรายงานให้ลูกค้าได้จากที่นี่ ยังไม่มีข้อมูลไลก์และคอมเมนต์ เพราะส่วนขยายยังไม่อ่านกลับมา',
-      'See which groups pay off, which posts are used most, and send client reports from here. Likes and comments are not collected yet, because the extension does not read them back',
+      'ดูว่ากลุ่มหรือเพจไหนคุ้ม โพสต์ไหนใช้บ่อย และส่งรายงานให้ลูกค้าได้จากที่นี่ ยังไม่มีข้อมูลไลก์และคอมเมนต์ เพราะส่วนขยายยังไม่อ่านกลับมา',
+      'See which groups and pages pay off, which posts are used most, and send client reports from here. Likes and comments are not collected yet, because the extension does not read them back',
+    ],
+    byGroup: ['ผลต่อกลุ่มและเพจ', 'By group and page'],
+    group: ['กลุ่ม / เพจ', 'Group / page'],
+    disable: ['ปิดลิงก์นี้', 'Disable link'],
+    // The plan is called "Premium" for people (its key stays `agency`).
+    client: ['รายงานส่งลูกค้า (Premium)', 'Client report (Premium)'],
+    clientLocked: [
+      'รายงานส่งลูกค้าแบบ white-label ใช้ได้ในแผน Premium',
+      'White-label client reports are available on the Premium plan',
     ],
     // The share link is a snapshot made when it is created (valid for 30 days), not a live page.
     fLink: [
       'ลิงก์แชร์ (สรุปตัวเลข ณ วันที่สร้าง ใช้ได้ 30 วัน)',
       'Shareable link (a snapshot of the numbers when it is created, valid for 30 days)',
     ],
-    // A group is switched off where it is listed, not "in every link set".
-    disabledMsg: ['ปิดกลุ่ม {g} แล้ว', 'Group {g} switched off'],
+    // A group or page is switched off where it is listed, not "in every link set".
+    disabledMsg: ['ปิด {g} แล้ว', '{g} switched off'],
     // The design has the agency upload its own logo. Nothing stores one: the box only decides whether the
     // AutoPost name and mark show on the shared page, so it is a "white-label" switch.
     logo: [
@@ -274,14 +396,26 @@ export const AP_I18N_FIXES = {
     created: ['สร้างรายงาน ({p}) ของ {w} แล้ว: {l}', 'Report ({p}) for {w} created: {l}'],
   },
   test: {
+    // Groups and pages (Facebook only), through the extension the person picks; the page has two panels (from a
+    // collection, by hand), so the design's "one group" wording is widened.
+    sub: [
+      'ส่งโพสต์จริง 1 โพสต์ลงกลุ่มหรือเพจ Facebook ตอนนี้ ผ่านส่วนขยายที่เลือก เพื่อตรวจว่างานของตารางโพสต์ทำงานได้จริง ทั้งส่วนขยาย รหัสกลุ่ม ข้อความ และรูป เลือกจากชุดโพสต์ หรือพิมพ์เองก็ได้',
+      'Send one real post to a Facebook group or page right now, through the extension you choose, to check that the jobs of a schedule really work: the extension, the group code, the text and the images. Pick it from a collection, or type it yourself',
+    ],
+    group: ['กลุ่มหรือเพจปลายทาง', 'Target group or page'],
+    groupPh: ['เลือกกลุ่มหรือเพจ…', 'Choose a group or page…'],
+    needPick: [
+      'เลือกกลุ่มหรือเพจ และชุดโพสต์ก่อน',
+      'Choose a group or page and a collection first',
+    ],
     // The test post is real, so the page shows its real state (queued, posting, result), not simulated steps.
     // The leaves l1-l7 (opening the group, scrolling, typing...) describe steps nothing reports back, so no page uses them.
     logTitle: ['ความคืบหน้า', 'Progress'],
   },
   reasons: {
     // The design's texts were sample cases (TikTok, LINE OA, X video size). The server uses these codes for
-    // any platform and for more situations, and the real reason arrives as the failure detail, which the
-    // errors page shows instead of the body when there is one.
+    // more situations than the sample, and the real reason arrives as the failure detail, which the errors
+    // page shows instead of the body when there is one. Facebook is the only platform.
     rate_limit: {
       body: [
         'Facebook แสดงคำเตือนหรือจำกัดการโพสต์ ส่วนขยายจึงหยุดและโพสต์นี้ยังไม่ถูกส่ง',
@@ -317,8 +451,8 @@ export const AP_I18N_FIXES = {
     media_too_large: {
       title: ['ไฟล์ใหญ่เกินกำหนด', 'File too large'],
       body: [
-        'ไฟล์ที่แนบกับโพสต์นี้ใหญ่กว่าที่แพลตฟอร์มรับได้',
-        'A file attached to this post is larger than the platform accepts',
+        'ไฟล์ที่แนบกับโพสต์นี้ใหญ่กว่าที่ Facebook รับได้',
+        'A file attached to this post is larger than Facebook accepts',
       ],
       fix: [
         'ใช้ไฟล์ที่เล็กลงจากคลังสื่อ แล้วกดลองใหม่',
@@ -328,8 +462,8 @@ export const AP_I18N_FIXES = {
     quota: {
       title: ['ถึงเพดานการโพสต์แล้ว', 'Posting limit reached'],
       body: [
-        'ถึงเพดานต่อ 24 ชั่วโมงของแพลตฟอร์มนี้ (หรือโควตาของแผน) โพสต์นี้จึงไม่ถูกส่ง',
-        'The limit for this platform in 24 hours (or your plan’s posts) was reached, so this post was not sent',
+        'ถึงเพดานโพสต์ Facebook ต่อ 24 ชั่วโมง (หรือโควตาของแผน) โพสต์นี้จึงไม่ถูกส่ง',
+        'The Facebook limit for 24 hours (or your plan’s posts) was reached, so this post was not sent',
       ],
       fix: [
         'เพิ่มเพดานในหน้าความปลอดภัยบัญชี อัปเกรดแผน หรือกดลองใหม่ภายหลัง',
@@ -338,10 +472,27 @@ export const AP_I18N_FIXES = {
     },
   },
   plans: {
-    // The Free plan is permanent: there is no 14-day trial.
+    // The Free plan is permanent: there is no 14-day trial. Each tag says who the package suits.
     free: {
       name: ['ฟรี', 'Free'],
-      tag: ['ใช้ฟรีไม่จำกัดเวลา', 'Free, no time limit'],
+      tag: [
+        'เหมาะกับ: ลองใช้ระบบ ฟรีไม่จำกัดเวลา',
+        'Good for: trying it out, free with no time limit',
+      ],
+    },
+    basic: {
+      tag: ['เหมาะกับ: ร้านเล็ก ขายคนเดียว', 'Good for: a small shop with one seller'],
+    },
+    pro: {
+      tag: [
+        'เหมาะกับ: คนขายที่ใช้หลายเบราว์เซอร์',
+        'Good for: a seller who works with several browsers',
+      ],
+    },
+    // The top plan (key `agency`) is shown to people as "Premium": it carries every function, bumping included.
+    agency: {
+      name: ['Premium', 'Premium'],
+      tag: ['เหมาะกับ: เอเจนซี่และคนใช้งานหนัก', 'Good for: agencies and heavy use'],
     },
   },
   team: {
@@ -398,12 +549,8 @@ export const AP_I18N_FIXES = {
     postLimit: ['โพสต์ต่อ 24 ชม.', 'Posts per 24 h'],
     limPosts: ['โพสต์ต่อ 24 ชม.', 'Posts per 24 h'],
     gQueued: ['รอโพสต์', 'Queued'],
-  },
-  ext: {
-    // The popup preview shows the real device's version and pauses the real jobs.
-    version: ['เวอร์ชัน {v} · Chrome', 'Version {v} · Chrome'],
-    pause: ['พักรับงาน', 'Pause jobs'],
-    paused: ['พักรับงานอยู่', 'Jobs paused'],
-    quota: ['โควตาใน 24 ชม.', 'Quota, last 24 h'],
+    // The plans count Facebook accounts (one for each paired browser).
+    accLimit: ['จำนวนบัญชี Facebook', 'Facebook accounts allowed'],
+    limAccounts: ['บัญชี Facebook', 'Facebook accounts'],
   },
 } as const satisfies Fixes<typeof AP_I18N>;

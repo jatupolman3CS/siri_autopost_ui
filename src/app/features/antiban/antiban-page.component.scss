@@ -71,8 +71,41 @@ input[type='range'] {
   flex-wrap: wrap;
   margin-bottom: 8px;
 }
-.not-yet {
-  margin: -8px 0 8px 44px;
+.speed {
+  margin: -4px 0 12px 44px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  p {
+    margin: 0;
+  }
+}
+.uses {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.uses-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.uses-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.uses-what {
+  margin: 0;
+}
+.uses-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .human {
   display: grid;

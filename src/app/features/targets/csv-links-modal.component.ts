@@ -24,7 +24,7 @@ function utf8Text(bytes: ArrayBuffer): string {
   return new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^\uFEFF/, '');
 }
 
-// "Import CSV": rows `set, name, url, code` pasted from Excel or read from a file. Missing sets are created
+// "Import CSV": rows `set, name, url, code` (a group or page address) pasted from Excel or read from a file. Missing sets are created
 // by name; the server skips repeated and invalid addresses and counts them.
 @Component({
   selector: 'app-csv-links-modal',

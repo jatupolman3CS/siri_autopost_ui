@@ -106,6 +106,11 @@ export class SessionStore {
     return r.checkoutUrl;
   }
 
+  /** The server applied a payment (the in-app checkout): the customer as it now stands, new plan included. */
+  applyUser(user: ApiUser): void {
+    this._user.set(user);
+  }
+
   /** The customer is back from Stripe Checkout: the server applies the paid session, and so do we. */
   async confirmCheckout(sessionId: string): Promise<void> {
     this._user.set(await this.api.confirmCheckout(sessionId));

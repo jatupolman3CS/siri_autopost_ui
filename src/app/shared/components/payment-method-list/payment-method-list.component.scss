@@ -1,0 +1,86 @@
+:host {
+  display: block;
+}
+
+.pm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  transition:
+    border-color 0.15s ease-out,
+    box-shadow 0.15s ease-out;
+  &:hover:not(.off):not(.open) {
+    border-color: var(--color-primary);
+  }
+  &.open {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
+  }
+  &.off {
+    opacity: 0.55;
+  }
+}
+
+.pm-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  &:disabled {
+    cursor: not-allowed;
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.pm-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.pm-label {
+  font-size: 15px;
+  font-weight: 600;
+}
+.pm-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+// The radio dot on the right; filled for the open row.
+.pm-dot {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  box-sizing: border-box;
+}
+.open .pm-dot {
+  border-color: var(--color-primary);
+  background: radial-gradient(circle, var(--color-primary) 0 4px, transparent 5px);
+}
+
+.pm-panel {
+  padding: 4px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

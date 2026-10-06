@@ -36,15 +36,35 @@
       </div>
       <div>
         <div class="fs14 fw5">{{ t().bill.usage }}</div>
-        @for (u of usageRows(); track u.label) {
+        @for (u of usageRows(); track u.key) {
           <div class="usage">
             <div class="usage-head">
               <span>{{ u.label }}</span
-              ><span class="muted">{{ u.value }}</span>
+              ><span class="muted" [class.warn-text]="u.warn !== ''">{{ u.value }}</span>
             </div>
-            <div class="bar">
+            <div class="bar" aria-hidden="true">
               <span [style.width.%]="u.pct" [style.background]="u.color"></span>
             </div>
+            @if (u.warn) {
+              <div class="usage-warn" role="status">
+                <i class="ph ph-warning" aria-hidden="true"></i>
+                <span
+                  >{{ u.warn }}
+                  @if (u.upgrade) {
+                    · {{ t().api.usageUpgrade }}
+                  }
+                </span>
+                @if (u.upgrade) {
+                  <button
+                    type="button"
+                    class="su-btn su-btn-sm su-btn-secondary"
+                    (click)="goPlans()"
+                  >
+                    {{ t().common.upgrade }}
+                  </button>
+                }
+              </div>
+            }
           </div>
         }
       </div>
@@ -85,12 +105,13 @@
     </section>
   </div>
 
-  <section class="compare">
+  <section id="bill-plans" class="compare" tabindex="-1">
     <div class="panel-head">
       <h2 class="h20">{{ t().bill.compare }}</h2>
       <app-cycle-switch />
     </div>
     <app-plan-cards [cards]="tiers()" (choose)="planModal.set($event)" />
+    <app-plan-compare [plans]="admin.plans()" [current]="session.plan()" />
   </section>
 
   <section class="panel">
@@ -146,3 +167,12 @@
     </button>
   </div>
 </app-modal>
+
+<app-payment-checkout
+  [open]="paying() !== null"
+  [plan]="paying()?.plan ?? 'pro'"
+  [cycle]="paying()?.cycle ?? 'month'"
+  [promoCode]="paying()?.promo ?? ''"
+  (paid)="onPaid($event.user.plan)"
+  (closed)="onPayClosed()"
+/>

@@ -1,8 +1,9 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { SettingsStore } from '../../core/data/settings.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
-import { I18nService } from '../../core/i18n/i18n.service';
+import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { SIMPLE_KEY } from '../../core/services/ui-prefs.service';
 import {
   answerWorkspaceLoads,
@@ -82,10 +83,10 @@ describe('the sidebar of the app shell', () => {
         ['/app/calendar', t.calendar],
         ['/app/errors', t.errors],
       ]);
-      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team', '/app/campaigns']);
+      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team']);
     });
 
-    it('has no item for the composer or the engine pages', async () => {
+    it('has no item for the composer (its editor is a panel of the post library) or the engine pages', async () => {
       await render();
       const all = groups().flatMap((g) => g.links.map((l) => l.path));
       for (const gone of [
@@ -111,15 +112,10 @@ describe('the sidebar of the app shell', () => {
   });
 
   describe('the full menu', () => {
-    it('has the design groups: workspace, engine, account and preview', async () => {
+    it('has the groups workspace, engine and account (no extension preview, no extension settings page)', async () => {
       await render({ simple: false });
       const t = TestBed.inject(I18nService).t().nav;
-      expect(groups().map((g) => g.label)).toEqual([
-        t.gWorkspace,
-        t.gEngine,
-        t.gAccount,
-        t.gPreview,
-      ]);
+      expect(groups().map((g) => g.label)).toEqual([t.gWorkspace, t.gEngine, t.gAccount]);
       expect(paths(t.gWorkspace)).toEqual([
         '/app/overview',
         '/app/posts',
@@ -138,8 +134,10 @@ describe('the sidebar of the app shell', () => {
         '/app/offline',
         '/app/errors',
       ]);
-      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team', '/app/campaigns']);
-      expect(paths(t.gPreview)).toEqual(['/app/extension']);
+      expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team']);
+      const all = groups().flatMap((g) => g.links.map((l) => l.path));
+      expect(all).not.toContain('/app/extension');
+      expect(all).not.toContain('/app/campaigns');
     });
 
     it('keeps the names the simple menu gave its items', async () => {
@@ -186,14 +184,15 @@ describe('the sidebar of the app shell', () => {
         '/app/admin/finance',
         '/app/admin/plans',
         '/app/admin/jobs',
+        '/app/admin/payment-test',
       ]);
       toggle().click();
       fixture.detectChanges();
       expect(owner()).toBeDefined();
-      // After the account group, before the preview.
+      // Right after the account group, and last.
       const labels = groups().map((g) => g.label);
       expect(labels.indexOf(t.gOwner)).toBe(labels.indexOf(t.gAccount) + 1);
-      expect(labels.at(-1)).toBe(t.gPreview);
+      expect(labels.at(-1)).toBe(t.gOwner);
     });
 
     it('is not shown to shop users', async () => {
@@ -206,6 +205,68 @@ describe('the sidebar of the app shell', () => {
       expect(groups().map((g) => g.label)).not.toContain(
         TestBed.inject(I18nService).t().nav.gOwner,
       );
+    });
+  });
+
+  describe('the extension status in the top bar', () => {
+    const status = () => el.querySelector<HTMLElement>('.top .ext-status')!;
+    const settings = () => TestBed.inject(SettingsStore);
+    const dot = () => status().querySelector<HTMLElement>('.dot')!.style.background;
+
+    it('says "not paired" and links to the team page while no browser is paired', async () => {
+      await render();
+      settings().devices.set(0);
+      fixture.detectChanges();
+      expect(status().textContent).toContain(TestBed.inject(I18nService).t().api.extUnpaired);
+      expect(status().getAttribute('href')).toBe('/app/team');
+    });
+
+    it('is one dot and "online" / "offline" with a single extension', async () => {
+      await render();
+      const t = TestBed.inject(I18nService).t();
+      settings().devices.set(1);
+      settings().devicesOnline.set(1);
+      settings().extensionOnline.set(true);
+      fixture.detectChanges();
+      expect(status().textContent!.trim()).toBe(t.top.extOnline);
+      expect(dot()).toContain('--color-success');
+      settings().devicesOnline.set(0);
+      settings().extensionOnline.set(false);
+      fixture.detectChanges();
+      expect(status().textContent!.trim()).toBe(t.top.extOffline);
+      expect(dot()).toContain('--color-danger');
+    });
+
+    it('counts the extensions that are online when there are several: all, some, none', async () => {
+      await render();
+      const t = TestBed.inject(I18nService).t();
+      settings().devices.set(3);
+      settings().devicesOnline.set(3);
+      settings().extensionOnline.set(true);
+      fixture.detectChanges();
+      expect(status().textContent!.trim()).toBe(fmt(t.api.extCount, { n: 3, m: 3 }));
+      expect(status().textContent).toContain('3/3');
+      expect(dot()).toContain('--color-success');
+      settings().devicesOnline.set(1);
+      fixture.detectChanges();
+      expect(status().textContent!.trim()).toBe(fmt(t.api.extCount, { n: 1, m: 3 }));
+      expect(dot()).toContain('--color-warning');
+      settings().devicesOnline.set(0);
+      settings().extensionOnline.set(false);
+      fixture.detectChanges();
+      expect(status().textContent!.trim()).toBe(fmt(t.api.extCount, { n: 0, m: 3 }));
+      expect(dot()).toContain('--color-danger');
+    });
+
+    it('reads as offline during a simulated outage, whatever the count', async () => {
+      await render();
+      const t = TestBed.inject(I18nService).t();
+      settings().devices.set(2);
+      settings().devicesOnline.set(2);
+      settings().extensionOnline.set(false);
+      settings().simulatedOffline.set(true);
+      fixture.detectChanges();
+      expect(status().textContent!.trim()).toBe(t.top.extOffline);
     });
   });
 
@@ -253,12 +314,15 @@ describe('the sidebar of the app shell', () => {
       expect(on()).toEqual(['/app/posts']);
     });
 
-    it('keeps "collections" marked on the composer, which edits a post of a collection', async () => {
-      await render({ url: '/app/composer?col=c1' });
-      expect(on()).toEqual(['/app/collections']);
+    it('keeps the post library marked while its editor is open (a new post or one being edited)', async () => {
+      await render({ url: '/app/posts?new=1&collection=c1' });
+      expect(on()).toEqual(['/app/posts']);
       toggle().click();
       fixture.detectChanges();
-      expect(on()).toEqual(['/app/collections']);
+      expect(on()).toEqual(['/app/posts']);
+      await TestBed.inject(Router).navigateByUrl('/app/posts?post=p1');
+      fixture.detectChanges();
+      expect(on()).toEqual(['/app/posts']);
     });
 
     it('marks the customers item on a customer page but the overview only on its own', async () => {

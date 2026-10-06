@@ -30,6 +30,27 @@
   gap: 8px;
   font-size: 14px;
 }
+.usage-warn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--color-warning);
+  > .ph {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  > span {
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+}
+.warn-text {
+  color: var(--color-warning);
+  font-weight: 600;
+}
 .col12 {
   display: flex;
   flex-direction: column;
@@ -60,6 +81,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  &:focus {
+    outline: none;
+  }
 }
 .h20 {
   margin: 0;

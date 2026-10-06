@@ -10,6 +10,11 @@
           <div class="fw6">{{ r.name }}</div>
           <div class="small muted">{{ r.pair }}</div>
           <div class="small muted">{{ r.cadence }}</div>
+          @if (r.bump) {
+            <div class="small muted bump-line">
+              <i class="ph ph-arrow-fat-lines-up" aria-hidden="true"></i>{{ r.bump }}
+            </div>
+          }
           @if (r.stored) {
             <div class="small muted" [attr.title]="t().api.flow.storedOnly">{{ r.stored }}</div>
           }

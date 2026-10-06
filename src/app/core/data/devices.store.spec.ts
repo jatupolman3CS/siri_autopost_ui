@@ -1,6 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ApiDevice } from '../http/api.service';
+import { ApiDevice, QUIET } from '../http/api.service';
+import { problemMessage } from '../http/problem-details';
 import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import { DeviceEventsService } from './device-events.service';
@@ -59,6 +60,64 @@ describe('DevicesStore', () => {
     events.resume();
     await settle();
     http.expectOne(URL).flush([device('d1')]);
+  });
+
+  describe('names are unique in a workspace', () => {
+    beforeEach(() => {
+      store.list.set([device('d1', { name: 'Shop PC' }), device('d2', { name: 'Laptop' })]);
+    });
+
+    it('knows when another extension has a name, ignoring case and surrounding spaces', () => {
+      expect(store.nameTaken('Laptop')).toBe(true);
+      expect(store.nameTaken('  laptop ')).toBe(true);
+      expect(store.nameTaken('Office')).toBe(false);
+      expect(store.nameTaken('')).toBe(false);
+      // An extension's own name is not "taken" for that extension (a rename that changes only the case).
+      expect(store.nameTaken('LAPTOP', 'd2')).toBe(false);
+      expect(store.nameTaken('Laptop', 'd1')).toBe(true);
+    });
+
+    it('works out the name an extension gets when it pairs, like the server: name, then name (2), (3)...', () => {
+      expect(store.freeName('Office')).toBe('Office');
+      expect(store.freeName('  Office  ')).toBe('Office');
+      expect(store.freeName('Laptop')).toBe('Laptop (2)');
+      expect(store.freeName('laptop')).toBe('laptop (2)');
+      store.list.update((l) => [...l, device('d3', { name: 'Laptop (2)' })]);
+      expect(store.freeName('Laptop')).toBe('Laptop (3)');
+      expect(store.freeName('')).toBe('');
+    });
+
+    it('keeps a numbered name within the longest name the API takes', () => {
+      const long = 'x'.repeat(80);
+      store.list.set([device('d1', { name: long })]);
+      const next = store.freeName(long);
+      expect(next).toHaveLength(80);
+      expect(next.endsWith(' (2)')).toBe(true);
+    });
+
+    it('renames through the API, quietly, and shows the name the server kept', async () => {
+      const done = store.rename('d1', 'Front desk');
+      const req = http.expectOne({ method: 'PUT', url: `${URL}/d1` });
+      expect(req.request.body).toEqual({ name: 'Front desk', jobsPaused: null });
+      // A quiet request: the page shows a refusal itself, the interceptor does not toast it.
+      expect(req.request.context.get(QUIET)).toBe(true);
+      req.flush(device('d1', { name: 'Front desk' }));
+      await done;
+      expect(store.list().find((d) => d.id === 'd1')!.name).toBe('Front desk');
+    });
+
+    it('throws the refusal and keeps the old name when the name is taken', async () => {
+      const done = store.rename('d1', 'Laptop').catch((e) => e);
+      http
+        .expectOne({ method: 'PUT', url: `${URL}/d1` })
+        .flush(
+          { title: 'มีส่วนขยายชื่อ “Laptop” อยู่แล้ว', status: 422 },
+          { status: 422, statusText: 'Unprocessable' },
+        );
+      const error = await done;
+      expect(problemMessage(error)).toBe('มีส่วนขยายชื่อ “Laptop” อยู่แล้ว');
+      expect(store.list().find((d) => d.id === 'd1')!.name).toBe('Shop PC');
+    });
   });
 
   describe('automatic pause', () => {

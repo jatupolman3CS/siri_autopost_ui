@@ -1,7 +1,7 @@
 import { registerPack } from './i18n.service';
 
 // Lazy dictionary pack "flow": the strings the design handoff lacks for the Collections -> Link sets ->
-// Schedules flow and its neighbours (composer, calendar, overview additions). Only the lazily loaded pages
+// Schedules flow and its neighbours (post editor, calendar, overview additions). Only the lazily loaded pages
 // that read t().api.flow import this module, which registers the pack (see registerPack in i18n.service.ts),
 // so it stays out of the first bundle. Every file that reads t().api.flow must `import './i18n.flow'`.
 //
@@ -11,7 +11,8 @@ import { registerPack } from './i18n.service';
 // is corrected in i18n.fixes.ts instead, with a comment saying what the design got wrong.
 export const AP_I18N_FLOW = {
   // A setting that is saved with the collection, link set or schedule but not applied yet (collection page
-  // tags, image shuffle and watermark; schedule bump and auto-delete). Keep the design's label and add this hint.
+  // tags, image shuffle and watermark; schedule auto-delete: the bump IS applied now, see schBump* below).
+  // Keep the design's label and add this hint.
   // It says plainly that nothing applies the value (neither the extension nor the server), so a switch that is
   // on does not read as active.
   storedOnly: [
@@ -22,25 +23,9 @@ export const AP_I18N_FLOW = {
   // A control of a plan the owner does not have ({plan} is the plan's name, from t().plans).
   planLocked: ['ใช้ได้ในแผน {plan} ขึ้นไป', 'Available on {plan} and above'],
 
-  // Collections and composer
+  // Collections
   // Schedule names are not on the collection (only how many schedules use it), so the page counts them.
   usedInN: ['ใช้ใน {n} ตาราง', 'Used by {n} schedule(s)'],
-  cmpColHint: ['ชุดนี้ถูกใช้ในตารางโพสต์ {n} ตาราง', 'This collection is used by {n} schedule(s)'],
-  // An approved post that is edited in a collection that needs approval goes back to draft (server rule).
-  cmpEditResets: [
-    'ชุดนี้ต้องอนุมัติโพสต์ ถ้าแก้โพสต์ที่อนุมัติแล้ว โพสต์จะกลับเป็นฉบับร่างและต้องส่งขออนุมัติใหม่',
-    'This collection needs approval: editing an approved post sends it back to draft and it must be approved again',
-  ],
-  cmpPostGone: [
-    'ไม่พบโพสต์นี้แล้ว (อาจถูกลบไปแล้ว) จึงเริ่มโพสต์ใหม่ในชุดนี้แทน',
-    'That post no longer exists (it may have been deleted), so a new post starts in this collection instead',
-  ],
-  cmpNoCollections: [
-    'ยังไม่มีชุดโพสต์ สร้างชุดแรกก่อนจึงจะเก็บโพสต์ได้',
-    'There are no collections yet. Create the first one to save the post in',
-  ],
-  // The spintax the "insert spintax" button puts in front of the text (user content: a sample to edit).
-  spinSample: ['{สวัสดีค่ะ|หวัดดีค่ะ|ทักทายค่ะ} ', '{Hello|Hi|Hey} '],
   exportFailed: [
     'ส่งออกไฟล์ไม่สำเร็จ เบราว์เซอร์ไม่ให้ดาวน์โหลด',
     'The export failed: the browser did not allow the download',
@@ -54,10 +39,10 @@ export const AP_I18N_FLOW = {
     'สร้างชุดโพสต์ แล้วเขียนโพสต์เก็บไว้ในชุด เช่น ชุดตามสินค้าหรือหัวข้อ',
     'Create a collection and write posts into it, for example one per product or topic',
   ],
-  emptyLinkSetsTitle: ['ยังไม่มีชุดลิงก์กลุ่ม', 'No link sets yet'],
+  emptyLinkSetsTitle: ['ยังไม่มีชุดลิงก์', 'No link sets yet'],
   emptyLinkSetsBody: [
-    'สร้างชุดลิงก์ แล้ววางลิงก์กลุ่ม Facebook ที่ต้องการโพสต์',
-    'Create a link set and paste the Facebook group links you post to',
+    'สร้างชุดลิงก์ แล้ววางลิงก์กลุ่มหรือเพจ Facebook ที่ต้องการโพสต์',
+    'Create a link set and paste the Facebook group or page links you post to',
   ],
   emptySchedulesTitle: ['ยังไม่มีตารางโพสต์', 'No schedules yet'],
   emptySchedulesBody: [
@@ -71,30 +56,35 @@ export const AP_I18N_FLOW = {
     'Pair a computer first: schedules post only through the extension in a paired browser',
   ],
 
+  // The overview's panel of paired extensions (a real list from the devices; it replaced the sample accounts).
+  ovExtTitle: ['ส่วนขยายที่เชื่อมต่อ', 'Connected extensions'],
+  ovExtManage: ['จัดการ', 'Manage'],
+  ovExtOffline: ['ออฟไลน์', 'Offline'],
+  ovExtPaused: ['พักรับงาน', 'Paused'],
+  ovExtAuto: ['หยุดอัตโนมัติ', 'Paused by the engine'],
+  ovExtSeen: ['เห็นล่าสุด', 'last seen'],
+  ovExtEmptyTitle: ['ยังไม่มีส่วนขยายที่เชื่อมต่อ', 'No extension connected yet'],
+  ovExtEmptyBody: [
+    'ติดตั้งส่วนขยายใน Chrome ที่ล็อกอิน Facebook ไว้ แล้วผูกเครื่องที่หน้าทีมและเวิร์กสเปซ ส่วนขยายจะโพสต์ให้ตามตารางที่ตั้งไว้',
+    'Install the extension in the Chrome where you are signed in to Facebook, then pair it on Team & workspaces. It posts for you on your schedules',
+  ],
+
   // Link sets
   // How many schedules use the set (the API gives a count, not the names; a refused delete names them).
   linkSetUsedBy: ['ใช้ในตารางโพสต์ {n} ตาราง', 'Used by schedules: {n}'],
-  // The "post as" select: only Facebook accounts with a paired computer can post.
-  postAsAuto: [
-    'อัตโนมัติ: บัญชี Facebook แรกที่ผูกเครื่อง',
-    'Automatic: the first connected Facebook account',
-  ],
+  // The "post as" select: the extension (a paired browser, shown by its name) that posts the set. Only a browser
+  // that is paired can be chosen; the Facebook account it brings is what the API stores.
+  postAsAuto: ['อัตโนมัติ: ส่วนขยายแรกที่เชื่อมต่อ', 'Automatic: the first connected extension'],
   postAsHint: [
-    'เลือกได้เฉพาะบัญชี Facebook ที่ผูกเครื่องแล้ว บัญชีนี้โพสต์ลงทุกกลุ่มในชุด',
-    'Only Facebook accounts with a paired computer can be chosen. This account posts to every group in the set',
+    'เลือกส่วนขยายที่จะโพสต์ชุดนี้ เลือกได้เฉพาะส่วนขยายที่ผูกเครื่องแล้ว ส่วนขยายนี้โพสต์ลงทุกกลุ่มและเพจในชุด',
+    'Choose the extension that posts this set. Only paired extensions can be chosen; it posts to every group and page in the set',
   ],
-  postAsMissing: ['บัญชีที่ไม่พบแล้ว', 'Account no longer exists'],
-  // Import from an account (what the extension of that account last synced).
-  importAccount: ['บัญชี Facebook', 'Facebook account'],
-  importNoAccount: [
-    'ยังไม่มีบัญชี Facebook ที่ผูกเครื่อง ผูกเครื่องที่หน้าทีมและเวิร์กสเปซก่อน แล้วค่อยดึงกลุ่มจากบัญชีนั้น',
-    'No Facebook account is connected yet. Pair a computer in Team & workspaces first, then pick groups from it',
-  ],
-  importEmpty: [
-    'บัญชีนี้ยังไม่มีกลุ่มที่ส่วนขยายซิงก์ไว้ ส่วนขยายส่งรายชื่อกลุ่มจากชุดโพสต์ของมันเอง เพิ่มกลุ่มที่นั่นก่อน หรือวางลิงก์เองก็ได้',
-    'This account has no synced groups yet. The extension sends the groups of its own campaigns: add groups there first, or paste the links yourself',
-  ],
-  importFailed: ['โหลดรายชื่อกลุ่มของบัญชีนี้ไม่ได้', 'Could not load the groups of this account'],
+  postAsMissing: ['ส่วนขยายที่ไม่พบแล้ว', 'Extension no longer exists'],
+  // Group or page: the small label of a link row (the server tells them apart by the address).
+  linkKindGroup: ['กลุ่ม', 'Group'],
+  linkKindPage: ['เพจ', 'Page'],
+  linkKindGroupHint: ['ลิงก์กลุ่ม Facebook', 'Facebook group link'],
+  linkKindPageHint: ['ลิงก์เพจ Facebook', 'Facebook page link'],
   // CSV import: the text box, or a file read in the browser.
   csvChooseFile: ['เลือกไฟล์ CSV', 'Choose a CSV file'],
   csvFileError: ['อ่านไฟล์นี้ไม่ได้', 'Could not read this file'],
@@ -108,13 +98,13 @@ export const AP_I18N_FLOW = {
     'This file is not UTF-8. In Excel, save it as “CSV UTF-8” and choose it again',
   ],
   csvNoRows: [
-    'ไม่มีแถวที่ใช้ได้ แต่ละแถวต้องมีชื่อชุดและลิงก์กลุ่ม Facebook',
-    'No usable rows: each row needs a set name and a Facebook group link',
+    'ไม่มีแถวที่ใช้ได้ แต่ละแถวต้องมีชื่อชุดและลิงก์กลุ่มหรือเพจ Facebook',
+    'No usable rows: each row needs a set name and a Facebook group or page link',
   ],
 
   // Schedules, calendar and overview
   schGoCollections: ['ไปสร้างชุดโพสต์', 'Create a collection'],
-  schGoLinkSets: ['ไปสร้างชุดลิงก์กลุ่ม', 'Create a link set'],
+  schGoLinkSets: ['ไปสร้างชุดลิงก์', 'Create a link set'],
   // Checked before the request, with the same reasons the API gives (a new schedule needs something to post and somewhere to post it).
   schNoPosts: [
     'ชุดโพสต์นี้ยังไม่มีโพสต์ เพิ่มโพสต์ก่อนสร้างตาราง',
@@ -125,8 +115,8 @@ export const AP_I18N_FLOW = {
     'This collection has no approved posts yet. Approve a post before creating the schedule',
   ],
   schNoTargets: [
-    'ชุดลิงก์นี้ยังไม่มีกลุ่มที่เปิดใช้งานและลิงก์ถูกต้อง หรือบัญชีอื่นให้โพสต์',
-    'This link set has no enabled group with a valid link, and no other account to post to',
+    'ชุดลิงก์นี้ยังไม่มีกลุ่มหรือเพจที่เปิดใช้งานและลิงก์ถูกต้อง',
+    'This link set has no enabled group or page with a valid link',
   ],
   // The schedule was made but the server queued nothing: its times today have passed, or its first day is more than 14 days away.
   schNothingQueued: [
@@ -152,24 +142,31 @@ export const AP_I18N_FLOW = {
   schStartAtTime: ['ตามเวลาที่ตั้งไว้', 'At the times I set'],
   schStartNow: ['เริ่มทันทีที่กดสร้าง', 'Right away, when I press create'],
   schStartNowNote: [
-    'เมื่อกดสร้าง ระบบจะเริ่มโพสต์รอบแรกทันที โดยเข้าทีละกลุ่มแบบสุ่มลำดับ เว้นระยะห่างแต่ละกลุ่มแบบคนเล่น Facebook จากนั้นจึงโพสต์ตามเวลาที่ตั้งไว้ต่อไป',
-    'When you press create, the first round starts at once: one group at a time in a random order, with a pause between groups like a person browsing Facebook. Then the schedule carries on at its times',
+    'เมื่อกดสร้าง ระบบจะเริ่มโพสต์รอบแรกทันที โดยเข้าทีละกลุ่มหรือเพจแบบสุ่มลำดับ เว้นระยะห่างแต่ละที่แบบคนเล่น Facebook จากนั้นจึงโพสต์ตามเวลาที่ตั้งไว้ต่อไป',
+    'When you press create, the first round starts at once: one group or page at a time in a random order, with a pause between them like a person browsing Facebook. Then the schedule carries on at its times',
   ],
   schStartNowOnceNote: [
-    'โพสต์ครั้งเดียวทันทีที่กดสร้าง โดยเข้าทีละกลุ่มแบบสุ่มลำดับ เว้นระยะห่างแต่ละกลุ่มแบบคนเล่น Facebook (ไม่ใช้วันและเวลาที่ตั้ง)',
-    'One round right when you press create: one group at a time in a random order, with a pause between groups like a person browsing Facebook (the date and time are not used)',
+    'โพสต์ครั้งเดียวทันทีที่กดสร้าง โดยเข้าทีละกลุ่มหรือเพจแบบสุ่มลำดับ เว้นระยะห่างแต่ละที่แบบคนเล่น Facebook (ไม่ใช้วันและเวลาที่ตั้ง)',
+    'One round right when you press create: one group or page at a time in a random order, with a pause between them like a person browsing Facebook (the date and time are not used)',
   ],
   schSummaryNow: [
-    'เริ่มทันที: {m} ปลายทาง ทีละกลุ่ม เว้น {a}–{b} นาทีระหว่างกลุ่ม',
+    'เริ่มทันที: {m} ปลายทาง ทีละที่ เว้น {a}–{b} นาทีระหว่างกัน',
     'Starts now: {m} targets one by one, {a}–{b} min apart',
   ],
+  // The schedule makes more Facebook posts a day than the anti-ban daily limit lets out: the server fails the rest (quota).
+  schOverLimit: [
+    'ตารางนี้โพสต์ Facebook {n} งานต่อวัน แต่เพดานต่อวันของ Facebook ตั้งไว้ {limit} โพสต์ งานที่เกินจะล้มเหลว (ครบโควตา) ปรับเพดานได้ที่หน้ากันแบน (สูงสุด {max})',
+    'This schedule makes {n} Facebook posts a day, but the Facebook daily limit is {limit}: the rest fail (quota). Raise it on the anti-ban page (up to {max})',
+  ],
+  schOverLimitLink: ['ไปหน้ากันแบน', 'Open anti-ban'],
 
   // Hand-over to the extension: the panel of the schedules page. A schedule hands its posts to the extension one
-  // at a time (the extension asks every 30 s); nothing has to be set up in the extension's own campaigns.
+  // at a time (the extension asks every 30 s) with its text, images and target: what it posts is exactly what the
+  // schedule says, and how it behaves while posting is set on the anti-ban page.
   dispTitle: ['การส่งงานให้ส่วนขยาย', 'Hand-over to the extension'],
   dispSub: [
-    'ตารางโพสต์ส่งงานให้ส่วนขยายเองทีละโพสต์ พร้อมข้อความและลิงก์กลุ่ม ส่วนขยายมารับงานทุก 30 วินาที ไม่ต้องตั้งชุดโพสต์หรือกลุ่มในส่วนขยายอีก',
-    'A schedule hands its posts to the extension one at a time, with the text and the group link. The extension asks for work every 30 seconds, so nothing has to be set up in the extension itself',
+    'ตารางโพสต์ส่งงานให้ส่วนขยายเองทีละโพสต์ พร้อมข้อความและลิงก์กลุ่มหรือเพจ ส่วนขยายมารับงานทุก 30 วินาที ไม่ต้องตั้งชุดโพสต์หรือกลุ่มในส่วนขยายอีก',
+    'A schedule hands its posts to the extension one at a time, with the text and the group or page link. The extension asks for work every 30 seconds, so nothing has to be set up in the extension itself',
   ],
   dispReady: ['พร้อมรับงาน', 'Ready for jobs'],
   dispOffline: [
@@ -195,10 +192,10 @@ export const AP_I18N_FLOW = {
     'Could not tell the extension to take its jobs. Try again',
   ],
   dispConfigNote: [
-    'ค่าของตัวส่วนขยายเอง (ชุดโพสต์ในส่วนขยาย เวลา Telegram) แยกไว้ในหน้า “ตั้งค่าส่วนขยาย” ตารางโพสต์ไม่ใช้ค่าเหล่านั้น',
-    'The extension’s own settings (its campaigns, timing, Telegram) are on a separate “Extension settings” page. Schedules do not use them',
+    'ส่วนขยายโพสต์ตรงตามที่ตารางโพสต์ระบุ ทั้งข้อความ รูป และกลุ่มหรือเพจปลายทาง ส่วนพฤติกรรมตอนโพสต์ (พิมพ์ เลื่อนหน้า พักหลังถูกบล็อก) ตั้งที่หน้าความปลอดภัยบัญชี',
+    'The extension posts exactly what the schedule says: the text, the images and the target group or page. How it behaves while posting (typing, scrolling, the rest after a block) is set on the account safety page',
   ],
-  dispConfigLink: ['ตั้งค่าส่วนขยาย', 'Extension settings'],
+  dispConfigLink: ['ตั้งค่าที่หน้าความปลอดภัยบัญชี', 'Open account safety (anti-ban)'],
 
   // Posts a group may get again (the schedule's "repeat" choice; only the random order uses it)
   repeatLabel: ['โพสต์ซ้ำกับกลุ่มเดิม', 'The same post to the same group'],
@@ -394,6 +391,298 @@ export const AP_I18N_FLOW = {
     'แสดง {n} โพสต์แรก พิมพ์ค้นหาเพื่อกรอง',
     'The first {n} posts are shown; search to narrow them',
   ],
+
+  // The post editor (features/posts): ONE screen for a new post and for editing one, with the insert toolbar
+  // ({{code}}, Spintax, snippets, AI), a live status line under the text, a live preview and the AI panel.
+  edClose: ['ปิดตัวแก้ไข', 'Close the editor'],
+  edSub: [
+    'เขียนโพสต์ แล้วดูตัวอย่างตอนโพสต์จริงได้ทันทีข้างๆ',
+    'Write the post and see how it will look when it goes out, right beside it',
+  ],
+  edPostGone: [
+    'ไม่พบโพสต์นี้แล้ว (อาจถูกลบไปแล้ว)',
+    'That post no longer exists (it may have been deleted)',
+  ],
+  edMore: ['ตั้งค่าเพิ่มเติมของโพสต์นี้', 'More options for this post'],
+  edMoreHint: [
+    'ข้อความท้าย แฮชแท็ก และช่วงเวลาเฉพาะโพสต์นี้ ไม่ตั้งก็ได้',
+    'Footer, hashtags and timing for this post only. Optional',
+  ],
+  edColNew: ['สร้างชุดโพสต์ใหม่', 'New collection'],
+  edSavedAnother: [
+    'เพิ่มโพสต์แล้ว เขียนโพสต์ถัดไปได้เลย',
+    'Post added. Go ahead and write the next one',
+  ],
+  edMediaOff: ['ไฟล์นี้ปิดอยู่ในคลังสื่อ', 'This file is switched off in the media library'],
+  edTooLongInsert: [
+    'ใส่ไม่ได้ ข้อความจะยาวเกิน {n} ตัวอักษร',
+    'Cannot insert: the text would be longer than {n} characters',
+  ],
+
+  // The toolbar above the text.
+  edToolbar: ['เครื่องมือแทรกในข้อความ', 'Insert into the text'],
+  edSnippetBtn: ['ข้อความสำเร็จรูป', 'Snippet'],
+  edSnippetTip: [
+    'แทรกข้อความที่บันทึกไว้ในคลัง ตรงตำแหน่งเคอร์เซอร์',
+    'Insert a text saved in your library at the cursor',
+  ],
+  edSnippetNone: [
+    'ยังไม่มีข้อความสำเร็จรูปที่เปิดใช้งาน สร้างได้ที่คลังสื่อ',
+    'No active snippets yet. Create one in the media library',
+  ],
+  edSnippetLib: ['เปิดคลังข้อความ', 'Open the snippet library'],
+  edHelpBtn: ['วิธีใช้ {{code}} และ Spintax', 'How {{code}} and Spintax work'],
+
+  // Why the AI buttons are off (AiStore.reason), and the AI button itself.
+  edAiBtn: ['AI', 'AI'],
+  edAiChecking: ['กำลังตรวจสอบว่า AI พร้อมใช้งานหรือไม่…', 'Checking whether AI is available…'],
+  edAiStatusFailed: [
+    'ตรวจสถานะ AI ไม่สำเร็จ ลองโหลดหน้านี้ใหม่อีกครั้ง',
+    'Could not check the AI status. Try reloading the page',
+  ],
+  edAiNoKey: [
+    'ยังใช้ AI ไม่ได้: ผู้ดูแลระบบต้องตั้งค่า AI Key ที่เซิร์ฟเวอร์ก่อน',
+    'AI is not available yet: the admin has to set up an AI key on the server first',
+  ],
+  edAiNoPlan: ['AI ช่วยเขียนใช้ได้ในแผน Pro ขึ้นไป', 'AI writing is available on Pro and above'],
+  edAiNoDrafts: [
+    'วันนี้ใช้ AI ร่างโพสต์ครบแล้ว ลองใหม่พรุ่งนี้',
+    'Today’s AI drafts are used up. Try again tomorrow',
+  ],
+
+  // The status line under the text.
+  edStatus: ['สถานะของข้อความ', 'What this text does'],
+  edCodeOn: ['{{code}} ✓ ระบบแทนด้วยรหัสของแต่ละกลุ่ม', '{{code}} ✓ replaced by each group’s code'],
+  edCodeOff: ['ไม่มี {{code}}: รหัสกลุ่มจะอยู่บรรทัดแรก', 'No {{code}}: the code goes on line 1'],
+  edSpinOn: ['Spintax: {g} กลุ่มคำ ≈ {v} แบบ', 'Spintax: {g} group(s) ≈ {v} variants'],
+  edSpinOff: [
+    'ไม่มี Spintax: ทุกกลุ่มได้ข้อความเดียวกัน',
+    'No Spintax: every group gets the same text',
+  ],
+  edVariantsMany: ['มากกว่า {v}', 'over {v}'],
+  edLintUnclosed: [
+    'มี { ที่ไม่ได้ปิด ใกล้ “{t}” กลุ่มคำนี้จะไม่ถูกสุ่ม',
+    'A { is never closed, near “{t}”. This group will not be mixed',
+  ],
+  edLintUnopened: ['มี } ที่ไม่มี { คู่กัน ใกล้ “{t}”', 'A } has no matching {, near “{t}”'],
+  edLintNoPipe: [
+    '“{t}” ไม่มีเครื่องหมาย | จึงไม่มีอะไรถูกสุ่ม ใส่คำอย่างน้อย 2 คำแล้วคั่นด้วย |',
+    'No | in “{t}”, so nothing is mixed. Put at least two words in and apart them with |',
+  ],
+  edLintEmpty: [
+    'มีตัวเลือกว่างใน “{t}” บางกลุ่มจะไม่ได้คำตรงนั้น',
+    'An empty option in “{t}”: some groups will get nothing there',
+  ],
+  edLintCodeIn: [
+    '{{code}} อยู่ใน Spintax “{t}” กลุ่มคำนี้จะไม่ถูกสุ่ม ย้าย {{code}} ออกมานอกปีกกา',
+    '{{code}} is inside the Spintax “{t}”, which is then not mixed. Move {{code}} outside the braces',
+  ],
+  edLintMore: ['และอีก {n} จุด', 'and {n} more'],
+
+  // The "?" help.
+  edHelpTitle: ['{{code}} และ Spintax ใช้ยังไง', 'How {{code}} and Spintax work'],
+  edHelpCodeH: ['{{code}} = รหัสกลุ่ม', '{{code}} = the group code'],
+  edHelpCodeB: [
+    'กลุ่มแต่ละกลุ่มในชุดลิงก์มี “รหัส” ของตัวเอง (ช่องรหัสในหน้าชุดลิงก์กลุ่ม) ตอนโพสต์ ระบบแทน {{code}} ด้วยรหัสของกลุ่มนั้น ถ้าไม่ใส่ {{code}} ระบบจะเขียนรหัสไว้บรรทัดแรกให้เอง',
+    'Every group in a link set has its own “code” (the code column of the Link sets page). When the post goes out, {{code}} is replaced by that group’s code. Without {{code}} the code goes on line 1 by itself',
+  ],
+  edHelpSpinH: ['Spintax = สุ่มคำ', 'Spintax = mix the words'],
+  edHelpSpinB: [
+    'เขียนตัวเลือกในปีกกา คั่นด้วย | เช่น {สวัสดี|หวัดดี} แต่ละกลุ่มจะได้คำที่ไม่เหมือนกัน ข้อความจึงต่างกันทุกกลุ่ม ไม่ดูเหมือนโพสต์ซ้ำ',
+    'Write the options in braces, apart with |, like {Hello|Hi}. Every group gets a different pick, so the text is different for every group and does not look like a repeated post',
+  ],
+  edHelpSets: ['ดูรหัสของแต่ละกลุ่ม', 'See each group’s code'],
+  edHelpExamples: ['ตัวอย่าง', 'Examples'],
+  edHelpInsert: ['ใส่ตัวอย่างนี้', 'Insert this example'],
+  edEx1Title: ['ใส่รหัสกลุ่ม', 'Group code'],
+  edEx1Text: [
+    '{{code}}\nขายคอนโดใกล้ BTS ทักแชทได้เลย',
+    '{{code}}\nCondo for sale near the BTS, message us anytime',
+  ],
+  edEx1Result: [
+    'กลุ่มที่มีรหัส A12 ได้ “A12” ขึ้นบรรทัดแรก แล้วตามด้วยข้อความ',
+    'A group with code A12 gets “A12” on the first line, then the text',
+  ],
+  edEx2Title: ['สุ่มคำทักทาย', 'Mix the greeting'],
+  edEx2Text: [
+    '{สวัสดีค่ะ|หวัดดีค่ะ|ทักทายค่ะ} วันนี้มีของใหม่',
+    '{Hello|Hi|Hey} we have new arrivals today',
+  ],
+  edEx2Result: [
+    'กลุ่มหนึ่งได้ “หวัดดีค่ะ วันนี้มีของใหม่” อีกกลุ่มได้ “สวัสดีค่ะ วันนี้มีของใหม่”',
+    'One group gets “Hi we have new arrivals today”, another “Hello we have new arrivals today”',
+  ],
+  edEx3Title: ['ใช้ทั้งสองอย่าง', 'Both together'],
+  edEx3Text: [
+    '{{code}}\n{โปรแรง|ดีลพิเศษ} วันนี้ {ส่งฟรี|ผ่อน 0%}',
+    '{{code}}\n{Big sale|Special deal} today, {free shipping|0% installments}',
+  ],
+  edEx3Result: [
+    'ทุกกลุ่มได้รหัสของตัวเอง และได้ข้อความที่สุ่มคำต่างกัน',
+    'Every group gets its own code and a differently mixed text',
+  ],
+
+  // The Spintax popover.
+  edSpinIntro: [
+    'เลือกชุดคำสำเร็จรูป หรือสร้างเอง ระบบจะสุ่มเลือก 1 คำต่อกลุ่มตอนโพสต์',
+    'Pick a ready-made set or build your own. One option is picked at random for each group when the post goes out',
+  ],
+  edSpinWrap: [
+    'ทำข้อความที่เลือก “{t}” เป็น Spintax แล้วพิมพ์คำอื่นต่อ',
+    'Turn the selected “{t}” into a Spintax group and type the other words',
+  ],
+  edSpinReady: ['ชุดคำสำเร็จรูป', 'Ready-made sets'],
+  edSetGreet: ['คำทักทาย', 'Greetings'],
+  edSetGreetText: ['{สวัสดีค่ะ|หวัดดีค่ะ|ทักทายค่ะ}', '{Hello|Hi|Hey}'],
+  edSetClose: ['ปิดท้าย', 'Closings'],
+  edSetCloseText: [
+    '{สนใจทักแชทได้เลยนะคะ|ทักมาคุยกันได้เลยค่ะ|สอบถามได้ทางแชทค่ะ}',
+    '{Message us anytime|Feel free to DM us|Ask us in chat}',
+  ],
+  edSetCta: ['ชวนให้ซื้อ', 'Call to action'],
+  edSetCtaText: ['{สั่งเลย|ทักเลย|ดูรายละเอียดเลย}', '{Order now|Message us now|See the details}'],
+  edSpinCustom: ['สร้างเอง', 'Build your own'],
+  edOptionN: ['ตัวเลือกที่ {n}', 'Option {n}'],
+  edOptionPh: ['พิมพ์คำหรือประโยค', 'A word or a phrase'],
+  edAddOption: ['เพิ่มตัวเลือก', 'Add option'],
+  edRemoveOption: ['เอาตัวเลือกนี้ออก', 'Remove this option'],
+  edSpinResult: ['ผลลัพธ์', 'Result'],
+  edSpinInsert: ['แทรก', 'Insert'],
+  edSpinNeed2: ['ใส่อย่างน้อย 2 ตัวเลือก', 'Fill in at least 2 options'],
+  edSpinNoBraces: [
+    'ไม่ต้องพิมพ์ { } หรือ | ในตัวเลือก ระบบใส่ให้เอง',
+    'No need to type { } or | in an option: they are added for you',
+  ],
+
+  // The preview.
+  edPvAs: ['ดูตัวอย่างเหมือนอยู่ในชุด', 'Preview as collection'],
+  edPvOneCol: [
+    'ข้อความท้ายและแฮชแท็กจากชุด “{c}”',
+    'Footer and hashtags from the collection “{c}”',
+  ],
+  edPvNoCol: [
+    'ยังไม่ได้เลือกชุดโพสต์ จึงใช้เฉพาะข้อความท้ายและแฮชแท็กของโพสต์นี้เอง',
+    'No collection chosen, so only this post’s own footer and hashtags are used',
+  ],
+  edPvGroup: ['ดูตัวอย่างกับกลุ่ม', 'Preview with group'],
+  edPvCode: ['รหัสกลุ่มนี้: {c}', 'This group’s code: {c}'],
+  edPvNoCode: [
+    'กลุ่มนี้ยังไม่มีรหัส ตั้งได้ที่หน้าชุดลิงก์กลุ่ม',
+    'This group has no code yet. Set it on the Link sets page',
+  ],
+  edPvVariants: ['ดู 3 แบบ', 'Show 3 variants'],
+  edPvSingle: ['ดูแบบเดียว', 'Show one'],
+  edPvVariantN: ['แบบที่ {n}', 'Variant {n}'],
+  edPvSpunHint: ['คำที่ไฮไลต์คือคำที่ Spintax สุ่มได้', 'Highlighted words were picked by Spintax'],
+  edPvLen: [
+    'ความยาวเมื่อโพสต์จริง {n} / {max} ตัวอักษร',
+    'Length as posted: {n} / {max} characters',
+  ],
+  edPvTooLong: [
+    'ยาวเกิน {max} ตัวอักษร ระบบจะไม่ส่งโพสต์นี้ ลดข้อความ ข้อความท้าย หรือแฮชแท็ก',
+    'Over {max} characters: this post would be refused. Shorten the text, the footer or the hashtags',
+  ],
+
+  // The AI panel (the buttons are off, with the reason, until AiStore says it can write).
+  edAiSub: [
+    'บอกว่าจะโพสต์เรื่องอะไร AI จะร่างให้ ร่างที่เลือกจะไปอยู่ในช่องข้อความให้คุณแก้ และยังไม่บันทึกจนกว่าคุณจะกดบันทึกโพสต์',
+    'Tell it what the post is about. The draft you pick goes into the text box for you to edit, and nothing is saved until you press Save',
+  ],
+  edAiLeft: ['วันนี้เหลืออีก {n} ร่าง', '{n} drafts left today'],
+  edAiPointRemove: ['เอาจุดขายนี้ออก', 'Remove this selling point'],
+  edAiPointsMax: ['ใส่จุดขายได้ไม่เกิน {n} ข้อ', 'At most {n} selling points'],
+  edAiToneShort: ['สั้นกระชับ', 'Short'],
+  edAiWriting: ['AI กำลังเขียน…', 'AI is writing…'],
+  edAiRegenerate: ['เขียนใหม่', 'Regenerate'],
+  edAiDraftN: ['ร่างที่ {n}', 'Draft {n}'],
+  edAiUse: ['ใช้ร่างนี้', 'Use this'],
+  edAiUseTip: ['แทนที่ข้อความในช่องด้วยร่างนี้', 'Replaces the text in the box with this draft'],
+  edAiAppend: ['ต่อท้าย', 'Append'],
+  edAiAppendTip: ['ต่อท้ายข้อความที่มีอยู่', 'Adds this draft after the text you have'],
+  edAiSeparate: ['เพิ่มเป็นอีกโพสต์', 'Add as a separate post'],
+  edAiSeparateTip: [
+    'บันทึกร่างนี้เป็นโพสต์ใหม่แยกอีกโพสต์ (ปิดไว้ก่อน จนกว่าคุณจะเปิดใช้งาน)',
+    'Saves this draft as another post of its own (switched off until you switch it on)',
+  ],
+  edAiUsed: ['ใส่ร่างในช่องข้อความแล้ว', 'Draft put in the text box'],
+  edAiAppended: ['ต่อท้ายข้อความแล้ว', 'Draft added after the text'],
+  edAiAdded: [
+    'เพิ่มเป็นโพสต์ใหม่แล้ว (ปิดอยู่ จนกว่าคุณจะเปิดใช้งาน)',
+    'Added as a new post (switched off until you switch it on)',
+  ],
+  edAiFailed: ['AI เขียนไม่สำเร็จ ลองใหม่อีกครั้ง', 'The AI could not write. Please try again'],
+  edAiCheck: [
+    'AI อาจเขียนผิดพลาดได้ ตรวจและแก้ก่อนโพสต์จริง',
+    'AI can make mistakes. Read and edit the draft before it goes out',
+  ],
+  edAiClose: ['ปิดแผง AI', 'Close the AI panel'],
+
+  // Schedules: the bump section of the builder (a Premium function: after a post goes out the extension opens
+  // its link and comments on it, so it comes back to the top). {plan} is the name of the top plan.
+  schBumpTitle: ['ดันโพสต์ ({plan})', 'Bump posts ({plan})'],
+  schBumpIntro: [
+    'หลังโพสต์ลงกลุ่มแล้ว ส่วนขยายจะเปิดลิงก์โพสต์นั้นและคอมเมนต์ใต้โพสต์ เพื่อให้โพสต์กลับขึ้นมาอยู่บนสุด',
+    'After a post goes out, the extension opens its link and comments on it, so it comes back to the top',
+  ],
+  schBumpSwitch: ['ดันโพสต์อัตโนมัติ', 'Bump posts automatically'],
+  schBumpAfter: ['ดันหลังโพสต์', 'Bump after the post'],
+  schBumpAfterOpt: ['{h} ชั่วโมง', '{h} hour(s)'],
+  schBumpRounds: ['ดันกี่ครั้ง', 'How many bumps'],
+  schBumpRoundsOpt: ['{n} ครั้ง', '{n} time(s)'],
+  schBumpRoundsHint: [
+    'ดันครั้งถัดไปห่างจากครั้งก่อนตามชั่วโมงที่เลือก',
+    'Each next bump comes that many hours after the one before',
+  ],
+  schBumpText: ['ข้อความที่ใช้ดัน', 'Bump comment'],
+  schBumpTextPh: [
+    'เว้นว่างไว้เพื่อใช้ข้อความสั้นๆ ที่ระบบเตรียมให้',
+    'Leave blank to use a short default phrase',
+  ],
+  schBumpTextHint: [
+    'ใช้ spintax ได้ เช่น {ขึ้นๆ ค่ะ|ดันหน่อยค่ะ|ยังมีของนะคะ} ระบบสุ่มหนึ่งแบบต่อการดันหนึ่งครั้ง',
+    'Spintax works, e.g. {Up we go|Bump|Still in stock}: one option is picked at random for each bump',
+  ],
+  schBumpImages: ['รูปที่ใช้ดัน', 'Images for the bump'],
+  schBumpPick: ['เลือกรูปจากคลัง', 'Pick from the library'],
+  schBumpPickHide: ['ซ่อนรายการรูป', 'Hide the images'],
+  schBumpImagesSel: ['เลือกแล้ว {n} / {max} รูป', '{n} / {max} images chosen'],
+  schBumpImagesNone: [
+    'ยังไม่ได้เลือกรูป จะดันด้วยข้อความอย่างเดียว',
+    'No image chosen: the bump is text only',
+  ],
+  schBumpNoLibrary: [
+    'ยังไม่มีรูปในคลัง อัปโหลดรูปที่หน้าคลังสื่อก่อน',
+    'No image in the library yet. Upload some on the library page first',
+  ],
+  schBumpMax: [
+    'เลือกรูปสำหรับดันได้ไม่เกิน {n} รูป',
+    'At most {n} images can be chosen for bumping',
+  ],
+  schBumpEach: ['จำนวนรูปต่อการดัน', 'Images per bump'],
+  schBumpEachOpt: ['{n} รูป', '{n} image(s)'],
+  schBumpEachHint: [
+    'สุ่มจากรูปที่เลือกไว้ (ไม่ซ้ำกันในการดันครั้งเดียว) เลือกรูปก่อนจึงตั้งค่านี้ได้',
+    'Drawn at random from the chosen images (no repeats within one bump). Choose images first to set this',
+  ],
+  schBumpHead1: ['ดัน 1 ครั้ง หลังโพสต์ {h} ชม.', 'Bump once, {h} h after the post'],
+  schBumpHeadN: ['ดัน {n} ครั้ง ห่างกัน {h} ชม.', 'Bump {n} times, {h} h apart'],
+  schBumpTailImg: ['ครั้งละ {k} รูป', '{k} image(s) each time'],
+  schBumpTailText: ['ข้อความอย่างเดียว', 'text only'],
+  schBumpNote: [
+    'การดันคอมเมนต์จากเบราว์เซอร์เดียวกับที่โพสต์ และไม่นับรวมในจำนวนโพสต์ต่อวัน',
+    'A bump is commented from the same browser that posted, and does not count toward the daily post limit',
+  ],
+  schBumpLockedTitle: [
+    'การดันโพสต์ใช้ได้ในแผน {plan}',
+    'Bumping posts is available on the {plan} plan',
+  ],
+  schBumpLockedBody: [
+    'แผนของเจ้าของเวิร์กสเปซนี้ยังไม่รวมการดันโพสต์ อัปเกรดเป็น {plan} เพื่อเปิดใช้',
+    'The owner of this workspace is not on a plan with bumping. Upgrade to {plan} to switch it on',
+  ],
+  // The schedule list's bump line, e.g. "bump 2h × 2" (every {h} hours, {n} times).
+  schBumpLine: ['ดัน {h} ชม. × {n}', 'bump {h}h × {n}'],
+  schBumpLineImg: ['{k} รูป/ครั้ง', '{k} image(s) each'],
 } as const;
 
 registerPack('flow', AP_I18N_FLOW);

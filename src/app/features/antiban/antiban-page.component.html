@@ -16,6 +16,40 @@
     </button>
   </div>
 
+  <section class="panel uses" [attr.aria-label]="t().api.engine.abExtTitle">
+    <div class="uses-head">
+      <span class="pico"><i class="ph ph-puzzle-piece" aria-hidden="true"></i></span>
+      <div>
+        <h2 class="h2">{{ t().api.engine.abExtTitle }}</h2>
+        <p class="sub">{{ t().api.engine.abExtBody }}</p>
+      </div>
+    </div>
+    <ul class="uses-list">
+      <li>{{ t().api.engine.abExtTyping }}</li>
+      <li>{{ t().api.engine.abExtScroll }}</li>
+      <li>{{ t().api.engine.abExtFocus }}</li>
+      <li>{{ t().api.engine.abExtBlock }}</li>
+      <li>{{ t().api.engine.abExtPause }}</li>
+    </ul>
+    <p class="fs14 uses-what">
+      <strong>{{ t().api.engine.abExtWhatTitle }}</strong> {{ t().api.engine.abExtWhat }}
+    </p>
+    <div class="uses-links">
+      <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/schedules"
+        ><i class="ph ph-calendar-check" aria-hidden="true"></i>{{ t().nav.schedules }}</a
+      >
+      <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/posts"
+        ><i class="ph ph-note-pencil" aria-hidden="true"></i>{{ t().api.postsNav }}</a
+      >
+      <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/targets"
+        ><i class="ph ph-users-four" aria-hidden="true"></i>{{ t().nav.targets }}</a
+      >
+      <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/team"
+        ><i class="ph ph-puzzle-piece" aria-hidden="true"></i>{{ t().api.engine.abExtLinkTeam }}</a
+      >
+    </div>
+  </section>
+
   <div class="panel risk">
     <i class="ph ph-shield-check" [style.color]="risk().color"></i>
     <div class="grow160">
@@ -79,32 +113,29 @@
         <h2 class="h2">{{ t().ab.limitsTitle }}</h2>
         <p class="sub">{{ t().ab.limitsBody }}</p>
       </div>
-      <p class="small muted">{{ t().api.limitsFbOnly }}</p>
-      @for (r of limitRows(); track r.k) {
-        <div class="row">
-          <span class="pico"><i class="ph" [class]="r.icon"></i></span>
-          <div class="grow">
-            <div class="limit-head">
-              <span class="fw5">{{ r.name }}</span
-              ><span class="muted nowrap">{{ r.usedLabel }}</span>
-            </div>
-            <div class="bar">
-              <span [style.width.%]="r.pct" [style.background]="r.color"></span>
-            </div>
+      <div class="row">
+        <span class="pico"><i class="ph" [class]="limit().icon"></i></span>
+        <div class="grow">
+          <div class="limit-head">
+            <span class="fw5">{{ limit().name }}</span
+            ><span class="muted nowrap">{{ limit().usedLabel }}</span>
           </div>
-          <input
-            type="number"
-            min="1"
-            max="200"
-            class="num-input w76"
-            [disabled]="!editable()"
-            [value]="r.limit"
-            (change)="setLimit(r.k, $any($event.target).value)"
-            [attr.aria-label]="r.name"
-          />
-          <span class="small muted w48">{{ t().common.perDay }}</span>
+          <div class="bar">
+            <span [style.width.%]="limit().pct" [style.background]="limit().color"></span>
+          </div>
         </div>
-      }
+        <input
+          type="number"
+          min="1"
+          [max]="maxLimit"
+          class="num-input w76"
+          [disabled]="!editable()"
+          [value]="limit().limit"
+          (change)="setLimit($any($event.target))"
+          [attr.aria-label]="limit().name"
+        />
+        <span class="small muted w48">{{ t().common.perDay }}</span>
+      </div>
     </section>
   </div>
 
@@ -127,8 +158,17 @@
             [disabled]="!editable() || locked()"
             (checkedChange)="setHuman(h.k, $event)"
           />
-          @if (h.storedOnly) {
-            <p class="small muted not-yet">{{ t().api.engine.storedOnly }}</p>
+          @if (h.k === 'typing') {
+            <div class="speed">
+              <app-select-field
+                [label]="t().api.engine.abTypingSpeed"
+                [options]="speedOptions()"
+                [value]="ab().typingSpeed"
+                [disabled]="!editable() || locked() || !ab().typing"
+                (valueChange)="setSpeed($event)"
+              />
+              <p class="small muted">{{ t().api.engine.abSpeedHint }}</p>
+            </div>
           }
         </div>
       }

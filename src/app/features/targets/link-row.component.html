@@ -17,20 +17,32 @@
       [disabled]="perm.readOnly()"
       (input)="edit('name', $event)"
     />
-    <input
-      #urlInput
-      class="cell"
-      [class.bad]="!!note()"
-      [value]="link().url"
-      [placeholder]="t().ts.urlPh"
-      [attr.aria-label]="t().ts.urlPh"
-      [attr.aria-invalid]="note() ? true : null"
-      [attr.aria-describedby]="note() ? 'note-' + link().id : null"
-      [maxLength]="limits.url"
-      [disabled]="perm.readOnly()"
-      spellcheck="false"
-      (input)="edit('url', $event)"
-    />
+    <div class="urlwrap">
+      <input
+        #urlInput
+        class="cell"
+        [class.bad]="!!note()"
+        [class.has-kind]="showKind()"
+        [value]="link().url"
+        [placeholder]="t().ts.urlPh"
+        [attr.aria-label]="t().ts.urlPh"
+        [attr.aria-invalid]="note() ? true : null"
+        [attr.aria-describedby]="note() ? 'note-' + link().id : null"
+        [maxLength]="limits.url"
+        [disabled]="perm.readOnly()"
+        spellcheck="false"
+        (input)="edit('url', $event)"
+      />
+      @if (showKind()) {
+        <app-chip
+          class="kind"
+          [tone]="kind() === 'page' ? 'accent' : 'muted'"
+          [attr.title]="kindHint()"
+          ><i class="ph" [class]="kindIcons[kind()]" aria-hidden="true"></i
+          >{{ kindLabel() }}</app-chip
+        >
+      }
+    </div>
     <input
       class="cell"
       [value]="link().code"

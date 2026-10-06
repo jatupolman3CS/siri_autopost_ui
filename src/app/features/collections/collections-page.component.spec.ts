@@ -449,20 +449,25 @@ describe('CollectionsPageComponent', () => {
   describe('navigation', () => {
     beforeEach(() => open());
 
-    it('"write post" starts a blank post in the open collection and opens the composer', () => {
-      TestBed.inject(DraftStore).patch({ text: 'old draft' });
+    it('"write post" opens the post library\'s editor on a new post in the open collection', () => {
       btn(t().col.write).click();
-      expect(TestBed.inject(DraftStore).draft()).toMatchObject({ text: '', collectionId: 'a' });
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], {
-        queryParams: { collection: 'a' },
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], {
+        queryParams: { new: 1, collection: 'a' },
       });
     });
 
-    it('"write a post here" starts a blank post in that collection', () => {
+    it('"write post" prefers the collection last saved to, if there is one', () => {
+      TestBed.inject(CollectionsStore).lastId.set('b');
+      btn(t().col.write).click();
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], {
+        queryParams: { new: 1, collection: 'b' },
+      });
+    });
+
+    it('"write a post here" opens the editor on a new post in that collection', () => {
       btn(t().col.addPost, cards()[1]).click();
-      expect(TestBed.inject(DraftStore).draft()).toMatchObject({ collectionId: 'b', postId: null });
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], {
-        queryParams: { collection: 'b' },
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], {
+        queryParams: { new: 1, collection: 'b' },
       });
     });
 
@@ -473,16 +478,17 @@ describe('CollectionsPageComponent', () => {
       });
     });
 
-    it('"edit" loads the post into the composer', () => {
+    it('"edit" opens that post in the post library\'s editor', () => {
       btn(t().common.edit, rows(cards()[0])[1]).click();
-      expect(TestBed.inject(DraftStore).draft()).toMatchObject({
-        text: a2.text,
-        postId: 'a2',
-        collectionId: 'a',
-      });
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], {
-        queryParams: { collection: 'a', post: 'a2' },
-      });
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], { queryParams: { post: 'a2' } });
+    });
+
+    it('does not touch the draft of a post in progress', () => {
+      const draft = TestBed.inject(DraftStore);
+      draft.patch({ text: 'half written' });
+      btn(t().col.write).click();
+      btn(t().common.edit, rows(cards()[0])[1]).click();
+      expect(draft.draft().text).toBe('half written');
     });
   });
 

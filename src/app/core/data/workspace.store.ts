@@ -18,6 +18,12 @@ export class WorkspaceStore {
   /** The list for the current user has arrived (pages show "—" instead of zeros until it has). */
   readonly loaded = signal(false);
   readonly current = computed(() => this.list().find((w) => w.id === this.id()) ?? null);
+  /**
+   * The owner's plan lacks a function: true only once the workspaces have arrived (before that nothing is locked,
+   * so a lock banner does not flash on a reload). The flags are the OWNER's plan, whoever works in the workspace.
+   */
+  readonly aiLocked = computed(() => this.loaded() && !this.current()?.ai);
+  readonly bumpLocked = computed(() => this.loaded() && !this.current()?.bump);
   private readonly userId = computed(() => this.session.user()?.id ?? null);
   private lastUser: string | null = null;
   private lastPlan: string | null = null;

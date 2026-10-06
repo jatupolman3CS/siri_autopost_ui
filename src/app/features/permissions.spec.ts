@@ -129,12 +129,13 @@ describe('role gating of the pages', () => {
   });
 
   describe('account safety', () => {
-    it('lets only an admin save and change the settings, and says which one is only saved', async () => {
+    it('lets only an admin save and change the settings, and none of them is only saved', async () => {
       const editor = await render(AntibanPageComponent, 'editor');
       expect(editor.el.querySelector<HTMLButtonElement>('.page-head button')!.disabled).toBe(true);
       expect(off(editor.el, 'input[type=range], input[type=number]').every(Boolean)).toBe(true);
       // The advanced rules, backup and restore are an admin's too.
       expect(off(editor.el, '.adv button')).toEqual([true, true]);
+      expect(editor.el.querySelector<HTMLSelectElement>('.human select')!.disabled).toBe(true);
       http.verify();
       TestBed.resetTestingModule();
 
@@ -142,11 +143,12 @@ describe('role gating of the pages', () => {
       expect(admin.el.querySelector<HTMLButtonElement>('.page-head button')!.disabled).toBe(false);
       expect(off(admin.el, 'input[type=range], input[type=number]').some(Boolean)).toBe(false);
       expect(off(admin.el, '.adv button')).toEqual([false, false]);
-      // Typing and scrolling are done by the extension, auto-pause and warm-up by the server: all can be switched.
-      // Only the shuffle is saved without effect, and says so.
+      // Typing and scrolling are done by the extension, shuffle, auto-pause and warm-up by the server: all can be
+      // switched, and so can the typing speed. None is saved without effect any more.
       const boxes = [...admin.el.querySelectorAll<HTMLInputElement>('.human input[type=checkbox]')];
       expect(boxes.map((b) => b.disabled)).toEqual([false, false, false, false, false]);
-      expect(admin.el.querySelectorAll('.not-yet').length).toBe(1);
+      expect(admin.el.querySelector<HTMLSelectElement>('.human select')!.disabled).toBe(false);
+      expect(admin.el.querySelectorAll('.not-yet').length).toBe(0);
     });
 
     it('also locks typing and scrolling when the owner plan has no advanced anti-ban', async () => {

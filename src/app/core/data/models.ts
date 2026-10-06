@@ -1,7 +1,8 @@
 // Domain types for the AutoPost dashboard. Bilingual values are [th, en] pairs.
 export type L10n = readonly [string, string];
 
-export type PlatformKey = 'fb' | 'x' | 'ig' | 'tt' | 'line' | 'th';
+/** Only Facebook groups and pages are posted to for now; the other social platforms are a later phase. */
+export type PlatformKey = 'fb';
 export type PlanKey = 'free' | 'basic' | 'pro' | 'agency';
 export type Role = 'guest' | 'user' | 'admin';
 export type Health = 'ok' | 'warn' | 'relogin';
@@ -35,41 +36,44 @@ export interface Workspace {
   notifications: boolean;
   /** The owner's plan includes auto-reply rules (Pro and above). */
   autoReply: boolean;
-  /** The owner's plan includes white-label client reports (Agency). */
+  /** The owner's plan includes white-label client reports (Premium, key `agency`). */
   clientReports: boolean;
+  /** The owner's plan includes the AI post writer (Pro and above). */
+  ai: boolean;
+  /** The owner's plan includes bumping posts (Premium, key `agency`). */
+  bump: boolean;
 }
 
-/** A connected social account (from the API). */
+/**
+ * A Facebook account the API lists: one for each paired browser ("Facebook · <browser name>"). It keeps its
+ * history when its browser is unbound, but cannot post until a browser is paired again.
+ */
 export interface SocialAccount {
   id: string;
+  /** Always 'fb' (the API still sends it). */
   platform: PlatformKey;
   name: string;
   handle: string;
-  /** Where posts go when the account has no groups (page, timeline, feed...). */
+  /** Where posts go when the account has no groups (its timeline). */
   defaultTarget: string;
   health: Health;
-  /** Facebook groups this account posts to; empty for every other kind of account. */
+  /** Facebook groups the browser synced for this account. */
   groups: string[];
-  /** Posts through a paired browser; false for the sample accounts of a new workspace. */
+  /** Posts through a paired browser; false once that browser was unbound. */
   connected: boolean;
 }
 
-/** Prefix of the Facebook account a paired browser brings (SocialAccount.ForDevice in the API). */
-const DEVICE_ACCOUNT_PREFIX = 'Facebook · ';
-
 /**
- * What an account is: one a browser posts for (`connected`), one whose browser was unbound (it keeps its
- * history but cannot post until the browser is paired again), or a sample account of a new workspace.
- * The API has no flag for the difference, so an unbound account is told by the name it got from its browser.
+ * What an account is: one a browser posts for (`connected`), or one whose browser was unbound (it keeps its
+ * history but cannot post until a browser is paired again). Every account comes from a paired browser.
  */
-export type AccountKind = 'connected' | 'unbound' | 'sample';
+export type AccountKind = 'connected' | 'unbound';
 
-export function accountKind(a: Pick<SocialAccount, 'connected' | 'name'>): AccountKind {
-  if (a.connected) return 'connected';
-  return a.name.startsWith(DEVICE_ACCOUNT_PREFIX) ? 'unbound' : 'sample';
+export function accountKind(a: Pick<SocialAccount, 'connected'>): AccountKind {
+  return a.connected ? 'connected' : 'unbound';
 }
 
-/** Sample account in the design data (landing preview, admin mock). */
+/** Sample Facebook account in the design data (landing preview). */
 export interface SeedAccount {
   id: string;
   /** The sample device (SeedData.devices) the account posts through. */
@@ -151,13 +155,31 @@ export interface Device {
   icon: string;
 }
 
-export interface PlanLimits {
-  accounts: number | null;
-  posts: number | null;
-  devices: number | null;
-  seats: number | null;
+/** The functions a plan can include (the keys of `features` in /api/plans); an unknown key is ignored. */
+export type PlanFeature =
+  'advanced_anti_ban' | 'notifications' | 'auto_reply' | 'ai' | 'bump' | 'client_reports';
+
+/** In the order a plan card and the comparison table list them. */
+export const PLAN_FEATURES: readonly PlanFeature[] = [
+  'ai',
+  'advanced_anti_ban',
+  'notifications',
+  'auto_reply',
+  'bump',
+  'client_reports',
+];
+
+export const isPlanFeature = (k: string): k is PlanFeature =>
+  (PLAN_FEATURES as readonly string[]).includes(k);
+
+/** A plan's price (baht per month), its seven numbers (null = unlimited) and the functions it includes. */
+export interface PlanLimits extends Record<LimitKey, number | null> {
   price: number;
+  features: PlanFeature[];
 }
+
+/** The design handoff's sample plan (it knew four numbers and no functions): only the seed types use it. */
+export type SeedPlanLimits = Pick<PlanLimits, 'accounts' | 'posts' | 'devices' | 'seats' | 'price'>;
 
 export interface CustomerDevice {
   id: string;
@@ -184,7 +206,23 @@ export interface CustomerJobs {
   running: number;
 }
 
-export type LimitKey = 'devices' | 'accounts' | 'posts' | 'seats';
+/** The seven numbers a plan limits (and an admin may override per customer). */
+export type LimitKey =
+  'accounts' | 'posts' | 'devices' | 'seats' | 'groups' | 'images' | 'libraryPosts';
+
+/** What the admin edits on a plan (the functions it includes are fixed by the API). */
+export type PlanField = 'price' | LimitKey;
+
+/** In the order the plan cards, the comparison table and the billing page list them. */
+export const LIMIT_KEYS: readonly LimitKey[] = [
+  'groups',
+  'images',
+  'libraryPosts',
+  'posts',
+  'devices',
+  'seats',
+  'accounts',
+];
 
 export interface Customer {
   id: string;
@@ -279,8 +317,6 @@ export interface SeedLink {
 export interface SeedTargetSet {
   id: string;
   name: L10n;
-  /** Other social accounts that post to the same set. */
-  accounts: string[];
   links: SeedLink[];
 }
 
@@ -313,7 +349,7 @@ export interface SeedSchedule {
   dripN?: number;
   /** Once mode: HH:MM of the single post (its date is `start`). */
   onceTime?: string;
-  /** Bump after N hours and delete after N days (0 = off); saved only, nothing applies them yet. */
+  /** Bump after N hours (applied: the extension comments on the post again) and delete after N days (0 = off; saved only). */
   bump?: number;
   del?: number;
 }
@@ -325,15 +361,6 @@ export interface SeedPost {
   /** Media ids of the library. */
   media: string[];
   text: L10n;
-}
-
-export interface SeedMemberGroup {
-  url: string;
-  name: string;
-  members: number;
-  /** Joining needs the admins' approval, so a post waits there. */
-  approval: boolean;
-  last: 'ok' | 'pending' | 'failed';
 }
 
 export interface SeedArRule {
@@ -361,13 +388,20 @@ export interface SeedData {
   user: { name: L10n; email: string; initials: string };
   workspaces: Omit<
     Workspace,
-    'role' | 'limits' | 'advancedAntiBan' | 'notifications' | 'autoReply' | 'clientReports'
+    | 'role'
+    | 'limits'
+    | 'advancedAntiBan'
+    | 'notifications'
+    | 'autoReply'
+    | 'clientReports'
+    | 'ai'
+    | 'bump'
   >[];
   platforms: Record<PlatformKey, Platform>;
   groups: string[];
   /** Post collections ("ชุดโพสต์") of the three-step flow: collections, link sets, schedules. */
   collections: SeedCollection[];
-  /** Link sets ("ชุดลิงก์กลุ่ม"): Facebook group links with a group code each. */
+  /** Link sets ("ชุดลิงก์"): Facebook group links with a group code each. */
   targetSets: SeedTargetSet[];
   schedules: SeedSchedule[];
   accounts: SeedAccount[];
@@ -379,14 +413,12 @@ export interface SeedData {
   snippets: SeedSnippet[];
   limits: Record<PlatformKey, number>;
   usedToday: Record<PlatformKey, number>;
-  /** Groups a social account is a member of, offered by "import groups from account". */
-  memberGroups: SeedMemberGroup[];
   /** Auto-reply rules and the comment feed of the engage page. */
   arRules: SeedArRule[];
   arFeed: SeedArFeedItem[];
   members: Member[];
   devices: Device[];
-  planLimits: Record<PlanKey, PlanLimits>;
+  planLimits: Record<PlanKey, SeedPlanLimits>;
   invoices: number[][];
   customers: SeedCustomer[];
   subs: Record<'basic' | 'pro' | 'agency', number>;

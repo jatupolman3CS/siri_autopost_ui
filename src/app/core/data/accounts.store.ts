@@ -1,5 +1,5 @@
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
-import { ApiService } from '../http/api.service';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { ApiDevice, ApiService } from '../http/api.service';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
 import { Health, SocialAccount } from './models';
@@ -16,14 +16,36 @@ const ACCOUNT_EVENTS = [
 /** The event stream keeps the list fresh; this poll only runs while the stream is down. */
 const FALLBACK_POLL_MS = 60_000;
 
-// Social accounts connected to the current workspace.
+/** Prefix of the Facebook account a paired browser brings (SocialAccount.ForDevice in the API). */
+const DEVICE_ACCOUNT_PREFIX = 'Facebook · ';
+
+/**
+ * What a person calls the extension an account belongs to: the name of its browser ("Shop PC"), not the
+ * account's "Facebook · Shop PC". The device list is asked first (a rename shows there at once); the account's
+ * own name, without its prefix, stands in while the devices have not arrived or the browser was unbound.
+ */
+export function extensionNameOf(
+  account: Pick<SocialAccount, 'id' | 'name'>,
+  devices: readonly Pick<ApiDevice, 'accountId' | 'name'>[],
+): string {
+  const device = devices.find((d) => d.accountId === account.id);
+  if (device) return device.name;
+  return account.name.startsWith(DEVICE_ACCOUNT_PREFIX)
+    ? account.name.slice(DEVICE_ACCOUNT_PREFIX.length)
+    : account.name;
+}
+
+// The Facebook accounts of the current workspace: one for each paired browser (its sign-in health, the groups it
+// synced), which stays in the list with its history after the browser is unbound.
 @Injectable({ providedIn: 'root' })
 export class AccountsStore {
   private readonly api = inject(ApiService);
   private readonly ws = inject(WorkspaceStore);
 
   readonly list = signal<SocialAccount[]>([]);
-  /** The list for the current workspace has arrived (the composer and the overview wait for it). */
+  /** The accounts a browser posts for: the only ones that can post a link set or take a test post. */
+  readonly connected = computed(() => this.list().filter((a) => a.connected));
+  /** The list for the current workspace has arrived (the schedules page waits for it). */
   readonly loaded = signal(false);
 
   constructor() {

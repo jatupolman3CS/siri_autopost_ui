@@ -178,18 +178,16 @@ describe('CalendarPageComponent', () => {
   });
 
   describe('edit', () => {
-    it('opens the collection post a queued task came from in the composer', async () => {
+    it("opens the library post a queued task came from in the post library's editor", async () => {
       const { fixture, el } = await open([
         apiPost({ id: 'q', scheduledAt: at(9), status: 'queued', collectionPostId: 'cp1' }),
       ]);
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       button(rows(el)[0], t().common.edit)!.click();
       await tick(fixture);
-      const draft = TestBed.inject(DraftStore).draft();
-      expect([draft.collectionId, draft.postId, draft.text]).toEqual(['c1', 'cp1', POST.text]);
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], {
-        queryParams: { collection: 'c1', post: 'cp1' },
-      });
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], { queryParams: { post: 'cp1' } });
+      // An existing post is edited with the editor's own state, not through the draft of a new one.
+      expect(TestBed.inject(DraftStore).draft().text).toBe('');
     });
 
     it('starts a new post with the text and media of a task that has no collection post', async () => {
@@ -206,13 +204,13 @@ describe('CalendarPageComponent', () => {
       button(rows(el)[0], t().common.edit)!.click();
       await tick(fixture);
       const draft = TestBed.inject(DraftStore).draft();
-      expect([draft.postId, draft.text, draft.media]).toEqual([
-        null,
+      expect([draft.text, draft.media, draft.collectionIds]).toEqual([
         'Made before collections',
         ['m1'],
+        [],
       ]);
       expect(navigate).toHaveBeenCalledTimes(1);
-      expect(navigate.mock.calls[0][0]).toEqual(['/app/composer']);
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], { queryParams: { new: 1 } });
     });
 
     it('starts a new post when the collection post of the task is gone', async () => {
@@ -229,7 +227,7 @@ describe('CalendarPageComponent', () => {
       button(rows(el)[0], t().common.edit)!.click();
       await tick(fixture);
       const draft = TestBed.inject(DraftStore).draft();
-      expect([draft.postId, draft.text]).toEqual([null, 'Its own text']);
+      expect(draft.text).toBe('Its own text');
     });
   });
 
@@ -336,10 +334,10 @@ describe('CalendarPageComponent', () => {
       ]);
     });
 
-    it('goes to the new-post composer from the header button', async () => {
+    it("goes to the post library's new-post editor from the header button", async () => {
       const { el } = await open();
       expect(el.querySelector('.actions a.su-btn-primary')?.getAttribute('href')).toBe(
-        '/app/composer',
+        '/app/posts?new=1',
       );
     });
 

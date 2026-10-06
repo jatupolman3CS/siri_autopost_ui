@@ -19,6 +19,7 @@ import { fmtDate, hm } from '../../core/i18n/format';
 import { ApiMember, ApiRole } from '../../core/http/api.service';
 import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { problemMessage } from '../../core/http/problem-details';
+import '../../core/i18n/i18n.engine';
 import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
 import { autoPauseLine } from '../../core/data/auto-pause-line';
 import { autoPauseOf } from '../../core/data/devices.store';
@@ -159,6 +160,13 @@ export class TeamPageComponent {
   protected readonly devicesBody = computed(() => {
     const max = this.limitsNow()?.devices;
     return max ? fmt(this.t().team.devicesBody, { n: max }) : this.t().team.devicesUnl;
+  });
+  /** "n/m extensions online" when there are several browsers (one browser has its own dot and status line). */
+  protected readonly onlineLabel = computed(() => {
+    const list = this.devices.list();
+    return list.length > 1
+      ? fmt(this.t().api.extCount, { n: list.filter((d) => d.online).length, m: list.length })
+      : '';
   });
   protected readonly deviceRows = computed(() => {
     const { t, li } = { t: this.t(), li: this.i18n.li() };
@@ -337,10 +345,14 @@ export class TeamPageComponent {
     }
     if (name === current) return this.close();
     this.busy.set(true);
+    this.formErr.set('');
     try {
-      await this.devices.update(id, { name });
-    } catch {
-      return; // the interceptor says why; the dialog stays open
+      await this.devices.rename(id, name);
+    } catch (e) {
+      // Names are unique in a workspace: the server's refusal ("already used") shows under the field, the dialog
+      // stays open and the browser keeps the name it had.
+      this.formErr.set(problemMessage(e) ?? this.t().api.serverDown);
+      return;
     } finally {
       this.busy.set(false);
     }

@@ -1,14 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
-import { DraftStore } from '../../core/data/draft.store';
 import { LibraryStore } from '../../core/data/library.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { postFlags } from '../../core/flow';
 import { ApiCollection, ApiCollectionPost } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
+import { POSTS_PATH, editPostParams } from '../posts/posts-link';
 import '../../core/i18n/i18n.flow';
 
 const DOT: Record<ApiCollectionPost['approval'], string> = {
@@ -28,7 +27,6 @@ const DOT: Record<ApiCollectionPost['approval'], string> = {
 })
 export class CollectionPostRowComponent {
   private readonly store = inject(CollectionsStore);
-  private readonly draft = inject(DraftStore);
   private readonly library = inject(LibraryStore);
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
@@ -91,8 +89,7 @@ export class CollectionPostRowComponent {
   }
 
   protected edit(): void {
-    this.draft.edit(this.collection(), this.post());
-    void this.router.navigate([COMPOSER_PATH], { queryParams: composerParams(this.draft.draft()) });
+    void this.router.navigate([POSTS_PATH], { queryParams: editPostParams(this.post().id) });
   }
 
   /**

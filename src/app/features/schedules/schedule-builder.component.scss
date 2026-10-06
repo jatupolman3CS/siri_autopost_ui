@@ -52,6 +52,26 @@
     flex-shrink: 0;
   }
 }
+.over {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-warning);
+  font-size: 14px;
+  > .ph {
+    font-size: 20px;
+    color: var(--color-warning);
+    flex-shrink: 0;
+  }
+  > span {
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+}
 .btns {
   display: flex;
   gap: 12px;

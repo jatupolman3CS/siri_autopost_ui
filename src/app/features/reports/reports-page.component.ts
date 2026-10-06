@@ -23,7 +23,7 @@ interface GroupRow {
 }
 
 // "Reports": how each group and each post did over the last 7 or 30 days, and the client report (Agency).
-// The numbers are real posts of paired accounts (no test posts, no sample accounts). Likes and comments are not
+// The numbers are real posts of the paired extensions (no test posts). Likes and comments are not
 // collected, so their columns show a dash and the page says why. "Disable" switches the group's link off in every
 // set that has its address (an editor's action).
 @Component({

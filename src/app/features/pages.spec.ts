@@ -2,13 +2,12 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { ApiDevice, ApiMedia, ApiSnippet } from '../core/http/api.service';
+import { ApiMedia, ApiSnippet } from '../core/http/api.service';
 import { LibraryStore } from '../core/data/library.store';
 import { SettingsStore } from '../core/data/settings.store';
 import { WorkspaceStore } from '../core/data/workspace.store';
 import { I18nService } from '../core/i18n/i18n.service';
 import {
-  WS,
   answerThumbs,
   answerWorkspaceLoads,
   apiPost,
@@ -17,23 +16,9 @@ import {
   signIn,
 } from '../testing/api-testing';
 import { CalendarPageComponent } from './calendar/calendar-page.component';
-import { ExtensionPageComponent } from './extension/extension-page.component';
 import { LibraryPageComponent } from './library/library-page.component';
 import { OfflinePageComponent } from './offline/offline-page.component';
 import { OverviewPageComponent } from './overview/overview-page.component';
-
-const device = (over: Partial<ApiDevice> = {}): ApiDevice => ({
-  id: 'd1',
-  name: 'Shop PC',
-  browser: 'Chrome 130',
-  version: '2.2.0',
-  createdAt: '2026-10-01T00:00:00Z',
-  lastSeenAt: null,
-  online: true,
-  accountId: 'acc-1',
-  jobsPaused: false,
-  ...over,
-});
 
 describe('pages that must not claim what the system does not do', () => {
   let http: HttpTestingController;
@@ -174,36 +159,6 @@ describe('pages that must not claim what the system does not do', () => {
       settings().simulatedOffline.set(true);
       fixture.detectChanges();
       expect(button().textContent!.trim()).toBe(t.off.simOn);
-    });
-  });
-
-  describe('extension popup', () => {
-    it('shows the version the browser reported and pauses the real jobs', async () => {
-      const { fixture, el } = await open(ExtensionPageComponent, { devices: [device()] });
-      expect(el.querySelector('.pop-foot')!.textContent).toContain('2.2.0');
-      expect(el.querySelector('.pop-foot')!.textContent).not.toContain('2.4.1');
-      el.querySelector<HTMLButtonElement>('.pop-actions button')!.click();
-      const req = http.expectOne({ method: 'PUT', url: `/api/workspaces/${WS}/devices/d1` });
-      expect(req.request.body).toEqual({ name: null, jobsPaused: true });
-      req.flush(device({ jobsPaused: true }));
-      await settle();
-      fixture.detectChanges();
-      expect(TestBed.inject(WorkspaceStore).id()).toBe(WS);
-    });
-
-    it('is off for someone who may not pause devices', async () => {
-      const { el } = await open(ExtensionPageComponent, {
-        devices: [device()],
-        workspace: { role: 'editor' },
-      });
-      expect(el.querySelector<HTMLButtonElement>('.pop-actions button')!.disabled).toBe(true);
-    });
-
-    it('links to the extension campaigns page, which has no menu item any more', async () => {
-      const { el } = await open(ExtensionPageComponent, { devices: [device()] });
-      const link = el.querySelector<HTMLAnchorElement>('a[href="/app/campaigns"]')!;
-      expect(link).not.toBeNull();
-      expect(link.textContent).toContain(TestBed.inject(I18nService).t().api.extNav);
     });
   });
 

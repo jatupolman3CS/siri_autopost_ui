@@ -23,7 +23,7 @@ export const BRAND_MAX = 120;
 
 // The report of the current workspace: how the groups and the posts did over the last 7 or 30 days, and (Agency)
 // the shareable copy for a client. Reading is for every role and plan; the numbers are real posts of paired
-// accounts only (no test posts, no sample accounts) and carry no likes or comments, because none are collected.
+// extensions only (no test posts) and carry no likes or comments, because none are collected.
 // The page asks again when it is entered (`ensureFresh`) and whenever the period changes.
 @Injectable({ providedIn: 'root' })
 export class ReportsStore {

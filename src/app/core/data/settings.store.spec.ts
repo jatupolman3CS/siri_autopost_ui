@@ -15,12 +15,13 @@ import { DeviceEventsService } from './device-events.service';
 import { SettingsStore, defaultAdvanced, defaultAntiBan } from './settings.store';
 import { WorkspaceStore } from './workspace.store';
 
-const engine = (min: number, devices = 0) => ({
+const engine = (min: number, devices = 0, typingSpeed = 'normal') => ({
   antiBan: {
     min,
     max: 20,
-    limits: { fb: 25, x: 20, ig: 10, tt: 5, line: 3, th: 10 },
+    limits: { fb: 25 },
     typing: true,
+    typingSpeed,
     scroll: false,
     shuffle: false,
     autoPause: false,
@@ -48,7 +49,7 @@ describe('SettingsStore', () => {
     events = TestBed.inject(DeviceEventsService) as unknown as FakeDeviceEvents;
     await signIn(http, {
       posts: [
-        // Sent in the last 24 h by the connected account, by a sample account, a failed one, and an old one.
+        // Sent in the last 24 h by the connected account, a pending one, a failed one, and an old one.
         apiPost({
           id: 'a',
           accountId: 'acc-page',
@@ -80,10 +81,11 @@ describe('SettingsStore', () => {
           scheduledAt: ago(30),
           publishedAt: ago(30),
         }),
+        // By an account that is not a browser's (nothing counts for it).
         apiPost({
           id: 'e',
-          accountId: 'acc-ig',
-          platform: 'ig',
+          accountId: 'acc-other',
+          platform: 'fb',
           status: 'success',
           scheduledAt: ago(1),
           publishedAt: ago(1),
@@ -94,19 +96,59 @@ describe('SettingsStore', () => {
 
   afterEach(() => http.verify());
 
-  it('counts what the server counts: connected accounts, success and pending, last 24 hours', async () => {
+  it('counts what the server counts: Facebook posts of connected accounts, success and pending, last 24 hours', async () => {
     const accounts = TestBed.inject(AccountsStore);
-    // Only the page is a connected (device) account; Instagram is a sample.
-    accounts.list.set(ACCOUNTS.map((a) => ({ ...a, connected: a.id === 'acc-page' })));
-    expect(store.used24h().fb).toBe(2);
-    expect(store.used24h().ig).toBe(0);
-    accounts.list.set(ACCOUNTS.map((a) => ({ ...a, connected: false })));
-    expect(store.used24h().fb).toBe(0);
+    const account = (id: string, connected: boolean) => ({ ...ACCOUNTS[0], id, connected });
+    // Only acc-page is a connected (device) account; acc-other is not.
+    accounts.list.set([account('acc-page', true), account('acc-other', false)]);
+    expect(store.used24h()).toBe(2);
+    accounts.list.set([account('acc-page', false), account('acc-other', false)]);
+    expect(store.used24h()).toBe(0);
   });
 
   it('starts from the workspace settings once they have arrived', () => {
     expect(store.loaded()).toBe(true);
     expect(store.ab().min).toBe(3);
+    // One Facebook limit, and a typing speed.
+    expect(Object.keys(store.ab().limits)).toEqual(['fb']);
+    expect(store.ab().typingSpeed).toBe('normal');
+  });
+
+  describe('typing speed', () => {
+    const ANTI_BAN = `/api/workspaces/${WS}/engine/anti-ban`;
+
+    it('is normal until the workspace says otherwise', () => {
+      expect(defaultAntiBan().typingSpeed).toBe('normal');
+    });
+
+    it.each(['slow', 'normal', 'fast'] as const)(
+      'reads %s from the settings the server holds',
+      async (speed) => {
+        const loading = store.load(WS);
+        http.expectOne(`/api/workspaces/${WS}/engine`).flush(engine(3, 0, speed));
+        await loading;
+        expect(store.ab().typingSpeed).toBe(speed);
+      },
+    );
+
+    it('falls back to normal for a value it does not know', async () => {
+      const loading = store.load(WS);
+      http.expectOne(`/api/workspaces/${WS}/engine`).flush(engine(3, 0, 'turbo'));
+      await loading;
+      expect(store.ab().typingSpeed).toBe('normal');
+    });
+
+    it('is sent with the other anti-ban settings and shows what the server stored', async () => {
+      store.patchAb({ typingSpeed: 'slow' });
+      const saving = store.saveAb();
+      const req = http.expectOne((r) => r.method === 'PUT' && r.url === ANTI_BAN);
+      expect(req.request.body.typingSpeed).toBe('slow');
+      expect(req.request.body.limits).toEqual({ fb: 40 });
+      // A plan below Pro keeps the old speed: what comes back is shown.
+      req.flush(engine(3, 0, 'normal'));
+      await saving;
+      expect(store.ab().typingSpeed).toBe('normal');
+    });
   });
 
   it('forgets the previous workspace at once and refuses to save before the new one has loaded', async () => {

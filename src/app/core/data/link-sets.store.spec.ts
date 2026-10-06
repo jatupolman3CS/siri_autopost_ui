@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ApiCollection } from '../http/api.service';
 import { WORKSPACE, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { FakeDeviceEvents } from '../../testing/fake-events';
-import { SET_URL, apiLink, apiLinkSet } from '../../testing/link-sets.fixtures';
+import { SET_URL, apiLink, apiLinkSet, apiPageLink } from '../../testing/link-sets.fixtures';
 import { CollectionsStore } from './collections.store';
 import { DeviceEventsService } from './device-events.service';
 import {
@@ -18,7 +18,7 @@ import { WorkspaceStore } from './workspace.store';
 const SETS_URL = `/api/workspaces/${WS}/link-sets`;
 const A = apiLink({ id: 'a', name: 'Condo BKK', code: '#Jan24' });
 const B = apiLink({ id: 'b', name: 'Condo rent', url: 'https://www.facebook.com/groups/rent' });
-const SET = apiLinkSet({ id: 's1', links: [A, B], accountIds: ['acc-ig'], scheduleCount: 1 });
+const SET = apiLinkSet({ id: 's1', links: [A, B], scheduleCount: 1 });
 
 describe('LinkSetsStore', () => {
   let http: HttpTestingController;
@@ -79,11 +79,11 @@ describe('LinkSetsStore', () => {
       expect(store.loaded()).toBe(true);
     });
 
-    it('counts per set: links, enabled valid ones, those with a code, other accounts', async () => {
+    it('counts per set: links, enabled valid ones, and those with a code', async () => {
       const off = apiLink({ id: 'c', enabled: false, code: 'X' });
       const bad = apiLink({ id: 'd', url: 'nope', valid: false, code: 'Y' });
-      await start([apiLinkSet({ id: 's1', links: [A, B, off, bad], accountIds: ['x', 'y'] })]);
-      expect(store.stats()['s1']).toEqual({ links: 4, on: 2, codes: 1, accounts: 2 });
+      await start([apiLinkSet({ id: 's1', links: [A, B, off, bad] })]);
+      expect(store.stats()['s1']).toEqual({ links: 4, on: 2, codes: 1 });
       expect(statsOf(store.byId('s1')!)).toEqual(store.stats()['s1']);
     });
 
@@ -202,6 +202,31 @@ describe('LinkSetsStore', () => {
         .flush({ ...A, url: 'https://www.facebook.com/groups/condo.bkk' });
       await settle();
       expect(rowOf('s1', 'a').url).toBe('https://www.facebook.com/groups/condo.bkk');
+    });
+
+    it('calls a row a page or a group by its address while it is typed, before the save comes back', async () => {
+      await start();
+      expect(rowOf('s1', 'a').kind).toBe('group');
+      store.editLink('s1', 'a', { url: 'https://www.facebook.com/baandee.shop' });
+      expect(rowOf('s1', 'a')).toMatchObject({ kind: 'page', valid: true });
+      store.editLink('s1', 'a', { url: 'https://www.facebook.com/watch' });
+      expect(rowOf('s1', 'a')).toMatchObject({ kind: 'group', valid: false });
+      store.editLink('s1', 'a', { url: 'https://www.facebook.com/groups/condo' });
+      expect(rowOf('s1', 'a')).toMatchObject({ kind: 'group', valid: true });
+      await wait();
+      http
+        .expectOne(`${SET_URL('s1')}/links/a`)
+        .flush({ ...A, url: 'https://www.facebook.com/groups/condo' });
+    });
+
+    it('flags a page address that is already in the set as a duplicate', async () => {
+      await start([apiLinkSet({ id: 's1', links: [apiPageLink({ id: 'baandee.shop' }), B] })]);
+      store.editLink('s1', 'b', { url: 'FB.com/BaanDee.Shop/' });
+      expect(rowOf('s1', 'b')).toMatchObject({ kind: 'page', duplicate: true });
+      await wait();
+      http
+        .expectOne(`${SET_URL('s1')}/links/b`)
+        .flush({ ...B, url: 'https://www.facebook.com/BaanDee.Shop' });
     });
 
     it('keeps a space typed at the end of a text the server only trimmed', async () => {
@@ -507,29 +532,6 @@ describe('LinkSetsStore', () => {
       http.expectOne(`${SET_URL('s1')}/links/a`).flush({ ...A, name: 'Typing' });
     });
 
-    it('lists the synced groups of an account', async () => {
-      await start();
-      const done = store.accountGroups('acc-fb');
-      http
-        .expectOne(`/api/workspaces/${WS}/accounts/acc-fb/groups`)
-        .flush([{ name: 'Condo BKK', url: A.url }]);
-      expect(await done).toEqual([{ name: 'Condo BKK', url: A.url }]);
-    });
-
-    it('imports the picked groups of an account into the set', async () => {
-      await start();
-      const done = store.importGroups('s1', 'acc-fb', ['https://www.facebook.com/groups/g1']);
-      const req = http.expectOne(`${SET_URL('s1')}/links/import`);
-      expect(req.request.body).toEqual({
-        accountId: 'acc-fb',
-        urls: ['https://www.facebook.com/groups/g1'],
-      });
-      req.flush({ ...SET, links: [A, B, apiLink({ id: 'g1' })] });
-      const set = await done;
-      expect(set.links).toHaveLength(3);
-      expect(store.byId('s1')!.links).toHaveLength(3);
-    });
-
     it('imports CSV rows and reads the sets again, which may include new ones', async () => {
       await start();
       const rows = [{ set: 'New set', name: 'G', url: A.url, code: '' }];
@@ -589,7 +591,7 @@ describe('LinkSetsStore', () => {
       expect(req.request.body).toEqual({
         name: 'Condo groups',
         postAsAccountId: 'acc-fb',
-        accountIds: ['acc-ig'],
+        accountIds: [],
       });
       req.flush({ ...SET, postAsAccountId: 'acc-fb' });
       expect(await done).toBe(true);
@@ -603,47 +605,51 @@ describe('LinkSetsStore', () => {
       expect(store.byId('s1')?.postAsAccountId).toBeNull();
     });
 
-    it('adds and removes other accounts', async () => {
-      await start();
-      const adding = store.addAccount('s1', 'acc-tt');
-      expect(store.byId('s1')?.accountIds).toEqual(['acc-ig', 'acc-tt']);
-      const add = http.expectOne(SET_URL('s1'));
-      expect(add.request.body.accountIds).toEqual(['acc-ig', 'acc-tt']);
-      add.flush({ ...SET, accountIds: ['acc-ig', 'acc-tt'] });
-      expect(await adding).toBe(true);
-
-      const removing = store.removeAccount('s1', 'acc-ig');
-      expect(store.byId('s1')?.accountIds).toEqual(['acc-tt']);
-      const remove = http.expectOne(SET_URL('s1'));
-      expect(remove.request.body.accountIds).toEqual(['acc-tt']);
-      remove.flush({ ...SET, accountIds: ['acc-tt'] });
-      expect(await removing).toBe(true);
+    it('sends no other accounts: they were sample data and are gone from the web app', async () => {
+      // A set that still carries accounts from before (the API keeps the field) is sent without them.
+      await start([apiLinkSet({ id: 's1', links: [A, B], accountIds: ['old-1', 'old-2'] })]);
+      const done = store.updateSet('s1', { name: 'Renamed' });
+      const req = http.expectOne(SET_URL('s1'));
+      expect(req.request.body).toEqual({
+        name: 'Renamed',
+        postAsAccountId: null,
+        accountIds: [],
+      });
+      req.flush({ ...SET, name: 'Renamed' });
+      expect(await done).toBe(true);
     });
 
-    it('ignores an account that is already there, or not there', async () => {
+    it('ignores a change to a set that is not there', async () => {
       await start();
-      expect(await store.addAccount('s1', 'acc-ig')).toBe(false);
-      expect(await store.removeAccount('s1', 'zzz')).toBe(false);
-      expect(await store.addAccount('nope', 'x')).toBe(false);
+      expect(await store.updateSet('nope', { name: 'x' })).toBe(false);
+      expect(await store.setPostAs('nope', 'acc-fb')).toBe(false);
     });
 
     it('sends quick changes one after the other, the second with the set as it is then', async () => {
       await start();
-      const first = store.addAccount('s1', 'acc-tt');
-      const second = store.addAccount('s1', 'acc-x');
-      expect(store.byId('s1')?.accountIds).toEqual(['acc-ig', 'acc-tt', 'acc-x']);
+      const first = store.setPostAs('s1', 'acc-fb');
+      const second = store.updateSet('s1', { name: 'Renamed' });
+      expect(store.byId('s1')).toMatchObject({ name: 'Renamed', postAsAccountId: 'acc-fb' });
       const one = http.expectOne(SET_URL('s1'));
-      expect(one.request.body.accountIds).toEqual(['acc-ig', 'acc-tt']);
+      expect(one.request.body).toEqual({
+        name: 'Condo groups',
+        postAsAccountId: 'acc-fb',
+        accountIds: [],
+      });
       // The first answer is not applied: a newer change is still on its way.
-      one.flush({ ...SET, accountIds: ['acc-ig', 'acc-tt'] });
+      one.flush({ ...SET, postAsAccountId: 'acc-fb' });
       expect(await first).toBe(true);
       await settle();
-      expect(store.byId('s1')?.accountIds).toEqual(['acc-ig', 'acc-tt', 'acc-x']);
+      expect(store.byId('s1')?.name).toBe('Renamed');
       const two = http.expectOne(SET_URL('s1'));
-      expect(two.request.body.accountIds).toEqual(['acc-ig', 'acc-tt', 'acc-x']);
-      two.flush({ ...SET, accountIds: ['acc-ig', 'acc-tt', 'acc-x'] });
+      expect(two.request.body).toEqual({
+        name: 'Renamed',
+        postAsAccountId: 'acc-fb',
+        accountIds: [],
+      });
+      two.flush({ ...SET, name: 'Renamed', postAsAccountId: 'acc-fb' });
       expect(await second).toBe(true);
-      expect(store.byId('s1')?.accountIds).toEqual(['acc-ig', 'acc-tt', 'acc-x']);
+      expect(store.byId('s1')).toMatchObject({ name: 'Renamed', postAsAccountId: 'acc-fb' });
     });
   });
 

@@ -49,11 +49,7 @@
     <p class="muted fs14" role="status">{{ t().api.loading }}</p>
   } @else {
     @for (s of setPage(); track s.id) {
-      <app-link-set-card
-        [set]="s"
-        (bulk)="open('bulk', s.id)"
-        (importGroups)="open('import', s.id)"
-      />
+      <app-link-set-card [set]="s" (bulk)="open('bulk', s.id)" />
     } @empty {
       <app-empty-state
         icon="ph-link"
@@ -69,5 +65,4 @@
 
 <app-new-set-modal [open]="dialog() === 'set'" (closed)="close()" />
 <app-bulk-links-modal [open]="dialog() === 'bulk'" [setId]="dialogSet()" (closed)="close()" />
-<app-import-groups-modal [open]="dialog() === 'import'" [setId]="dialogSet()" (closed)="close()" />
 <app-csv-links-modal [open]="dialog() === 'csv'" (closed)="close()" />

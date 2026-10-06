@@ -15,7 +15,7 @@ import { answerThumbs, provideApiTesting, settle, signIn } from '../../testing/a
 import { apiCollection, apiCollectionPost } from '../../testing/collection-fixtures';
 import { LibraryPageComponent } from './library-page.component';
 
-describe('LibraryPageComponent and the composer draft', () => {
+describe('LibraryPageComponent and the draft of a new post', () => {
   let http: HttpTestingController;
   let fixture: ComponentFixture<LibraryPageComponent>;
   let el: HTMLElement;
@@ -92,49 +92,36 @@ describe('LibraryPageComponent and the composer draft', () => {
       expect(bar()).toBeNull();
     });
 
-    it('says how much is written and leads back to the post', async () => {
+    it("says how much is written and leads back to the post, in the post library's editor", async () => {
       await open();
-      draft().patch({ text: 'สวัสดี', media: ['m1', 'm2'], collectionId: 'a' });
+      draft().patch({ text: 'สวัสดี', media: ['m1', 'm2'], collectionIds: ['a'] });
       await rerender();
       expect(bar()!.textContent).toContain(
         t().lib.draftBar.replace('{n}', '2').replace('{c}', '6'),
       );
       bar()!.querySelector<HTMLButtonElement>('button')!.click();
       expect(bar()!.textContent).toContain(t().lib.backToPost);
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], {
-        queryParams: { collection: 'a' },
-      });
+      // The draft keeps its own collections: the address only says "a new post".
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], { queryParams: { new: 1 } });
     });
 
-    it('also shows for a post that is being edited, and the way back names the post', async () => {
-      await open();
-      const store = TestBed.inject(CollectionsStore);
-      draft().edit(store.byId('a')!, store.postById('a1')!.post);
-      await rerender();
-      expect(bar()).not.toBeNull();
-      bar()!.querySelector<HTMLButtonElement>('button')!.click();
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], {
-        queryParams: { collection: 'a', post: 'a1' },
-      });
-    });
-
-    it('shows when only media was added, and goes to the plain composer without a collection', async () => {
+    it('shows when only media was added', async () => {
       await open();
       draft().addMedia('m1');
       await rerender();
       expect(bar()).not.toBeNull();
       bar()!.querySelector<HTMLButtonElement>('button')!.click();
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], { queryParams: {} });
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], { queryParams: { new: 1 } });
     });
   });
 
   describe('"use"', () => {
     beforeEach(() => open());
 
-    it('attaches a file to the draft and opens the composer', () => {
+    it('attaches a file to the draft and opens the post editor on a new post', () => {
       useButtons()[1].click();
       expect(draft().draft().media).toEqual(['m2']);
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], { queryParams: {} });
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], { queryParams: { new: 1 } });
     });
 
     it('does not attach a file twice', () => {
@@ -143,13 +130,13 @@ describe('LibraryPageComponent and the composer draft', () => {
       expect(draft().draft().media).toEqual(['m1']);
     });
 
-    it('keeps the post that is being edited and its address', async () => {
-      const store = TestBed.inject(CollectionsStore);
-      draft().edit(store.byId('a')!, store.postById('a1')!.post);
+    it('keeps the text and the collections of the post in progress', () => {
+      draft().patch({ text: 'half written', collectionIds: ['a', 'b'] });
       useButtons()[1].click();
-      expect(draft().draft()).toMatchObject({ postId: 'a1', media: ['m1', 'm2'] });
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], {
-        queryParams: { collection: 'a', post: 'a1' },
+      expect(draft().draft()).toEqual({
+        text: 'half written',
+        media: ['m2'],
+        collectionIds: ['a', 'b'],
       });
     });
 
@@ -164,12 +151,12 @@ describe('LibraryPageComponent and the composer draft', () => {
       ).toEqual([t().api.mediaMax.replace('{n}', String(INPUT_LIMITS.postMedia))]);
     });
 
-    it('adds a snippet after the text and opens the composer', async () => {
+    it('adds a snippet after the text and opens the post editor', async () => {
       draft().patch({ text: 'ข้อความเดิม' });
       await tab(1);
       useButtons()[0].click();
       expect(draft().draft().text).toBe('ข้อความเดิม\nสวัสดีค่ะ');
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], { queryParams: {} });
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], { queryParams: { new: 1 } });
     });
   });
 

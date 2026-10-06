@@ -54,13 +54,39 @@ describe('ScheduleDispatchComponent', () => {
     expect(el.querySelector('section')).toBeNull();
   });
 
-  it('says a connected browser is ready, that the settings are elsewhere, and links to them', async () => {
+  it('says a connected browser is ready, that it posts what the schedule says, and links to the anti-ban page', async () => {
     const el = await render([device()]);
     expect(el.querySelector('.dev')!.textContent).toContain('Shop PC');
     expect(el.querySelector('.dev [role=status]')!.textContent).toBe(t().dispReady);
     expect(el.querySelector('.note')!.textContent).toContain(t().dispConfigNote);
-    expect(el.querySelector('.note a')!.getAttribute('href')).toBe('/app/campaigns');
+    expect(el.querySelector('.note a')!.getAttribute('href')).toBe('/app/antiban');
     expect(button(el, t().dispTake)!.disabled).toBe(false);
+  });
+
+  it('no longer sends the person to an extension-settings page', async () => {
+    const el = await render([device()]);
+    expect(el.querySelector('a[href="/app/campaigns"]')).toBeNull();
+    // The note says what the browser posts comes from the schedule and where its behaviour is set.
+    expect(t().dispConfigNote).toContain('ตารางโพสต์');
+    expect(t().dispConfigNote).toContain('ความปลอดภัยบัญชี');
+    expect(t().dispConfigNote).not.toContain('ตั้งค่าส่วนขยาย');
+  });
+
+  it('lists every extension by its name, each with its own state', async () => {
+    const el = await render([
+      device({ id: 'dev-1', name: 'Shop PC' }),
+      device({ id: 'dev-2', name: 'Laptop', online: false }),
+      device({ id: 'dev-3', name: 'Office', jobsPaused: true }),
+    ]);
+    const rows = [...el.querySelectorAll('.dev')].map((r) => [
+      r.querySelector('.fw6')!.textContent!.trim(),
+      r.querySelector('[role=status]')!.textContent!.trim(),
+    ]);
+    expect(rows).toEqual([
+      ['Shop PC', t().dispReady],
+      ['Laptop', t().dispOffline],
+      ['Office', t().dispPaused],
+    ]);
   });
 
   it('tells an offline browser to stay open and does not offer to take jobs', async () => {

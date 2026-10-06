@@ -1,0 +1,114 @@
+<div class="tools" role="toolbar" [attr.aria-label]="t().api.flow.edToolbar">
+  <button
+    type="button"
+    class="su-btn su-btn-sm su-btn-secondary"
+    data-testid="tool-code"
+    [disabled]="!perm.canEdit()"
+    [attr.title]="perm.editHint() || t().cmp.codeHint"
+    (click)="code.emit()"
+  >
+    <i class="ph ph-hash"></i>{{ t().cmp.insertCode }}
+  </button>
+
+  <app-pop #spinPop [label]="t().cmp.insertSpin">
+    <button
+      pop-trigger
+      type="button"
+      class="su-btn su-btn-sm su-btn-secondary"
+      data-testid="tool-spin"
+      aria-haspopup="dialog"
+      [attr.aria-expanded]="spinPop.open()"
+      [disabled]="!perm.canEdit()"
+      [attr.title]="perm.editHint() || t().cmp.spinHint"
+      (click)="spinPop.toggle()"
+    >
+      <i class="ph ph-shuffle"></i>{{ t().cmp.insertSpin }}<i class="ph ph-caret-down caret"></i>
+    </button>
+    @if (spinPop.open()) {
+      <app-spintax-popover
+        [selection]="selection()"
+        (insert)="spin.emit($event); spinPop.close()"
+        (wrap)="wrap.emit(); spinPop.close()"
+      />
+    }
+  </app-pop>
+
+  <app-pop #snipPop [label]="t().api.flow.edSnippetBtn">
+    <button
+      pop-trigger
+      type="button"
+      class="su-btn su-btn-sm su-btn-secondary"
+      data-testid="tool-snippet"
+      aria-haspopup="dialog"
+      [attr.aria-expanded]="snipPop.open()"
+      [disabled]="!perm.canEdit()"
+      [attr.title]="perm.editHint() || t().api.flow.edSnippetTip"
+      (click)="snipPop.toggle()"
+    >
+      <i class="ph ph-text-t"></i>{{ t().api.flow.edSnippetBtn
+      }}<i class="ph ph-caret-down caret"></i>
+    </button>
+    @if (snipPop.open()) {
+      <div class="snips">
+        @for (s of snippets(); track s.id) {
+          <button
+            type="button"
+            class="snip"
+            data-testid="snippet-item"
+            (click)="snippet.emit(s.text); snipPop.close()"
+          >
+            <span class="fw5 small">{{ s.title }}</span>
+            <span class="small muted clip">{{ s.text }}</span>
+          </button>
+        } @empty {
+          <p class="small muted none">{{ t().api.flow.edSnippetNone }}</p>
+        }
+        <a class="small" routerLink="/app/library">{{ t().api.flow.edSnippetLib }}</a>
+      </div>
+    }
+  </app-pop>
+
+  <button
+    type="button"
+    class="su-btn su-btn-sm su-btn-secondary ai"
+    data-testid="tool-ai"
+    [class.skel]="ai.state() === 'loading'"
+    [class.on]="aiOpen()"
+    [disabled]="!ai.canOpen()"
+    [attr.aria-pressed]="aiOpen()"
+    [attr.title]="ai.reason() || t().ai.title"
+    (click)="aiToggle.emit()"
+  >
+    <i class="ph ph-sparkle"></i>{{ t().api.flow.edAiBtn }}
+  </button>
+
+  <span class="grow"></span>
+
+  <app-pop #helpPop [right]="true" [label]="t().api.flow.edHelpTitle">
+    <button
+      pop-trigger
+      type="button"
+      class="ibtn"
+      data-testid="tool-help"
+      aria-haspopup="dialog"
+      [attr.aria-expanded]="helpPop.open()"
+      [title]="t().api.flow.edHelpBtn"
+      [attr.aria-label]="t().api.flow.edHelpBtn"
+      (click)="helpPop.toggle()"
+    >
+      <i class="ph ph-question"></i>
+    </button>
+    @if (helpPop.open()) {
+      <app-post-help (insert)="example.emit($event); helpPop.close()" />
+    }
+  </app-pop>
+</div>
+@if (showReason()) {
+  <p class="reason small" role="status" data-testid="ai-reason">
+    <i class="ph ph-info" aria-hidden="true"></i>
+    <span>{{ ai.reason() }}</span>
+    @if (ai.state() === 'noPlan' && perm.role() === 'owner') {
+      <a routerLink="/app/billing">{{ t().common.upgrade }}</a>
+    }
+  </p>
+}

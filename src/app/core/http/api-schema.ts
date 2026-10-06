@@ -804,6 +804,146 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/admin/payment-override': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PaymentOverrideDto'];
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['PaymentOverrideRequest'];
+          'text/json': components['schemas']['PaymentOverrideRequest'];
+          'application/*+json': components['schemas']['PaymentOverrideRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PaymentOverrideDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/ai/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AiStatusDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/ai/posts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['WriteAiPostsRequest'];
+          'text/json': components['schemas']['WriteAiPostsRequest'];
+          'application/*+json': components['schemas']['WriteAiPostsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['AiDraftsDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/auth/signup': {
     parameters: {
       query?: never;
@@ -1372,6 +1512,128 @@ export interface paths {
           };
           content: {
             'application/json': components['schemas']['UserDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/payment-config': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PaymentConfigDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/payments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['StartPaymentRequest'];
+          'text/json': components['schemas']['StartPaymentRequest'];
+          'application/*+json': components['schemas']['StartPaymentRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PaymentIntentDto'];
+          };
+        };
+        /** @description Unprocessable Entity */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ProblemDetails'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/payments/{id}/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PaymentStatusDto'];
           };
         };
       };
@@ -2036,6 +2298,49 @@ export interface paths {
           };
           content: {
             'application/json': components['schemas']['PostDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/device/bumps/{bumpId}/result': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          bumpId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['BumpResultRequest'];
+          'text/json': components['schemas']['BumpResultRequest'];
+          'application/*+json': components['schemas']['BumpResultRequest'];
+        };
+      };
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
           };
         };
       };
@@ -5293,6 +5598,49 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/test-post/manual': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ManualTestPostRequest'];
+          'text/json': components['schemas']['ManualTestPostRequest'];
+          'application/*+json': components['schemas']['ManualTestPostRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PostDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/webhooks/stripe': {
     parameters: {
       query?: never;
@@ -5676,6 +6024,16 @@ export interface components {
       /** Format: int32 */
       stopFailPct: number;
     };
+    AiDraftsDto: {
+      variants: string[];
+    };
+    AiStatusDto: {
+      enabled: boolean;
+      allowed: boolean;
+      model: string;
+      /** Format: int32 */
+      draftsLeftToday: null | number;
+    };
     AntiBanDto: {
       /** Format: int32 */
       min: number;
@@ -5688,6 +6046,8 @@ export interface components {
       autoPause: boolean;
       warmup: boolean;
       advanced: components['schemas']['AdvancedAntiBanDto'];
+      /** @default normal */
+      typingSpeed: string;
     };
     /** @enum {unknown} */
     ApprovalAction: 'request' | 'approve' | 'reject';
@@ -5709,7 +6069,9 @@ export interface components {
       | 'plan_settings_changed'
       | 'promo_created'
       | 'promo_toggled'
-      | 'impersonated';
+      | 'impersonated'
+      | 'payment_override_changed'
+      | 'payment_override_used';
     AuditEntryDto: {
       /** Format: uuid */
       id: string;
@@ -5839,6 +6201,7 @@ export interface components {
       /** Format: int32 */
       utcOffsetMinutes: number;
       repeat?: components['schemas']['PostRepeat'];
+      bump?: null | components['schemas']['BumpPlanDto'];
     };
     BackupSetNotifyRuleDto: {
       linkSet: string;
@@ -5888,6 +6251,20 @@ export interface components {
       action: components['schemas']['BulkPostAction'];
       /** Format: uuid */
       collectionId: null | string;
+    };
+    BumpPlanDto: {
+      /** Format: int32 */
+      rounds: number;
+      text: string;
+      mediaIds: string[];
+      /** Format: int32 */
+      imagesEach: number;
+    };
+    BumpResultRequest: {
+      ok: boolean;
+      needsLogin: boolean;
+      blocked: boolean;
+      error: null | string;
     };
     CardDto: {
       brand: string;
@@ -6292,6 +6669,11 @@ export interface components {
       content: string;
       media: components['schemas']['JobMediaDto'][];
       antiBan: components['schemas']['AntiBanDto'];
+      /** @default post */
+      kind: string;
+      /** @default group */
+      targetKind: string;
+      pageTags?: null | string;
     };
     JobMediaDto: {
       /** Format: uuid */
@@ -6309,6 +6691,12 @@ export interface components {
       devices: null | number;
       /** Format: int32 */
       seats: null | number;
+      /** Format: int32 */
+      groups: null | number;
+      /** Format: int32 */
+      images: null | number;
+      /** Format: int32 */
+      libraryPosts: null | number;
     };
     LimitsDto: {
       /** Format: int32 */
@@ -6319,6 +6707,12 @@ export interface components {
       devices: null | number;
       /** Format: int32 */
       seats: null | number;
+      /** Format: int32 */
+      groups: null | number;
+      /** Format: int32 */
+      images: null | number;
+      /** Format: int32 */
+      libraryPosts: null | number;
     };
     LimitsRequest: {
       /** Format: int32 */
@@ -6329,6 +6723,12 @@ export interface components {
       devices: null | number;
       /** Format: int32 */
       seats: null | number;
+      /** Format: int32 */
+      groups: null | number;
+      /** Format: int32 */
+      images: null | number;
+      /** Format: int32 */
+      libraryPosts: null | number;
     };
     LineSettingsDto: {
       on: boolean;
@@ -6353,6 +6753,13 @@ export interface components {
     LogInCommand: {
       email: string;
       password: string;
+    };
+    ManualTestPostRequest: {
+      url: string;
+      text: string;
+      mediaIds: null | string[];
+      /** Format: uuid */
+      deviceId: null | string;
     };
     MediaActiveRequest: {
       mediaIds: string[];
@@ -6477,6 +6884,52 @@ export interface components {
     PausedRequest: {
       paused: boolean;
     };
+    /** @enum {unknown} */
+    PaymentAttemptState: 'pending' | 'succeeded' | 'failed';
+    PaymentConfigDto: {
+      publishableKey: null | string;
+      currency: string;
+    };
+    /** @enum {unknown} */
+    PaymentFlow: 'subscription' | 'prepaid';
+    PaymentIntentDto: {
+      id: string;
+      clientSecret: string;
+      /** Format: double */
+      amount: number;
+      currency: string;
+      flow: components['schemas']['PaymentFlow'];
+      method: components['schemas']['PaymentMethodKind'];
+    };
+    /** @enum {unknown} */
+    PaymentMethodKind: 'card' | 'apple_pay' | 'google_pay' | 'link' | 'promptpay';
+    PaymentOverrideDto: {
+      enabled: boolean;
+      /** Format: int32 */
+      amount: number;
+      emails: string[];
+      /** Format: date-time */
+      updatedAt: null | string;
+      /** Format: int32 */
+      minAmount: number;
+      paymentsConnected: boolean;
+    };
+    PaymentOverrideRequest: {
+      enabled: boolean;
+      /** Format: int32 */
+      amount: number;
+      emails: null | string[];
+    };
+    PaymentStatusDto: {
+      id: string;
+      status: components['schemas']['PaymentAttemptState'];
+      method: null | components['schemas']['PaymentMethodKind'];
+      failureMessage: null | string;
+      /** Format: double */
+      amount: number;
+      flow: components['schemas']['PaymentFlow'];
+      user: components['schemas']['UserDto'];
+    };
     PlanChangeDto: {
       user: components['schemas']['UserDto'];
       checkoutUrl: null | string;
@@ -6493,6 +6946,13 @@ export interface components {
       devices: null | number;
       /** Format: int32 */
       seats: null | number;
+      /** Format: int32 */
+      groups: null | number;
+      /** Format: int32 */
+      images: null | number;
+      /** Format: int32 */
+      libraryPosts: null | number;
+      features: string[];
     };
     /** @enum {unknown} */
     PlanKey: 'free' | 'basic' | 'pro' | 'agency';
@@ -6510,9 +6970,15 @@ export interface components {
       devices: null | number;
       /** Format: int32 */
       seats: null | number;
+      /** Format: int32 */
+      groups: null | number;
+      /** Format: int32 */
+      images: null | number;
+      /** Format: int32 */
+      libraryPosts: null | number;
     };
     /** @enum {unknown} */
-    Platform: 'fb' | 'x' | 'ig' | 'tt' | 'line' | 'th';
+    Platform: 'fb';
     PlatformHealthDto: {
       /** Format: int32 */
       mrr: number;
@@ -6558,16 +7024,6 @@ export interface components {
     PlatformLimitsDto: {
       /** Format: int32 */
       fb: number;
-      /** Format: int32 */
-      x: number;
-      /** Format: int32 */
-      ig: number;
-      /** Format: int32 */
-      tt: number;
-      /** Format: int32 */
-      line: number;
-      /** Format: int32 */
-      th: number;
     };
     /** @enum {unknown} */
     PostApproval: 'draft' | 'pending' | 'approved';
@@ -6701,6 +7157,7 @@ export interface components {
       needsLogin: boolean;
       blocked: boolean;
       error: null | string;
+      postUrl?: null | string;
     };
     RevenueMonthDto: {
       /** Format: int32 */
@@ -6748,6 +7205,7 @@ export interface components {
       /** @default false */
       startNow: boolean;
       repeat?: components['schemas']['PostRepeat'];
+      bump?: null | components['schemas']['BumpPlanDto'];
     };
     ScheduleCreatedDto: {
       schedule: components['schemas']['ScheduleDto'];
@@ -6802,6 +7260,7 @@ export interface components {
       /** @default false */
       startNow: boolean;
       repeat?: components['schemas']['PostRepeat'];
+      bump?: null | components['schemas']['BumpPlanDto'];
     };
     /** @enum {unknown} */
     ScheduleMode: 'daily' | 'weekdays' | 'weekend' | 'interval' | 'drip' | 'once';
@@ -6839,6 +7298,8 @@ export interface components {
       failStreak: number;
       valid: boolean;
       duplicate: boolean;
+      /** @default group */
+      kind: string;
     };
     SetNotifyRuleDto: {
       /** Format: uuid */
@@ -6882,6 +7343,12 @@ export interface components {
       usedCount: number;
       active: boolean;
     };
+    StartPaymentRequest: {
+      plan: components['schemas']['PlanKey'];
+      cycle: null | components['schemas']['BillingCycle'];
+      promoCode: null | string;
+      method: components['schemas']['PaymentMethodKind'];
+    };
     StatusRequest: {
       status: components['schemas']['CustomerStatus'];
     };
@@ -6923,6 +7390,8 @@ export interface components {
       /** Format: uuid */
       collectionPostId: null | string;
       text: null | string;
+      /** Format: uuid */
+      deviceId?: null | string;
     };
     TransactionDto: {
       /** Format: uuid */
@@ -6994,6 +7463,12 @@ export interface components {
       postsLast24h: number;
       /** Format: int32 */
       devices: number;
+      /** Format: int32 */
+      groups: number;
+      /** Format: int32 */
+      images: number;
+      /** Format: int32 */
+      libraryPosts: number;
     };
     UserDto: {
       /** Format: uuid */
@@ -7034,9 +7509,18 @@ export interface components {
       notifications: boolean;
       autoReply: boolean;
       clientReports: boolean;
+      ai: boolean;
+      bump: boolean;
     };
     /** @enum {unknown} */
     WorkspaceRole: 'viewer' | 'editor' | 'admin' | 'owner';
+    WriteAiPostsRequest: {
+      topic: string;
+      points: null | string[];
+      tone: null | string;
+      /** Format: int32 */
+      count: number;
+    };
   };
   responses: never;
   parameters: never;

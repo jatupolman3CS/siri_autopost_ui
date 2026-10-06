@@ -16,18 +16,26 @@
 .min0 {
   min-width: 0;
 }
-.via {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  > .ph {
-    font-size: 14px;
-    flex-shrink: 0;
-  }
-}
 .row.tight {
   padding: 8px 0;
+}
+// A row of the extensions panel is a link to the team page, where the browsers are managed.
+.extrow {
+  color: var(--color-text);
+  text-decoration: none;
+  min-width: 0;
+  &:hover {
+    color: var(--color-text);
+    background: var(--color-surface-muted);
+  }
+  .grow {
+    min-width: 0;
+  }
+}
+.add {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
 }
 .trend {
   height: 140px;

@@ -1,0 +1,98 @@
+<app-modal [open]="open()" [title]="title()" [closable]="phase() !== 'paying'" (closed)="close()">
+  @if (phase() === 'done') {
+    <div class="done" role="status">
+      <i class="ph-fill ph-check-circle" aria-hidden="true"></i>
+      <p class="fs15 fw5">{{ t().api.payDone }}</p>
+    </div>
+  } @else {
+    <div class="total">
+      <span class="muted">{{ t().api.payTotal }}</span>
+      <strong>{{ total() || '…' }}</strong>
+    </div>
+
+    <app-payment-method-list
+      [methods]="rows()"
+      [selected]="method()"
+      [label]="t().api.payMethods"
+      (selectedChange)="onPick($event)"
+    >
+      <ng-template let-m>
+        @if (!intent()) {
+          @if (phase() === 'preparing') {
+            <p class="small muted" role="status">{{ t().api.payPreparing }}</p>
+          } @else {
+            <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="retry()">
+              {{ t().api.payRetry }}
+            </button>
+          }
+        } @else if (m === 'card') {
+          <div class="stripe-host" appPaymentHost (hostReady)="mountCard($event)"></div>
+          <p class="small muted">{{ t().api.payEmail }} {{ email() }}</p>
+          <button
+            type="button"
+            class="su-btn su-btn-primary pay"
+            [disabled]="busy()"
+            (click)="payCard()"
+          >
+            {{ payLabel() }}
+          </button>
+        } @else if (m === 'promptpay') {
+          <p class="small muted">{{ t().api.payPromptPaySteps }}</p>
+          <p class="small muted">{{ t().api.payEmail }} {{ email() }}</p>
+          <button
+            type="button"
+            class="su-btn su-btn-primary pay"
+            [disabled]="busy()"
+            (click)="payPromptPay()"
+          >
+            {{ t().api.payWithPromptPay }} · {{ total() }}
+          </button>
+        } @else {
+          <div
+            class="stripe-host wallet"
+            [hidden]="walletOff()"
+            appPaymentHost
+            (hostReady)="mountWallet(m, $event)"
+          ></div>
+          @if (walletOff()) {
+            <div class="callout warn">
+              <i class="ph ph-warning-circle" style="color: var(--color-warning)"></i>
+              <span>{{ t().api.payWalletOff }} {{ walletNote() }}</span>
+            </div>
+          } @else {
+            <p class="small muted">{{ walletNote() }}</p>
+          }
+        }
+      </ng-template>
+    </app-payment-method-list>
+
+    @if (message(); as m) {
+      <div
+        class="callout"
+        [class.warn]="m.kind === 'error'"
+        [attr.role]="m.kind === 'error' ? 'alert' : 'status'"
+      >
+        <i
+          class="ph ph-warning-circle"
+          [style.color]="m.kind === 'error' ? 'var(--color-warning)' : 'var(--color-primary)'"
+        ></i>
+        <span>{{ m.text }}</span>
+      </div>
+    }
+    @if (phase() === 'waiting') {
+      <p class="small muted wait" role="status">{{ t().api.payWaiting }}</p>
+    }
+    <p class="small muted">{{ modeNote() }}</p>
+  }
+
+  <div modal-footer>
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-secondary"
+      [disabled]="phase() === 'paying'"
+      (click)="close()"
+    >
+      {{ phase() === 'done' ? t().common.close : t().common.cancel }}
+    </button>
+  </div>
+</app-modal>

@@ -6,9 +6,10 @@ import { routes } from '../../app.routes';
 import { assistStorage } from '../../core/auth/token';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { DeviceEventsService } from '../../core/data/device-events.service';
+import { DevicesStore } from '../../core/data/devices.store';
 import { EDIT_DEBOUNCE_MS, LinkSetsStore } from '../../core/data/link-sets.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
-import { ApiCollection, ApiRole } from '../../core/http/api.service';
+import { ApiCollection, ApiDevice, ApiRole } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
@@ -23,7 +24,14 @@ import {
   signIn,
 } from '../../testing/api-testing';
 import { FakeDeviceEvents } from '../../testing/fake-events';
-import { FB_CONNECTED, SET_URL, apiLink, apiLinkSet } from '../../testing/link-sets.fixtures';
+import {
+  FB_CONNECTED,
+  SET_URL,
+  apiDevice,
+  apiLink,
+  apiLinkSet,
+  apiPageLink,
+} from '../../testing/link-sets.fixtures';
 import { TargetsPageComponent } from './targets-page.component';
 
 const SETS_URL = `/api/workspaces/${WS}/link-sets`;
@@ -33,7 +41,6 @@ const SET = apiLinkSet({
   id: 's1',
   name: 'Condo groups',
   links: [A, B],
-  accountIds: ['acc-ig'],
   scheduleCount: 1,
 });
 
@@ -48,6 +55,8 @@ describe('TargetsPageComponent', () => {
       /** Answer the sets only when the test says so (to see the page before they arrive). */
       holdSets?: boolean;
       connected?: boolean;
+      /** The paired browsers (default: "Shop PC", the one that brought FB_CONNECTED). */
+      devices?: ApiDevice[];
       /** Simple mode off: the "more options" of every set start open. */
       simple?: boolean;
       /** What GET collections answers (the first collection's settings feed the example under "more options"). */
@@ -71,11 +80,13 @@ describe('TargetsPageComponent', () => {
     if (opts.simple === false) TestBed.inject(UiPrefsService).set(false);
     TestBed.inject(WorkspaceStore);
     TestBed.inject(AccountsStore);
+    TestBed.inject(DevicesStore);
     TestBed.inject(LinkSetsStore);
     await signIn(http, {
       workspace: { role: opts.role ?? 'owner' },
       linkSets: opts.holdSets ? [] : (opts.sets ?? [SET]),
       collections: opts.collections,
+      devices: opts.devices ?? (opts.connected === false ? [] : [apiDevice()]),
     });
     TestBed.inject(AccountsStore).list.set(
       opts.connected === false ? ACCOUNTS : [...ACCOUNTS, FB_CONNECTED],
@@ -198,7 +209,6 @@ describe('TargetsPageComponent', () => {
           fmt(t().ts.linksN, { n: 2 }),
           fmt(t().ts.onN, { n: 2 }),
           fmt(t().ts.codesN, { n: 1 }),
-          fmt(t().ts.accountsN, { n: 1 }),
         ].join(' · '),
       );
       expect(rows(card)).toHaveLength(2);
@@ -220,20 +230,29 @@ describe('TargetsPageComponent', () => {
       expect(cards(el)[0].textContent).toContain(t().ts.empty);
     });
 
-    it('counts only links that are on and real groups in the header line', async () => {
+    it('counts only links that are on and real groups or pages in the header line', async () => {
       const off = apiLink({ id: 'c', enabled: false, code: 'X' });
       const bad = apiLink({ id: 'd', url: 'nope', valid: false, code: 'Y' });
+      const page = apiPageLink({ id: 'baandee.shop' });
       const { el } = await open({
-        sets: [apiLinkSet({ id: 's2', links: [A, off, bad], accountIds: [] })],
+        sets: [apiLinkSet({ id: 's2', links: [A, off, bad, page] })],
       });
       expect(cards(el)[0].querySelector('.title .small')?.textContent).toBe(
         [
-          fmt(t().ts.linksN, { n: 3 }),
-          fmt(t().ts.onN, { n: 1 }),
+          fmt(t().ts.linksN, { n: 4 }),
+          fmt(t().ts.onN, { n: 2 }),
           fmt(t().ts.codesN, { n: 1 }),
-          fmt(t().ts.accountsN, { n: 0 }),
         ].join(' · '),
       );
+    });
+
+    it('has no button for picking groups from an account, and no other accounts of a set', async () => {
+      const set = apiLinkSet({ id: 's1', links: [A], accountIds: ['old-1'] });
+      const { el } = await open({ sets: [set], simple: false });
+      const card = cards(el)[0];
+      expect(card.querySelectorAll('.head button').length).toBeGreaterThan(0);
+      expect(card.textContent).not.toContain(t().ts.fromAccount);
+      expect(card.querySelector('.accs, .chip, .add')).toBeNull();
     });
 
     it('sends the schedule button to the schedules with the set in the address', async () => {
@@ -245,7 +264,62 @@ describe('TargetsPageComponent', () => {
   });
 
   describe('link rows', () => {
-    it('marks an address that is not a Facebook group, with the note', async () => {
+    const chip = (row: HTMLElement) => row.querySelector<HTMLElement>('.urlwrap app-chip');
+
+    it('asks for a group or page link in the address and the name fields', async () => {
+      const { el } = await open();
+      const row = rows(el)[0];
+      expect(cell(row, URL_).placeholder).toBe(t().ts.urlPh);
+      expect(cell(row, URL_).getAttribute('aria-label')).toBe(t().ts.urlPh);
+      expect(cell(row, NAME).placeholder).toBe(t().ts.namePh);
+      expect(t().ts.urlPh).toBe('ลิงก์กลุ่มหรือเพจ Facebook');
+      expect(t().ts.invalidUrl).toContain('เพจ');
+    });
+
+    it('says on each row whether the address is a group or a page', async () => {
+      const page = apiPageLink({ id: 'baandee.shop', name: 'Baan Dee' });
+      const { el } = await open({ sets: [apiLinkSet({ id: 's1', links: [A, page] })] });
+      const [group, shop] = rows(el);
+      expect(chip(group)?.textContent?.trim()).toBe(t().api.flow.linkKindGroup);
+      expect(chip(group)?.getAttribute('title')).toBe(t().api.flow.linkKindGroupHint);
+      expect(group.querySelector('.urlwrap .ph-users-three')).not.toBeNull();
+      expect(chip(shop)?.textContent?.trim()).toBe(t().api.flow.linkKindPage);
+      expect(chip(shop)?.getAttribute('title')).toBe(t().api.flow.linkKindPageHint);
+      expect(shop.querySelector('.urlwrap .ph-flag')).not.toBeNull();
+      expect(cell(shop, URL_).value).toBe('https://www.facebook.com/baandee.shop');
+      expect(cell(shop, URL_).classList.contains('bad')).toBe(false);
+      expect(cell(shop, URL_).classList.contains('has-kind')).toBe(true);
+    });
+
+    it('shows no chip for a blank row or an address that is neither', async () => {
+      const blank = apiLink({ id: 'x', url: '', name: '', valid: false });
+      const bad = apiLink({ id: 'y', url: 'https://example.com/y', valid: false });
+      const { el } = await open({ sets: [apiLinkSet({ id: 's1', links: [blank, bad] })] });
+      expect(chip(rows(el)[0])).toBeNull();
+      expect(chip(rows(el)[1])).toBeNull();
+      expect(cell(rows(el)[1], URL_).classList.contains('has-kind')).toBe(false);
+    });
+
+    it('follows the address while it is typed: group, page, nothing', async () => {
+      const { fixture, el } = await open();
+      const row = rows(el)[1];
+      expect(chip(row)?.textContent?.trim()).toBe(t().api.flow.linkKindGroup);
+      type(cell(row, URL_), 'https://www.facebook.com/baandee.shop');
+      fixture.detectChanges();
+      expect(chip(row)?.textContent?.trim()).toBe(t().api.flow.linkKindPage);
+      expect(row.querySelector('.note')).toBeNull();
+      type(cell(row, URL_), 'https://www.facebook.com/watch');
+      fixture.detectChanges();
+      expect(chip(row)).toBeNull();
+      expect(row.querySelector('.note')?.textContent).toBe(t().ts.invalidUrl);
+      type(cell(row, URL_), 'https://www.facebook.com/groups/fresh');
+      fixture.detectChanges();
+      expect(chip(row)?.textContent?.trim()).toBe(t().api.flow.linkKindGroup);
+      await wait(EDIT_DEBOUNCE_MS);
+      http.expectOne(`${SET_URL('s1')}/links/b`).flush({ ...B, url: cell(row, URL_).value });
+    });
+
+    it('marks an address that is not a Facebook group or page, with the note', async () => {
       const bad = apiLink({ id: 'x', url: 'https://example.com/y', valid: false });
       const { el } = await open({ sets: [apiLinkSet({ id: 's1', links: [bad] })] });
       const row = rows(el)[0];
@@ -451,13 +525,11 @@ describe('TargetsPageComponent', () => {
       const { fixture, el } = await open();
       const card = cards(el)[0];
       expect(card.querySelector('.postas')).toBeNull();
-      expect(card.querySelector('.accs')).toBeNull();
       const toggle = button(card, t().common.more)!;
       expect(toggle.getAttribute('aria-expanded')).toBe('false');
       toggle.click();
       fixture.detectChanges();
       expect(card.querySelector('.postas')).not.toBeNull();
-      expect(card.querySelector('.accs')).not.toBeNull();
       expect(button(card, t().common.less)!.getAttribute('aria-expanded')).toBe('true');
       button(card, t().common.less)!.click();
       fixture.detectChanges();
@@ -477,27 +549,62 @@ describe('TargetsPageComponent', () => {
 
     const openMore = (opts: Parameters<typeof open>[0] = {}) => open({ ...opts, simple: false });
 
-    it('list the connected Facebook accounts to post as, with the automatic choice first', async () => {
+    it('list the paired extensions by the name of their browser, with the automatic choice first', async () => {
       const { el } = await openMore();
-      const select = cards(el)[0].querySelector<HTMLSelectElement>('.postas select')!;
+      const postas = cards(el)[0].querySelector('.postas')!;
+      expect(postas.querySelector('label')?.textContent).toContain(t().ts.postAs);
+      const select = postas.querySelector<HTMLSelectElement>('select')!;
       expect([...select.options].map((o) => [o.value, o.textContent])).toEqual([
         ['', t().api.flow.postAsAuto],
-        ['acc-fb', 'Facebook · Shop PC'],
+        ['acc-fb', 'Shop PC'],
       ]);
       expect(select.value).toBe('');
-      expect(cards(el)[0].querySelector('.postas .su-field-help')?.textContent).toBe(
-        t().api.flow.postAsHint,
-      );
+      expect(postas.querySelector('.su-field-help')?.textContent).toBe(t().api.flow.postAsHint);
     });
 
-    it('keep an account that is no longer connected visible, labelled', async () => {
+    it('follow a rename of the browser, and show a connected account by its own name before the browsers arrive', async () => {
+      const { fixture, el } = await openMore({ devices: [apiDevice({ name: 'Back office' })] });
+      const options = () =>
+        [...cards(el)[0].querySelectorAll<HTMLOptionElement>('.postas option')].map(
+          (o) => o.textContent,
+        );
+      expect(options()).toEqual([t().api.flow.postAsAuto, 'Back office']);
+      TestBed.inject(DevicesStore).list.set([]);
+      fixture.detectChanges();
+      // No device knows it yet: the account's name without its "Facebook · " prefix stands in.
+      expect(options()).toEqual([t().api.flow.postAsAuto, 'Shop PC']);
+    });
+
+    it('list every paired extension, and none that no browser posts for', async () => {
+      const laptop = { ...FB_CONNECTED, id: 'acc-fb2', name: 'Facebook · Laptop' };
+      const { fixture, el } = await openMore({
+        devices: [apiDevice(), apiDevice({ id: 'dev-2', name: 'Laptop', accountId: 'acc-fb2' })],
+      });
+      TestBed.inject(AccountsStore).list.update((l) => [...l, laptop]);
+      fixture.detectChanges();
+      const options = [...cards(el)[0].querySelectorAll<HTMLOptionElement>('.postas option')];
+      expect(options.map((o) => o.textContent)).toEqual([
+        t().api.flow.postAsAuto,
+        'Shop PC',
+        'Laptop',
+      ]);
+      // The unbound browser's account (ACCOUNTS[0]) is not on the list.
+      expect(options.map((o) => o.value)).not.toContain('acc-page');
+    });
+
+    it('keep an extension that is no longer paired visible, labelled', async () => {
       const set = apiLinkSet({ id: 's1', links: [A], postAsAccountId: 'acc-page' });
       const { el } = await openMore({ sets: [set] });
       const select = cards(el)[0].querySelector<HTMLSelectElement>('.postas select')!;
       expect(select.value).toBe('acc-page');
-      expect([...select.options].at(-1)?.textContent).toBe(
-        `Facebook · Baan Dee · ${t().api.demoAccount}`,
-      );
+      expect([...select.options].at(-1)?.textContent).toBe(`Old PC · ${t().api.unboundAccount}`);
+    });
+
+    it('say that an extension that is gone is gone', async () => {
+      const set = apiLinkSet({ id: 's1', links: [A], postAsAccountId: 'acc-nobody' });
+      const { el } = await openMore({ sets: [set] });
+      const select = cards(el)[0].querySelector<HTMLSelectElement>('.postas select')!;
+      expect([...select.options].at(-1)?.textContent).toBe(t().api.flow.postAsMissing);
     });
 
     it('send the chosen account, and the automatic choice as null', async () => {
@@ -509,7 +616,7 @@ describe('TargetsPageComponent', () => {
       expect(req.request.body).toEqual({
         name: 'Condo groups',
         postAsAccountId: 'acc-fb',
-        accountIds: ['acc-ig'],
+        accountIds: [],
       });
       req.flush({ ...SET, postAsAccountId: 'acc-fb' });
       await settle();
@@ -518,45 +625,6 @@ describe('TargetsPageComponent', () => {
       const back = http.expectOne({ method: 'PUT', url: SET_URL('s1') });
       expect(back.request.body.postAsAccountId).toBeNull();
       back.flush(SET);
-    });
-
-    it('show the other accounts as chips, and only offer accounts that are not posting yet', async () => {
-      const { el } = await openMore();
-      const card = cards(el)[0];
-      const chips = [...card.querySelectorAll<HTMLButtonElement>('.chip')];
-      expect(chips.map((c) => c.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
-        `Instagram · @baandee · ${t().api.demoAccount}`,
-      ]);
-      expect(chips[0].querySelector('.ph-instagram-logo')).not.toBeNull();
-      expect(chips[0].getAttribute('title')).toBe(t().common.remove);
-      // The posting account (the first connected one) and the Instagram one are not offered again.
-      const options = [...card.querySelectorAll<HTMLOptionElement>('.add select option')];
-      expect(options.map((o) => o.value)).toEqual(['', 'acc-page', 'acc-tt']);
-      expect(options[0].textContent).toBe(t().ts.addAccountPh);
-    });
-
-    it('add an account with a toast, and take it off again', async () => {
-      const { fixture, el } = await openMore();
-      const card = cards(el)[0];
-      const select = card.querySelector<HTMLSelectElement>('.add select')!;
-      select.value = 'acc-tt';
-      select.dispatchEvent(new Event('change'));
-      const add = http.expectOne({ method: 'PUT', url: SET_URL('s1') });
-      expect(add.request.body.accountIds).toEqual(['acc-ig', 'acc-tt']);
-      add.flush({ ...SET, accountIds: ['acc-ig', 'acc-tt'] });
-      await settle();
-      fixture.detectChanges();
-      expect(toasts().some((x) => x.message === t().ts.added)).toBe(true);
-      expect(card.querySelectorAll('.chip')).toHaveLength(2);
-
-      card.querySelector<HTMLButtonElement>('.chip')!.click();
-      const remove = http.expectOne({ method: 'PUT', url: SET_URL('s1') });
-      expect(remove.request.body.accountIds).toEqual(['acc-tt']);
-      remove.flush({ ...SET, accountIds: ['acc-tt'] });
-      await settle();
-      fixture.detectChanges();
-      expect(toasts().some((x) => x.message === t().ts.removed)).toBe(true);
-      expect(card.querySelectorAll('.chip')).toHaveLength(1);
     });
 
     it('write an example of the text sent to the first group that has a code', async () => {
@@ -691,6 +759,41 @@ describe('TargetsPageComponent', () => {
       expect(rows(el)).toHaveLength(3);
     });
 
+    it('takes a page address like a group address, and says both in its words', async () => {
+      const { fixture } = await openBulk();
+      expect(modalBody()?.textContent).toContain(t().ts.bulkHint);
+      const box = modalBody()!.querySelector('textarea')!;
+      expect(box.placeholder).toContain('https://www.facebook.com/baandee.shop');
+      expect(t().ts.bulkTitle).toContain('เพจ');
+      type(box, 'https://www.facebook.com/baandee.shop | P1');
+      modalButtons()[1].click();
+      fixture.detectChanges();
+      expect(modalBody()?.querySelector('.su-field-err')).toBeNull();
+      const req = http.expectOne({ method: 'POST', url: `${SET_URL('s1')}/links/bulk` });
+      expect(req.request.body).toEqual({ text: 'https://www.facebook.com/baandee.shop | P1' });
+      req.flush({
+        added: 1,
+        duplicates: 0,
+        recoded: 0,
+        invalid: 0,
+        set: { ...SET, links: [A, B, apiPageLink({ id: 'baandee.shop', code: 'P1' })] },
+      });
+      await settle();
+      fixture.detectChanges();
+    });
+
+    it('refuses a text of Facebook screens that are not a group or a page', async () => {
+      const { fixture } = await openBulk();
+      type(
+        modalBody()!.querySelector('textarea')!,
+        'https://www.facebook.com/watch\nfacebook.com/abc',
+      );
+      modalButtons()[1].click();
+      fixture.detectChanges();
+      expect(modalBody()?.querySelector('.su-field-err')?.textContent).toBe(t().ts.bulkEmpty);
+      http.expectNone(`${SET_URL('s1')}/links/bulk`);
+    });
+
     it('reports a clean paste as a success', async () => {
       const { fixture } = await openBulk();
       type(modalBody()!.querySelector('textarea')!, 'https://www.facebook.com/groups/a');
@@ -704,136 +807,6 @@ describe('TargetsPageComponent', () => {
         toasts().find((x) => x.message === fmt(t().ts.bulkResult, { n: 0, d: 1, r: 0, i: 0 }))
           ?.type,
       ).toBe('success');
-    });
-  });
-
-  describe('pick from an account', () => {
-    const GROUPS_URL = `/api/workspaces/${WS}/accounts/acc-fb/groups`;
-    const groups = [
-      { name: 'Condo BKK', url: 'https://www.facebook.com/groups/a' },
-      { name: 'Villas', url: 'https://www.facebook.com/groups/villas' },
-      { name: '', url: 'https://www.facebook.com/groups/loft.th' },
-    ];
-
-    async function openImport(opts: Parameters<typeof open>[0] = {}) {
-      const page = await open(opts);
-      button(cards(page.el)[0], t().ts.fromAccount)!.click();
-      page.fixture.detectChanges();
-      return page;
-    }
-    const items = () => [...document.querySelectorAll<HTMLElement>('.su-modal-body .item')];
-
-    it('says honestly that no Facebook account is connected', async () => {
-      await openImport({ connected: false });
-      expect(modalBody()?.textContent).toContain(t().api.flow.importNoAccount);
-      expect(modalBody()?.querySelector('select')).toBeNull();
-      expect(modalButtons()[1].disabled).toBe(true);
-    });
-
-    it('lists the groups the account synced, with the ones already in the set off', async () => {
-      const { fixture } = await openImport();
-      expect(modalBody()?.textContent).toContain(t().api.loading);
-      http.expectOne(GROUPS_URL).flush(groups);
-      await settle();
-      fixture.detectChanges();
-      expect(modalBody()?.textContent).toContain(t().ts.importHint);
-      const select = modalBody()!.querySelector<HTMLSelectElement>('select')!;
-      expect([...select.options].map((o) => o.textContent)).toEqual(['Facebook · Shop PC']);
-      expect(items().map((i) => i.querySelector('.name')?.textContent)).toEqual([
-        'Condo BKK',
-        'Villas',
-        'loft.th',
-      ]);
-      const meta = items().map((i) => i.querySelector('.meta')?.textContent);
-      expect(meta[0]).toBe(`https://www.facebook.com/groups/a · ${t().ts.inSet}`);
-      expect(meta[1]).toBe('https://www.facebook.com/groups/villas');
-      const boxes = items().map((i) => i.querySelector<HTMLInputElement>('input')!);
-      expect(boxes.map((b) => b.disabled)).toEqual([true, false, false]);
-      expect(items()[0].classList.contains('in-set')).toBe(true);
-      expect(modalButtons()[1].textContent?.trim()).toBe(fmt(t().ts.addSelected, { n: 0 }));
-    });
-
-    it('counts the ticked groups in the button and imports them', async () => {
-      const { fixture, el } = await openImport();
-      http.expectOne(GROUPS_URL).flush(groups);
-      await settle();
-      fixture.detectChanges();
-      items()[1].querySelector<HTMLInputElement>('input')!.click();
-      items()[2].querySelector<HTMLInputElement>('input')!.click();
-      fixture.detectChanges();
-      expect(modalButtons()[1].textContent?.trim()).toBe(fmt(t().ts.addSelected, { n: 2 }));
-      modalButtons()[1].click();
-      const req = http.expectOne({ method: 'POST', url: `${SET_URL('s1')}/links/import` });
-      expect(req.request.body).toEqual({
-        accountId: 'acc-fb',
-        urls: ['https://www.facebook.com/groups/villas', 'https://www.facebook.com/groups/loft.th'],
-      });
-      req.flush({
-        ...SET,
-        links: [A, B, apiLink({ id: 'v' }), apiLink({ id: 'l' })],
-      });
-      await settle();
-      fixture.detectChanges();
-      expect(
-        toasts().some((x) => x.message === fmt(t().ts.imported, { n: 2, s: 'Condo groups' })),
-      ).toBe(true);
-      expect(document.querySelector('.su-modal-panel')).toBeNull();
-      expect(rows(el)).toHaveLength(4);
-    });
-
-    it('asks for at least one group', async () => {
-      const { fixture } = await openImport();
-      http.expectOne(GROUPS_URL).flush(groups);
-      await settle();
-      fixture.detectChanges();
-      modalButtons()[1].click();
-      fixture.detectChanges();
-      expect(modalBody()?.querySelector('.su-field-err')?.textContent).toBe(t().ts.pickOne);
-      http.expectNone(`${SET_URL('s1')}/links/import`);
-    });
-
-    it('says honestly when the account has no synced groups yet', async () => {
-      const { fixture } = await openImport();
-      http.expectOne(GROUPS_URL).flush([]);
-      await settle();
-      fixture.detectChanges();
-      expect(modalBody()?.textContent).toContain(t().api.flow.importEmpty);
-      expect(modalBody()?.querySelector('.list')).toBeNull();
-    });
-
-    it('can try again when the groups could not be read', async () => {
-      const { fixture } = await openImport();
-      http.expectOne(GROUPS_URL).flush(null, { status: 500, statusText: 'x' });
-      await settle();
-      fixture.detectChanges();
-      expect(modalBody()?.querySelector('.su-field-err')?.textContent).toBe(
-        t().api.flow.importFailed,
-      );
-      button(modalBody()!, t().common.retryNow)!.click();
-      http.expectOne(GROUPS_URL).flush(groups);
-      await settle();
-      fixture.detectChanges();
-      expect(items()).toHaveLength(3);
-    });
-
-    it('reads the groups of the account the person picks', async () => {
-      const second = { ...FB_CONNECTED, id: 'acc-fb2', name: 'Facebook · Laptop' };
-      const { fixture } = await openImport();
-      TestBed.inject(AccountsStore).list.update((l) => [...l, second]);
-      http.expectOne(GROUPS_URL).flush(groups);
-      await settle();
-      fixture.detectChanges();
-      const select = modalBody()!.querySelector<HTMLSelectElement>('select')!;
-      expect(select.options).toHaveLength(2);
-      select.value = 'acc-fb2';
-      select.dispatchEvent(new Event('change'));
-      await settle();
-      http
-        .expectOne(`/api/workspaces/${WS}/accounts/acc-fb2/groups`)
-        .flush([{ name: 'Only here', url: 'https://www.facebook.com/groups/only' }]);
-      await settle();
-      fixture.detectChanges();
-      expect(items().map((i) => i.querySelector('.name')?.textContent)).toEqual(['Only here']);
     });
   });
 
@@ -888,6 +861,25 @@ describe('TargetsPageComponent', () => {
       expect(toast?.type).toBe('info');
       expect(document.querySelector('.su-modal-panel')).toBeNull();
       expect(cards(el)).toHaveLength(2);
+    });
+
+    it('takes a row with a page address next to a group', async () => {
+      const { fixture } = await openCsv();
+      type(
+        modalBody()!.querySelector('textarea')!,
+        'Shops,Baan Dee,https://m.facebook.com/baandee.shop/,P1\nShops,Group,facebook.com/groups/g1,',
+      );
+      modalButtons()[1].click();
+      fixture.detectChanges();
+      const req = http.expectOne({ method: 'POST', url: `${SETS_URL}/import-csv` });
+      expect(req.request.body.rows.map((r: { url: string }) => r.url)).toEqual([
+        'https://www.facebook.com/baandee.shop',
+        'https://www.facebook.com/groups/g1',
+      ]);
+      req.flush({ links: 2, sets: 1, invalid: 0 });
+      await settle();
+      http.expectOne(SETS_URL).flush([SET]);
+      await settle();
     });
 
     /** Chooses `file` in the dialog's file input, as the browser reports it. */
@@ -1082,7 +1074,6 @@ describe('TargetsPageComponent', () => {
         const set = apiLinkSet({
           id: 's1',
           links: [A, apiLink({ id: 'o', enabled: false, health: 'off', failStreak: 2 })],
-          accountIds: ['acc-ig'],
         });
         const { el } = await open({ ...opts, sets: [set], simple: false });
         expect(el.querySelector('app-perm-note')?.textContent).toContain(
@@ -1093,13 +1084,7 @@ describe('TargetsPageComponent', () => {
         expect(button(el, t().ts.csvImport)!.disabled).toBe(true);
         expect(button(el, t().ts.csvExport)!.disabled).toBe(false);
         const card = cards(el)[0];
-        for (const label of [
-          t().ts.addLink,
-          t().ts.bulk,
-          t().ts.fromAccount,
-          t().ts.schedule,
-          t().ts.removeSet,
-        ]) {
+        for (const label of [t().ts.addLink, t().ts.bulk, t().ts.schedule, t().ts.removeSet]) {
           const b = button(card, label)!;
           expect(b.disabled, label).toBe(true);
           expect(b.getAttribute('title'), label).toBeTruthy();
@@ -1112,10 +1097,6 @@ describe('TargetsPageComponent', () => {
         }
         expect(button(card, t().ts.enableAgain)!.disabled).toBe(true);
         expect(card.querySelector<HTMLSelectElement>('.postas select')!.disabled).toBe(true);
-        expect(card.querySelector<HTMLSelectElement>('.add select')!.disabled).toBe(true);
-        expect(
-          [...card.querySelectorAll<HTMLButtonElement>('.chip')].every((c) => c.disabled),
-        ).toBe(true);
       });
     }
 

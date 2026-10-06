@@ -1,9 +1,16 @@
 import { HttpClient, HttpContext, HttpContextToken, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, firstValueFrom } from 'rxjs';
+import type { PaymentRequest } from '../payments/payment.types';
 import { components } from './api-schema';
 
 type S = components['schemas'];
+export type ApiPaymentConfig = S['PaymentConfigDto'];
+export type ApiPaymentIntent = S['PaymentIntentDto'];
+export type ApiPaymentStatus = S['PaymentStatusDto'];
+export type ApiPaymentMethod = S['PaymentMethodKind'];
+export type ApiPaymentFlow = S['PaymentFlow'];
+export type ApiPaymentState = S['PaymentAttemptState'];
 export type ApiUser = S['UserDto'];
 export type ApiAuthResult = S['AuthResultDto'];
 export type ApiWorkspace = S['WorkspaceDto'];
@@ -31,15 +38,12 @@ export type ApiCustomer = S['CustomerDto'];
 export type ApiAdminSummary = S['AdminSummaryDto'];
 export type ApiAdminJob = S['AdminJobDto'];
 export type ApiPromo = S['PromoDto'];
+export type ApiPaymentOverride = S['PaymentOverrideDto'];
 export type ApiCycle = S['BillingCycle'];
 export type ApiCustomerStatus = S['CustomerStatus'];
 export type ApiHealth = S['PlatformHealthDto'];
 export type ApiAuditEntry = S['AuditEntryDto'];
 export type ApiAuditAction = S['AuditAction'];
-export type ApiExtensionConfig = S['ExtensionConfigDto'];
-export type ApiConfigSaved = S['ConfigSavedDto'];
-export type ApiDeviceLive = S['DeviceLiveDto'];
-export type ApiDeviceLog = S['DeviceLogDto'];
 export type ApiDeviceCommand = S['DeviceCommandDto'];
 export type ApiCollection = S['CollectionDto'];
 export type ApiCollectionSettings = S['CollectionSettingsDto'];
@@ -72,10 +76,15 @@ export type ApiSchedule = S['ScheduleDto'];
 export type ApiSaveSchedule = S['SaveScheduleRequest'];
 export type ApiScheduleCreated = S['ScheduleCreatedDto'];
 export type ApiScheduleMode = S['ScheduleMode'];
+export type ApiBumpPlan = S['BumpPlanDto'];
 export type ApiPostOrder = S['PostOrder'];
 export type ApiTestPost = S['TestPostRequest'];
+export type ApiManualTestPost = S['ManualTestPostRequest'];
 export type ApiBackup = S['BackupDto'];
 export type ApiRestoreResult = S['RestoreResultDto'];
+export type ApiAiStatus = S['AiStatusDto'];
+export type ApiAiRequest = S['WriteAiPostsRequest'];
+export type ApiAiDrafts = S['AiDraftsDto'];
 
 /** Set on a request whose errors the caller shows itself (no toast from errorInterceptor). */
 export const QUIET = new HttpContextToken<boolean>(() => false);
@@ -138,6 +147,31 @@ export class ApiService {
   /** The Stripe Billing Portal address (card, invoices, cancel). */
   billingPortal() {
     return run(this.http.post<S['UrlDto']>('/api/billing/portal', {}));
+  }
+  /** The publishable key the in-app checkout needs (null key: Stripe's own page is used instead). */
+  paymentConfig() {
+    return run(this.http.get<ApiPaymentConfig>('/api/billing/payment-config', quiet));
+  }
+  /** Starts a payment for a plan: the server makes the Stripe PaymentIntent and answers with its client secret. */
+  startPayment(request: PaymentRequest) {
+    const body: S['StartPaymentRequest'] = {
+      plan: request.plan,
+      cycle: request.cycle,
+      promoCode: request.promoCode || null,
+      method: request.method,
+    };
+    // Quiet: the payment window shows the refusal (its reason) next to the button itself.
+    return run(this.http.post<ApiPaymentIntent>('/api/billing/payments', body, quiet));
+  }
+  /** Reads the payment from Stripe and applies it (the webhook does the same); answers where it stands. */
+  confirmPayment(id: string) {
+    return run(
+      this.http.post<ApiPaymentStatus>(
+        `/api/billing/payments/${encodeURIComponent(id)}/confirm`,
+        {},
+        quiet,
+      ),
+    );
   }
 
   workspaces() {
@@ -279,17 +313,22 @@ export class ApiService {
     // Quiet: the pairing dialog shows a refusal (plan limit) itself.
     return run(this.http.post<ApiPairingCode>(`/api/workspaces/${ws}/devices/pairing`, {}, quiet));
   }
-  /** Rename a browser or pause the jobs it takes (null keeps a value). */
+  /**
+   * Rename a browser or pause the jobs it takes (null keeps a value). A name another browser of the workspace
+   * already has is refused (422, Thai reason); `own` asks for that refusal to reach the caller without a toast.
+   */
   updateDevice(
     ws: string,
     id: string,
     body: { name?: string | null; jobsPaused?: boolean | null },
+    own = false,
   ) {
     return run(
-      this.http.put<ApiDevice>(`/api/workspaces/${ws}/devices/${id}`, {
-        name: body.name ?? null,
-        jobsPaused: body.jobsPaused ?? null,
-      }),
+      this.http.put<ApiDevice>(
+        `/api/workspaces/${ws}/devices/${id}`,
+        { name: body.name ?? null, jobsPaused: body.jobsPaused ?? null },
+        own ? quiet : {},
+      ),
     );
   }
   revokeDevice(ws: string, id: string) {
@@ -366,7 +405,7 @@ export class ApiService {
   adminRetryPayment(txId: string) {
     return run(this.http.post<ApiTransaction>(`/api/admin/transactions/${txId}/retry`, {}));
   }
-  adminUpdatePlan(key: ApiPlan, body: Omit<ApiPlanSetting, 'key'>) {
+  adminUpdatePlan(key: ApiPlan, body: S['PlanSettingsRequest']) {
     return run(this.http.put<ApiPlanSetting>(`/api/admin/plans/${key}`, body));
   }
   adminPromos() {
@@ -380,52 +419,19 @@ export class ApiService {
       this.http.put<ApiPromo>(`/api/admin/promos/${encodeURIComponent(code)}/active`, { active }),
     );
   }
+  adminPaymentOverride() {
+    return run(this.http.get<ApiPaymentOverride>('/api/admin/payment-override'));
+  }
+  adminSetPaymentOverride(body: { enabled: boolean; amount: number; emails: string[] }) {
+    return run(this.http.put<ApiPaymentOverride>('/api/admin/payment-override', body));
+  }
 
   skipWaiting(ws: string) {
     return run(this.http.post<ApiExtensionState>(`/api/workspaces/${ws}/engine/waiting/skip`, {}));
   }
 
-  // ---------- the extension's own campaigns (per paired device) ----------
-  extConfig(ws: string, device: string) {
-    return run(this.http.get<ApiExtensionConfig>(`/api/workspaces/${ws}/devices/${device}/config`));
-  }
-  /** 409 when the settings changed since baseRevision (quiet: the campaigns page explains it). */
-  saveExtConfig(ws: string, device: string, settings: unknown, baseRevision: number | null) {
-    return run(
-      this.http.put<ApiConfigSaved>(
-        `/api/workspaces/${ws}/devices/${device}/config`,
-        { settings, baseRevision },
-        quiet,
-      ),
-    );
-  }
-  extImage(ws: string, imageId: string) {
-    return run(
-      this.http.get(`/api/workspaces/${ws}/extension-images/${encodeURIComponent(imageId)}`, {
-        ...quiet,
-        responseType: 'blob',
-      }),
-    );
-  }
-  /** A photo or video as a data URL, stored under the extension's id. */
-  putExtImage(ws: string, imageId: string, rec: { name: string; type: string; data: string }) {
-    return run(
-      this.http.put<void>(
-        `/api/workspaces/${ws}/extension-images/${encodeURIComponent(imageId)}`,
-        rec,
-        quiet,
-      ),
-    );
-  }
-  /** background: the page polls it, so failures do not toast. */
-  deviceLive(ws: string, device: string, background = false) {
-    return run(
-      this.http.get<ApiDeviceLive>(
-        `/api/workspaces/${ws}/devices/${device}/live`,
-        background ? quiet : {},
-      ),
-    );
-  }
+  // ---------- commands to a paired browser ----------
+  /** `takeJobs` is the only command the web app sends (the extension's own campaigns are gone). */
   sendDeviceCommand(ws: string, device: string, cmd: string, args: object = {}) {
     return run(
       this.http.post<ApiDeviceCommand>(`/api/workspaces/${ws}/devices/${device}/commands`, {
@@ -433,17 +439,6 @@ export class ApiService {
         args,
       }),
     );
-  }
-  deviceCommand(ws: string, device: string, id: string) {
-    return run(
-      this.http.get<ApiDeviceCommand>(
-        `/api/workspaces/${ws}/devices/${device}/commands/${id}`,
-        quiet,
-      ),
-    );
-  }
-  clearDeviceLogs(ws: string, device: string) {
-    return run(this.http.delete<void>(`/api/workspaces/${ws}/devices/${device}/logs`));
   }
   // Collections ("ชุดโพสต์"): sets of library posts with their composing settings.
   collections(ws: string, background = false) {
@@ -754,6 +749,13 @@ export class ApiService {
   testPost(ws: string, body: ApiTestPost) {
     return run(this.http.post<ApiPost>(`/api/workspaces/${ws}/test-post`, body, quiet));
   }
+  /**
+   * One real post typed by hand: a group or page address, a text and library files, sent through one extension
+   * (`deviceId` may be left out only when exactly one is connected). Quiet: the page shows the refusal.
+   */
+  testPostManual(ws: string, body: ApiManualTestPost) {
+    return run(this.http.post<ApiPost>(`/api/workspaces/${ws}/test-post/manual`, body, quiet));
+  }
   /** Every collection, link set, schedule and setting as one file (no tokens). */
   backup(ws: string) {
     return run(this.http.get<ApiBackup>(`/api/workspaces/${ws}/backup`));
@@ -761,6 +763,16 @@ export class ApiService {
   /** Replaces the workspace's collections, link sets, schedules and settings with a backup. Quiet: the dialog shows the refusal. */
   restore(ws: string, body: ApiBackup) {
     return run(this.http.post<ApiRestoreResult>(`/api/workspaces/${ws}/restore`, body, quiet));
+  }
+
+  // The AI post writer: drafts for the editor, never saved by the server.
+  /** Whether the AI buttons work: the server has a key, the owner's plan has the writer, the day's allowance. Quiet. */
+  aiStatus(ws: string) {
+    return run(this.http.get<ApiAiStatus>(`/api/workspaces/${ws}/ai/status`, quiet));
+  }
+  /** 1-5 drafts for a topic (403 plan, 422 no key / the day's allowance used / the provider failed). Quiet: the panel shows the refusal. */
+  aiPosts(ws: string, body: ApiAiRequest) {
+    return run(this.http.post<ApiAiDrafts>(`/api/workspaces/${ws}/ai/posts`, body, quiet));
   }
 }
 

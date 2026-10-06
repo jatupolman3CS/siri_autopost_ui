@@ -1,7 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { AP_I18N } from './i18n.data';
 import type { AP_I18N_ENGINE } from './i18n.engine';
-import type { AP_I18N_EXT } from './i18n.ext';
 import { AP_I18N_EXTRA } from './i18n.extra';
 import type { AP_I18N_FLOW } from './i18n.flow';
 import { AP_I18N_FIXES, Fixes } from './i18n.fixes';
@@ -24,14 +23,12 @@ export function applyFixes<T>(base: T, fixes: Fixes<T>): T {
 /**
  * The lazy dictionary packs, each typed from its own module and living at t().api.<name> once that module
  * has been imported (see registerPack):
- *  - ext: the campaigns page (i18n.ext.ts)
- *  - flow: collections, link sets, schedules, composer, calendar and overview additions (i18n.flow.ts)
+ *  - flow: collections, link sets, schedules, post editor, calendar and overview additions (i18n.flow.ts)
  *  - engine: test post, notifications, auto-reply, reports, anti-ban additions and backup (i18n.engine.ts)
  * A pack is typed here but only exists at run time after its module has been imported, so every file that
  * reads t().api.<name> must `import './i18n.<name>'`; the packs stay out of the first bundle that way.
  */
 export interface Packs {
-  ext: typeof AP_I18N_EXT;
   flow: typeof AP_I18N_FLOW;
   engine: typeof AP_I18N_ENGINE;
 }
@@ -50,11 +47,6 @@ const packsLoaded = signal(0);
 export function registerPack<K extends PackName>(name: K, part: Packs[K]): void {
   packs.set(name, part);
   packsLoaded.update((n) => n + 1);
-}
-
-/** Adds the campaigns page's strings (i18n.ext.ts calls this when it is imported). */
-export function registerExt(part: unknown): void {
-  registerPack('ext', part as Packs['ext']);
 }
 
 export type Lang = 'th' | 'en';

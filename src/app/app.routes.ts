@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { adminGuard, guestGuard, signedInGuard } from './core/auth/guards';
+import { composerRedirect } from './features/posts/posts-link';
 import { AppLayoutComponent } from './layouts/app-layout/app-layout.component';
 import { PublicLayoutComponent } from './layouts/public-layout/public-layout.component';
 
@@ -56,14 +57,8 @@ export const routes: Routes = [
             (m) => m.CalendarPageComponent,
           ),
       },
-      {
-        path: 'composer',
-        title: 'nav.composer',
-        loadComponent: () =>
-          import('./features/composer/composer-page.component').then(
-            (m) => m.ComposerPageComponent,
-          ),
-      },
+      // The post editor is a panel of the post library now; old links to the composer still work.
+      { path: 'composer', redirectTo: composerRedirect },
       {
         path: 'posts',
         title: 'api.postsNav',
@@ -122,14 +117,10 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/engage/engage-page.component').then((m) => m.EngagePageComponent),
       },
-      {
-        path: 'campaigns',
-        title: 'api.extNav',
-        loadComponent: () =>
-          import('./features/campaigns/campaigns-page.component').then(
-            (m) => m.CampaignsPageComponent,
-          ),
-      },
+      // The extension's own settings page is gone (its useful settings live on the anti-ban page). Extensions of
+      // older versions still open this address after pairing, so it goes to the anti-ban page.
+      { path: 'campaigns', redirectTo: 'antiban' },
+      { path: 'extension', redirectTo: 'team' },
       {
         path: 'antiban',
         title: 'nav.antiban',
@@ -159,14 +150,6 @@ export const routes: Routes = [
         title: 'nav.team',
         loadComponent: () =>
           import('./features/team/team-page.component').then((m) => m.TeamPageComponent),
-      },
-      {
-        path: 'extension',
-        title: 'nav.extension',
-        loadComponent: () =>
-          import('./features/extension/extension-page.component').then(
-            (m) => m.ExtensionPageComponent,
-          ),
       },
       {
         path: 'admin',

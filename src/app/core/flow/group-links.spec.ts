@@ -1,9 +1,11 @@
 import {
   defaultLinkName,
   duplicateUrlFlags,
+  facebookTarget,
   groupSlug,
   groupUrlKey,
   isDuplicateUrl,
+  linkKindOf,
   linkLabel,
   linksToCsv,
   normalizeGroupUrl,
@@ -15,6 +17,7 @@ import {
 } from './group-links';
 
 const G = 'https://www.facebook.com/groups/';
+const FB = 'https://www.facebook.com/';
 
 describe('normalizeGroupUrl', () => {
   it.each([
@@ -41,15 +44,27 @@ describe('normalizeGroupUrl', () => {
     expect(normalizeGroupUrl('https://www.facebook.com/groups/abc#x')).toBe(G + 'abc');
   });
 
+  // Neither a group nor a page (the server's FacebookGroupUrlTests): a vanity page name needs 5 or more letters,
+  // digits or dots with a letter among them, and Facebook's own screens (watch, marketplace, login...) are no page.
   it.each([
     '',
     '   ',
     'abc',
     'https://example.com/groups/abc',
+    'https://www.facebook.com/',
     'https://www.facebook.com/abc',
+    'https://www.facebook.com/12345678',
+    'https://www.facebook.com/watch/',
+    'https://www.facebook.com/marketplace/item/123',
+    'https://www.facebook.com/login.php',
     'https://www.facebook.com/pages/abc',
+    'https://www.facebook.com/groups',
     'https://www.facebook.com/groups/',
     'https://www.facebook.com/groups/?x=1',
+    'https://www.facebook.com/groups/.',
+    'https://www.facebook.com/groups/..',
+    'https://www.facebook.com/groups/_-',
+    'https://notfacebook.com/baandee.shop',
     'https://l.facebook.com/groups/abc',
     'https://evilfacebook.com/groups/abc',
     'https://facebook.com.evil.com/groups/abc',
@@ -66,6 +81,131 @@ describe('normalizeGroupUrl', () => {
 
   it('stops the slug at the first character a slug cannot hold', () => {
     expect(normalizeGroupUrl('https://www.facebook.com/groups/abc กลุ่ม')).toBe(G + 'abc');
+  });
+});
+
+describe('Facebook pages', () => {
+  it.each([
+    ['https://www.facebook.com/baandee.shop', FB + 'baandee.shop', 'baandee.shop'],
+    ['facebook.com/KHRUSIRI/', FB + 'KHRUSIRI', 'KHRUSIRI'],
+    ['https://m.facebook.com/KHRUSIRI?ref=page_internal', FB + 'KHRUSIRI', 'KHRUSIRI'],
+    ['fb.com/baandee#about', FB + 'baandee', 'baandee'],
+    [
+      'https://web.facebook.com/profile.php?id=100012345678901',
+      FB + 'profile.php?id=100012345678901',
+      '100012345678901',
+    ],
+    [
+      'https://www.facebook.com/profile.php?ref=x&id=100012345678901',
+      FB + 'profile.php?id=100012345678901',
+      '100012345678901',
+    ],
+    [
+      'https://www.facebook.com/pages/Baan-Dee/123456789',
+      FB + 'pages/Baan-Dee/123456789',
+      'Baan-Dee',
+    ],
+    [
+      'https://www.facebook.com/p/Baan-Dee-100012345678901/',
+      FB + 'p/Baan-Dee-100012345678901',
+      'Baan-Dee-100012345678901',
+    ],
+  ])('%s is a page', (raw, url, slug) => {
+    expect(normalizeGroupUrl(raw)).toBe(url);
+    expect(facebookTarget(raw)).toEqual({ kind: 'page', slug, url });
+    expect(linkKindOf(raw)).toBe('page');
+  });
+
+  it('keeps a page name as typed and compares addresses without regard to case', () => {
+    expect(normalizeGroupUrl('FB.com/BaanDee.Shop')).toBe(FB + 'BaanDee.Shop');
+    expect(groupUrlKey('FB.com/BaanDee.Shop')).toBe(
+      groupUrlKey('https://m.facebook.com/baandee.shop/'),
+    );
+  });
+
+  it('wants 5 or more characters with a letter for a vanity name', () => {
+    expect(normalizeGroupUrl('facebook.com/abcd')).toBe('');
+    expect(normalizeGroupUrl('facebook.com/abcde')).toBe(FB + 'abcde');
+    expect(normalizeGroupUrl('facebook.com/12345.6789')).toBe('');
+    expect(normalizeGroupUrl('facebook.com/1234a')).toBe(FB + '1234a');
+  });
+
+  it('refuses Facebook screens that look like a page name', () => {
+    for (const screen of ['watch', 'marketplace', 'events', 'login', 'groups', 'reels', 'settings'])
+      expect(normalizeGroupUrl('facebook.com/' + screen + '/'), screen).toBe('');
+    expect(normalizeGroupUrl('facebook.com/Marketplace')).toBe('');
+    expect(normalizeGroupUrl('facebook.com/photo.php?fbid=123456')).toBe('');
+    expect(normalizeGroupUrl('facebook.com/profile.php?id=123')).toBe('');
+    expect(normalizeGroupUrl('facebook.com/profile.php')).toBe('');
+  });
+
+  it('is a group when the address says groups, a page otherwise', () => {
+    expect(linkKindOf(G + 'baandee')).toBe('group');
+    expect(linkKindOf(FB + 'baandee')).toBe('page');
+    expect(facebookTarget(G + 'baandee')).toEqual({
+      kind: 'group',
+      slug: 'baandee',
+      url: G + 'baandee',
+    });
+    // An address that is neither counts as a group, as the server's kind does while an address is not valid.
+    expect(linkKindOf('https://example.com/baandee')).toBe('group');
+    expect(linkKindOf('')).toBe('group');
+    expect(facebookTarget('https://example.com/baandee')).toBeNull();
+    expect(facebookTarget(null)).toBeNull();
+  });
+
+  it('names a page from its address like a group', () => {
+    expect(groupSlug(FB + 'baandee.shop')).toBe('baandee.shop');
+    expect(groupSlug(FB + 'pages/Baan-Dee/123456789')).toBe('Baan-Dee');
+    expect(linkLabel({ name: '', url: FB + 'pages/Baan-Dee/123456789' })).toBe('Baan-Dee');
+    expect(defaultLinkName(FB + 'baandee.shop')).toBe('baandee shop');
+    expect(defaultLinkName(FB + 'p/Baan-Dee-100012345678901')).toBe('Baan Dee 100012345678901');
+    expect(defaultLinkName(FB + 'profile.php?id=100012345678901')).toBe('100012345678901');
+  });
+
+  it('reads pages in pasted lines and in a CSV, next to groups', () => {
+    const r = parseBulkLinks(
+      [
+        'facebook.com/groups/shop.th | A1',
+        'https://www.facebook.com/baandee.shop | P1',
+        'facebook.com/watch',
+        'https://www.facebook.com/profile.php?id=100012345678901',
+      ].join('\n'),
+    );
+    expect(r.invalid).toEqual(['facebook.com/watch']);
+    expect(r.links).toEqual([
+      { url: G + 'shop.th', name: 'shop th', code: 'A1' },
+      { url: FB + 'baandee.shop', name: 'baandee shop', code: 'P1' },
+      { url: FB + 'profile.php?id=100012345678901', name: '100012345678901', code: '' },
+    ]);
+    const csv = parseLinkCsv(
+      [
+        'A,Shop page,https://m.facebook.com/baandee.shop/,P1',
+        'A,Group,facebook.com/groups/g1,',
+        'A,Screen,facebook.com/marketplace,',
+      ].join('\n'),
+    );
+    expect(csv.invalid).toBe(1);
+    expect(csv.rows.map((x) => x.url)).toEqual([FB + 'baandee.shop', G + 'g1']);
+  });
+
+  it('flags a repeated page address and exports pages like groups', () => {
+    expect(
+      duplicateUrlFlags([
+        { url: FB + 'baandee.shop' },
+        { url: 'FB.com/BaanDee.shop/' },
+        { url: G + 'a' },
+      ]),
+    ).toEqual([false, true, false]);
+    const csv = linksToCsv([
+      {
+        name: 'Set',
+        links: [{ name: 'Shop', url: FB + 'baandee.shop', code: '', enabled: true, dailyMax: 1 }],
+      },
+    ]);
+    expect(parseLinkCsv(csv).rows).toEqual([
+      { set: 'Set', name: 'Shop', url: FB + 'baandee.shop', code: '' },
+    ]);
   });
 });
 
@@ -121,7 +261,7 @@ describe('parseBulkLinks', () => {
     expect(r.invalid).toEqual([]);
   });
 
-  it('collects lines that are not group addresses, trimmed', () => {
+  it('collects lines that are neither a group nor a page address, trimmed', () => {
     const r = parseBulkLinks(
       '  hello world  \nfacebook.com/groups/a | X\nhttps://example.com/x | Y',
     );

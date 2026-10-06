@@ -12,17 +12,16 @@ import { NextStepComponent } from '../../shared/components/next-step/next-step.c
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { BulkLinksModalComponent } from './bulk-links-modal.component';
 import { CsvLinksModalComponent } from './csv-links-modal.component';
-import { ImportGroupsModalComponent } from './import-groups-modal.component';
 import { LinkSetCardComponent } from './link-set-card.component';
 import { NewSetModalComponent } from './new-set-modal.component';
 import { Pager } from '../../shared/components/pager/pager';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 
-type Dialog = 'set' | 'csv' | 'bulk' | 'import';
+type Dialog = 'set' | 'csv' | 'bulk';
 
-// "Group links and link sets" (step 2 of the flow): the Facebook groups to post to, grouped in sets with an
-// optional group code and a daily cap per group. Rows are edited in place; the dialogs create a set, paste
-// several links, pick groups from an account and import a CSV. Everything that writes is an editor's.
+// "Group and page links" (step 3 of the flow): the Facebook groups and pages to post to, grouped in sets with an
+// optional group code and a daily cap per link. Rows are edited in place; the dialogs create a set, paste
+// several links and import a CSV. Everything that writes is an editor's.
 @Component({
   selector: 'app-targets-page',
   imports: [
@@ -34,7 +33,6 @@ type Dialog = 'set' | 'csv' | 'bulk' | 'import';
     LinkSetCardComponent,
     NewSetModalComponent,
     BulkLinksModalComponent,
-    ImportGroupsModalComponent,
     CsvLinksModalComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,7 +50,7 @@ export class TargetsPageComponent {
   protected readonly setPage = computed(() => this.pager.slice(this.store.sets()));
 
   protected readonly dialog = signal<Dialog | null>(null);
-  /** The set a paste or import dialog adds to. */
+  /** The set a paste dialog adds to. */
   protected readonly dialogSet = signal<string | null>(null);
 
   protected open(dialog: Dialog, setId: string | null = null): void {

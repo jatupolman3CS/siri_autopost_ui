@@ -199,13 +199,13 @@ describe('OverviewPageComponent', () => {
       expect(navigate).toHaveBeenCalledWith('/app/targets');
     });
 
-    it('takes the second step to the composer, in the collection that is open', async () => {
+    it('takes the second step to the post library, ready for a new post in the collection that is open', async () => {
       const { el } = await open({ collections: [COLLECTION, COLLECTION_2] });
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       TestBed.inject(CollectionsStore).openId.set('c2');
       steps(el)[1].querySelector('button')!.click();
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], {
-        queryParams: { collection: 'c2' },
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], {
+        queryParams: { collection: 'c2', new: 1 },
       });
     });
 
@@ -214,16 +214,16 @@ describe('OverviewPageComponent', () => {
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       TestBed.inject(CollectionsStore).lastId.set('c1');
       steps(el)[1].querySelector('button')!.click();
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], {
-        queryParams: { collection: 'c1' },
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], {
+        queryParams: { collection: 'c1', new: 1 },
       });
     });
 
-    it('opens the composer with no collection when there is none', async () => {
+    it('opens the new-post editor with no collection when there is none', async () => {
       const { el } = await open();
       const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
       steps(el)[1].querySelector('button')!.click();
-      expect(navigate).toHaveBeenCalledWith(['/app/composer'], { queryParams: {} });
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], { queryParams: { new: 1 } });
     });
 
     it('takes the third step to the schedules with the builder open', async () => {
@@ -282,32 +282,120 @@ describe('OverviewPageComponent', () => {
     });
   });
 
-  describe('the accounts', () => {
-    const rows = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('.row.tight')];
+  // The panel lists the paired browsers (the devices): real data only. The sample accounts of the design, and the
+  // accounts of the workspace, are not shown here any more.
+  describe('the connected extensions', () => {
+    const panel = (el: HTMLElement) =>
+      el.querySelector<HTMLElement>(`section[aria-label="${t().api.flow.ovExtTitle}"]`)!;
+    const rows = (el: HTMLElement) => [...panel(el).querySelectorAll<HTMLElement>('.extrow')];
+    const stateOf = (row: HTMLElement) => row.querySelector('.status')?.textContent?.trim();
+    const dotOf = (row: HTMLElement) => row.querySelector<HTMLElement>('.dot')?.style.background;
 
-    it('says which computer and browser post for an account that has one', async () => {
+    it('is titled for extensions, and no longer says "accounts seen by the extension"', async () => {
       const { el } = await open({ devices: [DEVICE] });
-      const connected = rows(el).find((r) => r.textContent?.includes(FB_CONNECTED.name))!;
-      expect(connected.querySelector('.via')?.textContent?.trim()).toBe(
-        `${t().ov.via} Shop PC · Chrome 130`,
+      expect(panel(el).querySelector('h2')?.textContent).toBe(t().api.flow.ovExtTitle);
+      expect(t().ov.accountsTitle).toBe(t().api.flow.ovExtTitle);
+      expect(panel(el).querySelector('a[routerLink], a[href="/app/team"]')).not.toBeNull();
+      expect(panel(el).textContent).toContain(t().api.flow.ovExtManage);
+    });
+
+    it('shows one row for each paired browser: its name, its browser and that it is online', async () => {
+      const { el } = await open({ devices: [DEVICE, { ...DEVICE, id: 'd2', name: 'Laptop' }] });
+      const [first, second] = rows(el);
+      expect(rows(el)).toHaveLength(2);
+      expect(first.querySelector('.fw5')?.textContent?.trim()).toBe('Shop PC');
+      expect(first.querySelector('.small')?.textContent?.trim()).toBe('Chrome 130');
+      expect(stateOf(first)).toBe(t().api.deviceOnline);
+      expect(dotOf(first)).toContain('success');
+      expect(second.querySelector('.fw5')?.textContent?.trim()).toBe('Laptop');
+      expect(first.getAttribute('href')).toBe('/app/team');
+    });
+
+    it('shows a browser that cannot be reached as offline, with when it was last seen', async () => {
+      const seen = new Date(Date.now() - 3 * 3600_000).toISOString();
+      const { el } = await open({ devices: [{ ...DEVICE, online: false, lastSeenAt: seen }] });
+      const [row] = rows(el);
+      expect(stateOf(row)).toBe(t().api.flow.ovExtOffline);
+      expect(dotOf(row)).toContain('danger');
+      expect(row.querySelector('.small')?.textContent?.trim()).toBe(
+        `Chrome 130 · ${t().api.flow.ovExtSeen} ${fmt(t().api.hoursAgo, { n: 3 })}`,
       );
-      expect(connected.querySelector('.via .ph-desktop')).not.toBeNull();
     });
 
-    it('says an account with no computer is not bound to a browser, and invents no address', async () => {
+    it('says a browser that never called in has never connected', async () => {
+      const { el } = await open({ devices: [{ ...DEVICE, online: false, lastSeenAt: null }] });
+      expect(rows(el)[0].querySelector('.small')?.textContent?.trim()).toBe(
+        `Chrome 130 · ${t().api.deviceNever}`,
+      );
+    });
+
+    it('shows a browser whose jobs are paused, and one the engine paused itself', async () => {
+      const { el } = await open({
+        devices: [
+          { ...DEVICE, jobsPaused: true },
+          { ...DEVICE, id: 'd2', name: 'Laptop', autoPausedUntil: '2099-01-01T00:00:00Z' },
+        ],
+      });
+      const [byHand, byEngine] = rows(el);
+      expect(stateOf(byHand)).toBe(t().api.flow.ovExtPaused);
+      expect(dotOf(byHand)).toContain('warning');
+      expect(stateOf(byEngine)).toBe(t().api.flow.ovExtAuto);
+      expect(dotOf(byEngine)).toContain('warning');
+    });
+
+    it('looks right in a new workspace: no extension yet, and a way to add one', async () => {
+      const { el } = await open();
+      expect(rows(el)).toHaveLength(0);
+      const empty = panel(el).querySelector('app-empty-state')!;
+      expect(empty.textContent).toContain(t().api.flow.ovExtEmptyTitle);
+      expect(empty.textContent).toContain(t().api.flow.ovExtEmptyBody);
+      const add = panel(el).querySelector<HTMLAnchorElement>('.add a')!;
+      expect(add.textContent?.trim()).toBe(t().ov.pair);
+      expect(add.getAttribute('href')).toBe('/app/team?pair=1');
+    });
+
+    it('shows no sample accounts and no account of the workspace, only the browsers', async () => {
       const { el } = await open({ devices: [DEVICE] });
-      const sample = rows(el).find((r) => r.textContent?.includes('Baan Dee'))!;
-      expect(sample.querySelector('.via')?.textContent?.trim()).toBe(t().ov.viaNone);
-      expect(sample.querySelector('.via .ph-plugs')).not.toBeNull();
-      expect(el.textContent).not.toMatch(/\bIP\b|\d+\.\d+\.\d+\.\d+/);
-    });
-
-    it('shows no such line until the computers have arrived', async () => {
-      const { fixture, el } = await open({ devices: [DEVICE] });
-      TestBed.inject(DevicesStore).loaded.set(false);
-      fixture.detectChanges();
+      // The accounts store holds the old, unbound account and the connected one; neither is a row of the panel.
+      expect(TestBed.inject(AccountsStore).list().length).toBeGreaterThan(1);
+      expect(rows(el)).toHaveLength(1);
+      expect(el.textContent).not.toContain('Old PC');
+      expect(el.textContent).not.toContain(FB_CONNECTED.name);
+      expect(el.textContent).not.toMatch(/ตัวอย่าง|Sample|\bIP\b|\d+\.\d+\.\d+\.\d+/);
       expect(el.querySelector('.via')).toBeNull();
     });
+
+    it('says it is loading until the browsers have arrived, not that there is none', async () => {
+      const { fixture, el } = await open();
+      TestBed.inject(DevicesStore).loaded.set(false);
+      fixture.detectChanges();
+      expect(panel(el).querySelector('app-empty-state')).toBeNull();
+      expect(panel(el).textContent).toContain(t().api.loading);
+      TestBed.inject(DevicesStore).loaded.set(true);
+      fixture.detectChanges();
+      expect(panel(el).querySelector('app-empty-state')).not.toBeNull();
+    });
+
+    it('follows a browser that is paired, renamed or goes offline without a reload', async () => {
+      const { fixture, el } = await open({ devices: [DEVICE] });
+      const devices = TestBed.inject(DevicesStore);
+      devices.list.set([{ ...DEVICE, name: 'Back office', online: false }]);
+      await refresh(fixture);
+      expect(rows(el)[0].querySelector('.fw5')?.textContent?.trim()).toBe('Back office');
+      expect(stateOf(rows(el)[0])).toBe(t().api.flow.ovExtOffline);
+      devices.list.set([]);
+      await refresh(fixture);
+      expect(rows(el)).toHaveLength(0);
+      expect(panel(el).querySelector('app-empty-state')).not.toBeNull();
+    });
+  });
+
+  it('is an empty page that still looks right in a new workspace: no posts, no errors, no extensions', async () => {
+    const { el } = await open();
+    expect(el.querySelectorAll('.kpi')).toHaveLength(4);
+    expect(el.textContent).toContain(t().cal.empty);
+    expect(el.textContent).toContain(t().ov.noErrors);
+    expect(el.querySelectorAll('.row')).toHaveLength(0);
   });
 
   it('keeps the figures, the queue and the errors below the card', async () => {

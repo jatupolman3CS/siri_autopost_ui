@@ -1,13 +1,15 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AccountsStore } from '../../core/data/accounts.store';
 import { CollectionsStore } from '../../core/data/collections.store';
+import { LibraryStore } from '../../core/data/library.store';
 import { LinkSetsStore, isActiveLink } from '../../core/data/link-sets.store';
-import { PLATFORMS } from '../../core/data/platforms';
+import { LINK_KIND_ICONS } from '../../core/data/platforms';
 import { PostsStore } from '../../core/data/posts.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
 import { SettingsStore } from '../../core/data/settings.store';
+import { WorkspaceStore } from '../../core/data/workspace.store';
 import { linkLabel } from '../../core/flow/group-links';
 import {
+  BUMP_HOUR_OPTIONS,
   PostOrder,
   PostRepeat,
   ScheduleLike,
@@ -16,7 +18,6 @@ import {
   hourChips,
   isTimesMode,
   normalizeTimes,
-  overrideKeyOfAccount,
   overrideKeyOfLink,
   overridesFromInput,
   parseDateKey,
@@ -27,6 +28,7 @@ import {
   utcOffsetMinutes,
 } from '../../core/flow/schedule-math';
 import { ApiSaveSchedule } from '../../core/http/api.service';
+import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
@@ -34,13 +36,17 @@ import { UiPrefsService } from '../../core/services/ui-prefs.service';
 
 /** Schedule.MaxNameLength: the name input stops here. */
 export const SCHEDULE_NAME_MAX = 120;
+/** The hours after a post that a bump can be made (the server's options without 0 = no bump). */
+export const BUMP_HOURS = BUMP_HOUR_OPTIONS.filter((h) => h > 0);
+/** A new bump comes 2 hours after the post unless the person picks another. */
+export const BUMP_DEFAULT_HOURS = 2;
 /** The posting times the "times" chips offer before the person adds their own: 06:00 to 22:00. */
 export const CHIP_FROM_HOUR = 6;
 export const CHIP_TO_HOUR = 22;
 
-/** One target of a link set: an enabled group with a valid address, or one of the set's other accounts. */
+/** One target of a link set: an enabled Facebook group or page with a valid address. */
 export interface ScheduleMember {
-  /** The key of its time override: the link id as 32 hex digits, or `account:<id>`. */
+  /** The key of its time override: the link id as 32 hex digits. */
   key: string;
   icon: string;
   name: string;
@@ -64,15 +70,16 @@ const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(ma
 //
 // Everything the form shows about "what would this make" is computed from the same helpers the server's rules
 // are mirrored in (`core/flow/schedule-math`): the slots of a day, the members of the chosen link set (enabled,
-// valid, not a repeated address, then the set's other accounts) and the posts per day with per-group times.
+// valid, not a repeated address) and the posts per day with per-group times.
 @Injectable()
 export class ScheduleFormService {
   private readonly collections = inject(CollectionsStore);
   private readonly linkSets = inject(LinkSetsStore);
-  private readonly accounts = inject(AccountsStore);
   private readonly settings = inject(SettingsStore);
   private readonly posts = inject(PostsStore);
   private readonly schedules = inject(SchedulesStore);
+  private readonly workspaces = inject(WorkspaceStore);
+  private readonly library = inject(LibraryStore);
   private readonly prefs = inject(UiPrefsService);
   private readonly i18n = inject(I18nService);
 
@@ -99,7 +106,19 @@ export class ScheduleFormService {
   readonly dripFrom = signal('09:00');
   readonly dripTo = signal('21:00');
   readonly dripCount = signal(3);
-  readonly bump = signal(0);
+  /**
+   * Bump (Premium): after a post goes out the extension opens its link and comments on it, so it comes back to
+   * the top. `bumpOn` is the switch; the first bump comes `bumpHours` after the post and each next one that
+   * long after the one before (`bumpRounds` times). The comment is `bumpText` (spintax; blank = a default
+   * phrase of the server) and up to `bumpEach` images drawn at random from `bumpMedia` (library files).
+   */
+  readonly bumpOn = signal(false);
+  readonly bumpHours = signal(BUMP_DEFAULT_HOURS);
+  readonly bumpRounds = signal(1);
+  readonly bumpText = signal('');
+  readonly bumpMedia = signal<string[]>([]);
+  /** The images per bump the person asked for; `bumpEach` is what it comes to with the images chosen. */
+  readonly bumpEachWanted = signal(1);
   readonly del = signal(0);
   readonly error = signal('');
   /** The "more" section was opened (true) or closed (false) by hand; null follows simple mode. */
@@ -109,6 +128,24 @@ export class ScheduleFormService {
   readonly saving = signal(false);
 
   readonly more = computed(() => this.moreOverride() ?? !this.prefs.simple());
+
+  /** The workspace owner's plan lacks bumping (only known once the workspaces have arrived). */
+  readonly bumpLocked = this.workspaces.bumpLocked;
+  /** The bump is on and allowed: what the request carries. A locked form never asks for one (the API says 403). */
+  readonly bumpActive = computed(() => this.bumpOn() && !this.bumpLocked());
+  /** Images per bump: 0 to 5, never more than the images chosen (none chosen = a text-only bump). */
+  readonly bumpEach = computed(() =>
+    clamp(this.bumpEachWanted(), 0, Math.min(INPUT_LIMITS.bumpImages, this.bumpMedia().length)),
+  );
+  /** "Bump 2 times, 2 h apart, 1 image each time". */
+  readonly bumpSummary = computed(() => {
+    const f = this.i18n.t().api.flow;
+    const h = this.bumpHours();
+    const n = this.bumpRounds();
+    const head = n === 1 ? fmt(f.schBumpHead1, { h }) : fmt(f.schBumpHeadN, { n, h });
+    const each = this.bumpEach();
+    return `${head} · ${each > 0 ? fmt(f.schBumpTailImg, { k: each }) : f.schBumpTailText}`;
+  });
 
   readonly isTimes = computed(() => isTimesMode(this.mode()));
   readonly isInterval = computed(() => this.mode() === 'interval');
@@ -124,32 +161,18 @@ export class ScheduleFormService {
     return c ? this.collections.usablePosts(c).length : 0;
   });
 
-  /** The targets of the chosen link set, in the order the server uses them. */
+  /** The targets of the chosen link set, in the order the server uses them: its Facebook groups and pages. */
   readonly members = computed<ScheduleMember[]>(() => {
     const set = this.set();
     if (!set) return [];
-    const links = set.links
+    return set.links
       .filter((l) => isActiveLink(l) && !l.duplicate)
       .map((l) => ({
         key: overrideKeyOfLink(l.id),
-        icon: PLATFORMS.fb.icon,
+        icon: LINK_KIND_ICONS[l.kind === 'page' ? 'page' : 'group'],
         name: linkLabel(l),
         code: l.code.trim(),
       }));
-    const others = set.accountIds.flatMap((id) => {
-      const a = this.accounts.byId(id);
-      return a
-        ? [
-            {
-              key: overrideKeyOfAccount(id),
-              icon: PLATFORMS[a.platform].icon,
-              name: `${a.name} · ${a.defaultTarget}`,
-              code: '',
-            },
-          ]
-        : [];
-    });
-    return [...links, ...others];
   });
   readonly codeCount = computed(() => this.members().filter((m) => m.code !== '').length);
 
@@ -176,6 +199,17 @@ export class ScheduleFormService {
       this.members().map((m) => m.key),
     ),
   );
+  /**
+   * Facebook posts a day (every group and page of the set) over the workspace's daily limit for Facebook: the server
+   * fails what goes beyond it (quota), so the builder says so before the schedule is made. Null when it fits, and
+   * before the anti-ban settings have loaded.
+   */
+  readonly overLimit = computed(() => {
+    if (!this.settings.loaded() || !this.set()) return null;
+    const n = this.perDay();
+    const limit = this.settings.ab().limits.fb;
+    return n > limit ? { n, limit } : null;
+  });
   /** The quick-pick chips: 06:00 to 22:00 and every other time already chosen. */
   readonly chips = computed(() => hourChips(CHIP_FROM_HOUR, CHIP_TO_HOUR, this.times()));
 
@@ -244,7 +278,12 @@ export class ScheduleFormService {
     this.dripFrom.set('09:00');
     this.dripTo.set('21:00');
     this.dripCount.set(3);
-    this.bump.set(0);
+    this.bumpOn.set(false);
+    this.bumpHours.set(BUMP_DEFAULT_HOURS);
+    this.bumpRounds.set(1);
+    this.bumpText.set('');
+    this.bumpMedia.set([]);
+    this.bumpEachWanted.set(1);
     this.del.set(0);
     this.error.set('');
     this.open.set(false);
@@ -326,6 +365,38 @@ export class ScheduleFormService {
     this.dripCount.set(clamp(parseInt(raw, 10) || 1, 1, 12));
   }
 
+  /** The hours between a post and its bump (and between the bumps); anything else is the default. */
+  setBumpHours(raw: string): void {
+    const h = parseInt(raw, 10);
+    this.bumpHours.set(BUMP_HOURS.includes(h) ? h : BUMP_DEFAULT_HOURS);
+  }
+
+  setBumpRounds(raw: string): void {
+    this.bumpRounds.set(clamp(parseInt(raw, 10) || 1, 1, INPUT_LIMITS.bumpRounds));
+  }
+
+  setBumpEach(raw: string): void {
+    this.bumpEachWanted.set(clamp(parseInt(raw, 10) || 0, 0, INPUT_LIMITS.bumpImages));
+  }
+
+  /** Adds a library image to the ones the bumps draw from, or takes it off (at most 20). Says so when full. */
+  toggleBumpMedia(id: string): void {
+    const on = this.bumpMedia();
+    if (on.includes(id)) {
+      this.bumpMedia.set(on.filter((m) => m !== id));
+      this.error.set('');
+      return;
+    }
+    if (on.length >= INPUT_LIMITS.bumpPool) {
+      this.error.set(fmt(this.i18n.t().api.flow.schBumpMax, { n: INPUT_LIMITS.bumpPool }));
+      return;
+    }
+    // The first image chosen with "0 per bump" means the person wants it used: one per bump.
+    if (!on.length && this.bumpEachWanted() === 0) this.bumpEachWanted.set(1);
+    this.bumpMedia.set([...on, id]);
+    this.error.set('');
+  }
+
   setOverride(key: string, text: string): void {
     this.overrides.update((o) => ({ ...o, [key]: text }));
     this.error.set('');
@@ -374,6 +445,13 @@ export class ScheduleFormService {
       if (start < addDays(today, -1) || start > addDays(today, 366))
         return this.fail(t.api.flow.schBadDate);
     }
+    // A bump the plan does not include is never asked for. Images that left the library meanwhile are dropped
+    // (the server refuses an unknown one) once the library has been read.
+    const bump = this.bumpActive();
+    const have = new Set(this.library.media().map((m) => m.id));
+    const pool = this.library.loaded()
+      ? this.bumpMedia().filter((m) => have.has(m))
+      : this.bumpMedia();
     this.error.set('');
     return {
       name: this.name().trim() || null,
@@ -390,7 +468,17 @@ export class ScheduleFormService {
       dripFrom: toMinutes(this.dripFrom()) === null ? null : this.dripFrom(),
       dripTo: toMinutes(this.dripTo()) === null ? null : this.dripTo(),
       dripCount: clamp(this.dripCount(), 1, 12),
-      bumpHours: this.bump(),
+      bumpHours: bump ? this.bumpHours() : 0,
+      ...(bump
+        ? {
+            bump: {
+              rounds: clamp(this.bumpRounds(), 1, INPUT_LIMITS.bumpRounds),
+              text: this.bumpText().trim().slice(0, INPUT_LIMITS.bumpText),
+              mediaIds: pool,
+              imagesEach: Math.min(this.bumpEach(), pool.length),
+            },
+          }
+        : {}),
       autoDeleteDays: this.del(),
       overrides: overrides.overrides,
       utcOffsetMinutes: utcOffsetMinutes(),

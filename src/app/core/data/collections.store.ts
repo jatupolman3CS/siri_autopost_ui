@@ -94,8 +94,8 @@ function approvalAfter(action: ApiApprovalAction): ApiCollectionPost['approval']
 // optimistic: the page shows them at once, they are sent in one complete PUT 800 ms after the last change,
 // and a refusal puts the collection back to what the server last confirmed (the API's reason is toasted by
 // the error interceptor); a 403 for the approval rule, which needs the admin role, takes back only that
-// switch and sends the other edits again. Text the server only trimmed stays as it was typed. Posts are added and edited by the pages that wait for the server (the composer
-// goes on only when the post is saved); taking a post out of the collection and the approval buttons are optimistic
+// switch and sends the other edits again. Text the server only trimmed stays as it was typed. Posts are added and edited by the pages that wait for the server (the post
+// editor goes on only when the post is saved); taking a post out of the collection and the approval buttons are optimistic
 // too. The posts are shared records of the post library (MasterPostsStore): the two stores keep each other
 // current through PostsSync.
 // None of the optimistic methods rejects: they answer whether the server took the change.
@@ -108,7 +108,7 @@ export class CollectionsStore {
   readonly collections = signal<ApiCollection[]>([]);
   /** The workspace's collections have arrived (pages show "—" until then). */
   readonly loaded = signal(false);
-  /** The collection whose posts are open on the collections page (also where the composer saves to next). */
+  /** The collection whose posts are open on the collections page (also the collection a new post starts in from the collections page). */
   readonly openId = signal<string | null>(null);
   /** The collection a post was last saved to: where the next new post goes by default. */
   readonly lastId = signal<string | null>(null);

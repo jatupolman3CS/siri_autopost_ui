@@ -16,7 +16,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { InputFieldComponent } from '../../shared/components/input-field/input-field.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 
-// "New collection" dialog (name + description), used by the collections page and by the composer. It creates the
+// "New collection" dialog (name + description), used by the collections page and by the post editor. It creates the
 // collection through CollectionsStore (which opens it on the collections page), toasts, and emits it.
 @Component({
   selector: 'app-new-collection-modal',

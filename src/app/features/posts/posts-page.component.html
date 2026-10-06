@@ -12,7 +12,7 @@
         data-testid="new-post"
         [disabled]="!perm.canEdit()"
         [attr.title]="perm.editHint() || null"
-        (click)="newOpen.set(true)"
+        (click)="startNew()"
       >
         <i class="ph ph-plus"></i>{{ t().api.flow.plNew }}
       </button>
@@ -20,6 +20,55 @@
   </div>
 
   <app-flow-steps [current]="1" />
+
+  <!-- ONE editor for a new post and for editing one: full width, the preview beside the form. -->
+  @if (panel(); as p) {
+    <section
+      #panelEl
+      class="panel ed-panel"
+      role="region"
+      data-testid="editor-panel"
+      [attr.aria-label]="panelTitle()"
+    >
+      <div class="ed-head">
+        <div>
+          <h2 class="h2">{{ panelTitle() }}</h2>
+          <p class="small muted">{{ t().api.flow.edSub }}</p>
+        </div>
+        <button
+          type="button"
+          class="ibtn"
+          data-testid="editor-close"
+          [title]="t().api.flow.edClose"
+          [attr.aria-label]="t().api.flow.edClose"
+          (click)="closePanel()"
+        >
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+      @for (k of [p.key]; track k) {
+        <app-post-editor
+          [post]="editPost()"
+          (saved)="closePanel()"
+          (savedAnother)="nextPost()"
+          (cancelled)="closePanel()"
+        />
+      }
+    </section>
+  } @else if (draft.hasDraft()) {
+    <div class="panel draft-bar" data-testid="draft-bar">
+      <i class="ph ph-pencil-simple-line" aria-hidden="true"></i>
+      <span class="grow">{{ draftLine() }}</span>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        data-testid="draft-continue"
+        (click)="continueDraft()"
+      >
+        {{ t().lib.backToPost }}<i class="ph ph-arrow-right"></i>
+      </button>
+    </div>
+  }
 
   @if (!store.loaded()) {
     <section class="panel loading" aria-busy="true">—</section>
@@ -141,7 +190,9 @@
       <app-master-post-card
         [post]="p"
         [selected]="isSelected(p.id)"
+        [editing]="editingId() === p.id"
         (select)="select(p.id, $event)"
+        (edit)="edit($event)"
         (remove)="deleting.set($event)"
       />
     } @empty {
@@ -155,21 +206,6 @@
     (go)="router.navigateByUrl('/app/collections')"
   />
 </div>
-
-<app-modal
-  [open]="newOpen()"
-  [title]="t().api.flow.plNewTitle"
-  [closable]="true"
-  (closed)="newOpen.set(false)"
->
-  @if (newOpen()) {
-    <app-post-editor
-      [startIn]="startIn()"
-      (saved)="newOpen.set(false)"
-      (cancelled)="newOpen.set(false)"
-    />
-  }
-</app-modal>
 
 <app-confirm-modal
   [open]="!!deleting()"

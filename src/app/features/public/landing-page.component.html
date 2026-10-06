@@ -17,10 +17,10 @@
       </div>
       <p class="note">{{ t().land.heroNote }}</p>
       <div class="platforms">
-        <span class="small muted">{{ t().land.platforms }}</span>
         @for (p of platforms; track p.name) {
           <span class="pico s36" [title]="p.name"><i class="ph" [class]="p.icon"></i></span>
         }
+        <span class="small muted">{{ t().land.platforms }}</span>
       </div>
     </div>
     <div class="preview">

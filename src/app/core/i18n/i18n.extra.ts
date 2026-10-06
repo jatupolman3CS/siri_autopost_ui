@@ -41,34 +41,31 @@ export const AP_I18N_EXTRA = {
   addDevice: ['เพิ่มอุปกรณ์', 'Add device'],
   pairTitle: ['เชื่อมต่อ Chrome กับเวิร์กสเปซนี้', 'Connect a Chrome to this workspace'],
   pairStep1: [
-    'ทำในหน้านี้บน Chrome ที่จะใช้โพสต์: ติดตั้งส่วนขยาย AutoPost และล็อกอิน Facebook ไว้แล้ว',
-    'Do this on the Chrome that will post: the AutoPost extension installed and Facebook logged in',
+    'ติดตั้งส่วนขยาย AutoPost ใน Chrome ที่จะใช้โพสต์ (เครื่องไหนก็ได้) และล็อกอิน Facebook ไว้ในนั้นแล้ว',
+    'Install the AutoPost extension in the Chrome that will post (any machine) and log in to Facebook there',
   ],
   pairStep2: [
-    'กด “เชื่อมต่อ Chrome เครื่องนี้” แล้วกด “อนุญาต” ในหน้าของส่วนขยายที่เปิดขึ้นมา',
-    'Press “Connect this Chrome”, then “Allow” on the extension page that opens',
+    'ถ้าเป็น Chrome เครื่องนี้: กด “เชื่อมต่อ Chrome เครื่องนี้” แล้วกด “อนุญาต” ในหน้าของส่วนขยายที่เปิดขึ้นมา',
+    'If it is this Chrome: press “Connect this Chrome”, then “Allow” on the extension page that opens',
   ],
   pairStep3: [
-    'คอมเครื่องอื่น: เข้าเว็บนี้จากเครื่องนั้น แล้วกด “เพิ่มอุปกรณ์” ที่นั่น การตั้งค่าทั้งหมดทำที่เว็บ ส่วนขยายแสดงแค่สถานะ',
-    'Another computer: open this site there and press “Add device” on it. All settings live on the web; the extension only shows its status.',
+    'ถ้าเป็นเครื่องอื่นหรือโปรไฟล์ Chrome อื่น: กด “คัดลอกลิงก์เชื่อมต่อ” แล้วเปิดลิงก์ใน Chrome ตัวนั้น ไม่ต้องล็อกอิน AutoPost ที่นั่น (หรือล็อกอินเป็นคนละบัญชีก็ได้) ส่วนขยายจะแสดงแค่ “เชื่อมต่อสำเร็จ”',
+    'If it is another computer or Chrome profile: press “Copy connect link” and open it in that Chrome. It does not need to be signed in to AutoPost (or it may be signed in as someone else); the extension only shows “connected successfully”',
   ],
   pairName: ['ชื่อเครื่อง', 'Device name'],
   pairNamePh: ['เช่น คอมที่ร้าน', 'e.g. Shop PC'],
   pairConnect: ['เชื่อมต่อ Chrome เครื่องนี้', 'Connect this Chrome'],
   pairCode: ['รหัสจับคู่', 'Pairing code'],
   pairExpires: ['ใช้ได้ครั้งเดียว ถึง {t} น.', 'Single use, valid until {t}'],
-  pairWaiting: [
-    'รอการอนุญาตในหน้าของส่วนขยาย (แท็บใหม่)…',
-    'Waiting for “Allow” on the extension page (new tab)…',
-  ],
+  pairWaiting: ['รอการอนุญาตในหน้าของส่วนขยาย…', 'Waiting for “Allow” on the extension page…'],
   connectTitle: ['กำลังส่งคำขอไปที่ส่วนขยาย AutoPost…', 'Handing over to the AutoPost extension…'],
   connectMissing: [
     'ไม่พบส่วนขยาย AutoPost ในเบราว์เซอร์นี้ (หรือยังเป็นเวอร์ชันเก่ากว่า 2.2)',
     'The AutoPost extension was not found in this browser (or it is older than 2.2)',
   ],
   connectHelp: [
-    'ติดตั้งหรืออัปเดตส่วนขยาย แล้วกลับไปที่ ทีมและเวิร์กสเปซ > เพิ่มอุปกรณ์ แล้วกดเชื่อมต่ออีกครั้ง',
-    'Install or update the extension, then go back to Team & workspaces > Add device and connect again.',
+    'ติดตั้งหรืออัปเดตส่วนขยายใน Chrome นี้ แล้วเปิดลิงก์เชื่อมต่อใหม่อีกครั้ง (สร้างลิงก์ใหม่ได้ที่ ทีมและเวิร์กสเปซ > เพิ่มอุปกรณ์ > คัดลอกลิงก์เชื่อมต่อ)',
+    'Install or update the extension in this Chrome, then open the connect link again (make a new one at Team & workspaces > Add device > Copy connect link).',
   ],
   connectClose: ['ปิดหน้านี้', 'Close this page'],
   extDownload: ['ดาวน์โหลดส่วนขยาย (.zip)', 'Download the extension (.zip)'],
@@ -87,7 +84,6 @@ export const AP_I18N_EXTRA = {
     'Jobs paused: this browser takes no posts scheduled on the web (state and settings still sync).',
   ],
   jobsResumedNote: ['เครื่องนี้รับงานโพสต์จากเว็บต่อแล้ว', 'This browser takes web posts again.'],
-  manageCampaigns: ['ชุดโพสต์', 'Campaigns'],
   pairExpired: ['รหัสหมดอายุแล้ว สร้างรหัสใหม่ได้', 'The code expired. Create a new one.'],
   pairNew: ['สร้างรหัสใหม่', 'New code'],
   paired: ['จับคู่ “{d}” แล้ว', 'Paired “{d}”'],
@@ -101,14 +97,15 @@ export const AP_I18N_EXTRA = {
   deviceOnline: ['ออนไลน์อยู่', 'Online'],
   deviceNever: ['ยังไม่เคยเชื่อมต่อ', 'Never connected'],
   extUnpaired: ['ยังไม่ได้เชื่อมส่วนขยาย', 'Extension not paired'],
+  // The top bar with several extensions: how many are online right now.
+  extCount: ['ส่วนขยายออนไลน์ {n}/{m}', '{n}/{m} extensions online'],
+  extCountHint: [
+    'จำนวนส่วนขยายที่ออนไลน์ ดูรายเครื่องได้ในหน้าทีมและเวิร์กสเปซ',
+    'Extensions that are online right now. See each one on the Team & workspaces page',
+  ],
   realOffline: [
     'ไม่มีเครื่องที่ผูกไว้ออนไลน์ เปิด Chrome ที่ติดตั้งส่วนขยายไว้ แล้วโพสต์จะเดินต่อ',
     'No paired device is online. Open the Chrome with the extension and posting resumes.',
-  ],
-  demoAccount: ['ตัวอย่าง', 'Sample'],
-  demoHint: [
-    'บัญชีตัวอย่าง: โพสต์ที่ตั้งให้บัญชีนี้จะไม่ถูกส่งจริง เชื่อมบัญชีจริงด้วย “เพิ่มอุปกรณ์” ในหน้าทีมและเวิร์กสเปซ',
-    'Sample account: posts for it are never sent. Connect a real one with “Add device” in Team & workspaces.',
   ],
 
   // Platform admin, billing and team (Phase 4)
@@ -248,6 +245,8 @@ export const AP_I18N_EXTRA = {
     promo_created: ['สร้างโค้ดส่วนลด', 'Promo code created'],
     promo_toggled: ['เปิด/ปิดโค้ดส่วนลด', 'Promo code toggled'],
     impersonated: ['เปิดโหมดช่วยเหลือ', 'Assist mode opened'],
+    payment_override_changed: ['แก้ยอดทดสอบการชำระเงิน', 'Payment test amount changed'],
+    payment_override_used: ['เรียกเก็บด้วยยอดทดสอบ', 'Charged the test amount'],
   },
 
   // Permissions, live data and copy that says only what the system does (the audit fixes)
@@ -281,10 +280,6 @@ export const AP_I18N_EXTRA = {
     'ยังไม่มีช่องทางแจ้งเตือนที่ใช้งานได้ ตัวเลือกเหล่านี้ยังไม่มีผล',
     'No notification channel works yet; these choices have no effect.',
   ],
-  limitsFbOnly: [
-    'ตอนนี้ส่วนขยายโพสต์ผ่าน Facebook เท่านั้น เพดานของแพลตฟอร์มอื่นเก็บไว้ใช้เมื่อเชื่อมต่อได้',
-    'Only Facebook is posted through the extension today; the other platforms’ limits are kept for when they can be connected.',
-  ],
   noDispatch: [
     'ยังไม่มีโพสต์ที่รอส่งจากบัญชีที่เชื่อมผ่านส่วนขยาย',
     'No queued posts for an account connected through the extension.',
@@ -297,10 +292,6 @@ export const AP_I18N_EXTRA = {
     'This account has no groups yet: open the extension and add groups to a campaign first',
   ],
   unboundAccount: ['ยกเลิกการผูก', 'Unbound'],
-  unboundHint: [
-    'เครื่องของบัญชีนี้ถูกยกเลิกการผูกแล้ว ประวัติยังอยู่ แต่จะโพสต์ไม่ได้จนกว่าจะจับคู่เครื่องใหม่',
-    'The browser of this account was unbound. Its history stays, but it cannot post until a browser is paired again.',
-  ],
   seatsFull: [
     'ที่นั่งเต็มแล้ว: แผนมี {n} ที่นั่ง (นับรวมเจ้าของและคำเชิญที่รออยู่)',
     'All {n} seats are taken (owner and pending invitations included)',
@@ -315,12 +306,47 @@ export const AP_I18N_EXTRA = {
     'ถ้าสมัครด้วย Google ให้เข้าสู่ระบบด้วยปุ่ม Google',
     'If you signed up with Google, use the Google button.',
   ],
-  // Plan card lines: the numbers come from /api/plans
-  planAccounts: ['บัญชีโซเชียล: {n}', 'Social accounts: {n}'],
-  planPosts: ['โพสต์ต่อ 24 ชม.: {n}', 'Posts per 24 h: {n}'],
-  planDevices: ['อุปกรณ์: {n}', 'Devices: {n}'],
-  planSeats: ['ที่นั่งทีม: {n}', 'Team seats: {n}'],
-  planAntiBan: ['Anti-ban ขั้นสูง', 'Advanced anti-ban'],
+  // Packages (plans): the seven numbers and the functions of each plan, in the plan cards, the comparison table,
+  // the billing page's usage bars and the admin pages. The numbers come from /api/plans (null = unlimited) and
+  // the functions from its `features` list; the labels are keyed like them.
+  planLimit: {
+    groups: ['กลุ่มและเพจ Facebook', 'Facebook groups and pages'],
+    images: ['คลังรูป', 'Image library'],
+    libraryPosts: ['คลังโพสต์', 'Post library'],
+    posts: ['โพสต์ต่อวัน (24 ชม.)', 'Posts per day (24 h)'],
+    devices: ['ส่วนขยาย (เบราว์เซอร์)', 'Extensions (browsers)'],
+    seats: ['ที่นั่งทีม', 'Team seats'],
+    accounts: ['บัญชี Facebook', 'Facebook accounts'],
+  },
+  planFeature: {
+    ai: ['AI ช่วยเขียนโพสต์', 'AI post drafts'],
+    advanced_anti_ban: ['Anti-ban ขั้นสูง', 'Advanced anti-ban'],
+    notifications: ['แจ้งเตือน Telegram / LINE', 'Notifications (Telegram / LINE)'],
+    auto_reply: ['ตอบกลับอัตโนมัติ', 'Auto-reply'],
+    bump: ['ดันโพสต์อัตโนมัติ', 'Auto bump'],
+    client_reports: ['รายงานส่งลูกค้า', 'Client reports'],
+  },
+  planIncluded: ['รวมอยู่ในแผนนี้', 'Included'],
+  planNotIncluded: ['ไม่รวมอยู่ในแผนนี้', 'Not included'],
+  planCompareCaption: [
+    'เปรียบเทียบจำนวนที่ใช้ได้และฟังก์ชันของแต่ละแผน',
+    'Limits and functions of each plan',
+  ],
+  planCompareRowHead: ['รายการ', 'What'],
+  planCompareLimits: ['จำนวนที่ใช้ได้', 'Limits'],
+  planCompareFeatures: ['ฟังก์ชัน', 'Functions'],
+  planYours: ['แผนของคุณ', 'Your plan'],
+  // The billing page's usage bars: a number that has reached its limit says so and points at the plans.
+  usageFull: ['ใช้ครบแล้ว', 'Limit reached'],
+  usageOver: ['เกินขีดจำกัด', 'Over the limit'],
+  usageUpgrade: ['อัปเกรดแผนเพื่อเพิ่ม', 'Upgrade to get more'],
+  // Platform admin: the plan editor's function list and the customer page's rows without a count.
+  planFeaturesAdmin: [
+    'ฟังก์ชันที่รวมในแผน (ตั้งที่เซิร์ฟเวอร์)',
+    'Functions in the plan (set on the server)',
+  ],
+  planFeaturesNone: ['ไม่มีฟังก์ชันเสริม', 'No extra functions'],
+  limitInForce: ['ใช้อยู่ตอนนี้: {m}', 'In force: {m}'],
   // Platform admin
   savesAsYouGo: ['การเปลี่ยนแต่ละช่องบันทึกอัตโนมัติ', 'Each change saves as you make it'],
   rate24Note: ['24 ชั่วโมงล่าสุด · เป้าหมาย ≥ 95%', 'Last 24 h · target ≥ 95%'],
@@ -342,9 +368,6 @@ export const AP_I18N_EXTRA = {
     'Letters and digits only, {min}–{max} characters, no spaces or symbols',
   ],
   planAudit: ['การเปลี่ยนแปลงแผนและโค้ดส่วนลด', 'Plan and promo code changes'],
-  // The extension's own settings page (/app/campaigns). Not "ชุดโพสต์": that is step 1 of the posting flow
-  // (collections), and the two were mistaken for each other.
-  extNav: ['ตั้งค่าส่วนขยาย', 'Extension settings'],
   nothingToRetry: ['ไม่มีงานที่ล้มเหลวให้ลองใหม่', 'No failed jobs to retry'],
 
   // Rename / delete / switch on-off of the items in the lists (library, collections, link sets, schedules).
@@ -411,4 +434,146 @@ export const AP_I18N_EXTRA = {
   flowPosts: ['เขียนและจัดการโพสต์', 'Write and manage posts'],
   flowPostsB: ['เปิด/ปิด ตั้งเวลาเอง ดูผลทีละโพสต์', 'On/off, own timing, results post by post'],
   nextToCollections: ['จัดโพสต์เข้าชุดโพสต์', 'Put the posts into a collection'],
+
+  // The in-app checkout (billing page): five ways to pay, paid through Stripe.js on the page.
+  checkoutBodyInApp: [
+    'เลือกวิธีชำระเงินในขั้นตอนถัดไป ข้อมูลบัตรกรอกในช่องของ Stripe โดยตรง ไม่ผ่านระบบของเรา แผนจะเริ่มใช้เมื่อชำระเงินสำเร็จ',
+    'Pick how to pay in the next step. Card details are typed into Stripe’s own fields and never touch our system. The plan starts once the payment goes through.',
+  ],
+  payMethods: ['เลือกวิธีชำระเงิน', 'Choose how to pay'],
+  pmCard: ['บัตร', 'Card'],
+  pmCardHint: ['บัตรเครดิต / เดบิต', 'Credit / debit card'],
+  pmApplePayHint: ['จ่ายด้วย Face ID / Touch ID', 'Pay with Face ID / Touch ID'],
+  pmGooglePayHint: ['จ่ายด้วยบัตรใน Google', 'Pay with a card saved in Google'],
+  pmLinkHint: ['จ่ายเร็วด้วยบัญชี Link', 'Pay fast with your Link account'],
+  pmPromptPayHint: ['สแกน QR ด้วยแอปธนาคาร', 'Scan a QR with your banking app'],
+  payAmount: ['ชำระ {amt}', 'Pay {amt}'],
+  payTotal: ['ยอดที่ต้องชำระ', 'Total to pay'],
+  payPreparing: ['กำลังเตรียมการชำระเงิน…', 'Preparing the payment…'],
+  payRetry: ['ลองอีกครั้ง', 'Try again'],
+  payRenewMonth: [
+    'ต่ออายุอัตโนมัติทุกเดือน ยกเลิกได้ทุกเมื่อที่หน้านี้',
+    'Renews automatically every month. Cancel any time on this page.',
+  ],
+  payRenewYear: [
+    'ต่ออายุอัตโนมัติทุกปี ยกเลิกได้ทุกเมื่อที่หน้านี้',
+    'Renews automatically every year. Cancel any time on this page.',
+  ],
+  payOnceMonth: [
+    'จ่ายครั้งเดียวสำหรับ 1 เดือน ไม่ต่ออายุอัตโนมัติ (PromptPay ตัดซ้ำอัตโนมัติไม่ได้) ต่ออายุเองเมื่อครบกำหนด',
+    'One payment for 1 month, no automatic renewal (PromptPay cannot be charged again by itself). Renew when it runs out.',
+  ],
+  payOnceYear: [
+    'จ่ายครั้งเดียวสำหรับ 1 ปี ไม่ต่ออายุอัตโนมัติ (PromptPay ตัดซ้ำอัตโนมัติไม่ได้) ต่ออายุเองเมื่อครบกำหนด',
+    'One payment for 1 year, no automatic renewal (PromptPay cannot be charged again by itself). Renew when it runs out.',
+  ],
+  payEmail: ['ใบเสร็จส่งไปที่', 'Receipt goes to'],
+  payPromptPaySteps: [
+    'กดปุ่มด้านล่างเพื่อแสดง QR แล้วสแกนด้วยแอปธนาคาร แผนเริ่มใช้ทันทีที่ธนาคารยืนยัน',
+    'Press the button below to show the QR, then scan it with your banking app. The plan starts as soon as the bank confirms.',
+  ],
+  payWithPromptPay: ['ชำระด้วย PromptPay', 'Pay with PromptPay'],
+  payWalletLink: [
+    'กดปุ่ม Link แล้วทำตามหน้าต่างที่เปิดขึ้น (กรอกอีเมลและรหัสยืนยัน)',
+    'Press the Link button and follow the window that opens (email and a code).',
+  ],
+  payWalletApple: [
+    'Apple Pay ใช้ได้บน Safari ใน iPhone, iPad หรือ Mac ที่เพิ่มบัตรใน Wallet แล้ว',
+    'Apple Pay works in Safari on an iPhone, iPad or Mac that has a card in Wallet.',
+  ],
+  payWalletGoogle: [
+    'Google Pay ใช้ได้บน Chrome ที่ลงชื่อเข้าใช้ Google และบันทึกบัตรไว้',
+    'Google Pay works in Chrome signed in to Google with a saved card.',
+  ],
+  payWalletOff: [
+    'อุปกรณ์หรือเบราว์เซอร์นี้ยังใช้วิธีนี้ไม่ได้ เลือกวิธีอื่นด้านบน',
+    'This device or browser cannot use this way to pay yet. Pick another one above.',
+  ],
+  payWaiting: [
+    'กำลังยืนยันการชำระเงินกับธนาคาร… กรุณาอย่าปิดหน้านี้',
+    'Confirming the payment with the bank… please keep this page open.',
+  ],
+  payDone: ['ชำระเงินสำเร็จ แผนของคุณพร้อมใช้งานแล้ว', 'Payment received. Your plan is ready.'],
+  payFailed: [
+    'ชำระเงินไม่สำเร็จ ลองอีกครั้งหรือเลือกวิธีอื่น',
+    'The payment did not go through. Try again or pick another way to pay.',
+  ],
+  payPending: [
+    'ยังไม่ได้รับการยืนยันจากธนาคาร ระบบจะเปลี่ยนแผนให้เองเมื่อชำระสำเร็จ ปิดหน้านี้ได้',
+    'The bank has not confirmed yet. The plan switches by itself once it is paid; you can close this.',
+  ],
+  payNoStripe: [
+    'โหลดระบบชำระเงินของ Stripe ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่',
+    'Stripe’s payment form did not load. Check your connection and try again.',
+  ],
+  prepaidUntil: ['ชำระล่วงหน้า ใช้ได้ถึง {date}', 'Prepaid, valid until {date}'],
+
+  // Admin: real payment test (route admin/payment-test): a small amount replaces the plan price for listed customers.
+  ptestNav: ['ทดสอบการชำระเงินจริง', 'Real payment test'],
+  ptestSub: [
+    'ตั้งยอดที่เรียกเก็บจริงแทนราคาแผน เพื่อทดลองโอนเงินผ่าน Stripe ด้วยยอดน้อย ๆ',
+    'Charge a small real amount instead of the plan price to try a real Stripe payment',
+  ],
+  ptestWarnTitle: [
+    'เงินจริงจะถูกตัดจากบัตร/บัญชีของผู้ทดสอบ',
+    'Real money is taken from the tester',
+  ],
+  ptestWarnBody: [
+    'เมื่อเปิดใช้ ลูกค้าที่อยู่ในรายชื่อจะถูกเรียกเก็บยอดนี้แทนราคาแผน ผ่าน Stripe จริง แผนที่ได้ยังเป็นแผนที่เลือก (เช่น Pro) ลูกค้าคนอื่นจ่ายราคาแผนตามปกติ',
+    'While on, the listed customers are charged this amount instead of the plan price, through the real Stripe. They still get the plan they pick (e.g. Pro). Everyone else pays the normal price.',
+  ],
+  ptestNoStripe: [
+    'ยังไม่ได้ตั้งค่า Stripe ที่ API (Stripe__SecretKey) จึงชำระเงินไม่ได้ ไม่ว่าจะตั้งยอดเท่าไร',
+    'Stripe is not set up on the API (Stripe__SecretKey), so nothing can be paid whatever the amount',
+  ],
+  ptestOn: ['เปิดใช้ยอดทดสอบ', 'Use the test amount'],
+  ptestAmount: ['ยอดที่เรียกเก็บจริงต่อรอบบิล (บาท)', 'Amount charged per billing period (baht)'],
+  ptestAmountHint: [
+    'ขั้นต่ำ {min} บาท (Stripe เรียกเก็บต่ำกว่านี้ไม่ได้) แผนรายปีจะเรียกเก็บยอดนี้ปีละครั้ง',
+    'At least {min} baht (Stripe cannot charge less). A yearly plan is charged this once a year.',
+  ],
+  ptestEmails: ['อีเมลลูกค้าที่ใช้ยอดทดสอบ', 'Customer emails that pay the test amount'],
+  ptestEmailsHint: [
+    'หนึ่งอีเมลต่อบรรทัด (หรือคั่นด้วยจุลภาค) ได้สูงสุด {max} บัญชี ใส่อีเมลที่คุณใช้ทดสอบเอง',
+    'One email per line (or comma separated), up to {max}. Use the account you test with.',
+  ],
+  ptestEmailsPh: ['tester@example.com', 'tester@example.com'],
+  ptestStateOn: [
+    'เปิดอยู่: {n} บัญชีจ่ายยอด {amount} แทนราคาแผน',
+    'On: {n} account(s) pay {amount} instead of the plan price',
+  ],
+  ptestStateOff: ['ปิดอยู่: ทุกคนจ่ายราคาแผนตามปกติ', 'Off: everyone pays the normal plan price'],
+  ptestUpdated: ['แก้ไขล่าสุด {t}', 'Last changed {t}'],
+  ptestNotesTitle: ['ควรรู้ก่อนทดสอบ', 'Good to know'],
+  ptestNote1: [
+    'การต่ออายุรอบถัดไปของ subscription นี้จะเรียกเก็บยอดทดสอบเดิมต่อไป จนกว่าจะยกเลิกหรือเปลี่ยนแผน',
+    'Renewals of that subscription keep charging the test amount until it is cancelled or changed.',
+  ],
+  ptestNote2: [
+    'ใช้โค้ดส่วนลดพร้อมกันไม่ได้ ระบบจะปฏิเสธโค้ดของบัญชีที่อยู่ในโหมดทดสอบ',
+    'Promo codes cannot be combined: they are refused for a customer in test mode.',
+  ],
+  ptestNote3: [
+    'คืนเงินยอดที่ทดสอบได้ที่หน้าการเงิน (ปุ่มคืนเงินของรายการนั้น) และตัวเลข MRR ยังคิดจากราคาแผน ไม่ใช่ยอดทดสอบ',
+    'Refund a test charge from the Finance page. MRR still counts the plan price, not the test amount.',
+  ],
+  ptestNote4: [
+    'ปิดโหมดนี้เมื่อทดสอบเสร็จ การเปิด ปิด และการเรียกเก็บด้วยยอดทดสอบทุกครั้งอยู่ในประวัติด้านล่าง',
+    'Switch it off when you are done. Every change and every charge made with it is in the log below.',
+  ],
+  ptestEmailsNeeded: [
+    'ใส่อีเมลอย่างน้อย 1 บัญชีก่อนเปิดใช้ เพื่อไม่ให้ลูกค้าจริงโดนเรียกเก็บยอดนี้',
+    'Add at least one email before turning it on, so real customers are never charged this',
+  ],
+  ptestEmailsTooMany: ['ระบุอีเมลได้ไม่เกิน {max} บัญชี', 'No more than {max} emails'],
+  ptestEmailBad: ['อีเมลไม่ถูกต้อง: {e}', 'Not a valid email: {e}'],
+  ptestAmountBad: [
+    'ยอดต้องเป็นจำนวนเต็มระหว่าง {min} ถึง {max} บาท',
+    'The amount must be a whole number from {min} to {max} baht',
+  ],
+  ptestSaved: ['บันทึกการตั้งค่าทดสอบการชำระเงินแล้ว', 'Payment test settings saved'],
+  ptestLog: ['ประวัติการตั้งค่าและการเรียกเก็บด้วยยอดทดสอบ', 'Test amount settings and charges'],
+  ptestOnShort: ['เปิด', 'on'],
+  ptestOffShort: ['ปิด', 'off'],
+  ptestAccounts: ['{n} บัญชี', '{n} account(s)'],
 } as const;

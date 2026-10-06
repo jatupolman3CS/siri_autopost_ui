@@ -21,20 +21,50 @@
       maxlength="80"
       [placeholder]="t().api.pairNamePh"
       [value]="name()"
+      [attr.aria-describedby]="'pair-name-hint'"
       (input)="name.set($any($event.target).value)"
     />
+    <span id="pair-name-hint" class="small muted">{{ t().api.engine.pairNameHint }}</span>
+    @if (nameTaken()) {
+      <span class="small warn" role="status" data-testid="pair-name-taken">{{
+        nameTakenNote()
+      }}</span>
+    }
   </label>
   <div class="field">
     @if (code(); as c) {
-      <button
-        type="button"
-        class="su-btn su-btn-md su-btn-primary"
-        data-testid="pair-connect"
-        [disabled]="expired()"
-        (click)="connect(c.code)"
-      >
-        <i class="ph ph-plugs-connected"></i>{{ t().api.pairConnect }}
-      </button>
+      <div class="btns">
+        <button
+          type="button"
+          class="su-btn su-btn-md su-btn-primary"
+          data-testid="pair-connect"
+          [disabled]="expired()"
+          (click)="connect(c.code)"
+        >
+          <i class="ph ph-plugs-connected"></i>{{ t().api.pairConnect }}
+        </button>
+        <button
+          type="button"
+          class="su-btn su-btn-md su-btn-secondary"
+          data-testid="pair-copy"
+          [disabled]="expired()"
+          (click)="copyLink()"
+        >
+          <i class="ph" [class]="copied() ? 'ph-check' : 'ph-link-simple'"></i
+          >{{ copied() ? t().api.copied : t().api.engine.pairCopy }}
+        </button>
+      </div>
+      <div class="small muted">{{ t().api.engine.pairCopyHint }}</div>
+      @if (copyFailed()) {
+        <input
+          class="su-input link-box"
+          readonly
+          data-testid="pair-link"
+          [attr.aria-label]="t().api.engine.pairCopy"
+          [value]="link()"
+          (focus)="$any($event.target).select()"
+        />
+      }
       <div class="small" [class.muted]="!expired()" [class.err]="expired()">
         @if (expired()) {
           {{ t().api.pairExpired }}

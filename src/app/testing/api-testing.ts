@@ -5,6 +5,7 @@ import { authInterceptor } from '../core/auth/auth.interceptor';
 import { SessionStore } from '../core/data/session.store';
 import {
   ApiAccount,
+  ApiAiStatus,
   ApiCollection,
   ApiCollectionPost,
   ApiDevice,
@@ -25,11 +26,22 @@ export const WORKSPACE: ApiWorkspace = {
   posts7: 0,
   members: 1,
   role: 'owner',
-  limits: { accounts: 10, posts: null, devices: 3, seats: 3 },
+  limits: {
+    accounts: 10,
+    posts: null,
+    devices: 3,
+    seats: 3,
+    groups: null,
+    images: null,
+    libraryPosts: null,
+  },
   advancedAntiBan: true,
   notifications: true,
   autoReply: true,
   clientReports: false,
+  // A Pro owner: the AI writer yes, bumping (Premium) no.
+  ai: true,
+  bump: false,
 };
 
 export const USER: ApiUser = {
@@ -62,44 +74,37 @@ export const NOTIFICATIONS = {
   commandsUsers: '',
 };
 
+/**
+ * What GET accounts answers: a workspace has one Facebook account for each browser it paired, and nothing else.
+ * This one's browser was unbound since (it keeps its history and cannot post: `connected` false), so a spec that
+ * wants a browser that posts adds `FB_CONNECTED` (testing/link-sets.fixtures.ts) or pairs a device.
+ */
+/** What GET ai/status answers by default: the server has a key, the plan includes the writer, no daily limit. */
+export const AI_STATUS: ApiAiStatus = {
+  enabled: true,
+  allowed: true,
+  model: 'test-model',
+  draftsLeftToday: null,
+};
+
 export const ACCOUNTS: ApiAccount[] = [
   {
     id: 'acc-page',
     platform: 'fb',
-    name: 'Baan Dee',
-    handle: 'เพจ Facebook',
-    defaultTarget: 'เพจ',
+    name: 'Facebook · Old PC',
+    handle: 'Facebook',
+    defaultTarget: 'โปรไฟล์',
     health: 'ok',
     groups: ['G1', 'G2', 'G3', 'G4'],
-    connected: false,
-  },
-  {
-    id: 'acc-ig',
-    platform: 'ig',
-    name: '@baandee',
-    handle: 'Instagram',
-    defaultTarget: 'ฟีด',
-    health: 'ok',
-    groups: [],
-    connected: false,
-  },
-  {
-    id: 'acc-tt',
-    platform: 'tt',
-    name: '@baandee',
-    handle: 'TikTok',
-    defaultTarget: 'โปรไฟล์',
-    health: 'relogin',
-    groups: [],
     connected: false,
   },
 ];
 
 export function apiPost(over: Partial<ApiPost> & { id: string; scheduledAt: string }): ApiPost {
   return {
-    accountId: 'acc-ig',
-    platform: 'ig',
-    target: 'ฟีด',
+    accountId: 'acc-page',
+    platform: 'fb',
+    target: 'ขายของบ้านและสวน',
     content: 'hello',
     mediaIds: [],
     status: 'queued',
@@ -159,6 +164,8 @@ export async function signIn(
     linkSets?: ApiLinkSet[];
     /** Answers GET schedules (the schedules store; typed by whoever builds it). */
     schedules?: unknown[];
+    /** Answers GET ai/status (only read once an editor is open): by default a key and a plan, no limit. */
+    aiStatus?: ApiAiStatus;
   } = {},
 ): Promise<void> {
   const login = TestBed.inject(SessionStore).logIn(USER.email, 'password1');
@@ -214,6 +221,7 @@ export function answerWorkspaceLoads(
     masterPosts?: ApiCollectionPost[];
     linkSets?: ApiLinkSet[];
     schedules?: unknown[];
+    aiStatus?: ApiAiStatus;
   } = {},
 ): void {
   const base = `/api/workspaces/${WS}`;
@@ -240,6 +248,7 @@ export function answerWorkspaceLoads(
     r.flush(data.masterPosts ?? libraryOf(data.collections ?? []));
   for (const r of http.match(`${base}/link-sets`)) r.flush(data.linkSets ?? []);
   for (const r of http.match(`${base}/schedules`)) r.flush(data.schedules ?? []);
+  for (const r of http.match(`${base}/ai/status`)) r.flush(data.aiStatus ?? AI_STATUS);
   for (const r of http.match(`${base}/notifications`)) r.flush(NOTIFICATIONS);
   for (const r of http.match(`${base}/auto-reply`)) r.flush({ on: false, rules: [] });
   for (const r of http.match(`${base}/engine`))
@@ -247,8 +256,9 @@ export function answerWorkspaceLoads(
       antiBan: {
         min: 3,
         max: 12,
-        limits: { fb: 40, x: 20, ig: 10, tt: 5, line: 3, th: 10 },
+        limits: { fb: 40 },
         typing: true,
+        typingSpeed: 'normal',
         scroll: true,
         shuffle: true,
         autoPause: true,

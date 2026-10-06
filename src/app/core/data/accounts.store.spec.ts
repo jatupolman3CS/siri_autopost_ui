@@ -9,7 +9,7 @@ import {
   signIn,
 } from '../../testing/api-testing';
 import { FakeDeviceEvents } from '../../testing/fake-events';
-import { AccountsStore } from './accounts.store';
+import { AccountsStore, extensionNameOf } from './accounts.store';
 import { DeviceEventsService } from './device-events.service';
 import { WorkspaceStore } from './workspace.store';
 
@@ -37,6 +37,29 @@ describe('AccountsStore', () => {
   it('knows when the list has arrived', () => {
     expect(store.loaded()).toBe(true);
     expect(store.list().length).toBe(ACCOUNTS.length);
+  });
+
+  it('lists the accounts a browser posts for, apart from one whose browser was unbound', async () => {
+    expect(store.connected()).toEqual([]);
+    const live = { ...ACCOUNTS[0], id: 'acc-live', name: 'Facebook · Shop PC', connected: true };
+    events.emit('device.paired');
+    await settle();
+    http.expectOne(URL).flush([ACCOUNTS[0], live]);
+    await settle();
+    expect(store.connected().map((a) => a.id)).toEqual(['acc-live']);
+    expect(store.byId('acc-live')?.name).toBe('Facebook · Shop PC');
+  });
+
+  it('marks an account signed in again with what the API answers', async () => {
+    store.list.set([{ ...ACCOUNTS[0], health: 'relogin' }]);
+    expect(store.health('acc-page')).toBe('relogin');
+    const done = store.reconnect('acc-page');
+    const req = http.expectOne(`${URL}/acc-page/reconnect`);
+    expect(req.request.method).toBe('POST');
+    req.flush({ ...ACCOUNTS[0], health: 'ok' });
+    await done;
+    expect(store.health('acc-page')).toBe('ok');
+    expect(store.list()).toHaveLength(1);
   });
 
   it.each(['device.groups', 'device.updated', 'device.paired', 'device.revoked', 'post'])(
@@ -100,5 +123,23 @@ describe('AccountsStore', () => {
     await old;
     await settle();
     expect(store.list()).toEqual([]);
+  });
+});
+
+describe('extensionNameOf', () => {
+  const account = { id: 'acc-1', name: 'Facebook · Shop PC' };
+
+  it('names an account by the browser that posts for it, so a rename shows at once', () => {
+    const devices = [
+      { accountId: 'acc-2', name: 'Laptop' },
+      { accountId: 'acc-1', name: 'Back office' },
+    ];
+    expect(extensionNameOf(account, devices)).toBe('Back office');
+  });
+
+  it('falls back to the account name without its "Facebook · " prefix', () => {
+    expect(extensionNameOf(account, [])).toBe('Shop PC');
+    expect(extensionNameOf(account, [{ accountId: null, name: 'Other' }])).toBe('Shop PC');
+    expect(extensionNameOf({ id: 'x', name: 'Baan Dee' }, [])).toBe('Baan Dee');
   });
 });

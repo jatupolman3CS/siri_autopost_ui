@@ -1,37 +1,38 @@
 import { HttpRequest } from '@angular/common/http';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import {
-  ACCOUNTS,
-  WS,
-  apiPost,
-  provideApiTesting,
-  settle,
-  signIn,
-} from '../../testing/api-testing';
+import { apiPost, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { apiCollection } from '../../testing/collection-fixtures';
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import {
   APPROVAL_COLLECTION,
-  FB,
-  OTHER_ACCOUNT,
+  MANUAL_POST_URL,
+  PAGE_SET,
   POSTS_URL,
   TEST_COLLECTION,
   TEST_POST_URL,
   TEST_SET,
   device,
   flushBackground,
+  laptop,
+  manualPostDto,
   testPostDto,
 } from '../../testing/test-post.fixtures';
 import { ApiPost } from '../http/api.service';
 import { I18nService } from '../i18n/i18n.service';
 import '../i18n/i18n.engine';
 import { NotificationService } from '../services/notification.service';
-import { AccountsStore } from './accounts.store';
 import { CollectionsStore } from './collections.store';
+import { DevicesStore } from './devices.store';
 import { DeviceEventsService } from './device-events.service';
 import { SettingsStore } from './settings.store';
-import { TEST_FOLLOW_MS, TEST_POLL_MS, TestPostStore } from './test-post.store';
+import {
+  TEST_FOLLOW_MS,
+  TEST_MAX_MEDIA,
+  TEST_POLL_MS,
+  TestPostStore,
+  deviceStateOf,
+} from './test-post.store';
 import { WorkspaceStore } from './workspace.store';
 
 const HOUR = 3600e3;
@@ -42,6 +43,8 @@ describe('TestPostStore', () => {
   let http: HttpTestingController;
   let store: TestPostStore;
   let events: FakeDeviceEvents;
+  /** What the background reads are answered with (the devices a spec has, for one). */
+  let background: Record<string, object> = {};
   const toasts = () => TestBed.inject(NotificationService).toasts();
   const t = () => TestBed.inject(I18nService).t();
 
@@ -49,7 +52,6 @@ describe('TestPostStore', () => {
     opts: {
       collections?: (typeof TEST_COLLECTION)[];
       sets?: (typeof TEST_SET)[];
-      accounts?: typeof ACCOUNTS;
       posts?: ApiPost[];
       devices?: ReturnType<typeof device>[];
     } = {},
@@ -59,13 +61,15 @@ describe('TestPostStore', () => {
     });
     store = TestBed.inject(TestPostStore);
     events = TestBed.inject(DeviceEventsService) as unknown as FakeDeviceEvents;
+    const sets = opts.sets ?? [TEST_SET];
+    const devices = opts.devices ?? [device()];
+    background = { 'link-sets': sets, devices };
     await signIn(http, {
-      linkSets: opts.sets ?? [TEST_SET],
+      linkSets: sets,
       collections: opts.collections ?? [TEST_COLLECTION, APPROVAL_COLLECTION],
-      devices: opts.devices ?? [device()],
+      devices,
       posts: opts.posts ?? [],
     });
-    TestBed.inject(AccountsStore).list.set(opts.accounts ?? [...ACCOUNTS, FB, OTHER_ACCOUNT]);
   }
 
   /** Reads of one day (the followed post) and of whole months (the posts store refreshing). */
@@ -83,7 +87,7 @@ describe('TestPostStore', () => {
   /** Lets promises run, answers the background reads, and lets their answers land. */
   async function quiet(): Promise<void> {
     await settle();
-    flushBackground(http);
+    flushBackground(http, background);
     await settle();
   }
 
@@ -97,13 +101,33 @@ describe('TestPostStore', () => {
     await quiet();
   }
 
+  /** The same for the hand-made test. */
+  async function runManual(dto: ApiPost = manualPostDto()): Promise<void> {
+    const sent = store.runManual();
+    http.expectOne(MANUAL_POST_URL).flush(dto);
+    await sent;
+    await settle();
+    refreshReads([dto]);
+    await quiet();
+  }
+
+  /** Fills the hand-made form with a valid test. */
+  function fillManual(): void {
+    store.pickPanel('manual');
+    store.manualUrl.set('https://www.facebook.com/baandee.shop');
+    store.manualText.set('ทดสอบ');
+  }
+
   /** Answers the next read of the followed post's day with the post in `status`. */
-  async function answer(over: Partial<ApiPost>): Promise<void> {
+  async function answer(
+    over: Partial<ApiPost>,
+    dto: () => ApiPost = () => testPostDto(over),
+  ): Promise<void> {
     const reads = dayReads();
     expect(reads.length).toBeGreaterThan(0);
-    for (const r of reads) r.flush([testPostDto(over)]);
+    for (const r of reads) r.flush([dto()]);
     await settle();
-    refreshReads([testPostDto(over)]);
+    refreshReads([dto()]);
     await quiet();
   }
 
@@ -111,7 +135,7 @@ describe('TestPostStore', () => {
     vi.useRealTimers();
     try {
       refreshReads();
-      flushBackground(http);
+      flushBackground(http, background);
       dayReads().forEach((r) => r.flush([]));
       http.verify();
     } finally {
@@ -124,19 +148,20 @@ describe('TestPostStore', () => {
 
     it('starts on the first set with a group to post to and lists its usable groups, with codes', () => {
       expect(store.setId()).toBe('s1');
-      // Switched-off and wrongly addressed links are left out; the set's other connected account follows.
-      expect(store.members().map((m) => m.label)).toEqual([
-        'Condo BKK (#Jan24)',
-        'Condo rent',
-        'Facebook · Laptop · โปรไฟล์',
-      ]);
-      expect(store.members().map((m) => m.key)).toEqual(['link:a', 'link:b', 'account:acc-other']);
+      // Switched-off and wrongly addressed links are left out.
+      expect(store.members().map((m) => m.label)).toEqual(['Condo BKK (#Jan24)', 'Condo rent']);
+      expect(store.members().map((m) => m.key)).toEqual(['link:a', 'link:b']);
+      expect(store.members().map((m) => m.kind)).toEqual(['group', 'group']);
       expect(store.member()?.key).toBe('link:a');
     });
 
-    it('leaves out other accounts of the set that no browser posts for', async () => {
-      TestBed.inject(AccountsStore).list.set([...ACCOUNTS, FB]);
-      expect(store.members().map((m) => m.key)).toEqual(['link:a', 'link:b']);
+    it('lists the pages of a set next to its groups, and says which is which', async () => {
+      TestBed.resetTestingModule();
+      await start({ sets: [PAGE_SET] });
+      expect(store.members().map((m) => [m.key, m.kind])).toEqual([
+        ['link:g1', 'group'],
+        ['link:baandee.shop', 'page'],
+      ]);
     });
 
     it('goes back to the first group when another set is picked', () => {
@@ -214,17 +239,6 @@ describe('TestPostStore', () => {
       expect(store.files()).toBe(store.post()!.mediaIds.length);
     });
 
-    it('says why a test cannot start', () => {
-      expect(store.block()).toBe('');
-      TestBed.inject(SettingsStore).extensionOnline.set(false);
-      expect(store.block()).toBe('offline');
-      TestBed.inject(SettingsStore).extensionOnline.set(true);
-      TestBed.inject(AccountsStore).list.set(ACCOUNTS);
-      expect(store.block()).toBe('noAccount');
-      TestBed.inject(AccountsStore).list.set([...ACCOUNTS, FB]);
-      expect(store.block()).toBe('');
-    });
-
     it('needs a post or a typed text', async () => {
       TestBed.resetTestingModule();
       await start({ collections: [apiCollection({ id: 'empty' })] });
@@ -238,30 +252,116 @@ describe('TestPostStore', () => {
       await start({ sets: [] });
       expect(store.block()).toBe('needPick');
     });
+  });
 
-    it('knows when every paired browser has its jobs paused, by hand or by the engine', async () => {
-      expect(store.paused()).toBe(false);
-      TestBed.resetTestingModule();
-      await start({ devices: [device({ jobsPaused: true })] });
-      expect(store.paused()).toBe(true);
-      TestBed.resetTestingModule();
+  describe('the extension that receives the test', () => {
+    it('is the only one when there is one, and nothing is blocked', async () => {
+      await start();
+      expect(store.deviceId()).toBe('dev-1');
+      expect(store.device()?.name).toBe('Shop PC');
+      expect(store.block()).toBe('');
+    });
+
+    it('is the one the link set posts as, when there are several', async () => {
+      await start({ sets: [PAGE_SET], devices: [device(), laptop()] });
+      expect(store.deviceId()).toBe('dev-2');
+    });
+
+    it('is the first one that is online when the link set names none', async () => {
+      await start({ devices: [device({ online: false }), laptop(), device({ id: 'dev-3' })] });
+      expect(store.deviceId()).toBe('dev-2');
+    });
+
+    it('is the first one when none is online', async () => {
+      await start({ devices: [device({ online: false }), laptop({ online: false })] });
+      expect(store.deviceId()).toBe('dev-1');
+    });
+
+    it('is the one the person picked, whatever the link set says, and is kept when the set changes', async () => {
+      await start({ sets: [PAGE_SET], devices: [device(), laptop()] });
+      store.pickDevice('dev-1');
+      expect(store.deviceId()).toBe('dev-1');
+      store.pickSet('s2');
+      expect(store.deviceId()).toBe('dev-1');
+      // A pick that is no extension of the workspace (gone meanwhile) falls back to the default.
+      store.pickDevice('gone');
+      expect(store.deviceId()).toBe('dev-2');
+    });
+
+    it('does not follow the link set on the hand-made panel: the first online one', async () => {
+      await start({ sets: [PAGE_SET], devices: [device(), laptop()] });
+      expect(store.deviceId()).toBe('dev-2');
+      store.pickPanel('manual');
+      expect(store.deviceId()).toBe('dev-1');
+    });
+
+    it('is nothing when no extension is connected, and says so once the list has arrived', async () => {
+      await start({ devices: [] });
+      expect(store.deviceId()).toBe('');
+      expect(store.device()).toBeNull();
+      expect(store.block()).toBe('noDevice');
+      store.pickPanel('manual');
+      expect(store.block()).toBe('noDevice');
+    });
+
+    it('does not say "no extension" before the list has arrived', () => {
+      http = provideApiTesting({
+        providers: [{ provide: DeviceEventsService, useClass: FakeDeviceEvents }],
+      });
+      store = TestBed.inject(TestPostStore);
+      expect(store.devicesLoaded()).toBe(false);
+      expect(store.block()).toBe('needPick');
+      background = {};
+    });
+
+    it('says why a test cannot start: none online, or the chosen one is offline', async () => {
+      await start({ devices: [device({ online: false }), laptop()] });
+      store.pickDevice('dev-1');
+      expect(store.block()).toBe('deviceDown');
+      store.pickDevice('dev-2');
+      expect(store.block()).toBe('');
+      TestBed.inject(SettingsStore).extensionOnline.set(false);
+      expect(store.block()).toBe('offline');
+    });
+
+    it('tells online, offline and paused apart for every extension, a pause by the engine too', async () => {
+      const inAnHour = new Date(Date.now() + HOUR).toISOString();
       await start({
         devices: [
-          device({
-            autoPausedUntil: new Date(Date.now() + HOUR).toISOString(),
-            autoPauseReason: 'x',
-          }),
+          device(),
+          laptop({ online: false }),
+          device({ id: 'dev-3', jobsPaused: true }),
+          device({ id: 'dev-4', autoPausedUntil: inAnHour, autoPauseReason: 'x' }),
+          device({ id: 'dev-5', autoPausedUntil: new Date(Date.now() - HOUR).toISOString() }),
         ],
       });
+      const states = store.deviceStates();
+      expect([...states.entries()]).toEqual([
+        ['dev-1', 'online'],
+        ['dev-2', 'offline'],
+        ['dev-3', 'paused'],
+        ['dev-4', 'paused'],
+        ['dev-5', 'online'],
+      ]);
+      expect(deviceStateOf(device({ online: false, jobsPaused: true }), new Date())).toBe(
+        'offline',
+      );
+    });
+
+    it('knows when the chosen extension has its jobs paused, by hand or by the engine', async () => {
+      await start({ devices: [device({ jobsPaused: true }), laptop()] });
+      expect(store.deviceId()).toBe('dev-1');
       expect(store.paused()).toBe(true);
-      TestBed.resetTestingModule();
-      await start({
-        devices: [
-          device({ autoPausedUntil: new Date(Date.now() - HOUR).toISOString() }),
-          device({ id: 'd2' }),
-        ],
-      });
+      store.pickDevice('dev-2');
       expect(store.paused()).toBe(false);
+      TestBed.inject(DevicesStore).list.update((l) =>
+        l.map((d) =>
+          d.id === 'dev-2'
+            ? { ...d, autoPausedUntil: new Date(Date.now() + HOUR).toISOString() }
+            : d,
+        ),
+      );
+      expect(store.paused()).toBe(true);
     });
   });
 
@@ -271,7 +371,7 @@ describe('TestPostStore', () => {
       vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
     });
 
-    it('sends the chosen group, collection and post, and starts the log with "queued"', async () => {
+    it('sends the chosen group, collection, post and extension, and starts the log with "queued"', async () => {
       store.pickGroup('link:b');
       store.pickPost('p2');
       const sent = store.run();
@@ -285,6 +385,7 @@ describe('TestPostStore', () => {
         collectionId: 'c1',
         collectionPostId: 'p2',
         text: null,
+        deviceId: 'dev-1',
       });
       req.flush(testPostDto());
       await sent;
@@ -295,19 +396,19 @@ describe('TestPostStore', () => {
       expect(store.runError()).toBe('');
     });
 
-    it('names the client-picked random post and a typed text, and posts to another account with its id', async () => {
-      store.pickGroup('account:acc-other');
+    it('names the client-picked random post and a typed text', async () => {
       store.text.set(' my text ');
       const picked = store.post()!.id;
       const sent = store.run();
       const req = http.expectOne(TEST_POST_URL);
       expect(req.request.body).toEqual({
         linkSetId: 's1',
-        linkId: null,
-        accountId: 'acc-other',
+        linkId: 'a',
+        accountId: null,
         collectionId: 'c1',
         collectionPostId: picked,
         text: 'my text',
+        deviceId: 'dev-1',
       });
       req.flush(testPostDto());
       await sent;
@@ -511,14 +612,23 @@ describe('TestPostStore', () => {
       expect(kinds()).toEqual(['queued', 'posting']);
     });
 
-    it('empties the form and the log when the workspace changes', async () => {
+    it('empties both forms, the extension choice and the log when the workspace changes', async () => {
       await run();
       store.text.set('x');
+      store.pickPanel('manual');
+      store.pickDevice('dev-1');
+      store.manualUrl.set('https://www.facebook.com/baandee.shop');
+      store.manualText.set('y');
+      store.addManualMedia(['m1']);
       TestBed.inject(WorkspaceStore).id.set(null);
       await settle();
       expect(store.log()).toEqual([]);
       expect(store.running()).toBe(false);
       expect(store.text()).toBe('');
+      expect(store.panel()).toBe('set');
+      expect(store.manualUrl()).toBe('');
+      expect(store.manualText()).toBe('');
+      expect(store.manualMedia()).toEqual([]);
       await vi.advanceTimersByTimeAsync(TEST_POLL_MS * 2);
       expect(dayReads()).toHaveLength(0);
     });
@@ -529,6 +639,170 @@ describe('TestPostStore', () => {
       await vi.advanceTimersByTimeAsync(TEST_POLL_MS);
       await answer({ status: 'success' });
       expect(store.seed()).toBeGreaterThan(seed);
+    });
+
+    it('sends the chosen extension of several', async () => {
+      TestBed.inject(DevicesStore).list.set([device(), laptop()]);
+      background = { ...background, devices: [device(), laptop()] };
+      store.pickDevice('dev-2');
+      const sent = store.run();
+      const req = http.expectOne(TEST_POST_URL);
+      expect(req.request.body.deviceId).toBe('dev-2');
+      req.flush(testPostDto());
+      await sent;
+      await settle();
+      refreshReads();
+    });
+  });
+
+  describe('the hand-made test', () => {
+    beforeEach(async () => {
+      await start();
+    });
+
+    it('reads the typed address: a group or a page, in its standard form', () => {
+      store.manualUrl.set('fb.com/groups/AbC/permalink/1');
+      expect(store.manualTarget()).toEqual({
+        kind: 'group',
+        url: 'https://www.facebook.com/groups/AbC',
+      });
+      store.manualUrl.set('https://m.facebook.com/baandee.shop?ref=x');
+      expect(store.manualTarget()).toEqual({
+        kind: 'page',
+        url: 'https://www.facebook.com/baandee.shop',
+      });
+      store.manualUrl.set('https://www.facebook.com/profile.php?id=1000123456');
+      expect(store.manualTarget()?.kind).toBe('page');
+      store.manualUrl.set('https://example.com/groups/abc');
+      expect(store.manualTarget()).toBeNull();
+      store.manualUrl.set('https://www.facebook.com/watch');
+      expect(store.manualTarget()).toBeNull();
+    });
+
+    it('needs a link that is a group or a page, a text, and an extension', async () => {
+      store.pickPanel('manual');
+      expect(store.block()).toBe('needUrl');
+      store.manualUrl.set('hello');
+      expect(store.block()).toBe('badUrl');
+      store.manualUrl.set('https://www.facebook.com/groups/abc');
+      expect(store.block()).toBe('needText');
+      store.manualText.set('  ');
+      expect(store.block()).toBe('needText');
+      store.manualText.set('ทดสอบ');
+      expect(store.block()).toBe('');
+      TestBed.inject(SettingsStore).extensionOnline.set(false);
+      expect(store.block()).toBe('offline');
+      // The other panel is not affected by what was typed here.
+      store.pickPanel('set');
+      expect(store.blockSet()).toBe('offline');
+    });
+
+    it('previews the text as the server writes it: spintax resolved, no code, footer or hashtags', () => {
+      store.manualText.set('สวัสดี {{code}}{ครับ|ค่ะ}');
+      expect(['สวัสดี ครับ', 'สวัสดี ค่ะ']).toContain(store.manualComposed());
+      store.manualText.set('   ');
+      expect(store.manualComposed()).toBe('');
+    });
+
+    it('picks library images up to the API maximum, takes them out again, and ignores repeats', () => {
+      for (let i = 0; i < TEST_MAX_MEDIA + 3; i++) store.toggleManualMedia('m' + i);
+      expect(store.manualMedia()).toHaveLength(TEST_MAX_MEDIA);
+      expect(store.manualMedia()[0]).toBe('m0');
+      store.toggleManualMedia('m3');
+      expect(store.manualMedia()).not.toContain('m3');
+      expect(store.manualMedia()).toHaveLength(TEST_MAX_MEDIA - 1);
+      // Uploaded files are added as far as they fit, once each.
+      store.addManualMedia(['m0', 'new1', 'new2']);
+      expect(store.manualMedia()).toHaveLength(TEST_MAX_MEDIA);
+      expect(store.manualMedia().filter((id) => id === 'm0')).toHaveLength(1);
+      expect(store.manualMedia()).toContain('new1');
+      expect(store.manualMedia()).not.toContain('new2');
+    });
+
+    it('sends the address, the text, the images and the extension, and follows the post like the other test', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+      fillManual();
+      store.manualUrl.set('  fb.com/baandee.shop  ');
+      store.manualText.set('  ทดสอบ  ');
+      store.addManualMedia(['m1', 'm2']);
+      const sent = store.runManual();
+      expect(store.running()).toBe(true);
+      const req = http.expectOne(MANUAL_POST_URL);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({
+        url: 'https://www.facebook.com/baandee.shop',
+        text: 'ทดสอบ',
+        mediaIds: ['m1', 'm2'],
+        deviceId: 'dev-1',
+      });
+      req.flush(manualPostDto());
+      await sent;
+      await settle();
+      refreshReads([manualPostDto()]);
+      await quiet();
+      expect(kinds()).toEqual(['queued']);
+      // The same follow-up: an event of the post reads its day again.
+      events.emit('post', { postId: 'mp1', status: 'posting' });
+      await settle();
+      await answer({}, () => manualPostDto({ status: 'posting' }));
+      expect(kinds()).toEqual(['queued', 'posting']);
+      events.emit('post', { postId: 'mp1', status: 'success' });
+      await settle();
+      await answer({}, () =>
+        manualPostDto({ status: 'success', publishedAt: new Date().toISOString() }),
+      );
+      expect(kinds()).toEqual(['queued', 'posting', 'success']);
+      expect(store.running()).toBe(false);
+      expect(toasts().map((x) => x.message)).toContain(t().test.done);
+    });
+
+    it('sends the extension that was picked', async () => {
+      TestBed.inject(DevicesStore).list.set([device(), laptop()]);
+      background = { ...background, devices: [device(), laptop()] };
+      fillManual();
+      store.pickDevice('dev-2');
+      const sent = store.runManual();
+      const req = http.expectOne(MANUAL_POST_URL);
+      expect(req.request.body.deviceId).toBe('dev-2');
+      req.flush(manualPostDto());
+      await sent;
+      await settle();
+      refreshReads();
+    });
+
+    it('does nothing while blocked or while a test is running', async () => {
+      store.pickPanel('manual');
+      await store.runManual();
+      http.expectNone(MANUAL_POST_URL);
+      fillManual();
+      const sent = store.runManual();
+      void store.runManual();
+      http.expectOne(MANUAL_POST_URL).flush(manualPostDto());
+      await sent;
+      await settle();
+      refreshReads();
+    });
+
+    it('shows the reason when the API refuses it, beside the button and not as a toast', async () => {
+      fillManual();
+      const sent = store.runManual();
+      http
+        .expectOne(MANUAL_POST_URL)
+        .flush(
+          { title: 'มีส่วนขยายมากกว่า 1 เครื่อง เลือกส่วนขยายที่จะส่งงานทดสอบก่อน', status: 422 },
+          { status: 422, statusText: 'Unprocessable' },
+        );
+      await sent;
+      await settle();
+      expect(store.runError()).toBe(
+        'มีส่วนขยายมากกว่า 1 เครื่อง เลือกส่วนขยายที่จะส่งงานทดสอบก่อน',
+      );
+      expect(store.running()).toBe(false);
+      expect(store.log()).toEqual([]);
+      expect(toasts()).toEqual([]);
+      // Changing panel forgets a refusal that belonged to the other one.
+      store.pickPanel('set');
+      expect(store.runError()).toBe('');
     });
   });
 

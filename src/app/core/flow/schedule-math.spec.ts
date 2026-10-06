@@ -11,7 +11,6 @@ import {
   localDateKey,
   memberSlots,
   normalizeTimes,
-  overrideKeyOfAccount,
   overrideKeyOfLink,
   overridesFromInput,
   parseDateKey,
@@ -40,7 +39,7 @@ describe('constants', () => {
   it('match the prototype and the server', () => {
     expect(SCHEDULE_MODES).toEqual(['daily', 'weekdays', 'weekend', 'interval', 'drip', 'once']);
     expect(HORIZON_DAYS).toBe(14);
-    expect(BUMP_HOUR_OPTIONS).toEqual([0, 6, 12, 24]);
+    expect(BUMP_HOUR_OPTIONS).toEqual([0, 1, 2, 3, 6, 12, 24]);
     expect(AUTO_DELETE_DAY_OPTIONS).toEqual([0, 3, 7, 14]);
   });
 
@@ -530,7 +529,6 @@ describe('overrides and members', () => {
     expect(overrideKeyOfLink('3f2504e04f8911d39a0c0305e82c3301')).toBe(
       '3f2504e04f8911d39a0c0305e82c3301',
     );
-    expect(overrideKeyOfAccount('abc')).toBe('account:abc');
   });
 
   it('overridesFromInput keeps readable non-empty texts and reports bad ones', () => {

@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
-import { DraftStore } from '../../core/data/draft.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { EXPORT_FILES } from '../../core/flow';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
@@ -12,13 +11,13 @@ import { NextStepComponent } from '../../shared/components/next-step/next-step.c
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { Pager } from '../../shared/components/pager/pager';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
-import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
+import { POSTS_PATH, newPostParams } from '../posts/posts-link';
 import { CollectionCardComponent } from './collection-card.component';
 import { NewCollectionModalComponent } from './new-collection-modal.component';
 import '../../core/i18n/i18n.flow';
 
 // Step 1 of the flow: the workspace's post collections ("ชุดโพสต์") with their posts, composing settings and
-// approval. Posts are written in the composer; a collection is paired with a link set on the schedules page.
+// approval. Posts are written in the post library's editor; a collection is paired with a link set on the schedules page.
 @Component({
   selector: 'app-collections-page',
   imports: [
@@ -36,7 +35,6 @@ import '../../core/i18n/i18n.flow';
 })
 export class CollectionsPageComponent {
   protected readonly router = inject(Router);
-  private readonly draft = inject(DraftStore);
   private readonly notify = inject(NotificationService);
   protected readonly store = inject(CollectionsStore);
   protected readonly perm = inject(PermissionsService);
@@ -58,9 +56,10 @@ export class CollectionsPageComponent {
     else this.notify.error(a.exportFailed);
   }
 
-  /** A blank post for the collection that is open (or the last one saved to). */
+  /** Writes a post in the collection that was last saved to (else the open one): the post library's editor opens. */
   protected write(): void {
-    this.draft.startNew();
-    void this.router.navigate([COMPOSER_PATH], { queryParams: composerParams(this.draft.draft()) });
+    const known = (id: string | null) => (id && this.store.byId(id) ? id : null);
+    const collection = known(this.store.lastId()) ?? known(this.store.openId());
+    void this.router.navigate([POSTS_PATH], { queryParams: newPostParams(collection) });
   }
 }

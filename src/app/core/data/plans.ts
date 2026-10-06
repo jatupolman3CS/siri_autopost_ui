@@ -1,26 +1,95 @@
 import { baht } from '../i18n/format';
 import { Dict, fmt } from '../i18n/i18n.service';
-import { PLAN_ORDER, PlanKey, PlanLimits } from './models';
+import {
+  LIMIT_KEYS,
+  LimitKey,
+  PLAN_FEATURES,
+  PLAN_ORDER,
+  PlanFeature,
+  PlanKey,
+  PlanLimits,
+} from './models';
+
+/** What the Pro plan includes besides its numbers (PlanFeatures.For in the API). */
+const PRO_FEATURES: PlanFeature[] = ['advanced_anti_ban', 'notifications', 'auto_reply', 'ai'];
 
 /**
- * The design's plan limits and prices, shown until /api/plans answers (the API's values replace them).
- * null is unlimited.
+ * The packages as the API ships them, shown until /api/plans answers (the API's values replace them).
+ * null is unlimited. Free is for trying it out, Basic for one small shop, Pro for a seller with several
+ * browsers, Agency (shown as "Premium") for agencies and heavy use: nothing is capped but the seats.
  */
 export const DESIGN_PLANS: Record<PlanKey, PlanLimits> = {
-  free: { accounts: 1, posts: 10, devices: 1, seats: 1, price: 0 },
-  basic: { accounts: 2, posts: 30, devices: 1, seats: 1, price: 290 },
-  pro: { accounts: 10, posts: null, devices: 3, seats: 1, price: 790 },
-  agency: { accounts: null, posts: null, devices: null, seats: 10, price: 1990 },
+  free: {
+    accounts: 1,
+    posts: 10,
+    devices: 1,
+    seats: 1,
+    groups: 10,
+    images: 20,
+    libraryPosts: 20,
+    price: 0,
+    features: [],
+  },
+  basic: {
+    accounts: 2,
+    posts: 50,
+    devices: 1,
+    seats: 1,
+    groups: 50,
+    images: 200,
+    libraryPosts: 200,
+    price: 290,
+    features: [],
+  },
+  pro: {
+    accounts: 10,
+    posts: 300,
+    devices: 3,
+    seats: 3,
+    groups: 300,
+    images: 1000,
+    libraryPosts: 1000,
+    price: 790,
+    features: [...PRO_FEATURES],
+  },
+  agency: {
+    accounts: null,
+    posts: null,
+    devices: null,
+    seats: 10,
+    groups: null,
+    images: null,
+    libraryPosts: null,
+    price: 1990,
+    features: [...PLAN_FEATURES],
+  },
 };
+
+/** One of the seven numbers of a plan, as a card line: a short label and the value (a number or "Unlimited"). */
+export interface TierLimit {
+  key: LimitKey;
+  label: string;
+  value: string;
+  unlimited: boolean;
+}
+
+/** One function of the plan: included (a check) or not (a muted dash). */
+export interface TierFeature {
+  key: PlanFeature;
+  label: string;
+  included: boolean;
+}
 
 export interface TierView {
   k: PlanKey;
   name: string;
+  /** "Good for ..." one-liner. */
   tag: string;
   price: string;
   per: string;
   billed: string;
-  features: readonly string[];
+  limits: readonly TierLimit[];
+  features: readonly TierFeature[];
 }
 
 /** Monthly price for a plan; annual billing is 20% off. */
@@ -34,29 +103,39 @@ export function perMonth(
 }
 
 /**
- * The lines of a plan card: the four limits from /api/plans (so an admin's edit shows up at once; null is
- * unlimited), and the advanced anti-ban line on the plans that have it (the API gates it to Pro and Agency).
- * Nothing else is promised: no feature that the API does not gate or does not have is listed.
+ * The seven numbers of a plan as card lines (groups, images, library posts, posts a day, extensions, seats,
+ * accounts). They come from /api/plans, so an admin's edit shows up at once; null is unlimited.
+ */
+export function limitLines(
+  plans: Record<PlanKey, PlanLimits>,
+  k: PlanKey,
+  t: Dict,
+): readonly TierLimit[] {
+  const p = plans[k];
+  return LIMIT_KEYS.map((key) => ({
+    key,
+    label: t.api.planLimit[key],
+    value: p[key] === null ? t.common.unlimited : String(p[key]),
+    unlimited: p[key] === null,
+  }));
+}
+
+/**
+ * The functions of a plan, each as included or not: the `features` list of /api/plans is the source, and a key
+ * this app does not know is ignored. Nothing is promised that the API does not gate.
  */
 export function featureLines(
   plans: Record<PlanKey, PlanLimits>,
   k: PlanKey,
   t: Dict,
-): readonly string[] {
-  const p = plans[k];
-  const n = (v: number | null) => v ?? t.common.unlimited;
-  const lines = [
-    fmt(t.api.planAccounts, { n: n(p.accounts) }),
-    fmt(t.api.planPosts, { n: n(p.posts) }),
-    fmt(t.api.planDevices, { n: n(p.devices) }),
-    fmt(t.api.planSeats, { n: n(p.seats) }),
-  ];
-  if (ADVANCED_ANTI_BAN.includes(k)) lines.push(t.api.planAntiBan);
-  return lines;
+): readonly TierFeature[] {
+  const has = new Set<string>(plans[k].features);
+  return PLAN_FEATURES.map((key) => ({
+    key,
+    label: t.api.planFeature[key],
+    included: has.has(key),
+  }));
 }
-
-/** The plans whose owners get the advanced anti-ban settings (User.HasAdvancedAntiBan in the API). */
-const ADVANCED_ANTI_BAN: PlanKey[] = ['pro', 'agency'];
 
 /** Plan cards for the landing page and the billing page. */
 export function tierViews(
@@ -78,7 +157,43 @@ export function tierViews(
           : cycle === 'year'
             ? fmt(t.bill.billedYear, { amt: baht(pm * 12) })
             : '',
+      limits: limitLines(plans, k, t),
       features: featureLines(plans, k, t),
     };
   });
+}
+
+/** One row of the comparison table: what is compared and its value under each plan (in plan order). */
+export interface CompareRow {
+  key: LimitKey | PlanFeature;
+  label: string;
+  cells: readonly { value: string; unlimited?: boolean; included?: boolean }[];
+}
+
+/**
+ * The comparison table of the billing page: a row per number and per function, a column per plan (in plan
+ * order). The numbers read as text, the functions as included or not.
+ */
+export function compareRows(
+  plans: Record<PlanKey, PlanLimits>,
+  t: Dict,
+): { limits: CompareRow[]; features: CompareRow[] } {
+  return {
+    limits: LIMIT_KEYS.map((key) => ({
+      key,
+      label: t.api.planLimit[key],
+      cells: PLAN_ORDER.map((k) => ({
+        value: plans[k][key] === null ? t.common.unlimited : String(plans[k][key]),
+        unlimited: plans[k][key] === null,
+      })),
+    })),
+    features: PLAN_FEATURES.map((key) => ({
+      key,
+      label: t.api.planFeature[key],
+      cells: PLAN_ORDER.map((k) => {
+        const included = plans[k].features.includes(key);
+        return { value: included ? t.api.planIncluded : t.api.planNotIncluded, included };
+      }),
+    })),
+  };
 }

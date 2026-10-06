@@ -26,6 +26,25 @@
           </div>
         }
         <div class="small muted hint">{{ t().adm.unlimitedHint }}</div>
+        <div class="feats" role="group" [attr.aria-label]="t().api.planFeaturesAdmin">
+          <div class="small muted">{{ t().api.planFeaturesAdmin }}</div>
+          <ul>
+            @for (f of p.features; track f.key) {
+              <li [class.off]="!f.included">
+                <i
+                  class="ph"
+                  [class.ph-check]="f.included"
+                  [class.ph-minus]="!f.included"
+                  aria-hidden="true"
+                ></i>
+                <span>{{ f.label }}</span>
+                <span class="sr-only">{{
+                  f.included ? t().api.planIncluded : t().api.planNotIncluded
+                }}</span>
+              </li>
+            }
+          </ul>
+        </div>
       </div>
     }
   </div>

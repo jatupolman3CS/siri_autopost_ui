@@ -1,0 +1,158 @@
+<section class="bump" [class.locked]="form.bumpLocked()" [attr.aria-labelledby]="textId + '-h'">
+  <div class="head">
+    <i class="ph ph-arrow-fat-lines-up" aria-hidden="true"></i>
+    <h3 class="title" [id]="textId + '-h'">{{ title() }}</h3>
+  </div>
+  <p class="bump-note">{{ t().api.flow.schBumpIntro }}</p>
+
+  @if (form.bumpLocked()) {
+    <app-feature-lock [heading]="lockTitle()" [body]="lockBody()" />
+  }
+
+  <app-checkbox
+    [label]="t().api.flow.schBumpSwitch"
+    [checked]="form.bumpActive()"
+    [disabled]="off()"
+    (checkedChange)="form.bumpOn.set($event)"
+  />
+
+  @if (showDetails()) {
+    <div class="grid">
+      <app-select-field
+        [label]="t().api.flow.schBumpAfter"
+        [options]="hourOptions()"
+        [disabled]="off()"
+        [value]="'' + form.bumpHours()"
+        (valueChange)="form.setBumpHours($event)"
+      />
+      <div>
+        <app-select-field
+          [label]="t().api.flow.schBumpRounds"
+          [options]="roundOptions()"
+          [disabled]="off()"
+          [value]="'' + form.bumpRounds()"
+          (valueChange)="form.setBumpRounds($event)"
+        />
+        <p class="su-field-help">
+          <i class="ph ph-info" aria-hidden="true"></i>{{ t().api.flow.schBumpRoundsHint }}
+        </p>
+      </div>
+    </div>
+
+    <div>
+      <label class="su-field-label" [attr.for]="textId">{{ t().api.flow.schBumpText }}</label>
+      <textarea
+        class="su-textarea text"
+        [id]="textId"
+        rows="3"
+        [placeholder]="t().api.flow.schBumpTextPh"
+        [value]="form.bumpText()"
+        [disabled]="off()"
+        [attr.maxlength]="limits.bumpText"
+        (input)="form.bumpText.set($any($event.target).value)"
+      ></textarea>
+      <p class="su-field-help">
+        <i class="ph ph-info" aria-hidden="true"></i>{{ t().api.flow.schBumpTextHint }}
+      </p>
+    </div>
+
+    <div class="images">
+      <div class="img-head">
+        <span class="fw5">{{ t().api.flow.schBumpImages }}</span>
+        <span class="small muted"> · {{ selLabel() }}</span>
+        <span class="grow"></span>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          [disabled]="off()"
+          [attr.aria-expanded]="pickerOpen()"
+          (click)="pickerOpen.set(!pickerOpen())"
+        >
+          <i class="ph ph-images" aria-hidden="true"></i
+          >{{ pickerOpen() ? t().api.flow.schBumpPickHide : t().api.flow.schBumpPick }}
+        </button>
+      </div>
+      @if (chosen().length) {
+        <div class="media">
+          @for (m of chosen(); track m.id) {
+            <div class="m on" [title]="m.label">
+              <span class="thumb">
+                @if (m.src) {
+                  <img [src]="m.src" alt="" />
+                } @else {
+                  <i class="ph ph-image" aria-hidden="true"></i>
+                }
+              </span>
+              <span class="small ellipsis">{{ m.label }}</span>
+              <button
+                type="button"
+                class="ibtn x"
+                [disabled]="off()"
+                [attr.aria-label]="t().common.remove + ' ' + m.label"
+                (click)="form.toggleBumpMedia(m.id)"
+              >
+                <i class="ph ph-x" aria-hidden="true"></i>
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="small muted none">{{ t().api.flow.schBumpImagesNone }}</p>
+      }
+      @if (pickerOpen()) {
+        <div class="media picker">
+          @for (m of picks(); track m.id) {
+            <button
+              type="button"
+              class="m"
+              [class.on]="m.selected"
+              [title]="m.label"
+              [disabled]="off()"
+              [attr.aria-pressed]="m.selected"
+              (click)="form.toggleBumpMedia(m.id)"
+            >
+              <span class="thumb">
+                @if (m.src) {
+                  <img [src]="m.src" alt="" />
+                } @else {
+                  <i class="ph ph-image" aria-hidden="true"></i>
+                }
+                @if (m.selected) {
+                  <i class="ph-fill ph-check-circle tick" aria-hidden="true"></i>
+                }
+              </span>
+              <span class="small ellipsis">{{ m.label }}</span>
+            </button>
+          } @empty {
+            @if (noLibrary()) {
+              <a class="small" routerLink="/app/library">{{ t().api.flow.schBumpNoLibrary }}</a>
+            }
+          }
+        </div>
+        <app-pager [pager]="pager" />
+      }
+    </div>
+
+    <div class="grid">
+      <div>
+        <app-select-field
+          [label]="t().api.flow.schBumpEach"
+          [options]="eachOptions()"
+          [disabled]="off() || !form.bumpMedia().length"
+          [value]="'' + form.bumpEach()"
+          (valueChange)="form.setBumpEach($event)"
+        />
+        <p class="su-field-help">
+          <i class="ph ph-info" aria-hidden="true"></i>{{ t().api.flow.schBumpEachHint }}
+        </p>
+      </div>
+    </div>
+
+    <div class="sum" role="status">
+      <i class="ph ph-timer" aria-hidden="true"></i><span>{{ form.bumpSummary() }}</span>
+    </div>
+    <p class="bump-note">
+      <i class="ph ph-info" aria-hidden="true"></i>{{ t().api.flow.schBumpNote }}
+    </p>
+  }
+</section>

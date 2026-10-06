@@ -20,7 +20,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
-import { COMPOSER_PATH, composerParams } from '../composer/composer-link';
+import { POSTS_PATH, editPostParams, newPostParams } from '../posts/posts-link';
 import { Pager } from '../../shared/components/pager/pager';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 
@@ -32,7 +32,7 @@ import { PagerComponent } from '../../shared/components/pager/pager.component';
   styleUrl: './calendar-page.component.scss',
 })
 export class CalendarPageComponent {
-  /** ?day=YYYY-MM-DD opens that day (the composer sends users here after scheduling). */
+  /** ?day=YYYY-MM-DD opens that day (a link to a day). */
   readonly day = input<string>();
 
   private readonly router = inject(Router);
@@ -157,17 +157,18 @@ export class CalendarPageComponent {
   }
 
   /**
-   * Opens the collection post a queued task came from in the composer. A task that has none (made before
-   * collections existed) starts a new post with its text and media, to be saved into a collection.
+   * Opens the library post a queued task came from in the post library's editor. A task that has none (made before
+   * collections existed) starts a new post with its text and media, to be saved from there.
    */
   protected edit(p: QueueItem): void {
     const found = this.collections.postById(p.collectionPostId);
-    if (found) this.draft.edit(found.collection, found.post);
-    else {
-      this.draft.startNew();
-      this.draft.patch({ text: p.text, media: p.mediaIds });
+    if (found) {
+      void this.router.navigate([POSTS_PATH], { queryParams: editPostParams(found.post.id) });
+      return;
     }
-    void this.router.navigate([COMPOSER_PATH], { queryParams: composerParams(this.draft.draft()) });
+    this.draft.startNew();
+    this.draft.patch({ text: p.text, media: p.mediaIds });
+    void this.router.navigate([POSTS_PATH], { queryParams: newPostParams() });
   }
 
   protected async confirmDelete(): Promise<void> {

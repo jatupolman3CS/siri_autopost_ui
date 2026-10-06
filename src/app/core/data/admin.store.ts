@@ -12,12 +12,21 @@ import {
 } from '../http/api.service';
 import { loadWithRetry } from './loading';
 import { DESIGN_PLANS } from './plans';
-import { Customer, DiscountKey, LimitKey, PlanKey, PlanLimits, Promo, Transaction } from './models';
+import {
+  Customer,
+  DiscountKey,
+  LIMIT_KEYS,
+  LimitKey,
+  PlanField,
+  PlanKey,
+  PlanLimits,
+  Promo,
+  Transaction,
+  isPlanFeature,
+} from './models';
 import { SessionStore } from './session.store';
 
 export type AdminAction = 'suspend' | 'ban' | 'refund' | 'assist' | 'restore';
-
-const LIMIT_KEYS: LimitKey[] = ['accounts', 'posts', 'devices', 'seats'];
 /** How many entries of the platform-wide activity log are read (plan and promo changes are the ones shown). */
 const GLOBAL_AUDIT_TAKE = 100;
 
@@ -96,6 +105,11 @@ function toPlans(list: ApiPlanSetting[]): Record<PlanKey, PlanLimits> {
       posts: p.posts,
       devices: p.devices,
       seats: p.seats,
+      groups: p.groups,
+      images: p.images,
+      libraryPosts: p.libraryPosts,
+      // The functions are the API's (a key this app does not know is dropped).
+      features: p.features.filter(isPlanFeature),
     };
   return out;
 }
@@ -299,11 +313,15 @@ export class AdminStore {
   async setLimit(id: string, key: LimitKey, value: number): Promise<void> {
     const c = this.customer(id);
     if (!c) return;
+    // Every override is sent each time; null keeps the plan's value, 0 means unlimited.
     const limits = {
       accounts: null,
       posts: null,
       devices: null,
       seats: null,
+      groups: null,
+      images: null,
+      libraryPosts: null,
       ...(c.limits ?? {}),
     } as Record<LimitKey, number | null>;
     limits[key] = Math.max(0, value || 0);
@@ -353,7 +371,8 @@ export class AdminStore {
     return this.customer(tx.userId);
   }
 
-  async setPlanField(plan: PlanKey, field: keyof PlanLimits, value: number): Promise<void> {
+  /** Saves one number of a plan; empty or 0 = unlimited (not for the price). */
+  async setPlanField(plan: PlanKey, field: PlanField, value: number): Promise<void> {
     const n = Math.max(0, value || 0);
     const cur = { ...this.plans()[plan], [field]: field === 'price' ? n : n || null };
     const saved = await this.api.adminUpdatePlan(plan, {
@@ -362,6 +381,9 @@ export class AdminStore {
       posts: cur.posts,
       devices: cur.devices,
       seats: cur.seats,
+      groups: cur.groups,
+      images: cur.images,
+      libraryPosts: cur.libraryPosts,
     });
     this.plans.update((p) =>
       toPlans([...Object.entries(p).map(([key, v]) => ({ key, ...v }) as ApiPlanSetting), saved]),

@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { assistStorage } from '../../core/auth/token';
 import { CollectionsStore } from '../../core/data/collections.store';
+import { DraftStore } from '../../core/data/draft.store';
 import { LibraryStore } from '../../core/data/library.store';
 import { MasterPostsStore } from '../../core/data/master-posts.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
@@ -10,7 +11,7 @@ import { ApiCollection, ApiCollectionPost, ApiRole } from '../../core/http/api.s
 import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import { AI_STATUS, WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import {
   apiCollection,
   apiCollectionPost,
@@ -20,6 +21,8 @@ import { PostsPageComponent } from './posts-page.component';
 
 const MASTER = `/api/workspaces/${WS}/master-posts`;
 const COLS = `/api/workspaces/${WS}/collections`;
+const SETS = `/api/workspaces/${WS}/link-sets`;
+const AI = `/api/workspaces/${WS}/ai/status`;
 
 const p1 = apiCollectionPost({
   id: 'p1',
@@ -75,6 +78,7 @@ describe('PostsPageComponent', () => {
     role: ApiRole = 'owner',
     assist = false,
     collections: ApiCollection[] = COLLECTIONS,
+    inputs: { new?: string; collection?: string; post?: string } = {},
   ): Promise<void> {
     posts = list;
     http = provideApiTesting({
@@ -94,6 +98,7 @@ describe('PostsPageComponent', () => {
     TestBed.inject(LibraryStore);
     await signIn(http, { collections, masterPosts: list, workspace: { role } });
     fixture = TestBed.createComponent(PostsPageComponent);
+    for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
     fixture.detectChanges();
     await settle();
     // Counts and times move while schedules run: the page reads both lists again when it opens.
@@ -141,6 +146,9 @@ describe('PostsPageComponent', () => {
     try {
       for (const r of http.match(MASTER)) r.flush(posts);
       for (const r of http.match(COLS)) r.flush(COLLECTIONS);
+      // An editor that was opened reads the link sets of its preview and the AI status.
+      for (const r of http.match(SETS)) r.flush([]);
+      for (const r of http.match(AI)) r.flush(AI_STATUS);
       http.verify();
     } finally {
       TestBed.resetTestingModule();
@@ -771,6 +779,240 @@ describe('PostsPageComponent', () => {
     });
   });
 
+  describe('the editor panel', () => {
+    const panel = () => el.querySelector<HTMLElement>('[data-testid="editor-panel"]');
+    const editBtn = (text: string) => btn(t().common.edit, cardOf(text));
+    let navigate: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(async () => {
+      await open();
+      navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    });
+
+    it('is not there until it is asked for, and the cards have no inline editor any more', async () => {
+      expect(panel()).toBeNull();
+      expect(el.querySelector('app-post-editor')).toBeNull();
+      editBtn(p1.text).click();
+      await rerender();
+      expect(el.querySelector('app-master-post-card app-post-editor')).toBeNull();
+      expect(el.querySelectorAll('app-post-editor').length).toBe(1);
+    });
+
+    it('opens ONE full-width panel for a new post, above the list and under the stepper', async () => {
+      byTestId('new-post').click();
+      await rerender();
+      expect(panel()!.querySelector('h2')!.textContent).toBe(t().api.flow.plNewTitle);
+      expect(panel()!.querySelector('app-post-editor')).not.toBeNull();
+      expect(panel()!.querySelector('app-post-preview')).not.toBeNull();
+      const order = [...el.querySelector('.page')!.children].map((c) => c.tagName.toLowerCase());
+      expect(order.indexOf('app-flow-steps')).toBeLessThan(order.indexOf('section'));
+      expect(el.querySelector('app-flow-steps + section')).toBe(panel());
+      // The new-post address is written so the panel survives a reload.
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], {
+        queryParams: { new: 1, collection: null, post: null },
+        queryParamsHandling: 'merge',
+      });
+    });
+
+    it('opens the same panel on a post from its card, marks the card and writes ?post= into the address', async () => {
+      editBtn(p2.text).click();
+      await rerender();
+      expect(panel()!.querySelector('h2')!.textContent).toBe(t().api.flow.plEditTitle);
+      expect(editor().querySelector<HTMLTextAreaElement>('textarea.text')!.value).toBe(p2.text);
+      expect(cardOf(p2.text).querySelector('section')!.classList.contains('editing')).toBe(true);
+      expect(cardOf(p1.text).querySelector('section')!.classList.contains('editing')).toBe(false);
+      expect(editBtn(p2.text).getAttribute('aria-pressed')).toBe('true');
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], {
+        queryParams: { post: 'p2', new: null, collection: null },
+        queryParamsHandling: 'merge',
+      });
+    });
+
+    it('switches to another post in the same panel', async () => {
+      editBtn(p1.text).click();
+      await rerender();
+      editBtn(p2.text).click();
+      await rerender();
+      expect(el.querySelectorAll('[data-testid="editor-panel"]').length).toBe(1);
+      expect(editor().querySelector<HTMLTextAreaElement>('textarea.text')!.value).toBe(p2.text);
+      expect(cardOf(p1.text).querySelector('section')!.classList.contains('editing')).toBe(false);
+    });
+
+    it('closes with the X and clears the address', async () => {
+      editBtn(p1.text).click();
+      await rerender();
+      byTestId('editor-close').click();
+      await rerender();
+      expect(panel()).toBeNull();
+      expect(navigate).toHaveBeenLastCalledWith(['/app/posts'], {
+        queryParams: { new: null, collection: null, post: null },
+        queryParamsHandling: 'merge',
+      });
+    });
+
+    it('keeps the draft of a new post when the X closes it, and a bar leads back to it', async () => {
+      byTestId('new-post').click();
+      await rerender();
+      await setValue(editor().querySelector<HTMLTextAreaElement>('textarea.text')!, 'half written');
+      byTestId('editor-close').click();
+      await rerender();
+      expect(panel()).toBeNull();
+      expect(TestBed.inject(DraftStore).draft().text).toBe('half written');
+      const bar = el.querySelector('[data-testid="draft-bar"]')!;
+      expect(bar.textContent).toContain(t().lib.draftBar.replace('{n}', '0').replace('{c}', '12'));
+      byTestId('draft-continue').click();
+      await rerender();
+      expect(editor().querySelector<HTMLTextAreaElement>('textarea.text')!.value).toBe(
+        'half written',
+      );
+      expect(el.querySelector('[data-testid="draft-bar"]')).toBeNull();
+    });
+
+    it('has no draft bar when nothing is written', async () => {
+      expect(el.querySelector('[data-testid="draft-bar"]')).toBeNull();
+      TestBed.inject(DraftStore).patch({ text: '   ' });
+      await rerender();
+      expect(el.querySelector('[data-testid="draft-bar"]')).toBeNull();
+    });
+
+    it('"Cancel" in the form throws the draft of a new post away', async () => {
+      byTestId('new-post').click();
+      await rerender();
+      await setValue(
+        editor().querySelector<HTMLTextAreaElement>('textarea.text')!,
+        'to throw away',
+      );
+      btn(t().common.cancel, editor()).click();
+      await rerender();
+      expect(panel()).toBeNull();
+      expect(TestBed.inject(DraftStore).draft().text).toBe('');
+      expect(el.querySelector('[data-testid="draft-bar"]')).toBeNull();
+    });
+
+    it('scrolls itself into view when it opens', async () => {
+      const scroll = vi.fn();
+      (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = scroll;
+      try {
+        byTestId('new-post').click();
+        await rerender();
+        await rerender();
+        expect(scroll).toHaveBeenCalled();
+      } finally {
+        delete (Element.prototype as unknown as { scrollIntoView?: unknown }).scrollIntoView;
+      }
+    });
+  });
+
+  describe('the address of the editor (route inputs)', () => {
+    const panel = () => el.querySelector<HTMLElement>('[data-testid="editor-panel"]');
+
+    it('?post= opens that post once the library has arrived', async () => {
+      await open(POSTS, 'owner', false, COLLECTIONS, { post: 'p2' });
+      expect(panel()!.querySelector('h2')!.textContent).toBe(t().api.flow.plEditTitle);
+      expect(editor().querySelector<HTMLTextAreaElement>('textarea.text')!.value).toBe(p2.text);
+      expect(cardOf(p2.text).querySelector('section')!.classList.contains('editing')).toBe(true);
+    });
+
+    it('?post= waits for the posts before it looks for the post', async () => {
+      http = provideApiTesting({
+        imports: [PostsPageComponent],
+        providers: [provideRouter([{ path: '**', children: [] }])],
+      });
+      posts = POSTS;
+      TestBed.inject(WorkspaceStore);
+      TestBed.inject(LibraryStore);
+      await signIn(http);
+      fixture = TestBed.createComponent(PostsPageComponent);
+      fixture.componentRef.setInput('post', 'p2');
+      fixture.detectChanges();
+      await settle();
+      el = fixture.nativeElement as HTMLElement;
+      expect(panel()).toBeNull();
+      expect(toasts()).toEqual([]);
+      http.expectOne(MASTER).flush(POSTS);
+      http.match(COLS).forEach((r) => r.flush(COLLECTIONS));
+      await rerender();
+      expect(panel()).not.toBeNull();
+      expect(editor().querySelector<HTMLTextAreaElement>('textarea.text')!.value).toBe(p2.text);
+    });
+
+    it('?post= for a post that is gone says so, opens nothing and clears the address', async () => {
+      const navigate = vi.spyOn(Router.prototype, 'navigate').mockResolvedValue(true);
+      await open(POSTS, 'owner', false, COLLECTIONS, { post: 'deleted' });
+      expect(toasts().map((x) => x.message)).toEqual([t().api.flow.edPostGone]);
+      expect(panel()).toBeNull();
+      expect(navigate).toHaveBeenCalledWith(['/app/posts'], {
+        queryParams: { post: null },
+        queryParamsHandling: 'merge',
+      });
+    });
+
+    it('?new=1 opens the editor on a blank new post', async () => {
+      await open(POSTS, 'owner', false, COLLECTIONS, { new: '1' });
+      expect(panel()!.querySelector('h2')!.textContent).toBe(t().api.flow.plNewTitle);
+      expect(editor().querySelector<HTMLTextAreaElement>('textarea.text')!.value).toBe('');
+    });
+
+    it('?new=1&collection= starts the post in that collection', async () => {
+      await open(POSTS, 'owner', false, COLLECTIONS, { new: '1', collection: 'b' });
+      expect(TestBed.inject(DraftStore).draft().collectionIds).toEqual(['b']);
+      const on = [...editor().querySelectorAll('.chips .pick[aria-pressed="true"]')].map((b) =>
+        b.textContent!.trim(),
+      );
+      expect(on).toEqual(['Tickets']);
+    });
+
+    it('?new=1 continues the post in progress and keeps its collections', async () => {
+      http = provideApiTesting({
+        imports: [PostsPageComponent],
+        providers: [provideRouter([{ path: '**', children: [] }])],
+      });
+      posts = POSTS;
+      TestBed.inject(WorkspaceStore);
+      TestBed.inject(MasterPostsStore);
+      TestBed.inject(CollectionsStore);
+      TestBed.inject(LibraryStore);
+      const draft = TestBed.inject(DraftStore);
+      await signIn(http, { collections: COLLECTIONS, masterPosts: POSTS });
+      draft.patch({
+        text: 'came back from the library',
+        collectionIds: ['a', 'b'],
+      });
+      fixture = TestBed.createComponent(PostsPageComponent);
+      fixture.componentRef.setInput('new', '1');
+      fixture.detectChanges();
+      await settle();
+      http.expectOne(MASTER).flush(POSTS);
+      http.expectOne(COLS).flush(COLLECTIONS);
+      await settle();
+      fixture.detectChanges();
+      el = fixture.nativeElement as HTMLElement;
+      expect(editor().querySelector<HTMLTextAreaElement>('textarea.text')!.value).toBe(
+        'came back from the library',
+      );
+      const on = [...editor().querySelectorAll('.chips .pick[aria-pressed="true"]')].map((b) =>
+        b.textContent!.trim(),
+      );
+      expect(on).toEqual(['Condo', 'Tickets']);
+    });
+
+    it('closes when the address loses its parameters (the back button)', async () => {
+      await open(POSTS, 'owner', false, COLLECTIONS, { new: '1' });
+      expect(panel()).not.toBeNull();
+      fixture.componentRef.setInput('new', undefined);
+      await rerender();
+      expect(panel()).toBeNull();
+    });
+
+    it('a viewer can open a post to read it, but not change it', async () => {
+      await open(POSTS, 'viewer', false, COLLECTIONS, { post: 'p1' });
+      expect(editor().querySelector<HTMLTextAreaElement>('textarea.text')!.readOnly).toBe(true);
+      expect(editor().querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(
+        true,
+      );
+    });
+  });
+
   describe('editing a post', () => {
     beforeEach(async () => {
       await open();
@@ -780,6 +1022,9 @@ describe('PostsPageComponent', () => {
         { id: 'm3', name: 'c.mp4', meta: '', kind: 'video', used: 0, folderId: null, active: true },
       ]);
       btn(t().common.edit, cardOf(p1.text)).click();
+      await rerender();
+      // The post's own message and timing are tucked away in simple mode: open them.
+      el.querySelector<HTMLButtonElement>('[data-testid="more-toggle"]')!.click();
       await rerender();
     });
 
@@ -794,7 +1039,7 @@ describe('PostsPageComponent', () => {
       )!;
     const err = () => editor().textContent;
 
-    it('opens an editor in the card with the text, the collections and the post settings', () => {
+    it('opens the editor with the text, the collections and the post settings', () => {
       expect(textarea().value).toBe(p1.text);
       expect(pick('Condo').getAttribute('aria-pressed')).toBe('true');
       expect(pick('Tickets').getAttribute('aria-pressed')).toBe('false');
@@ -864,7 +1109,8 @@ describe('PostsPageComponent', () => {
         { ...p1, text: 'ขายคอนโดใหม่', collectionIds: ['a', 'b'] },
         ...POSTS.slice(1),
       ]);
-      expect(editor()).toBeNull();
+      // The panel closes and the card shows the new text.
+      expect(el.querySelector('[data-testid="editor-panel"]')).toBeNull();
       expect(textsOf()[0]).toBe('ขายคอนโดใหม่');
       expect(toasts().map((x) => x.message)).toEqual([t().api.flow.plSaved]);
     });
@@ -889,7 +1135,7 @@ describe('PostsPageComponent', () => {
       await answerLists();
     });
 
-    it('starts from the own values of a post and can go back to following the collection', async () => {
+    it('starts from the own values of a post (its own settings open by themselves) and can go back to following the collection', async () => {
       await answerLists();
       btn(t().common.cancel, editor()).click();
       await rerender();
@@ -946,33 +1192,6 @@ describe('PostsPageComponent', () => {
       await answerLists();
     });
 
-    it('stops at the most files a post takes', async () => {
-      const store = TestBed.inject(LibraryStore);
-      store.media.set(
-        Array.from({ length: INPUT_LIMITS.postMedia + 1 }, (_, i) => ({
-          id: 'f' + i,
-          name: 'f' + i,
-          meta: '',
-          kind: 'video' as const,
-          used: 0,
-          folderId: null,
-          active: true,
-        })),
-      );
-      btn(t().api.flow.plMediaPick, editor()).click();
-      await rerender();
-      // Page of 12: two pages are needed to reach 21 files.
-      for (let page = 0; page < 2; page++) {
-        for (const b of editor().querySelectorAll<HTMLButtonElement>('.picker .m')) b.click();
-        await rerender();
-        editor()
-          .querySelector<HTMLButtonElement>(`app-pager button[aria-label="${t().common.pgNext}"]`)
-          ?.click();
-        await rerender();
-      }
-      expect(err()).toContain(t().api.mediaMax.replace('{n}', String(INPUT_LIMITS.postMedia)));
-    });
-
     it('needs some text', async () => {
       await setValue(textarea(), '   ');
       await submit();
@@ -1004,6 +1223,22 @@ describe('PostsPageComponent', () => {
       expect(err()).toContain(
         t().api.flow.plErrMax.replace('{n}', String(INPUT_LIMITS.postMaxPerDay)),
       );
+    });
+
+    it('opens the folded options when the problem is inside them', async () => {
+      el.querySelector<HTMLButtonElement>('[data-testid="more-toggle"]')!.click();
+      await rerender();
+      expect(editor().querySelector('.own')).toBeNull();
+      // a time the form cannot send, set through the (hidden) state: write both ends wrongly
+      el.querySelector<HTMLButtonElement>('[data-testid="more-toggle"]')!.click();
+      await rerender();
+      await setValue(input('time')[0], '09:00');
+      el.querySelector<HTMLButtonElement>('[data-testid="more-toggle"]')!.click();
+      await rerender();
+      expect(editor().querySelector('.own')).toBeNull();
+      await submit();
+      expect(editor().querySelector('.own')).not.toBeNull();
+      expect(err()).toContain(t().api.flow.plErrTime);
     });
 
     it('accepts the largest daily cap', async () => {
@@ -1042,6 +1277,32 @@ describe('PostsPageComponent', () => {
       expect(textarea().getAttribute('maxlength')).toBe(String(INPUT_LIMITS.postText));
     });
 
+    it('"save and add another" saves the post, then starts a blank new post in the same collections', async () => {
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      await setValue(textarea(), 'edited');
+      byTestId('save-another').click();
+      await rerender();
+      const req = http.expectOne({ method: 'PUT', url: `${MASTER}/p1` });
+      req.flush({ ...p1, text: 'edited' });
+      await answerLists();
+      expect(toasts().map((x) => x.message)).toEqual([t().api.flow.edSavedAnother]);
+      // The panel stays, now on a blank new post that sits in the collections of the one just saved.
+      expect(el.querySelector('[data-testid="editor-panel"] h2')!.textContent).toBe(
+        t().api.flow.plNewTitle,
+      );
+      expect(textarea().value).toBe('');
+      expect(TestBed.inject(DraftStore).draft()).toEqual({
+        text: '',
+        media: [],
+        collectionIds: ['a'],
+      });
+      expect(pick('Condo').getAttribute('aria-pressed')).toBe('true');
+      expect(navigate).toHaveBeenLastCalledWith(['/app/posts'], {
+        queryParams: { new: 1, collection: null, post: null },
+        queryParamsHandling: 'merge',
+      });
+    });
+
     function store() {
       return TestBed.inject(MasterPostsStore);
     }
@@ -1049,10 +1310,10 @@ describe('PostsPageComponent', () => {
 
   describe('a new post', () => {
     beforeEach(() => open());
-    const dialog = () => el.querySelector<HTMLElement>('app-modal .su-modal-panel');
+    const dialog = () => el.querySelector<HTMLElement>('[data-testid="editor-panel"]');
     const textarea = () => dialog()!.querySelector<HTMLTextAreaElement>('textarea.text')!;
 
-    it('opens the editor in a dialog, empty, and closes it on cancel', async () => {
+    it('opens the editor empty, and closes it on cancel', async () => {
       byTestId('new-post').click();
       await rerender();
       expect(dialog()!.textContent).toContain(t().api.flow.plNewTitle);
@@ -1087,6 +1348,13 @@ describe('PostsPageComponent', () => {
       expect(dialog()).toBeNull();
       expect(textsOf().at(-1)).toBe('โพสต์ใหม่');
       expect(toasts().map((x) => x.message)).toEqual([t().api.flow.plCreated]);
+      // The draft is used up: nothing in progress any more.
+      expect(TestBed.inject(DraftStore).draft()).toEqual({
+        text: '',
+        media: [],
+        collectionIds: [],
+      });
+      expect(el.querySelector('[data-testid="draft-bar"]')).toBeNull();
     });
 
     it('can start in no collection and switched off', async () => {
@@ -1117,7 +1385,31 @@ describe('PostsPageComponent', () => {
       expect(on).toEqual(['Tickets']);
     });
 
-    it('keeps the dialog open with the reason when the API refuses', async () => {
+    it('"save and add another" creates the post and leaves a blank one in the same collection', async () => {
+      byTestId('new-post').click();
+      await rerender();
+      await setValue(textarea(), 'หนึ่ง');
+      [...dialog()!.querySelectorAll<HTMLButtonElement>('.chips .pick')]
+        .find((b) => b.textContent!.trim() === 'Tickets')!
+        .click();
+      await rerender();
+      byTestId('save-another').click();
+      await rerender();
+      const req = http.expectOne({ method: 'POST', url: MASTER });
+      expect(req.request.body.collectionIds).toEqual(['b']);
+      req.flush(apiCollectionPost({ id: 'n3', text: 'หนึ่ง', collectionIds: ['b'] }));
+      await answerLists();
+      expect(toasts().map((x) => x.message)).toEqual([t().api.flow.edSavedAnother]);
+      expect(dialog()).not.toBeNull();
+      expect(textarea().value).toBe('');
+      const on = [...dialog()!.querySelectorAll('.chips .pick[aria-pressed="true"]')].map((b) =>
+        b.textContent!.trim(),
+      );
+      expect(on).toEqual(['Tickets']);
+      expect(TestBed.inject(DraftStore).draft().collectionIds).toEqual(['b']);
+    });
+
+    it('keeps the panel open with the reason when the API refuses', async () => {
       byTestId('new-post').click();
       await rerender();
       await setValue(textarea(), 'x');
@@ -1131,6 +1423,7 @@ describe('PostsPageComponent', () => {
         'ถึงจำนวนโพสต์สูงสุดแล้ว',
       );
       expect(textarea().value).toBe('x');
+      expect(TestBed.inject(DraftStore).draft().text).toBe('x');
     });
 
     it('says there are no collections when the workspace has none', async () => {

@@ -14,7 +14,9 @@ export interface ScheduleView {
   pair: string;
   /** Pattern, times, posts per day, how posts are picked, per-group times. */
   cadence: string;
-  /** The settings that are saved but not applied yet (bump, auto-delete), with that said; empty when none is set. */
+  /** The bump, e.g. "bump 2h × 2 · 1 image each"; empty when the schedule does not bump. */
+  bump: string;
+  /** The setting that is saved but not applied yet (auto-delete), with that said; empty when it is not set. */
   stored: string;
   todayLabel: string;
   nextLabel: string;
@@ -73,11 +75,19 @@ export function scheduleView(
     ...(own ? [fmt(t.sch.overridesN, { n: own })] : []),
   ].join(' · ');
 
-  const kept = [
-    ...(s.bumpHours ? [fmt(t.sch.bumpH, { h: s.bumpHours })] : []),
-    ...(s.autoDeleteDays ? [fmt(t.sch.autoDelD, { d: s.autoDeleteDays })] : []),
-  ];
-  const stored = kept.length ? `${kept.join(' · ')} (${t.api.flow.storedOnlyBadge})` : '';
+  // The bump is real (the extension comments on the posted link again); only the auto-delete is still stored.
+  const f = t.api.flow;
+  const rounds = s.bump?.rounds ?? 1;
+  const images = s.bump?.imagesEach ?? 0;
+  const bump = s.bumpHours
+    ? [
+        fmt(f.schBumpLine, { h: s.bumpHours, n: rounds }),
+        ...(images ? [fmt(f.schBumpLineImg, { k: images })] : []),
+      ].join(' · ')
+    : '';
+  const stored = s.autoDeleteDays
+    ? `${fmt(t.sch.autoDelD, { d: s.autoDeleteDays })} (${f.storedOnlyBadge})`
+    : '';
 
   const next = s.nextRunAt ? new Date(s.nextRunAt) : null;
   const nextOk = next !== null && !Number.isNaN(next.getTime());
@@ -88,6 +98,7 @@ export function scheduleView(
     icon: ctx.collection?.icon ?? 'ph-folder',
     pair: `${ctx.collection?.name ?? '—'} → ${ctx.set?.name ?? '—'}`,
     cadence,
+    bump,
     stored,
     todayLabel: fmt(t.sch.today, { n: s.todayCount }),
     nextLabel: `${t.sch.nextRun}: ${nextOk ? `${fmtDate(next, li)} ${hm(next)}` : '—'}`,

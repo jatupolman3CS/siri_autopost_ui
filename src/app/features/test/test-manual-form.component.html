@@ -1,0 +1,166 @@
+<section class="panel form" data-testid="test-manual-form">
+  <div>
+    <app-input-field
+      [label]="t().api.engine.testManualUrl"
+      [placeholder]="t().api.engine.testManualUrlPh"
+      [(value)]="store.manualUrl"
+      [error]="urlError()"
+      [disabled]="!canPick()"
+      [maxlength]="maxUrl"
+      autocomplete="off"
+    />
+    @if (target(); as tg) {
+      <p class="small target" data-testid="manual-target">
+        <span class="badge" data-testid="manual-kind">{{ tg.kind }}</span>
+        <span class="muted">{{ t().api.engine.testManualWillPost }}</span>
+        <span class="url">{{ tg.url }}</span>
+      </p>
+    } @else {
+      <p class="small muted hint">{{ urlHint() }}</p>
+    }
+  </div>
+
+  <div>
+    <label class="su-field-label" for="test-manual-text">{{ t().api.engine.testManualText }}</label>
+    <textarea
+      id="test-manual-text"
+      class="su-textarea ta"
+      rows="4"
+      [value]="store.manualText()"
+      [placeholder]="t().api.engine.testManualTextPh"
+      [readOnly]="!canPick()"
+      [attr.maxlength]="maxText"
+      [attr.aria-describedby]="'test-manual-text-hint'"
+      (input)="onText($event)"
+    ></textarea>
+    <p id="test-manual-text-hint" class="small muted hint">{{ textHint() }}</p>
+  </div>
+
+  <div class="images" data-testid="manual-images">
+    <div class="img-head">
+      <span class="su-field-label">{{ t().api.engine.testManualImages }}</span>
+      <span class="small muted" data-testid="manual-picked">{{ pickedLabel() }}</span>
+    </div>
+    <p class="small muted hint">{{ imagesHint() }}</p>
+    <div class="img-btns">
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary"
+        data-testid="manual-pick"
+        [disabled]="!canPick()"
+        [attr.aria-expanded]="pickerOpen()"
+        (click)="pickerOpen.set(!pickerOpen())"
+      >
+        <i class="ph ph-images"></i>{{ pickLabel() }}
+      </button>
+      <label
+        class="su-btn su-btn-sm su-btn-secondary upload"
+        [class.off]="!canPick() || uploading()"
+      >
+        <i class="ph" [class]="uploading() ? 'ph-circle-notch spin' : 'ph-upload-simple'"></i>
+        {{ uploadLabel() }}
+        <input
+          type="file"
+          class="file"
+          accept="image/*"
+          multiple
+          data-testid="manual-upload"
+          [disabled]="!canPick() || uploading()"
+          (change)="upload($event)"
+        />
+      </label>
+    </div>
+    @if (uploadError()) {
+      <p class="err small" role="alert" data-testid="manual-upload-error">{{ uploadError() }}</p>
+    }
+
+    @if (attached().length) {
+      <div class="media">
+        @for (m of attached(); track m.id) {
+          <div class="m on" [title]="m.label">
+            <span class="thumb">
+              @if (m.src) {
+                <img [src]="m.src" alt="" />
+              } @else {
+                <i class="ph ph-image"></i>
+              }
+            </span>
+            <span class="small ellipsis">{{ m.label }}</span>
+            <button
+              type="button"
+              class="ibtn x"
+              [disabled]="!canPick()"
+              [attr.aria-label]="t().common.remove + ' ' + m.label"
+              (click)="store.toggleManualMedia(m.id)"
+            >
+              <i class="ph ph-x"></i>
+            </button>
+          </div>
+        }
+      </div>
+    }
+    @if (pickerOpen()) {
+      <div class="media picker" data-testid="manual-picker">
+        @for (m of picks(); track m.id) {
+          <button
+            type="button"
+            class="m"
+            [class.on]="m.selected"
+            [title]="m.label"
+            [disabled]="!canPick() || (full() && !m.selected)"
+            [attr.aria-pressed]="m.selected"
+            (click)="store.toggleManualMedia(m.id)"
+          >
+            <span class="thumb">
+              @if (m.src) {
+                <img [src]="m.src" alt="" />
+              } @else {
+                <i class="ph ph-image"></i>
+              }
+              @if (m.selected) {
+                <i class="ph-fill ph-check-circle tick"></i>
+              }
+            </span>
+            <span class="small ellipsis">{{ m.label }}</span>
+          </button>
+        } @empty {
+          <p class="small muted none">{{ t().api.engine.testManualNoImages }}</p>
+        }
+      </div>
+      <app-pager [pager]="mediaPager" />
+    }
+  </div>
+
+  <div class="pv">
+    <div class="pv-head">
+      <span class="small muted">{{ t().test.preview }} · {{ pickedLabel() }}</span>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="!canPick()"
+        (click)="store.reshuffle()"
+      >
+        <i class="ph ph-shuffle"></i>{{ t().cmp.respin }}
+      </button>
+    </div>
+    <p class="box" data-testid="manual-preview">{{ preview() }}</p>
+  </div>
+
+  <div class="foot">
+    @if (error()) {
+      <span class="err" role="alert">{{ error() }}</span>
+    } @else {
+      <span class="small muted">{{ note() }}</span>
+    }
+    <button
+      type="button"
+      class="su-btn su-btn-sm su-btn-primary"
+      data-testid="manual-send"
+      [disabled]="!canRun()"
+      [attr.title]="perm.editHint() || null"
+      (click)="store.runManual()"
+    >
+      <i class="ph ph-paper-plane-right"></i>{{ runLabel() }}
+    </button>
+  </div>
+</section>

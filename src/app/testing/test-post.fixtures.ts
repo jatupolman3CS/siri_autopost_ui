@@ -10,12 +10,13 @@ import {
 } from '../core/http/api.service';
 import { ACCOUNTS, WS, apiPost } from './api-testing';
 import { apiCollection, apiCollectionPost } from './collection-fixtures';
-import { FB_CONNECTED, apiLink, apiLinkSet } from './link-sets.fixtures';
+import { FB_CONNECTED, apiLink, apiLinkSet, apiPageLink } from './link-sets.fixtures';
 
 // Fixtures of the test post page, the anti-ban page's backup/restore and the device auto-pause specs.
 
 export const POSTS_URL = `/api/workspaces/${WS}/posts`;
 export const TEST_POST_URL = `/api/workspaces/${WS}/test-post`;
+export const MANUAL_POST_URL = `/api/workspaces/${WS}/test-post/manual`;
 export const BACKUP_URL = `/api/workspaces/${WS}/backup`;
 export const RESTORE_URL = `/api/workspaces/${WS}/restore`;
 export const ENGINE_URL = `/api/workspaces/${WS}/engine`;
@@ -28,7 +29,6 @@ export const FB: ApiAccount = FB_CONNECTED;
 export const TEST_SET: ApiLinkSet = apiLinkSet({
   id: 's1',
   name: 'Condo groups',
-  accountIds: ['acc-other'],
   links: [
     apiLink({ id: 'a', name: 'Condo BKK', code: '#Jan24' }),
     apiLink({ id: 'b', name: 'Condo rent', url: 'https://www.facebook.com/groups/rent' }),
@@ -37,17 +37,29 @@ export const TEST_SET: ApiLinkSet = apiLinkSet({
   ],
 });
 
-/** A second account of the set that a browser posts for. */
-export const OTHER_ACCOUNT: ApiAccount = {
-  id: 'acc-other',
-  platform: 'fb',
+/** A link set of one group and one page, that posts as the account of a second browser (`device({ id: 'dev-2' ... })`). */
+export const PAGE_SET: ApiLinkSet = apiLinkSet({
+  id: 's2',
+  name: 'Shop pages',
+  postAsAccountId: 'acc-laptop',
+  links: [
+    apiLink({ id: 'g1', name: 'Shop group' }),
+    apiPageLink({ id: 'baandee.shop', name: 'Baandee page' }),
+  ],
+});
+
+/** The Facebook account a second browser brought. */
+export const LAPTOP_ACCOUNT: ApiAccount = {
+  ...FB_CONNECTED,
+  id: 'acc-laptop',
   name: 'Facebook · Laptop',
-  handle: 'Facebook',
-  defaultTarget: 'โปรไฟล์',
-  health: 'ok',
   groups: [],
-  connected: true,
 };
+
+/** A second paired browser, the one `PAGE_SET` posts as. */
+export function laptop(over: Partial<ApiDevice> = {}): ApiDevice {
+  return device({ id: 'dev-2', name: 'Laptop', accountId: LAPTOP_ACCOUNT.id, ...over });
+}
 
 export const TEST_COLLECTION: ApiCollection = apiCollection({
   id: 'c1',
@@ -73,6 +85,19 @@ export const APPROVAL_COLLECTION: ApiCollection = apiCollection({
     apiCollectionPost({ id: 't2', text: 'อนุมัติแล้ว' }),
   ],
 });
+
+/** What POST test-post/manual answers: a queued test post to the typed address, due now. */
+export function manualPostDto(over: Partial<ApiPost> = {}): ApiPost {
+  return testPostDto({
+    id: 'mp1',
+    target: 'baandee shop',
+    content: 'ทดสอบ',
+    targetUrl: 'https://www.facebook.com/baandee.shop',
+    linkId: null,
+    code: null,
+    ...over,
+  });
+}
 
 /** What POST test-post answers: a queued test post, due now, on the Facebook account. */
 export function testPostDto(over: Partial<ApiPost> = {}): ApiPost {
@@ -114,8 +139,9 @@ export function antiBan(over: Partial<ApiAntiBan> = {}): ApiAntiBan {
   return {
     min: 3,
     max: 12,
-    limits: { fb: 40, x: 20, ig: 10, tt: 5, line: 3, th: 10 },
+    limits: { fb: 40 },
     typing: true,
+    typingSpeed: 'normal',
     scroll: true,
     shuffle: true,
     autoPause: true,
@@ -150,11 +176,15 @@ export const BACKUP: ApiBackup = {
 
 /**
  * Answers what the other stores ask for on events and timers (their lists, the presence) with what they
- * already hold, so a spec about one page is not about them. The posts calls are left to the spec.
+ * already hold, so a spec about one page is not about them. The posts calls are left to the spec. `over` changes
+ * an answer by the last part of its address ("devices": the list a spec with several browsers works with).
  */
-export function flushBackground(http: HttpTestingController): void {
+export function flushBackground(
+  http: HttpTestingController,
+  over: Record<string, object> = {},
+): void {
   const answers: Record<string, object> = {
-    accounts: [...ACCOUNTS, FB, OTHER_ACCOUNT],
+    accounts: [...ACCOUNTS, FB],
     'link-sets': [TEST_SET],
     collections: [TEST_COLLECTION, APPROVAL_COLLECTION],
     devices: [device()],
@@ -167,6 +197,7 @@ export function flushBackground(http: HttpTestingController): void {
       devicesOnline: 1,
     },
     errors: [],
+    ...over,
   };
   for (const r of http.match((x) => !x.url.startsWith(POSTS_URL) && x.method === 'GET')) {
     const key = r.request.url.split('/').pop()!;

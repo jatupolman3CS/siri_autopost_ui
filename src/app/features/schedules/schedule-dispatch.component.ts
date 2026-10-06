@@ -21,7 +21,9 @@ interface DeviceRow {
 // "Hand-over to the extension" on the schedules page: a schedule queues its posts on the server and the extension
 // of a paired browser takes them one at a time (it asks every 30 s), so what the person needs to see here is
 // whether a browser is ready to take them, what waits in the queue, and a button to make it take the due post
-// now. The extension's own settings are not needed for this and live on their own page.
+// now. The browser posts exactly what the schedule says; how it behaves while posting (typing, scrolling, the rest
+// after a block) is set on the anti-ban page, which the note links to. With several extensions each one is listed
+// by its name, so the person sees which of them is ready, offline or paused.
 @Component({
   selector: 'app-schedule-dispatch',
   imports: [RouterLink],

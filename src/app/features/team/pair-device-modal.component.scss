@@ -29,6 +29,20 @@ code {
   align-self: flex-start;
 }
 
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.warn {
+  color: var(--color-warning);
+}
+
+.link-box {
+  font-size: 12px;
+}
+
 .err {
   color: var(--color-danger);
 }

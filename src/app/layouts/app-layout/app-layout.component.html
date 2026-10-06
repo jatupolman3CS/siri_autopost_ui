@@ -87,12 +87,9 @@
           <span class="label">{{ t().api.extUnpaired }}</span>
         </a>
       } @else {
-        <div class="ext-status">
-          <span
-            class="dot"
-            [style.background]="ext.online() ? 'var(--color-success)' : 'var(--color-danger)'"
-          ></span>
-          <span class="label">{{ ext.online() ? t().top.extOnline : t().top.extOffline }}</span>
+        <div class="ext-status" role="status" [title]="extStatus().title">
+          <span class="dot" [style.background]="extStatus().color"></span>
+          <span class="label">{{ extStatus().label }}</span>
         </div>
       }
       <div class="grow"></div>

@@ -1,4 +1,4 @@
-<section class="panel card" [class.off-item]="!post().active">
+<section class="panel card" [class.off-item]="!post().active" [class.editing]="editing()">
   <div class="head">
     <app-checkbox
       class="sel"
@@ -114,8 +114,8 @@
       class="su-btn su-btn-sm su-btn-ghost"
       [disabled]="!perm.canEdit()"
       [attr.title]="perm.editHint() || null"
-      [attr.aria-expanded]="editing()"
-      (click)="editing.set(!editing())"
+      [attr.aria-pressed]="editing()"
+      (click)="edit.emit(post())"
     >
       <i class="ph ph-pencil-simple"></i>{{ t().common.edit }}
     </button>
@@ -140,13 +140,6 @@
     </button>
   </div>
 
-  @if (editing()) {
-    <app-post-editor
-      [post]="post()"
-      (saved)="editing.set(false)"
-      (cancelled)="editing.set(false)"
-    />
-  }
   @if (resultsOpen()) {
     <app-post-activity [postId]="post().id" />
   }
