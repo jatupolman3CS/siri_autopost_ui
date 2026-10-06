@@ -268,7 +268,16 @@ describe('BillingPageComponent', () => {
     expect(cards[2].querySelectorAll('.limits li')).toHaveLength(7);
   });
 
-  it('sends a customer without a subscription to Stripe Checkout and leaves the plan alone', async () => {
+  it('without a publishable key still lets the customer pick the way to pay, then goes to the Stripe page for that way', async () => {
+    const FREE_USER = {
+      id: 'u-1',
+      email: 'owner@shop.co',
+      name: 'owner',
+      role: 'user',
+      plan: 'free',
+      cycle: 'month',
+      status: 'active',
+    };
     const { fixture, el } = await open(
       {
         hasSubscription: false,
@@ -283,30 +292,76 @@ describe('BillingPageComponent', () => {
     expect(el.textContent).toContain(t().api.noCard);
     fixture.componentInstance['planModal'].set('pro');
     fixture.detectChanges();
-    expect(el.ownerDocument.body.textContent).toContain(t().api.checkoutBody);
+    expect(el.ownerDocument.body.textContent).toContain(t().api.checkoutBodyInApp);
 
     fixture.componentInstance['promo'].set('LAUNCH20');
-    const confirm = fixture.componentInstance['confirmPlan']();
-    confirm.catch(() => undefined);
-    const req = http.expectOne({ method: 'PUT', url: '/api/billing/plan' });
-    expect(req.request.body).toEqual({ plan: 'pro', cycle: 'month', promoCode: 'LAUNCH20' });
-    // Pressing confirm again while it is in flight sends nothing new.
-    void fixture.componentInstance['confirmPlan']();
+    await fixture.componentInstance['confirmPlan']();
+    fixture.detectChanges();
+    await settle();
+
+    // Nothing is sent yet: the window opens with the five ways to pay.
     http.expectNone({ method: 'PUT', url: '/api/billing/plan' });
-    req.flush({
-      user: {
-        id: 'u-1',
-        email: 'owner@shop.co',
-        name: 'owner',
-        role: 'user',
-        plan: 'free',
-        cycle: 'month',
-        status: 'active',
-      },
-      checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_1',
+    http.expectNone({ method: 'POST', url: '/api/billing/payments' });
+    const body = el.ownerDocument.body;
+    const rows = [...body.querySelectorAll<HTMLElement>('button[role="radio"]')];
+    expect(rows.map((r) => r.dataset['method'])).toEqual([
+      'card',
+      'apple_pay',
+      'google_pay',
+      'link',
+      'promptpay',
+    ]);
+
+    // PromptPay: the server is asked for the one-off page; a second press while it is in flight sends nothing.
+    rows[4].click();
+    fixture.detectChanges();
+    const go = () =>
+      [...body.querySelectorAll<HTMLButtonElement>('.pm-panel button')].find((b) =>
+        b.textContent?.includes('PromptPay'),
+      )!;
+    go().click();
+    const req = http.expectOne({ method: 'PUT', url: '/api/billing/plan' });
+    expect(req.request.body).toEqual({
+      plan: 'pro',
+      cycle: 'month',
+      promoCode: 'LAUNCH20',
+      method: 'promptpay',
     });
-    await confirm;
+    fixture.detectChanges();
+    go().click();
+    http.expectNone({ method: 'PUT', url: '/api/billing/plan' });
+    req.flush({ user: FREE_USER, checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_1' });
+    await settle();
     expect(went).toEqual(['https://checkout.stripe.com/c/pay/cs_test_1']);
+  });
+
+  it('shows why Stripe refused the picked way to pay, next to the button, and lets the customer pick another', async () => {
+    const { fixture, el } = await open(
+      { hasSubscription: false, renewsAt: null, card: null },
+      {},
+      'free',
+    );
+    fixture.componentInstance['planModal'].set('pro');
+    await fixture.componentInstance['confirmPlan']();
+    fixture.detectChanges();
+    await settle();
+
+    const body = el.ownerDocument.body;
+    [...body.querySelectorAll<HTMLButtonElement>('.pm-panel button')]
+      .find((b) => b.textContent?.includes('Stripe'))!
+      .click();
+    http
+      .expectOne({ method: 'PUT', url: '/api/billing/plan' })
+      .flush(
+        { title: 'ยอดชำระหลังหักส่วนลดต่ำกว่า 10 บาท' },
+        { status: 422, statusText: 'Unprocessable Entity' },
+      );
+    await settle();
+    fixture.detectChanges();
+    expect(body.querySelector('app-payment-checkout [role="alert"]')?.textContent).toContain(
+      'ยอดชำระหลังหักส่วนลดต่ำกว่า 10 บาท',
+    );
+    expect(went).toEqual([]);
   });
 
   it('applies the paid session when Stripe sends the customer back, then reloads billing', async () => {

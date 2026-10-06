@@ -223,7 +223,7 @@ export class BillingPageComponent {
   protected readonly planBody = computed(() => {
     const a = this.t().api;
     const body = {
-      checkout: this.payments.ready() ? a.checkoutBodyInApp : a.checkoutBody,
+      checkout: a.checkoutBodyInApp,
       change: a.changeBody,
       cancel: fmt(a.cancelBody, { date: this.renewsAt() }),
       free: a.freeBody,
@@ -318,8 +318,10 @@ export class BillingPageComponent {
   protected async confirmPlan(): Promise<void> {
     const k = this.planModal();
     if (!k || this.busy() || this.perm.assist()) return;
-    // Paying for a first plan: the in-app window takes over (the plan only changes once Stripe confirms).
-    if (this.action() === 'checkout' && this.payments.ready()) {
+    // Paying for a first plan: the payment window takes over, where the way to pay is picked (the plan only changes
+    // once Stripe confirms). With no publishable key it still offers the choice and then goes to Stripe's own page.
+    if (this.action() === 'checkout') {
+      if (!this.payments.config()) await this.payments.loadConfig().catch(() => undefined);
       this.paying.set({ plan: k, cycle: this.settings.bill().cycle, promo: this.promo().trim() });
       this.planModal.set(null);
       this.promo.set('');

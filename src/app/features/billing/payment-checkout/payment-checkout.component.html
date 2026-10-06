@@ -5,10 +5,12 @@
       <p class="fs15 fw5">{{ t().api.payDone }}</p>
     </div>
   } @else {
-    <div class="total">
-      <span class="muted">{{ t().api.payTotal }}</span>
-      <strong>{{ total() || '…' }}</strong>
-    </div>
+    @if (!hosted()) {
+      <div class="total">
+        <span class="muted">{{ t().api.payTotal }}</span>
+        <strong>{{ total() || '…' }}</strong>
+      </div>
+    }
 
     <app-payment-method-list
       [methods]="rows()"
@@ -17,7 +19,18 @@
       (selectedChange)="onPick($event)"
     >
       <ng-template let-m>
-        @if (!intent()) {
+        @if (hosted()) {
+          <p class="small muted">{{ hostedNote() }}</p>
+          <p class="small muted">{{ t().api.payEmail }} {{ email() }}</p>
+          <button
+            type="button"
+            class="su-btn su-btn-primary pay"
+            [disabled]="busy()"
+            (click)="goHosted()"
+          >
+            {{ hostedLabel() }}
+          </button>
+        } @else if (!intent()) {
           @if (phase() === 'preparing') {
             <p class="small muted" role="status">{{ t().api.payPreparing }}</p>
           } @else {

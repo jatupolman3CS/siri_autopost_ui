@@ -451,6 +451,20 @@ export const AP_I18N_EXTRA = {
   payTotal: ['ยอดที่ต้องชำระ', 'Total to pay'],
   payPreparing: ['กำลังเตรียมการชำระเงิน…', 'Preparing the payment…'],
   payRetry: ['ลองอีกครั้ง', 'Try again'],
+  // Without a publishable key the way to pay is picked here and paid on Stripe's own page.
+  payGoStripe: ['ไปชำระด้วย {m} ที่ Stripe', 'Pay with {m} at Stripe'],
+  payHostedCard: [
+    'กดปุ่มด้านล่างเพื่อไปกรอกบัตรที่หน้าชำระเงินของ Stripe ข้อมูลบัตรไม่ผ่านระบบของเรา',
+    'The button below takes you to Stripe’s payment page to enter your card. Card details never touch our system.',
+  ],
+  payHostedLink: [
+    'กดปุ่มด้านล่างเพื่อไปหน้าชำระเงินของ Stripe แล้วจ่ายเร็วด้วยบัญชี Link ของคุณ',
+    'The button below takes you to Stripe’s payment page, where you pay fast with your Link account.',
+  ],
+  payHostedPromptPay: [
+    'กดปุ่มด้านล่างเพื่อไปหน้า Stripe ที่แสดง QR ของ PromptPay แล้วสแกนด้วยแอปธนาคาร แผนเริ่มใช้ทันทีที่ธนาคารยืนยัน',
+    'The button below takes you to Stripe’s page with the PromptPay QR. Scan it with your banking app; the plan starts as soon as the bank confirms.',
+  ],
   payRenewMonth: [
     'ต่ออายุอัตโนมัติทุกเดือน ยกเลิกได้ทุกเมื่อที่หน้านี้',
     'Renews automatically every month. Cancel any time on this page.',

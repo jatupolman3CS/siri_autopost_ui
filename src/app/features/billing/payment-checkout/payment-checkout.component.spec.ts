@@ -9,6 +9,7 @@ import {
   PaymentStatus,
 } from '../../../core/payments/payment.types';
 import { StripeService } from '../../../core/payments/stripe.service';
+import { RedirectService } from '../../../core/services/redirect.service';
 import { settle } from '../../../testing/api-testing';
 import { PaymentCheckoutComponent } from './payment-checkout.component';
 
@@ -96,7 +97,12 @@ describe('PaymentCheckoutComponent', () => {
     start: ReturnType<typeof vi.fn>;
     settle: ReturnType<typeof vi.fn>;
   };
-  let session: { user: ReturnType<typeof signal>; applyUser: ReturnType<typeof vi.fn> };
+  let session: {
+    user: ReturnType<typeof signal>;
+    applyUser: ReturnType<typeof vi.fn>;
+    setPlan: ReturnType<typeof vi.fn>;
+  };
+  let went: string[];
   let reported: ReturnType<typeof vi.fn>;
   const t = () => TestBed.inject(I18nService).t();
 
@@ -111,11 +117,13 @@ describe('PaymentCheckoutComponent', () => {
       ),
       settle: vi.fn(),
     };
-    session = { user: signal(USER), applyUser: vi.fn() };
+    went = [];
+    session = { user: signal(USER), applyUser: vi.fn(), setPlan: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
         { provide: PaymentStore, useValue: payments },
         { provide: SessionStore, useValue: session },
+        { provide: RedirectService, useValue: { go: (url: string) => went.push(url) } },
         { provide: ErrorHandler, useValue: { handleError: reported } },
         { provide: StripeService, useValue: { load: vi.fn().mockResolvedValue(fake.stripe) } },
       ],
@@ -403,5 +411,56 @@ describe('PaymentCheckoutComponent', () => {
     fixture.detectChanges();
     expect(reported).toHaveBeenCalledTimes(1);
     expect(el.querySelector('.callout')?.textContent).toContain(t().api.payWalletOff);
+  });
+
+  describe('without a publishable key (the Stripe page does the paying)', () => {
+    it('lists the same five ways to pay, loads nothing from Stripe and asks the server for no payment', async () => {
+      const { el } = await open({ hosted: true, promoCode: 'LAUNCH20' });
+
+      const rows = [...el.querySelectorAll<HTMLButtonElement>('button[role="radio"]')];
+      expect(rows.map((r) => r.dataset['method'])).toEqual([
+        'card',
+        'apple_pay',
+        'google_pay',
+        'link',
+        'promptpay',
+      ]);
+      expect(payments.start).not.toHaveBeenCalled();
+      expect(fake.stripe.elements).not.toHaveBeenCalled();
+      expect(el.querySelector('.total')).toBeNull(); // the amount is the server's, shown on Stripe's page
+      expect(el.querySelector('.pm-panel')?.textContent).toContain(t().api.payHostedCard);
+    });
+
+    it('sends the picked way to the server and goes to the page it answers with', async () => {
+      const { el, pick, button } = await open({ hosted: true, promoCode: ' LAUNCH20 ' });
+      session.setPlan.mockResolvedValue('https://checkout.stripe.com/c/pay/cs_test_1');
+
+      button('Stripe').click();
+      await settle();
+      expect(session.setPlan).toHaveBeenLastCalledWith('pro', 'month', 'LAUNCH20', 'card');
+      expect(went).toEqual(['https://checkout.stripe.com/c/pay/cs_test_1']);
+
+      await pick('promptpay');
+      expect(el.querySelector('.pm-panel')?.textContent).toContain(t().api.payHostedPromptPay);
+      button('PromptPay').click();
+      await settle();
+      expect(session.setPlan).toHaveBeenLastCalledWith('pro', 'month', 'LAUNCH20', 'promptpay');
+      expect(went).toHaveLength(2);
+    });
+
+    it('shows why the server refused the way to pay and lets the customer pick another', async () => {
+      const { fixture, el, pick, button } = await open({ hosted: true });
+      session.setPlan.mockRejectedValue(new Error('refused'));
+
+      button('Stripe').click();
+      await settle();
+      fixture.detectChanges();
+      expect(el.querySelector('[role="alert"]')?.textContent).toContain(t().api.payFailed);
+      expect(button('Stripe').disabled).toBe(false);
+      expect(went).toEqual([]);
+
+      await pick('link');
+      expect(el.querySelector('[role="alert"]')).toBeNull();
+    });
   });
 });

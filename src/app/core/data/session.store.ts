@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AssistSession, assistStorage, tokenStorage } from '../auth/token';
 import { ApiAuthResult, ApiService, ApiUser } from '../http/api.service';
+import { PaymentMethodId } from '../payments/payment.types';
 import { PlanKey, Role } from './models';
 
 // Who is signed in, from the API's JWT login. The token persists in localStorage and is
@@ -100,8 +101,9 @@ export class SessionStore {
     plan: PlanKey,
     cycle?: 'month' | 'year',
     promoCode?: string,
+    method?: PaymentMethodId,
   ): Promise<string | null> {
-    const r = await this.api.changePlan(plan, cycle, promoCode);
+    const r = await this.api.changePlan(plan, cycle, promoCode, method);
     this._user.set(r.user);
     return r.checkoutUrl;
   }

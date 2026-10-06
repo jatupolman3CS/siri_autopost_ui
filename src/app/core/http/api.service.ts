@@ -8,7 +8,8 @@ type S = components['schemas'];
 export type ApiPaymentConfig = S['PaymentConfigDto'];
 export type ApiPaymentIntent = S['PaymentIntentDto'];
 export type ApiPaymentStatus = S['PaymentStatusDto'];
-export type ApiPaymentMethod = S['PaymentMethodKind'];
+// The schema's enum lists null too (the API uses it as a nullable field); a way to pay is never null.
+export type ApiPaymentMethod = NonNullable<S['PaymentMethodKind']>;
 export type ApiPaymentFlow = S['PaymentFlow'];
 export type ApiPaymentState = S['PaymentAttemptState'];
 export type ApiUser = S['UserDto'];
@@ -131,13 +132,15 @@ export class ApiService {
    * Chooses a plan. A paid plan for a customer with no subscription answers with the Stripe Checkout
    * address to pay at; any other change is applied at once (Free: at the end of the paid period).
    */
-  changePlan(plan: ApiPlan, cycle?: ApiCycle, promoCode?: string) {
+  changePlan(plan: ApiPlan, cycle?: ApiCycle, promoCode?: string, method?: ApiPaymentMethod) {
     const body: S['ChangePlanRequest'] = {
       plan,
       cycle: cycle ?? null,
       promoCode: promoCode || null,
+      ...(method ? { method } : {}),
     };
-    return run(this.http.put<ApiPlanChange>('/api/billing/plan', body));
+    // With a method the payment window asked (Stripe's own page, picked there): it shows the refusal itself.
+    return run(this.http.put<ApiPlanChange>('/api/billing/plan', body, method ? quiet : undefined));
   }
   /** The customer is back from Stripe Checkout: applies the paid session. */
   confirmCheckout(sessionId: string) {

@@ -6278,6 +6278,7 @@ export interface components {
       plan: components['schemas']['PlanKey'];
       cycle: null | components['schemas']['BillingCycle'];
       promoCode: null | string;
+      method?: null | components['schemas']['PaymentMethodKind'];
     };
     CollectionDto: {
       /** Format: uuid */
@@ -6902,7 +6903,7 @@ export interface components {
       method: components['schemas']['PaymentMethodKind'];
     };
     /** @enum {unknown} */
-    PaymentMethodKind: 'card' | 'apple_pay' | 'google_pay' | 'link' | 'promptpay';
+    PaymentMethodKind: 'card' | 'apple_pay' | 'google_pay' | 'link' | 'promptpay' | null;
     PaymentOverrideDto: {
       enabled: boolean;
       /** Format: int32 */

@@ -32,6 +32,7 @@ import {
   flowOf,
 } from '../../../core/payments/payment.types';
 import { StripeService } from '../../../core/payments/stripe.service';
+import { RedirectService } from '../../../core/services/redirect.service';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import {
   PaymentMethodListComponent,
@@ -72,6 +73,11 @@ export class PaymentCheckoutComponent {
   readonly plan = input<PlanKey>('pro');
   readonly cycle = input<'month' | 'year'>('month');
   readonly promoCode = input('');
+  /**
+   * The server has no publishable key, so the way to pay is picked here but paid on Stripe's own page: the button of a
+   * row takes the customer there (PromptPay gets a one-off page, the other four the subscription page).
+   */
+  readonly hosted = input(false);
   readonly closed = output<void>();
   /** The payment went through and the server applied it. */
   readonly paid = output<PaymentStatus>();
@@ -80,6 +86,7 @@ export class PaymentCheckoutComponent {
   private readonly stripes = inject(StripeService);
   private readonly session = inject(SessionStore);
   private readonly errors = inject(ErrorHandler);
+  private readonly redirect = inject(RedirectService);
   protected readonly t = inject(I18nService).t;
 
   protected readonly method = signal<PaymentMethodId>('card');
@@ -120,6 +127,23 @@ export class PaymentCheckoutComponent {
     return year ? a.payRenewYear : a.payRenewMonth;
   });
 
+  /** What the open row says when Stripe's own page does the paying. */
+  protected readonly hostedNote = computed(() => {
+    const a = this.t().api;
+    const note: Record<PaymentMethodId, string> = {
+      card: a.payHostedCard,
+      apple_pay: a.payWalletApple,
+      google_pay: a.payWalletGoogle,
+      link: a.payHostedLink,
+      promptpay: a.payHostedPromptPay,
+    };
+    return note[this.method()];
+  });
+  protected readonly hostedLabel = computed(() => {
+    const row = this.rows().find((r) => r.id === this.method());
+    return fmt(this.t().api.payGoStripe, { m: row?.label ?? '' });
+  });
+
   protected readonly walletNote = computed(() => {
     const a = this.t().api;
     const m = this.method();
@@ -149,7 +173,30 @@ export class PaymentCheckoutComponent {
   protected onPick(id: PaymentMethodId | null): void {
     if (!id || id === this.method() || this.busy()) return;
     this.method.set(id);
-    void this.prepare(id);
+    if (this.hosted()) this.message.set(null);
+    else void this.prepare(id);
+  }
+
+  /** Stripe's own page for the picked way to pay (no publishable key): the server makes the page, the browser leaves. */
+  protected async goHosted(): Promise<void> {
+    if (this.busy()) return;
+    this.begun();
+    try {
+      const url = await this.session.setPlan(
+        this.plan(),
+        this.cycle(),
+        this.promoCode().trim() || undefined,
+        this.method(),
+      );
+      if (url) {
+        this.redirect.go(url);
+        // Not left on "paying": the browser's Back button can bring this page back from the cache with the window open.
+        this.phase.set('ready');
+      } else this.closed.emit();
+    } catch (e) {
+      this.message.set({ kind: 'error', text: problemMessage(e) ?? this.t().api.payFailed });
+      this.phase.set('ready');
+    }
   }
 
   /** The payment could not be started: ask for it again. */
@@ -302,7 +349,8 @@ export class PaymentCheckoutComponent {
   private async begin(): Promise<void> {
     this.reset();
     this.method.set('card');
-    await this.prepare('card');
+    if (this.hosted()) this.phase.set('ready');
+    else await this.prepare('card');
   }
 
   private reset(): void {

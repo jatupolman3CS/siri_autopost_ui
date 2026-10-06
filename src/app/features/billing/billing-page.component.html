@@ -173,6 +173,7 @@
   [plan]="paying()?.plan ?? 'pro'"
   [cycle]="paying()?.cycle ?? 'month'"
   [promoCode]="paying()?.promo ?? ''"
+  [hosted]="!payments.ready()"
   (paid)="onPaid($event.user.plan)"
   (closed)="onPayClosed()"
 />
