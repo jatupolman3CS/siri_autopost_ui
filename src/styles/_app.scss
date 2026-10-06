@@ -199,6 +199,31 @@ $narrow: 1023px;
   flex-shrink: 0;
   display: inline-block;
 }
+// The status light of a post as a small rounded square (timeline, schedule dots): green went out, yellow waits or
+// is being posted, red failed, blue is posting now, grey was skipped.
+.sq {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  background: var(--color-text-muted);
+  &.green {
+    background: var(--color-success);
+  }
+  &.yellow {
+    background: var(--color-warning);
+  }
+  &.red {
+    background: var(--color-danger);
+  }
+  &.blue {
+    background: var(--color-primary);
+  }
+  &.grey {
+    opacity: 0.55;
+  }
+}
 
 // Round platform/initial badge.
 .pico {

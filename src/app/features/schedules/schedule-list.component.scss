@@ -3,8 +3,18 @@
   min-width: 0;
 }
 
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 .h2 {
   margin-bottom: 4px;
+}
+.dots-row {
+  flex-basis: 100%;
 }
 .fs14 {
   font-size: 14px;

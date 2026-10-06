@@ -1,0 +1,104 @@
+// The status light is one fixed set of colours shared with the timeline and the schedule dots (post-light.ts).
+.pd {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.light {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--color-text-muted);
+  &.green {
+    background: var(--color-success);
+  }
+  &.yellow {
+    background: var(--color-warning);
+  }
+  &.red {
+    background: var(--color-danger);
+  }
+}
+.when {
+  margin-left: auto;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  &.rushed {
+    background: var(--color-warning);
+    color: #fff;
+  }
+}
+.callout {
+  &.danger {
+    border-color: var(--color-danger);
+    > .ph {
+      color: var(--color-danger);
+    }
+  }
+  &.warn > .ph {
+    color: var(--color-warning);
+  }
+}
+.meta {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 14px;
+  dt {
+    color: var(--color-text-muted);
+  }
+  dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+}
+.ext {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--color-primary);
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+.label {
+  margin-bottom: -6px;
+}
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 14px;
+}
+.hint {
+  margin: 0;
+}

@@ -1,0 +1,89 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.kpis {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.kcard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  .klabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .kvalue {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .knote {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+  &.green {
+    background: color-mix(in srgb, var(--color-success) 9%, var(--color-bg));
+    border-color: color-mix(in srgb, var(--color-success) 40%, var(--color-border));
+  }
+  &.yellow {
+    background: color-mix(in srgb, var(--color-warning) 9%, var(--color-bg));
+    border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border));
+  }
+  &.red {
+    background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg));
+    border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border));
+  }
+  &.blue {
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg));
+    border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+  }
+}
+
+.nextup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  font-size: 14px;
+  > .ph {
+    color: var(--color-primary);
+    font-size: 18px;
+  }
+  .when {
+    margin-left: auto;
+    font-weight: 600;
+    color: var(--color-primary);
+    &.late {
+      color: var(--color-danger);
+    }
+  }
+  &.late {
+    border-color: var(--color-danger);
+  }
+}
+.linkish {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  &:hover {
+    text-decoration: underline;
+  }
+}

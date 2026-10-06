@@ -1,0 +1,66 @@
+<div class="sd" [attr.aria-label]="t().api.flow.sdToggle">
+  <div class="sbar">
+    <div class="daynav">
+      <button
+        type="button"
+        class="nav"
+        [attr.aria-label]="t().api.flow.tlPrevDay"
+        (click)="shift(-1)"
+      >
+        <i class="ph ph-caret-left" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="day"
+        [class.today]="isToday()"
+        [attr.title]="t().common.today"
+        (click)="today()"
+      >
+        {{ isToday() ? t().common.today : dayLabel() }}
+      </button>
+      <button
+        type="button"
+        class="nav"
+        [attr.aria-label]="t().api.flow.tlNextDay"
+        (click)="shift(1)"
+      >
+        <i class="ph ph-caret-right" aria-hidden="true"></i>
+      </button>
+    </div>
+    <span class="small" data-testid="sd-counts">{{ counts().line }}</span>
+    @if (counts().skipped) {
+      <span class="small muted">{{ counts().skipped }}</span>
+    }
+    <a
+      class="small tl"
+      routerLink="/app/timeline"
+      [queryParams]="{ schedule: scheduleId(), day: day() }"
+      >{{ t().api.flow.sdOpenTimeline }}</a
+    >
+  </div>
+
+  @if (loading() && !dots().length) {
+    <p class="small muted">{{ t().api.flow.sdLoading }}</p>
+  } @else if (!dots().length) {
+    <p class="small muted">{{ t().api.flow.sdEmpty }}</p>
+  } @else {
+    <div class="dots" role="list">
+      @for (d of dots(); track d.id) {
+        <button
+          type="button"
+          role="listitem"
+          class="dot"
+          [class]="d.light"
+          [class.rushed]="d.rushed"
+          [attr.title]="d.label"
+          [attr.aria-label]="d.label"
+          [attr.data-post]="d.id"
+          (click)="selectedId.set(d.id)"
+        ></button>
+      }
+    </div>
+    <p class="small muted help">{{ t().api.flow.sdHelp }}</p>
+  }
+</div>
+
+<app-post-detail-modal [postId]="selectedId()" (closed)="selectedId.set(null)" />

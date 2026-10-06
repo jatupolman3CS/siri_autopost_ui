@@ -30,6 +30,10 @@
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 24px;
   align-items: start;
+  // The day list is hidden: the month takes the width and the "show" button sits beside it.
+  &.solo {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
 }
 .month {
   display: grid;
@@ -122,6 +126,45 @@
 }
 .day-head {
   margin-bottom: 4px;
+}
+.fold-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 0 -8px 4px;
+}
+.fold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  &:hover {
+    background: var(--color-surface-muted);
+  }
+}
+.day-row.closed {
+  gap: 2px;
+  padding: 6px 0;
+}
+// A folded row keeps one line of the text.
+.text.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  padding-left: 32px;
+}
+.show-panel {
+  align-self: start;
 }
 .day-row {
   padding: 12px 0;

@@ -1,6 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { AccountsStore } from '../../core/data/accounts.store';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { DraftStore } from '../../core/data/draft.store';
 import { PostsStore } from '../../core/data/posts.store';
@@ -10,7 +11,15 @@ import { dkey } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
-import { WS, apiPost, provideApiTesting, settle, signIn } from '../../testing/api-testing';
+import {
+  ACCOUNTS,
+  WS,
+  answerWorkspaceLoads,
+  apiPost,
+  provideApiTesting,
+  settle,
+  signIn,
+} from '../../testing/api-testing';
 import { apiCollection, apiCollectionPost } from '../../testing/collection-fixtures';
 import { CalendarPageComponent } from './calendar-page.component';
 
@@ -29,14 +38,20 @@ const COLLECTION = apiCollection({ id: 'c1', name: 'Condo posts', posts: [POST] 
 describe('CalendarPageComponent', () => {
   let http: HttpTestingController;
 
-  async function open(posts: ApiPost[] = [], day: string | null = TODAY) {
+  async function open(
+    posts: ApiPost[] = [],
+    day: string | null = TODAY,
+    prefs: Record<string, string> = {},
+  ) {
     http = provideApiTesting({
       imports: [CalendarPageComponent],
       providers: [provideRouter([{ path: '**', children: [] }])],
     });
+    for (const [k, v] of Object.entries(prefs)) localStorage.setItem(k, v); // provideApiTesting cleared the storage
     TestBed.inject(WorkspaceStore);
     TestBed.inject(PostsStore);
     TestBed.inject(CollectionsStore);
+    TestBed.inject(AccountsStore); // the page's post actions know which browsers are paired
     await signIn(http, { posts, collections: [COLLECTION] });
     const fixture = TestBed.createComponent(CalendarPageComponent);
     if (day) fixture.componentRef.setInput('day', day);
@@ -159,7 +174,8 @@ describe('CalendarPageComponent', () => {
         apiPost({ id: 'q', scheduledAt: at(9), status: 'queued' }),
         apiPost({ id: 's', scheduledAt: at(10), status: 'success' }),
       ]);
-      expect(rows(el)[0].querySelectorAll('.btns button')).toHaveLength(2);
+      // Post now, edit, delete: the post that went out has none of them.
+      expect(rows(el)[0].querySelectorAll('.btns button')).toHaveLength(3);
       expect(rows(el)[1].querySelector('.btns')).toBeNull();
     });
 
@@ -314,6 +330,14 @@ describe('CalendarPageComponent', () => {
       http.match((r) => r.url.endsWith('/posts')).forEach((r) => r.flush([]));
     });
 
+    it('gives a failed post the rerun button but not delete or edit (only a queued post can be removed)', async () => {
+      const { el } = await open([
+        apiPost({ id: 'f', scheduledAt: at(9), status: 'failed', failureCode: 'network' }),
+      ]);
+      const buttons = [...rows(el)[0].querySelectorAll<HTMLButtonElement>('.btns button')];
+      expect(buttons.map((b) => b.getAttribute('data-testid'))).toEqual(['cal-run']);
+    });
+
     it('shows three chips a day and counts the rest', async () => {
       const { el } = await open(
         [9, 10, 11, 12, 13].map((h) =>
@@ -354,6 +378,148 @@ describe('CalendarPageComponent', () => {
       for (const r of asked) r.flush([]);
       await settle();
       expect(posts.posts().length).toBe(before);
+    });
+  });
+
+  describe('folding the day list', () => {
+    const fold = (row: HTMLElement) => row.querySelector<HTMLButtonElement>('.fold')!;
+    const posts = [
+      apiPost({ id: 'a', scheduledAt: at(9), status: 'queued', code: '#A', content: 'First post' }),
+      apiPost({ id: 'b', scheduledAt: at(10), status: 'queued', code: '#B', content: 'Second' }),
+    ];
+
+    it('opens every row by default, with its tags, text and buttons', async () => {
+      const { el } = await open(posts);
+      for (const row of rows(el)) {
+        expect(fold(row).getAttribute('aria-expanded')).toBe('true');
+        expect(row.querySelector('.tag')).not.toBeNull();
+        expect(row.querySelector('.btns')).not.toBeNull();
+        expect(row.querySelector('.text.clamp')).toBeNull();
+      }
+    });
+
+    it('folds one row to a single line and opens it again', async () => {
+      const { fixture, el } = await open(posts);
+      fold(rows(el)[0]).click();
+      await tick(fixture);
+      const [first, second] = rows(el);
+      expect(fold(first).getAttribute('aria-expanded')).toBe('false');
+      expect(first.querySelector('.btns')).toBeNull();
+      expect(first.querySelector('.tag')).toBeNull();
+      expect(first.querySelector('.text.clamp')?.textContent).toBe('First post');
+      // The time, the target and the status stay: that is the overview.
+      expect(first.querySelector('.day-meta')?.textContent).toContain('09:00');
+      expect(first.querySelector('.status')?.textContent?.trim()).toBe(t().status.queued);
+      // The other row is untouched.
+      expect(fold(second).getAttribute('aria-expanded')).toBe('true');
+      expect(second.querySelector('.btns')).not.toBeNull();
+
+      fold(first).click();
+      await tick(fixture);
+      expect(fold(rows(el)[0]).getAttribute('aria-expanded')).toBe('true');
+      expect(rows(el)[0].querySelector('.btns')).not.toBeNull();
+    });
+
+    it('folds and opens every row at once, and remembers it for the next visit', async () => {
+      const { fixture, el } = await open(posts);
+      const all = () => el.querySelector<HTMLButtonElement>('[data-testid="fold-all"]')!;
+      expect(all().textContent).toContain(t().api.flow.calCollapseAll);
+      all().click();
+      await tick(fixture);
+      expect(rows(el).every((r) => r.classList.contains('closed'))).toBe(true);
+      expect(all().textContent).toContain(t().api.flow.calExpandAll);
+      expect(localStorage.getItem('ap-cal-open')).toBe('0');
+
+      // One row opened by hand stays open next to the folded ones.
+      fold(rows(el)[1]).click();
+      await tick(fixture);
+      expect(rows(el).map((r) => r.classList.contains('closed'))).toEqual([true, false]);
+
+      all().click();
+      await tick(fixture);
+      expect(rows(el).every((r) => !r.classList.contains('closed'))).toBe(true);
+      expect(localStorage.getItem('ap-cal-open')).toBe('1');
+    });
+
+    it('starts folded when the person folded it last time', async () => {
+      const { el } = await open(posts, TODAY, { 'ap-cal-open': '0' });
+      expect(rows(el).every((r) => r.classList.contains('closed'))).toBe(true);
+    });
+
+    it('hides the whole day list so the month has the width, and shows it again', async () => {
+      const { fixture, el } = await open(posts);
+      el.querySelector<HTMLButtonElement>('[data-testid="panel-hide"]')!.click();
+      await tick(fixture);
+      expect(el.querySelector('.panel')).toBeNull();
+      expect(el.querySelector('.cal-grid')?.classList.contains('solo')).toBe(true);
+      expect(localStorage.getItem('ap-cal-panel')).toBe('0');
+      const show = el.querySelector<HTMLButtonElement>('[data-testid="panel-show"]')!;
+      expect(show.textContent).toContain('(2)');
+      show.click();
+      await tick(fixture);
+      expect(rows(el)).toHaveLength(2);
+      expect(el.querySelector('.cal-grid')?.classList.contains('solo')).toBe(false);
+    });
+  });
+
+  describe('post now', () => {
+    const run = (row: HTMLElement) =>
+      row.querySelector<HTMLButtonElement>('[data-testid="cal-run"]')!;
+    const paired = () =>
+      TestBed.inject(AccountsStore).list.set([{ ...ACCOUNTS[0], connected: true }]);
+
+    it('sends the post to the front of the queue and reads the posts again', async () => {
+      const { fixture, el } = await open([
+        apiPost({ id: 'q', scheduledAt: at(23), status: 'queued', content: 'Soon' }),
+      ]);
+      paired(); // the browser of the post is paired
+      await tick(fixture);
+      expect(run(rows(el)[0]).disabled).toBe(false);
+      const notify = vi.spyOn(TestBed.inject(NotificationService), 'success');
+
+      run(rows(el)[0]).click();
+      await settle();
+      http.expectOne({ method: 'POST', url: `/api/workspaces/${WS}/posts/q/run-now` }).flush({});
+      await settle();
+      answerWorkspaceLoads(http, { posts: [] });
+      await tick(fixture);
+      expect(notify).toHaveBeenCalledWith(t().api.flow.runNowDone);
+    });
+
+    it('says retry on a failed post and is off while its browser is unbound', async () => {
+      const { fixture, el } = await open([
+        apiPost({ id: 'f', scheduledAt: at(9), status: 'failed', failureCode: 'network' }),
+      ]);
+      expect(run(rows(el)[0]).textContent).toContain(t().api.flow.pdRerun);
+      // The account of the sample post has no browser any more: nothing would ever take the post.
+      expect(run(rows(el)[0]).disabled).toBe(true);
+      expect(run(rows(el)[0]).getAttribute('title')).toBe(t().api.flow.pdUnbound);
+      paired();
+      await tick(fixture);
+      expect(run(rows(el)[0]).disabled).toBe(false);
+    });
+
+    it('is off for a viewer, with the reason', async () => {
+      http = provideApiTesting({
+        imports: [CalendarPageComponent],
+        providers: [provideRouter([{ path: '**', children: [] }])],
+      });
+      TestBed.inject(WorkspaceStore);
+      TestBed.inject(PostsStore);
+      TestBed.inject(CollectionsStore);
+      TestBed.inject(AccountsStore);
+      await signIn(http, {
+        posts: [apiPost({ id: 'q', scheduledAt: at(9), status: 'queued' })],
+        collections: [COLLECTION],
+        workspace: { role: 'viewer' },
+      });
+      const fixture = TestBed.createComponent(CalendarPageComponent);
+      fixture.componentRef.setInput('day', TODAY);
+      fixture.detectChanges();
+      await tick(fixture);
+      const el = fixture.nativeElement as HTMLElement;
+      expect(run(rows(el)[0]).disabled).toBe(true);
+      expect(run(rows(el)[0]).getAttribute('title')).toBe(t().api.permEdit);
     });
   });
 });

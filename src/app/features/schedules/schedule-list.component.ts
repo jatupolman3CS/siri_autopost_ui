@@ -13,6 +13,17 @@ import { ScheduleView, scheduleView } from './schedule-view';
 import { Pager } from '../../shared/components/pager/pager';
 import { RenameModalComponent } from '../../shared/components/rename-modal/rename-modal.component';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
+import { ScheduleDotsComponent } from './schedule-dots.component';
+
+const DOTS_KEY = 'ap-sch-dots';
+
+function readDots(): boolean {
+  try {
+    return localStorage.getItem(DOTS_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
 
 // "All schedules": one row per schedule with its pairing, cadence, today's posts and next run, and the buttons
 // to see it on the calendar, pause or resume it, and delete it. Pausing and deleting drop the schedule's future
@@ -20,7 +31,7 @@ import { PagerComponent } from '../../shared/components/pager/pager.component';
 // change something are an editor's.
 @Component({
   selector: 'app-schedule-list',
-  imports: [PagerComponent, EmptyStateComponent, RenameModalComponent],
+  imports: [PagerComponent, EmptyStateComponent, RenameModalComponent, ScheduleDotsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './schedule-list.component.html',
   styleUrl: './schedule-list.component.scss',
@@ -46,6 +57,19 @@ export class ScheduleListComponent {
     await this.store.rename(r.id, name);
     this.notify.success(this.t().api.itemRenamed);
   };
+
+  /** The rows of small squares (one per post) under each schedule; the choice is remembered in this browser. */
+  protected readonly showDots = signal(readDots());
+
+  protected toggleDots(): void {
+    const next = !this.showDots();
+    this.showDots.set(next);
+    try {
+      localStorage.setItem(DOTS_KEY, next ? '1' : '0');
+    } catch {
+      // The choice only lasts for this visit.
+    }
+  }
 
   protected readonly pager = new Pager(20);
   protected readonly page = computed(() => this.pager.slice(this.rows()));

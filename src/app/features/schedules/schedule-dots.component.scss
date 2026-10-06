@@ -1,0 +1,106 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.sd {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.sbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.daynav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav,
+.day {
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  &:hover {
+    background: var(--color-surface-muted);
+  }
+}
+.nav {
+  width: 28px;
+}
+.day {
+  padding: 0 10px;
+  &.today {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+}
+.tl {
+  margin-left: auto;
+  color: var(--color-primary);
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+.dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+// One square = one post; the same colours as the timeline's status lights.
+.dot {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--color-text-muted);
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  &.green {
+    background: var(--color-success);
+    &::after {
+      content: '✓';
+    }
+  }
+  &.yellow {
+    background: var(--color-warning);
+  }
+  &.red {
+    background: var(--color-danger);
+    &::after {
+      content: '✕';
+    }
+  }
+  &.grey {
+    opacity: 0.5;
+  }
+  &.rushed {
+    box-shadow: 0 0 0 2px var(--color-accent);
+  }
+  &:hover {
+    transform: scale(1.25);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+}
+.help {
+  margin: 0;
+}

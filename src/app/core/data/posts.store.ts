@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { dkey, hm } from '../i18n/format';
 import { Dict } from '../i18n/i18n.service';
-import { ApiPost, ApiService } from '../http/api.service';
+import { ApiPost, ApiRetryPostsResult, ApiService } from '../http/api.service';
 import { loadWithRetry } from './loading';
 import { ErrorItem, PostItem, STATUS_DOT } from './models';
 import { PLATFORMS } from './platforms';
@@ -44,6 +44,7 @@ export function toItem(p: ApiPost): PostItem {
     targetUrl: p.targetUrl ?? null,
     groupCode: p.code ?? null,
     isTest: p.isTest ?? false,
+    rushed: p.rushed ?? false,
   };
 }
 
@@ -78,6 +79,9 @@ export function groupByDay(items: QueueItem[]): Map<string, QueueItem[]> {
 }
 
 const monthKey = (y: number, m: number) => `${y}-${m}`;
+
+/** Posts the API puts back in the queue in one request (`RetryPostsCommandHandler.MaxItems`). */
+const RETRY_BATCH = 500;
 
 // Posting tasks (queue and history) and open error reports of the current workspace.
 // Posts load a calendar month at a time: the months around today first, then whichever
@@ -190,6 +194,36 @@ export class PostsStore {
   async retryError(id: string): Promise<void> {
     await this.api.retry(this.requireWs(), id);
     await this.refresh();
+  }
+
+  /**
+   * "Post now" / manual rerun: the post leaves its slot and is its browser's next job (the server also tells the
+   * browser to take it at once). A refusal (a post that went out, an unbound browser) rejects and is toasted.
+   */
+  async runNow(id: string): Promise<void> {
+    await this.api.runPostNow(this.requireWs(), id);
+    await this.refresh();
+  }
+
+  /**
+   * Puts failed posts back in the queue, as many as given: the API takes up to RETRY_BATCH at a time, so a long
+   * list goes in rounds. The totals add up what the API did and what it left alone (see `RetryPostsResultDto`).
+   * A round that fails stops the rest; what was done before it is still read back and shown.
+   */
+  async retryErrors(ids: readonly string[]): Promise<ApiRetryPostsResult> {
+    const wsId = this.requireWs();
+    const total: ApiRetryPostsResult = { retried: 0, unbound: 0, notFailed: 0 };
+    try {
+      for (let i = 0; i < ids.length; i += RETRY_BATCH) {
+        const done = await this.api.retryMany(wsId, ids.slice(i, i + RETRY_BATCH));
+        total.retried += done.retried;
+        total.unbound += done.unbound;
+        total.notFailed += done.notFailed;
+      }
+    } finally {
+      await this.refresh();
+    }
+    return total;
   }
 
   /** Closes an error report (a failed post becomes skipped). */

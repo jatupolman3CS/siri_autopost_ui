@@ -21,6 +21,31 @@
   flex-wrap: wrap;
 }
 
+// Keeps the cards in line whether or not a post can be picked (a pending one or one of an unbound browser cannot).
+.sel {
+  flex: 0 0 44px;
+  min-height: 44px;
+}
+
+.row-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bulk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  box-shadow: var(--shadow-md);
+}
+
 .body {
   flex: 1;
   min-width: 240px;

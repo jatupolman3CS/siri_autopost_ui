@@ -124,7 +124,10 @@ describe('role gating of the pages', () => {
       fixture.detectChanges();
       await settle();
       fixture.detectChanges();
-      expect(off(el, '.day-row .btns button')).toEqual([disabled, disabled]);
+      // Post now, edit, delete. Post now is off for an editor too: the sample account has no paired browser.
+      const [run, ...rest] = off(el, '.day-row .btns button');
+      expect(run).toBe(true);
+      expect(rest).toEqual([disabled, disabled]);
     });
   });
 

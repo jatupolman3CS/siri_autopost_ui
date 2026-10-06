@@ -431,6 +431,7 @@ export const AP_I18N_EXTRA = {
 
   // The post library (step 1 of the flow): the sidebar item, the route title and the stepper.
   postsNav: ['คลังโพสต์', 'Post library'],
+  tlNav: ['ไทม์ไลน์โพสต์', 'Post timeline'],
   flowPosts: ['เขียนและจัดการโพสต์', 'Write and manage posts'],
   flowPostsB: ['เปิด/ปิด ตั้งเวลาเอง ดูผลทีละโพสต์', 'On/off, own timing, results post by post'],
   nextToCollections: ['จัดโพสต์เข้าชุดโพสต์', 'Put the posts into a collection'],
@@ -590,4 +591,31 @@ export const AP_I18N_EXTRA = {
   ptestOnShort: ['เปิด', 'on'],
   ptestOffShort: ['ปิด', 'off'],
   ptestAccounts: ['{n} บัญชี', '{n} account(s)'],
+
+  // Error page: retry many failed posts at once
+  errSelectPage: ['เลือกทั้งหน้านี้', 'Select this page'],
+  errSelectOne: ['เลือกโพสต์นี้', 'Select this post'],
+  errReadyLine: ['ลองใหม่เป็นชุดได้ {n} โพสต์', '{n} post(s) can be retried together'],
+  errUnboundLine: [
+    'อีก {n} โพสต์ลองใหม่ไม่ได้ เพราะเครื่องที่ใช้โพสต์ถูกยกเลิกการผูกแล้ว',
+    '{n} more cannot be retried: the browser that posts for them was unbound',
+  ],
+  errBulkSelected: ['เลือกแล้ว {n} โพสต์', '{n} post(s) selected'],
+  errBulkRetry: ['ลองใหม่ที่เลือก ({n})', 'Retry selected ({n})'],
+  errBulkRetrying: ['กำลังนำกลับเข้าคิว…', 'Putting back in the queue…'],
+  errSelectAll: ['เลือกทั้งหมด {n} โพสต์', 'Select all {n}'],
+  errClearSelection: ['ไม่เลือกเลย', 'Clear selection'],
+  errBulkDone: [
+    'นำ {n} โพสต์กลับเข้าคิวแล้ว จะโพสต์ใน 15 นาที',
+    '{n} post(s) added back to the queue for 15 minutes from now',
+  ],
+  errBulkNone: ['ไม่มีโพสต์ที่นำกลับเข้าคิวได้', 'No post could be put back in the queue'],
+  errBulkUnbound: [
+    'ข้าม {n} โพสต์ เพราะเครื่องที่ใช้โพสต์ถูกยกเลิกการผูกแล้ว ต้องจับคู่เครื่องใหม่ก่อน',
+    'Left {n} post(s) as they were: their browser was unbound and has to be paired again first',
+  ],
+  errBulkGone: [
+    '{n} โพสต์ไม่ได้อยู่ในสถานะล้มเหลวแล้ว จึงไม่ถูกแตะต้อง',
+    '{n} post(s) were no longer failed and were not touched',
+  ],
 } as const;

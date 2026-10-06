@@ -22,7 +22,7 @@
     </div>
   </div>
 
-  <div class="cal-grid">
+  <div class="cal-grid" [class.solo]="!panelOpen()">
     <div class="min0">
       <div class="month">
         @for (dn of dayNames(); track dn) {
@@ -66,86 +66,153 @@
       </div>
     </div>
 
-    <section class="panel">
-      <div class="panel-head day-head">
-        <h2 class="h2">{{ selTitle() }}</h2>
-        <span class="muted fs14">{{ selList().length }} {{ t().common.posts }}</span>
-      </div>
-      @for (p of selPage(); track p.id) {
-        <div class="day-row">
-          <div class="day-meta">
-            <span class="fw5 fs14">{{ p.time }}</span>
-            <span class="pico s24"><i class="ph" [class]="p.icon"></i></span>
-            <span class="small muted grow ellipsis">{{ p.platformName }} · {{ p.target }}</span>
-            <span class="status"
-              ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
-            >
-          </div>
-          @if (p.code || p.isTest) {
-            <div class="tags">
-              @if (p.code) {
-                <span class="tag"><i class="ph ph-hash" aria-hidden="true"></i>{{ p.code }}</span>
-              }
-              @if (p.isTest) {
-                <span class="tag"
-                  ><i class="ph ph-flask" aria-hidden="true"></i>{{ t().api.flow.calTest }}</span
-                >
-              }
-            </div>
-          }
-          <div class="fs14 text">{{ p.text }}</div>
-          @if (p.editable) {
-            <div class="btns">
-              @if (p.canEdit) {
-                <button
-                  type="button"
-                  class="su-btn su-btn-sm su-btn-ghost"
-                  [disabled]="!perm.canEdit()"
-                  [attr.title]="perm.editHint() || null"
-                  (click)="edit(p.item)"
-                >
-                  {{ t().common.edit }}
-                </button>
-              }
+    @if (!panelOpen()) {
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary show-panel"
+        data-testid="panel-show"
+        (click)="setPanel(true)"
+      >
+        <i class="ph ph-sidebar-simple" aria-hidden="true"></i>{{ t().api.flow.calPanelShow }} ({{
+          selList().length
+        }})
+      </button>
+    } @else {
+      <section class="panel">
+        <div class="panel-head day-head">
+          <h2 class="h2">{{ selTitle() }}</h2>
+          <span class="muted fs14">{{ selList().length }} {{ t().common.posts }}</span>
+        </div>
+        <div class="fold-tools">
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-ghost"
+            data-testid="fold-all"
+            [disabled]="!selList().length"
+            (click)="setAllOpen(!allOpen())"
+          >
+            <i
+              class="ph"
+              [class]="allOpen() ? 'ph-arrows-in-line-vertical' : 'ph-arrows-out-line-vertical'"
+              aria-hidden="true"
+            ></i>
+            {{ allOpen() ? t().api.flow.calCollapseAll : t().api.flow.calExpandAll }}
+          </button>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-ghost"
+            data-testid="panel-hide"
+            (click)="setPanel(false)"
+          >
+            <i class="ph ph-sidebar-simple" aria-hidden="true"></i>{{ t().api.flow.calPanelHide }}
+          </button>
+        </div>
+        @for (p of selPage(); track p.id) {
+          <div class="day-row" [class.closed]="!isOpen(p.id)">
+            <div class="day-meta">
               <button
                 type="button"
-                class="su-btn su-btn-sm su-btn-ghost"
-                [disabled]="!perm.canEdit()"
-                [attr.title]="perm.editHint() || null"
-                (click)="deleteId.set(p.id)"
+                class="fold"
+                [attr.aria-expanded]="isOpen(p.id)"
+                [attr.aria-label]="
+                  isOpen(p.id) ? t().api.flow.calRowClose : t().api.flow.calRowOpen
+                "
+                (click)="toggleRow(p.id)"
               >
-                {{ t().common.remove }}
+                <i
+                  class="ph"
+                  [class]="isOpen(p.id) ? 'ph-caret-down' : 'ph-caret-right'"
+                  aria-hidden="true"
+                ></i>
               </button>
+              <span class="fw5 fs14">{{ p.time }}</span>
+              <span class="pico s24"><i class="ph" [class]="p.icon"></i></span>
+              <span class="small muted grow ellipsis">{{ p.platformName }} · {{ p.target }}</span>
+              <span class="status"
+                ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
+              >
             </div>
-          }
-          @if (p.isFailed) {
-            <div>
-              <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/errors">{{
-                t().common.fix
-              }}</a>
-            </div>
+            @if (isOpen(p.id) && (p.code || p.isTest)) {
+              <div class="tags">
+                @if (p.code) {
+                  <span class="tag"><i class="ph ph-hash" aria-hidden="true"></i>{{ p.code }}</span>
+                }
+                @if (p.isTest) {
+                  <span class="tag"
+                    ><i class="ph ph-flask" aria-hidden="true"></i>{{ t().api.flow.calTest }}</span
+                  >
+                }
+              </div>
+            }
+            <div class="fs14 text" [class.clamp]="!isOpen(p.id)">{{ p.text }}</div>
+            @if (isOpen(p.id) && (p.editable || p.canRun)) {
+              <div class="btns">
+                @if (p.canRun) {
+                  <button
+                    type="button"
+                    class="su-btn su-btn-sm su-btn-ghost"
+                    data-testid="cal-run"
+                    [disabled]="!!p.runBlocked || actions.isBusy(p.id)"
+                    [attr.title]="p.runBlocked || t().api.flow.pdRunHint"
+                    (click)="runNow(p.item)"
+                  >
+                    <i class="ph ph-lightning" aria-hidden="true"></i
+                    >{{ p.isFailed ? t().api.flow.pdRerun : t().api.flow.calRunNow }}
+                  </button>
+                }
+                @if (p.canEdit) {
+                  <button
+                    type="button"
+                    class="su-btn su-btn-sm su-btn-ghost"
+                    [disabled]="!perm.canEdit()"
+                    [attr.title]="perm.editHint() || null"
+                    (click)="edit(p.item)"
+                  >
+                    {{ t().common.edit }}
+                  </button>
+                }
+                @if (p.editable) {
+                  <button
+                    type="button"
+                    class="su-btn su-btn-sm su-btn-ghost"
+                    [disabled]="!perm.canEdit()"
+                    [attr.title]="perm.editHint() || null"
+                    (click)="deleteId.set(p.id)"
+                  >
+                    {{ t().common.remove }}
+                  </button>
+                }
+              </div>
+            }
+            @if (isOpen(p.id) && p.isFailed) {
+              <div>
+                <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/app/errors">{{
+                  t().common.fix
+                }}</a>
+              </div>
+            }
+          </div>
+        } @empty {
+          <app-empty-state [heading]="t().cal.empty" />
+        }
+        <app-pager [pager]="selPager" />
+        <div class="add">
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-secondary su-btn-full"
+            [disabled]="pastDay()"
+            [attr.title]="pastDay() ? t().api.flow.calPastHint : null"
+            [attr.aria-describedby]="pastDay() ? 'cal-past-hint' : null"
+            (click)="addOnDay()"
+          >
+            <i class="ph ph-plus"></i>{{ t().cal.add }}
+          </button>
+          @if (pastDay()) {
+            <p id="cal-past-hint" class="small muted past">{{ t().api.flow.calPastHint }}</p>
           }
         </div>
-      } @empty {
-        <app-empty-state [heading]="t().cal.empty" />
-      }
-      <app-pager [pager]="selPager" />
-      <div class="add">
-        <button
-          type="button"
-          class="su-btn su-btn-sm su-btn-secondary su-btn-full"
-          [disabled]="pastDay()"
-          [attr.title]="pastDay() ? t().api.flow.calPastHint : null"
-          [attr.aria-describedby]="pastDay() ? 'cal-past-hint' : null"
-          (click)="addOnDay()"
-        >
-          <i class="ph ph-plus"></i>{{ t().cal.add }}
-        </button>
-        @if (pastDay()) {
-          <p id="cal-past-hint" class="small muted past">{{ t().api.flow.calPastHint }}</p>
-        }
-      </div>
-    </section>
+      </section>
+    }
   </div>
 </div>
 

@@ -118,6 +118,7 @@ export function apiPost(over: Partial<ApiPost> & { id: string; scheduledAt: stri
     code: null,
     targetUrl: null,
     isTest: false,
+    rushed: false,
     ...over,
   };
 }

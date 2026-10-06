@@ -5628,6 +5628,105 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/posts/{postId}/run-now": {
+      "post": {
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/posts/retry": {
+      "post": {
+        "tags": [
+          "Posts"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryPostsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryPostsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryPostsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetryPostsResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/posts/{postId}/dismiss": {
       "post": {
         "tags": [
@@ -10856,6 +10955,10 @@
           },
           "isTest": {
             "type": "boolean"
+          },
+          "rushed": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -11217,6 +11320,43 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "RetryPostsRequest": {
+        "required": [
+          "postIds"
+        ],
+        "type": "object",
+        "properties": {
+          "postIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "RetryPostsResultDto": {
+        "required": [
+          "retried",
+          "unbound",
+          "notFailed"
+        ],
+        "type": "object",
+        "properties": {
+          "retried": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unbound": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notFailed": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

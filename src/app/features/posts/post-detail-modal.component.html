@@ -1,0 +1,113 @@
+<app-modal [open]="view() !== null" [title]="t().api.flow.pdTitle" (closed)="closed.emit()">
+  @if (view(); as v) {
+    <div class="pd">
+      <div class="head">
+        <span class="light" [class]="v.light" aria-hidden="true"></span>
+        <span class="fw6 status">{{ v.status }}</span>
+        <span class="muted small when">{{ v.when }}</span>
+        @if (v.rushed) {
+          <span class="tag rushed"
+            ><i class="ph ph-lightning" aria-hidden="true"></i>{{ t().api.flow.pdRushed }}</span
+          >
+        }
+      </div>
+
+      @if (v.overdue) {
+        <div class="callout warn" role="note">
+          <i class="ph ph-hourglass-medium" aria-hidden="true"></i>
+          <div class="grow">{{ t().api.flow.pdOverdue }}</div>
+        </div>
+      }
+
+      @if (v.failed || v.reasonDetail) {
+        <div class="callout danger" role="note" data-testid="pd-reason">
+          <i class="ph ph-warning-circle" aria-hidden="true"></i>
+          <div class="grow">
+            @if (v.reasonTitle) {
+              <div class="fw6">{{ v.reasonTitle }}</div>
+            }
+            @if (v.reasonDetail) {
+              <div class="small">{{ v.reasonDetail }}</div>
+            }
+          </div>
+        </div>
+      }
+
+      <dl class="meta">
+        <dt>{{ t().api.flow.pdTarget }}</dt>
+        <dd>
+          {{ item()!.target }}
+          @if (v.code) {
+            <span class="tag"><i class="ph ph-hash" aria-hidden="true"></i>{{ v.code }}</span>
+          }
+          @if (item()!.targetUrl; as url) {
+            <a [href]="url" target="_blank" rel="noopener noreferrer" class="ext">{{ url }}</a>
+          }
+        </dd>
+        @if (v.schedule) {
+          <dt>{{ t().api.flow.pdSchedule }}</dt>
+          <dd>
+            {{ v.schedule }} <span class="muted small">· {{ v.pair }}</span>
+          </dd>
+        }
+        @if (v.published) {
+          <dt>{{ t().api.flow.pdPublished }}</dt>
+          <dd>{{ v.published }}</dd>
+        }
+        @if (v.extension) {
+          <dt>{{ t().api.flow.pdExtension }}</dt>
+          <dd>{{ v.extension }}</dd>
+        }
+        @if (v.media) {
+          <dt><i class="ph ph-image" aria-hidden="true"></i></dt>
+          <dd>{{ v.media }}</dd>
+        }
+      </dl>
+
+      <div class="label small muted">{{ t().api.flow.pdText }}</div>
+      <div class="text" data-testid="pd-text">{{ v.text || t().api.flow.pdNoText }}</div>
+
+      @if (!v.blocked && !v.rushed) {
+        <p class="small muted hint">{{ t().api.flow.pdRunHint }}</p>
+      }
+      @if (v.blocked) {
+        <p class="small muted hint" data-testid="pd-blocked">{{ v.blocked }}</p>
+      }
+    </div>
+  }
+  @if (view(); as v) {
+    <div modal-footer>
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="closed.emit()">
+        {{ t().common.close }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-secondary"
+        data-testid="pd-edit"
+        [disabled]="!v.canEdit"
+        [attr.title]="v.editHint || null"
+        (click)="edit()"
+      >
+        <i class="ph ph-pencil-simple" aria-hidden="true"></i>{{ t().api.flow.pdEdit }}
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm"
+        data-testid="pd-run"
+        [class.su-btn-danger]="v.failed"
+        [class.su-btn-primary]="!v.failed"
+        [disabled]="!!v.blocked || busy()"
+        [attr.title]="v.blocked || t().api.flow.pdRunHint"
+        (click)="run()"
+      >
+        <i
+          class="ph"
+          [class.ph-lightning]="!v.failed"
+          [class.ph-arrow-counter-clockwise]="v.failed"
+          aria-hidden="true"
+        ></i
+        >{{ busy() ? t().api.flow.pdWorking : v.runLabel }}
+      </button>
+    </div>
+  }
+</app-modal>

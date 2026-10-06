@@ -81,6 +81,7 @@ describe('the sidebar of the app shell', () => {
         ['/app/targets', t.targets],
         ['/app/schedules', t.schedules],
         ['/app/calendar', t.calendar],
+        ['/app/timeline', all.api.tlNav],
         ['/app/errors', t.errors],
       ]);
       expect(paths(t.gAccount)).toEqual(['/app/billing', '/app/team']);
@@ -123,6 +124,7 @@ describe('the sidebar of the app shell', () => {
         '/app/targets',
         '/app/schedules',
         '/app/calendar',
+        '/app/timeline',
         '/app/library',
         '/app/reports',
       ]);

@@ -1,5 +1,23 @@
 <section class="panel" [attr.aria-label]="t().sch.listTitle">
-  <h2 class="h2">{{ t().sch.listTitle }}</h2>
+  <div class="head">
+    <h2 class="h2">{{ t().sch.listTitle }}</h2>
+    @if (store.schedules().length) {
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        data-testid="dots-toggle"
+        [attr.aria-pressed]="showDots()"
+        (click)="toggleDots()"
+      >
+        <i
+          class="ph"
+          [class]="showDots() ? 'ph-eye-slash' : 'ph-squares-four'"
+          aria-hidden="true"
+        ></i
+        >{{ showDots() ? t().api.flow.sdHide : t().api.flow.sdShow }}
+      </button>
+    }
+  </div>
   @if (!store.loaded()) {
     <p class="muted fs14" role="status">{{ t().api.loading }}</p>
   } @else {
@@ -61,6 +79,9 @@
             {{ t().sch.remove }}
           </button>
         </div>
+        @if (showDots()) {
+          <app-schedule-dots class="dots-row" [scheduleId]="r.id" />
+        }
       </div>
     } @empty {
       <app-empty-state

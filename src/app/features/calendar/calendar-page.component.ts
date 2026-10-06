@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CollectionsStore } from '../../core/data/collections.store';
-import { DraftStore } from '../../core/data/draft.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { STATUS_DOT } from '../../core/data/models';
 import { PostsStore, QueueItem } from '../../core/data/posts.store';
@@ -20,9 +19,31 @@ import { NotificationService } from '../../core/services/notification.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
-import { POSTS_PATH, editPostParams, newPostParams } from '../posts/posts-link';
+import { PostActionsService } from '../posts/post-actions.service';
+import { canRunNow } from '../posts/post-light';
 import { Pager } from '../../shared/components/pager/pager';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
+
+const OPEN_KEY = 'ap-cal-open';
+const PANEL_KEY = 'ap-cal-panel';
+
+/** A yes/no choice kept in this browser (it only lasts for the visit when storage is not available). */
+function readPref(key: string, fallback: boolean): boolean {
+  try {
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v === '1';
+  } catch {
+    return fallback;
+  }
+}
+
+function writePref(key: string, on: boolean): void {
+  try {
+    localStorage.setItem(key, on ? '1' : '0');
+  } catch {
+    // The choice only lasts for this visit.
+  }
+}
 
 @Component({
   selector: 'app-calendar-page',
@@ -37,17 +58,26 @@ export class CalendarPageComponent {
 
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
-  private readonly draft = inject(DraftStore);
   private readonly collections = inject(CollectionsStore);
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
   protected readonly posts = inject(PostsStore);
   protected readonly perm = inject(PermissionsService);
+  protected readonly actions = inject(PostActionsService);
 
   protected readonly calY = signal(this.posts.now().getFullYear());
   protected readonly calM = signal(this.posts.now().getMonth());
   protected readonly selDay = signal(this.posts.todayKey());
   protected readonly deleteId = signal<string | null>(null);
+
+  /**
+   * The day list folds up so the overview of what posts when stays visible: `allOpen` is the default of every row
+   * (kept in this browser), `flipped` the rows that differ from it, and the whole list can be hidden to give the
+   * month the full width.
+   */
+  protected readonly allOpen = signal(readPref(OPEN_KEY, true));
+  private readonly flipped = signal<ReadonlySet<string>>(new Set());
+  protected readonly panelOpen = signal(readPref(PANEL_KEY, true));
 
   constructor() {
     // The grid shows a few days of the neighbouring months too.
@@ -126,8 +156,39 @@ export class CalendarPageComponent {
       // A test post has no place in a collection to go back to: it can be removed, not edited.
       canEdit: p.status === 'queued' && !p.isTest,
       isFailed: p.status === 'failed' || p.status === 'pending',
+      // "Post now" (failed: rerun now); the hint says why it is off.
+      canRun: canRunNow(p),
+      runBlocked: this.actions.runBlockedReason(p),
     }));
   });
+
+  protected isOpen(id: string): boolean {
+    return this.allOpen() !== this.flipped().has(id);
+  }
+
+  protected toggleRow(id: string): void {
+    this.flipped.update((s) => {
+      const next = new Set(s);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  }
+
+  /** Opens or closes every row at once, and remembers it as the default. */
+  protected setAllOpen(open: boolean): void {
+    this.allOpen.set(open);
+    this.flipped.set(new Set());
+    writePref(OPEN_KEY, open);
+  }
+
+  protected setPanel(open: boolean): void {
+    this.panelOpen.set(open);
+    writePref(PANEL_KEY, open);
+  }
+
+  protected async runNow(p: QueueItem): Promise<void> {
+    await this.actions.runNow(p);
+  }
 
   protected pick(c: { key: string; date: Date }): void {
     this.selDay.set(c.key);
@@ -156,19 +217,9 @@ export class CalendarPageComponent {
     void this.router.navigate(['/app/schedules'], { queryParams: { start: this.selDay() } });
   }
 
-  /**
-   * Opens the library post a queued task came from in the post library's editor. A task that has none (made before
-   * collections existed) starts a new post with its text and media, to be saved from there.
-   */
+  /** Opens the library post a queued task came from in the post library's editor (see PostActionsService). */
   protected edit(p: QueueItem): void {
-    const found = this.collections.postById(p.collectionPostId);
-    if (found) {
-      void this.router.navigate([POSTS_PATH], { queryParams: editPostParams(found.post.id) });
-      return;
-    }
-    this.draft.startNew();
-    this.draft.patch({ text: p.text, media: p.mediaIds });
-    void this.router.navigate([POSTS_PATH], { queryParams: newPostParams() });
+    this.actions.edit(p);
   }
 
   protected async confirmDelete(): Promise<void> {

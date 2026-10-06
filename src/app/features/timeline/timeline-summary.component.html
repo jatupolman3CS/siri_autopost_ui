@@ -1,0 +1,48 @@
+<div class="kpis" role="group" [attr.aria-label]="label()">
+  <div class="kcard all">
+    <span class="klabel">{{ t().api.flow.tlKAll }}</span>
+    <span class="kvalue" data-testid="kpi-all">{{ ready() ? kpi().all : '—' }}</span>
+    <span class="knote">{{ t().api.flow.tlKAllNote }}</span>
+  </div>
+  <div class="kcard yellow">
+    <span class="klabel"
+      ><i class="sq yellow" aria-hidden="true"></i>{{ t().api.flow.tlKQueued }}</span
+    >
+    <span class="kvalue" data-testid="kpi-queued">{{ ready() ? kpi().queued : '—' }}</span>
+    <span class="knote">{{ t().api.flow.tlKQueuedNote }}</span>
+  </div>
+  <div class="kcard blue">
+    <span class="klabel"
+      ><i class="sq blue" aria-hidden="true"></i>{{ t().api.flow.tlKPosting }}</span
+    >
+    <span class="kvalue" data-testid="kpi-posting">{{ ready() ? kpi().posting : '—' }}</span>
+    <span class="knote">{{ t().api.flow.tlKPostingNote }}</span>
+  </div>
+  <div class="kcard green">
+    <span class="klabel"
+      ><i class="sq green" aria-hidden="true"></i>{{ t().api.flow.tlKDone }}</span
+    >
+    <span class="kvalue" data-testid="kpi-done">{{ ready() ? kpi().done : '—' }}</span>
+    <span class="knote">{{ t().api.flow.tlKDoneNote }}</span>
+  </div>
+  <div class="kcard red">
+    <span class="klabel"
+      ><i class="sq red" aria-hidden="true"></i>{{ t().api.flow.tlKFailed }}</span
+    >
+    <span class="kvalue" data-testid="kpi-failed">{{ ready() ? kpi().failed : '—' }}</span>
+    <span class="knote">{{ t().api.flow.tlKFailedNote }}</span>
+  </div>
+</div>
+
+<div class="nextup" data-testid="next-up" [class.late]="next().overdue">
+  <i class="ph ph-lightning" aria-hidden="true"></i>
+  <span class="fw6">{{ t().api.flow.tlNextUp }}</span>
+  @if (next().id) {
+    <button type="button" class="linkish" (click)="openNext.emit()">
+      <span class="fw6">{{ next().time }}</span> · {{ next().target }}
+    </button>
+    <span class="when" [class.late]="next().overdue">{{ next().when }}</span>
+  } @else {
+    <span class="muted">{{ next().empty }}</span>
+  }
+</div>

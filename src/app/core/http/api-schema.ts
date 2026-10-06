@@ -5048,6 +5048,96 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/posts/{postId}/run-now': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          postId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PostDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/posts/retry': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['RetryPostsRequest'];
+          'text/json': components['schemas']['RetryPostsRequest'];
+          'application/*+json': components['schemas']['RetryPostsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['RetryPostsResultDto'];
+          };
+        };
+        /** @description Bad Request */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ValidationProblemDetails'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/posts/{postId}/dismiss': {
     parameters: {
       query?: never;
@@ -7060,6 +7150,8 @@ export interface components {
       code: null | string;
       targetUrl: null | string;
       isTest: boolean;
+      /** @default false */
+      rushed: boolean;
     };
     /** @enum {unknown} */
     PostOrder: 'shuffle' | 'rotate';
@@ -7164,6 +7256,17 @@ export interface components {
       error: null | string;
       postUrl?: null | string;
       shot?: null | string;
+    };
+    RetryPostsRequest: {
+      postIds: string[];
+    };
+    RetryPostsResultDto: {
+      /** Format: int32 */
+      retried: number;
+      /** Format: int32 */
+      unbound: number;
+      /** Format: int32 */
+      notFailed: number;
     };
     RevenueMonthDto: {
       /** Format: int32 */

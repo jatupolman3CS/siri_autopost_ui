@@ -57,6 +57,14 @@ export const routes: Routes = [
             (m) => m.CalendarPageComponent,
           ),
       },
+      {
+        path: 'timeline',
+        title: 'api.tlNav',
+        loadComponent: () =>
+          import('./features/timeline/timeline-page.component').then(
+            (m) => m.TimelinePageComponent,
+          ),
+      },
       // The post editor is a panel of the post library now; old links to the composer still work.
       { path: 'composer', redirectTo: composerRedirect },
       {

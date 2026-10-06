@@ -463,6 +463,8 @@ export interface PostItem {
   groupCode?: string | null;
   /** A one-off test post. */
   isTest?: boolean;
+  /** Asked to post now (jumped the queue) and still waiting for its browser to take it. */
+  rushed?: boolean;
 }
 
 export interface ErrorItem extends PostItem {

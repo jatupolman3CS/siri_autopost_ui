@@ -109,6 +109,8 @@ export class AppLayoutComponent {
     // The post library comes first and holds the post editor (a panel above its list), so writing a post is
     // not a menu item of its own (`/app/composer` redirects here).
     const posts = item('posts', 'composer', 'ph-note-pencil', { label: this.t().api.postsNav });
+    // Every post of the day on one board, by the minute (the label comes from the api texts like the library's).
+    const timeline = item('timeline', 'calendar', 'ph-chart-line', { label: this.t().api.tlNav });
     if (simple)
       return [
         {
@@ -120,6 +122,7 @@ export class AppLayoutComponent {
             item('targets', 'targets', 'ph-users-four'),
             item('schedules', 'schedules', 'ph-calendar-check'),
             item('calendar', 'calendar', 'ph-calendar-blank'),
+            timeline,
             errors,
           ],
         },
@@ -136,6 +139,7 @@ export class AppLayoutComponent {
           item('targets', 'targets', 'ph-users-four'),
           item('schedules', 'schedules', 'ph-calendar-check'),
           item('calendar', 'calendar', 'ph-calendar-blank'),
+          timeline,
           item('library', 'library', 'ph-images'),
           item('reports', 'reports', 'ph-chart-bar'),
         ],

@@ -1,0 +1,237 @@
+<div class="page gap16">
+  <div class="page-head">
+    <div>
+      <h1>{{ t().api.flow.tlTitle }}</h1>
+      <p>{{ t().api.flow.tlSub }}</p>
+      <app-perm-note level="edit" />
+    </div>
+    <div class="actions">
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="refresh()">
+        <i class="ph ph-arrows-clockwise" aria-hidden="true"></i>{{ t().api.flow.tlRefresh }}
+      </button>
+    </div>
+  </div>
+
+  <app-timeline-summary
+    [kpi]="kpi()"
+    [ready]="ready()"
+    [next]="next()"
+    [label]="dayTitle()"
+    (openNext)="openNext()"
+  />
+
+  <section class="panel tools" role="search">
+    <div class="daynav">
+      <button
+        type="button"
+        class="nav-btn"
+        [attr.aria-label]="t().api.flow.tlPrevDay"
+        (click)="shiftDay(-1)"
+      >
+        <i class="ph ph-caret-left" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="su-btn su-btn-sm"
+        [class.su-btn-primary]="isToday()"
+        [class.su-btn-secondary]="!isToday()"
+        (click)="goToday()"
+      >
+        {{ t().common.today }}
+      </button>
+      <button
+        type="button"
+        class="nav-btn"
+        [attr.aria-label]="t().api.flow.tlNextDay"
+        (click)="shiftDay(1)"
+      >
+        <i class="ph ph-caret-right" aria-hidden="true"></i>
+      </button>
+      <input
+        class="su-input date"
+        type="date"
+        [value]="selDay()"
+        [attr.aria-label]="t().api.flow.tlDate"
+        (change)="setDay($any($event.target).value)"
+      />
+      <span class="daytitle fw6">{{ dayTitle() }}</span>
+    </div>
+
+    <div class="filters">
+      <label class="field">
+        <span class="small muted">{{ t().api.flow.tlFilterSchedule }}</span>
+        <select
+          class="su-select"
+          [value]="scheduleId()"
+          (change)="scheduleId.set($any($event.target).value)"
+        >
+          @for (o of scheduleOptions(); track o.value) {
+            <option [value]="o.value" [selected]="o.value === scheduleId()">{{ o.label }}</option>
+          }
+        </select>
+      </label>
+      <div class="chips" role="group" [attr.aria-label]="t().api.flow.tlFilterStatus">
+        <button
+          type="button"
+          class="fchip"
+          [class.on]="light() === 'all'"
+          [attr.aria-pressed]="light() === 'all'"
+          (click)="light.set('all')"
+        >
+          {{ lightLabel('all') }} ({{ lightCounts().all }})
+        </button>
+        @for (l of lights; track l) {
+          <button
+            type="button"
+            class="fchip"
+            [class.on]="light() === l"
+            [attr.aria-pressed]="light() === l"
+            (click)="light.set(l)"
+          >
+            <i class="sq" [class]="l" aria-hidden="true"></i>{{ lightLabel(l) }} ({{
+              lightCounts()[l]
+            }})
+          </button>
+        }
+      </div>
+      <label class="field grow search">
+        <span class="small muted">{{ t().api.flow.tlSearch }}</span>
+        <input
+          class="su-input"
+          type="search"
+          [placeholder]="t().api.flow.tlSearch"
+          [value]="query()"
+          (input)="query.set($any($event.target).value)"
+        />
+      </label>
+      <div class="field">
+        <span class="small muted">{{ t().api.flow.tlZoom }}</span>
+        <div class="seg sm" role="group" [attr.aria-label]="t().api.flow.tlZoom">
+          @for (z of zooms; track z) {
+            <button
+              type="button"
+              [class.on]="zoom() === z"
+              [attr.aria-pressed]="zoom() === z"
+              (click)="setZoom(z)"
+            >
+              {{ zoomLabel(z) }}
+            </button>
+          }
+        </div>
+      </div>
+      <button type="button" class="su-btn su-btn-sm su-btn-secondary gonow" (click)="goNow()">
+        <i class="ph ph-crosshair" aria-hidden="true"></i>{{ t().api.flow.tlGoNow }}
+      </button>
+    </div>
+  </section>
+
+  <section class="panel board" [attr.aria-label]="t().api.flow.tlTitle">
+    @if (!ready()) {
+      <p class="muted pad" role="status">{{ t().api.flow.tlLoading }}</p>
+    } @else if (!rows().length) {
+      <app-empty-state
+        icon="ph-chart-line"
+        [heading]="lightCounts().all ? t().api.flow.tlEmptyFiltered : t().api.flow.tlEmptyTitle"
+        [description]="t().api.flow.tlEmptyBody"
+      />
+      <div class="center">
+        <a class="su-btn su-btn-sm su-btn-secondary" routerLink="/app/schedules">{{
+          t().api.flow.tlEmptyGo
+        }}</a>
+      </div>
+    } @else {
+      <div class="scroller" #scroller (scroll)="hideTip()">
+        <div
+          class="canvas"
+          [style.width.px]="labelW + axisW()"
+          [style.--pph.px]="pxPerHour()"
+          [style.--pad.px]="14"
+        >
+          <div class="axis-row">
+            <div class="corner" [style.width.px]="labelW">
+              {{ t().api.flow.tlRowsHead }} ({{ rows().length }})
+            </div>
+            <div class="axis" [style.width.px]="axisW()">
+              @for (tk of ticks(); track tk.left) {
+                <span class="tick" [class.minor]="tk.minor" [style.left.px]="tk.left">{{
+                  tk.label
+                }}</span>
+              }
+              @if (nowLine(); as n) {
+                <span class="now-tag" [style.left.px]="n.x" data-testid="now-tag">{{
+                  n.label
+                }}</span>
+              }
+            </div>
+          </div>
+
+          <div class="body">
+            @if (pastW() > 0) {
+              <div class="past" [style.left.px]="labelW" [style.width.px]="pastW()"></div>
+            }
+            @if (nowLine(); as n) {
+              <div class="now-line" [style.left.px]="labelW + n.x" data-testid="now-line"></div>
+            }
+            @for (row of rows(); track trackRow($index, row)) {
+              <div class="trow" [attr.data-row]="row.key" [style.height.px]="row.height">
+                <div class="rlabel" [style.width.px]="labelW">
+                  <span class="pico s32 ico" aria-hidden="true"
+                    ><i class="ph" [class]="row.icon"></i
+                  ></span>
+                  <div class="rtext">
+                    <div class="rname fw6" [attr.title]="row.name">{{ row.name }}</div>
+                    <div class="rnote small muted" [attr.title]="row.note">
+                      {{ row.note || ' ' }}
+                    </div>
+                  </div>
+                  <div class="rcount small" [attr.title]="row.countTitle">
+                    <span class="fw6">{{ row.done }}/{{ row.total }}</span>
+                  </div>
+                </div>
+                <div class="lane" [style.width.px]="axisW()">
+                  @for (d of row.dots; track d.id) {
+                    <button
+                      type="button"
+                      class="dot"
+                      [class]="d.light"
+                      [class.next]="d.next"
+                      [class.rownext]="d.rowNext && !d.next"
+                      [class.rushed]="d.rushed"
+                      [class.overdue]="d.overdue"
+                      [style.left.px]="d.left"
+                      [style.top.px]="d.top"
+                      [attr.aria-label]="d.label"
+                      [attr.data-post]="d.id"
+                      (mouseenter)="showTip(d.id, $event)"
+                      (focus)="showTip(d.id, $event)"
+                      (mouseleave)="hideTip()"
+                      (blur)="hideTip()"
+                      (click)="open(d.id)"
+                    ></button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="legend" aria-label="legend">
+        <span class="small muted">{{ t().api.flow.tlLegend }}</span>
+        <span><i class="sq green"></i>{{ t().api.flow.tlLightGreen }}</span>
+        <span><i class="sq yellow"></i>{{ t().api.flow.tlLightYellow }}</span>
+        <span><i class="sq red"></i>{{ t().api.flow.tlLightRed }}</span>
+        <span><i class="sq grey"></i>{{ t().api.flow.tlLightGrey }}</span>
+        <span><i class="sq next"></i>{{ t().api.flow.tlLegendNext }}</span>
+        <span><i class="sq rushed"></i>{{ t().api.flow.tlLegendRushed }}</span>
+        <span><i class="sq overdue"></i>{{ t().api.flow.tlLegendOverdue }}</span>
+        <span class="small muted hint">{{ t().api.flow.tlHint }}</span>
+      </div>
+    }
+  </section>
+</div>
+
+@if (tipView(); as tp) {
+  <app-timeline-tip [tip]="tp" />
+}
+
+<app-post-detail-modal [postId]="selectedId()" (closed)="selectedId.set(null)" />

@@ -17,6 +17,7 @@ export type ApiAuthResult = S['AuthResultDto'];
 export type ApiWorkspace = S['WorkspaceDto'];
 export type ApiAccount = S['AccountDto'];
 export type ApiPost = S['PostDto'];
+export type ApiRetryPostsResult = S['RetryPostsResultDto'];
 export type ApiScheduleRequest = S['ScheduleRequest'];
 export type ApiScheduleResult = S['ScheduleResultDto'];
 export type ApiMedia = S['MediaDto'];
@@ -211,6 +212,15 @@ export class ApiService {
   }
   retry(ws: string, id: string) {
     return run(this.http.post<ApiPost>(`/api/workspaces/${ws}/posts/${id}/retry`, {}));
+  }
+  /** "Post now": a queued, held, failed or skipped post jumps the queue and is its browser's next job. */
+  runPostNow(ws: string, id: string) {
+    return run(this.http.post<ApiPost>(`/api/workspaces/${ws}/posts/${id}/run-now`, {}));
+  }
+  /** Up to 500 failed posts back in the queue; the answer counts what it did and what it left alone. */
+  retryMany(ws: string, postIds: string[]) {
+    const body: S['RetryPostsRequest'] = { postIds };
+    return run(this.http.post<ApiRetryPostsResult>(`/api/workspaces/${ws}/posts/retry`, body));
   }
   dismiss(ws: string, id: string) {
     return run(this.http.post<ApiPost>(`/api/workspaces/${ws}/posts/${id}/dismiss`, {}));

@@ -15,7 +15,13 @@ import { SchedulesStore } from '../../core/data/schedules.store';
 import { SettingsStore } from '../../core/data/settings.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { localDateKey, utcOffsetMinutes } from '../../core/flow/schedule-math';
-import { ApiCollection, ApiLinkSet, ApiRole, ApiSchedule } from '../../core/http/api.service';
+import {
+  ApiCollection,
+  ApiLinkSet,
+  ApiPost,
+  ApiRole,
+  ApiSchedule,
+} from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
@@ -24,6 +30,8 @@ import {
   ACCOUNTS,
   WS,
   answerThumbs,
+  answerWorkspaceLoads,
+  apiPost,
   provideApiTesting,
   settle,
   signIn,
@@ -101,6 +109,8 @@ describe('SchedulesPageComponent', () => {
       holdSchedules?: boolean;
       /** The owner's plan includes bumping (Premium); the default owner is on Pro, which does not. */
       bump?: boolean;
+      /** The posts the schedules made (the squares under each schedule). */
+      posts?: ApiPost[];
     } = {},
   ) {
     http = provideApiTesting({
@@ -133,6 +143,7 @@ describe('SchedulesPageComponent', () => {
     await signIn(http, {
       workspace: { role: opts.role ?? 'owner', bump: opts.bump ?? false },
       schedules: opts.holdSchedules ? [] : (opts.schedules ?? [MORNING]),
+      posts: opts.posts,
       collections: opts.collections ?? [C1, C2, C3],
       linkSets: opts.linkSets ?? [S1, S2],
     });
@@ -296,6 +307,110 @@ describe('SchedulesPageComponent', () => {
     it('has no such notice when a browser is paired', async () => {
       const { el } = await open();
       expect(el.querySelector('.callout')).toBeNull();
+    });
+  });
+
+  describe('the squares of the posts', () => {
+    const today = (h: number) => {
+      const d = new Date();
+      d.setHours(h, 0, 0, 0);
+      return d.toISOString();
+    };
+    const mine = (id: string, h: number, status: ApiPost['status'], over: Partial<ApiPost> = {}) =>
+      apiPost({
+        id,
+        scheduledAt: today(h),
+        status,
+        scheduleId: 'sc1',
+        accountId: FB_CONNECTED.id,
+        target: `Group ${id}`,
+        ...over,
+      });
+    const POSTS_OF_THE_DAY = [
+      mine('p-ok', 9, 'success'),
+      mine('p-wait', 10, 'queued'),
+      mine('p-bad', 8, 'failed', { failureCode: 'network', failureDetail: 'Lost connection' }),
+      mine('p-skip', 11, 'skipped'),
+      mine('other', 12, 'queued', { scheduleId: 'sc9' }),
+    ];
+    const squares = (el: HTMLElement) => [
+      ...el.querySelectorAll<HTMLButtonElement>('app-schedule-dots .dot'),
+    ];
+
+    it('shows one small square for each post of the schedule on the day, in time order, by status light', async () => {
+      const { el } = await open({ posts: POSTS_OF_THE_DAY });
+      expect(squares(el).map((s) => s.getAttribute('data-post'))).toEqual([
+        'p-bad',
+        'p-ok',
+        'p-wait',
+        'p-skip',
+      ]);
+      expect(squares(el).map((s) => s.className.replace(/\s*dot\s*/, '').trim())).toEqual([
+        'red',
+        'green',
+        'yellow',
+        'grey',
+      ]);
+      expect(el.querySelector('[data-testid="sd-counts"]')?.textContent).toBe(
+        fmt(t().api.flow.sdCounts, { a: 1, b: 1, c: 1 }),
+      );
+    });
+
+    it('opens the post of a red square, where it can be run again right now', async () => {
+      const { fixture, el } = await open({ posts: POSTS_OF_THE_DAY });
+      squares(el)[0].click();
+      await settle();
+      fixture.detectChanges();
+      const win = el.querySelector('.su-modal-panel')!;
+      expect(win.querySelector('[data-testid="pd-reason"]')?.textContent).toContain(
+        'Lost connection',
+      );
+      const run = win.querySelector<HTMLButtonElement>('[data-testid="pd-run"]')!;
+      expect(run.textContent).toContain(t().api.flow.pdRerun);
+      expect(run.disabled).toBe(false);
+      run.click();
+      await settle();
+      http
+        .expectOne({ method: 'POST', url: `/api/workspaces/${WS}/posts/p-bad/run-now` })
+        .flush({});
+      await settle();
+      answerWorkspaceLoads(http, { posts: POSTS_OF_THE_DAY.filter((p) => p.id !== 'p-bad') });
+      await settle();
+      fixture.detectChanges();
+      expect(el.querySelector('.su-modal-panel')).toBeNull();
+    });
+
+    it('moves to another day, and says so when the schedule has nothing on it', async () => {
+      const { fixture, el } = await open({ posts: POSTS_OF_THE_DAY });
+      el.querySelectorAll<HTMLButtonElement>('app-schedule-dots .nav')[1].click();
+      await settle();
+      fixture.detectChanges();
+      expect(squares(el)).toHaveLength(0);
+      expect(el.querySelector('app-schedule-dots')?.textContent).toContain(t().api.flow.sdEmpty);
+    });
+
+    it('links to the timeline of that schedule and day', async () => {
+      const { el } = await open({ posts: POSTS_OF_THE_DAY });
+      const href = el.querySelector('app-schedule-dots a')!.getAttribute('href')!;
+      expect(href).toContain('/app/timeline?');
+      expect(href).toContain('schedule=sc1');
+    });
+
+    it('hides the squares and shows them again, and remembers the choice', async () => {
+      const { fixture, el } = await open({ posts: POSTS_OF_THE_DAY });
+      const toggle = () => el.querySelector<HTMLButtonElement>('[data-testid="dots-toggle"]')!;
+      expect(toggle().textContent).toContain(t().api.flow.sdHide);
+      toggle().click();
+      await settle();
+      fixture.detectChanges();
+      expect(el.querySelector('app-schedule-dots')).toBeNull();
+      expect(toggle().textContent).toContain(t().api.flow.sdShow);
+      expect(localStorage.getItem('ap-sch-dots')).toBe('0');
+      toggle().click();
+      await settle();
+      fixture.detectChanges();
+      expect(squares(el)).toHaveLength(4);
+      expect(localStorage.getItem('ap-sch-dots')).toBe('1');
     });
   });
 

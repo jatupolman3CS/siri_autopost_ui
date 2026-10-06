@@ -6,17 +6,82 @@
       <app-perm-note level="edit" />
     </div>
     <div class="seg">
-      <button type="button" [class.on]="filter() === 'all'" (click)="filter.set('all')">
+      <button type="button" [class.on]="filter() === 'all'" (click)="setFilter('all')">
         {{ t().err.filterAll }} ({{ sorted().length }})
       </button>
-      <button type="button" [class.on]="filter() === 'today'" (click)="filter.set('today')">
+      <button type="button" [class.on]="filter() === 'today'" (click)="setFilter('today')">
         {{ t().err.filterToday }} ({{ todayList().length }})
       </button>
     </div>
   </div>
 
+  @if (selectableCount()) {
+    <section class="panel row-tools">
+      <app-checkbox
+        [label]="t().api.errSelectPage"
+        [checked]="pageSelected()"
+        [disabled]="!perm.canEdit() || !pageSelectable().length"
+        (checkedChange)="selectPage($event)"
+      />
+      <span class="small muted">
+        {{ readyLine() }}
+        @if (unboundCount()) {
+          · {{ unboundLine() }}
+        }
+      </span>
+    </section>
+  }
+
+  @if (selectedIds().length) {
+    <section class="panel bulk" role="region" [attr.aria-label]="selectedLine()">
+      <span class="fw6">{{ selectedLine() }}</span>
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-primary"
+        data-testid="bulk-retry"
+        [disabled]="!perm.canEdit() || bulkBusy()"
+        [attr.title]="perm.editHint() || null"
+        (click)="retrySelected()"
+      >
+        <i class="ph ph-arrow-counter-clockwise"></i
+        >{{ bulkBusy() ? t().api.errBulkRetrying : retryLine() }}
+      </button>
+      @if (!allSelected()) {
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-secondary"
+          data-testid="bulk-select-all"
+          [disabled]="bulkBusy()"
+          (click)="selectAll()"
+        >
+          {{ selectAllLine() }}
+        </button>
+      }
+      <button
+        type="button"
+        class="su-btn su-btn-sm su-btn-ghost"
+        [disabled]="bulkBusy()"
+        (click)="clearSelection()"
+      >
+        {{ t().api.errClearSelection }}
+      </button>
+    </section>
+  }
+
   @for (e of pageRows(); track e.id) {
     <section class="panel err">
+      @if (selectableCount()) {
+        <span class="sel">
+          @if (e.canBulk) {
+            <app-checkbox
+              [ariaLabel]="t().api.errSelectOne"
+              [checked]="isSelected(e.id)"
+              [disabled]="!perm.canEdit() || bulkBusy()"
+              (checkedChange)="select(e.id, $event)"
+            />
+          }
+        </span>
+      }
       <span class="pico s40"><i class="ph" [class]="e.icon"></i></span>
       <div class="body">
         <div class="title-row">
