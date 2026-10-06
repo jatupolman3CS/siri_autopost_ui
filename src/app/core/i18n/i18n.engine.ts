@@ -11,7 +11,7 @@ import { registerPack } from './i18n.service';
 // files of different features never collide. A string of the design that is wrong for the real system is
 // corrected in i18n.fixes.ts instead, with a comment saying what the design got wrong.
 export const AP_I18N_ENGINE = {
-  // A setting that is saved but not applied yet (notification screenshots and offline alerts, page tags...). The
+  // A setting that is saved but not applied yet (page tags...). The
   // anti-ban page has none left: the focus window and the rest after a block are applied by the extension, shuffle
   // by the server. Keep the design's label and add this hint. It says plainly that nothing applies the value (neither
   // the extension nor the server), so a switch that is on does not read as active.
@@ -32,9 +32,16 @@ export const AP_I18N_ENGINE = {
     'The saved token is removed when you save',
   ],
   notifyChatsPick: ['พบแชทเหล่านี้ เลือกแชทที่ต้องการ', 'Chats found. Pick the one to use'],
+  // The lookup reads what Telegram kept of the messages the bot received (24 hours at most), so an empty answer
+  // nearly always means nobody has written to the bot yet. A bot in a group only sees commands and mentions.
   notifyChatsNone: [
-    'ยังไม่พบแชท ลองส่งข้อความหาบอทสักข้อความ แล้วค้นหาใหม่',
-    'No chats found yet. Message the bot once, then search again',
+    'ยังไม่พบแชท: เปิด Telegram ค้นหาบอทของคุณ กด Start (หรือพิมพ์ /start) แล้วกด “ค้นหา Chat ID” ใหม่ ถ้าจะแจ้งเตือนเข้ากลุ่ม ให้เพิ่มบอทเข้ากลุ่มก่อน แล้วพิมพ์ /start@ชื่อบอท ในกลุ่ม',
+    'No chats found yet: open Telegram, find your bot, press Start (or type /start), then press “Find chat ID” again. To notify a group, add the bot to the group first, then type /start@botname in it',
+  ],
+  // Finding a chat only needs the bot token; the generic “token and recipient” text sends people in a circle.
+  notifyFindNeedsToken: [
+    'ใส่โทเค็นของบอทก่อน แล้วค้นหา Chat ID (ไม่ต้องรู้ Chat ID มาก่อน)',
+    'Enter the bot token first, then find the chat ID (you do not need to know it beforehand)',
   ],
   notifyNoSets: [
     'ยังไม่มีชุดลิงก์ เพิ่มกลุ่มในหน้า “ชุดลิงก์กลุ่ม” แล้วกลับมาตั้งการแจ้งเตือนรายชุดและรายกลุ่ม',
@@ -109,11 +116,7 @@ export const AP_I18N_ENGINE = {
   testSuccess: ['ส่วนขยายโพสต์แล้ว', 'The extension posted it'],
   testFailed: ['โพสต์ทดสอบไม่สำเร็จ', 'The test post did not go through'],
 
-  // Notifications: what is saved but not sent yet, and the token rule.
-  notifyNotSent: [
-    'การแนบภาพหน้าจอและการแจ้งเมื่อส่วนขยายออฟไลน์บันทึกไว้ แต่ยังไม่มีการส่ง',
-    'Screenshot attachments and offline alerts are saved, but nothing sends them yet',
-  ],
+  // Notifications: the token rule.
   tokenSaved: [
     'บันทึกโทเค็นไว้แล้ว และจะไม่แสดงอีก เว้นว่างไว้เพื่อใช้ค่าเดิม',
     'Token saved and never shown again. Leave it blank to keep it',

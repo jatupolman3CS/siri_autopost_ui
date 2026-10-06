@@ -71,7 +71,7 @@ export class NotifyChannelCardComponent {
     try {
       const r = await this.store.findChats();
       const t = this.t();
-      if (r.status === 'incomplete') this.notify.error(t.ntf.needToken);
+      if (r.status === 'incomplete') this.notify.error(t.api.engine.notifyFindNeedsToken);
       else if (r.status === 'unreachable') this.notify.error(t.api.serverDown);
       else if (r.status === 'failed') this.notify.error(r.message);
       else if (r.chats.length === 0) this.notify.error(t.api.engine.notifyChatsNone);

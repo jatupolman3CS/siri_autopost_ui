@@ -212,15 +212,15 @@ describe('NotifyPageComponent', () => {
   });
 
   describe('honest controls', () => {
-    it('turns the screenshot and offline pills off with the reason, and says so in a note', async () => {
+    it('has a real switch for every event, the machine-takes-a-job one off by default', async () => {
       const { el } = await open();
-      for (const label of [t().ntf.eShot, t().ntf.eOffline]) {
-        const p = pill(el, label);
-        expect(p.disabled).toBe(true);
-        expect(p.title).toBe(t().api.engine.notifyNotSent);
+      // The screenshot goes with the Telegram message of a post, and the offline message comes from the device watcher.
+      for (const label of [t().ntf.eShot, t().ntf.eOffline, t().ntf.eFail, t().ntf.eJob]) {
+        expect(pill(el, label).disabled).toBe(false);
+        expect(pill(el, label).title).toBe('');
       }
-      expect(pill(el, t().ntf.eFail).disabled).toBe(false);
-      expect(el.textContent).toContain(t().api.engine.notifyNotSent);
+      expect(pill(el, t().ntf.eJob).getAttribute('aria-pressed')).toBe('false');
+      expect(pill(el, t().ntf.eOffline).getAttribute('aria-pressed')).toBe('true');
     });
 
     it('says the chat commands are only saved, with a badge', async () => {
@@ -433,7 +433,7 @@ describe('NotifyPageComponent', () => {
       const { el } = await open();
       find(el).click();
       await settle();
-      expect(toasts().some((x) => x.message === t().ntf.needToken)).toBe(true);
+      expect(toasts().some((x) => x.message === t().api.engine.notifyFindNeedsToken)).toBe(true);
     });
 
     it('fills the chat id when exactly one chat is found, with the typed token', async () => {
@@ -614,9 +614,9 @@ describe('NotifyPageComponent', () => {
         'Condo rent',
       ]);
       expect(groups[0].querySelector('.small')?.textContent).toBe(
-        `${t().ntf.tg} · 4/6 · ${t().cal.code} #Jan24`,
+        `${t().ntf.tg} · 6/9 · ${t().cal.code} #Jan24`,
       );
-      expect(groups[1].querySelector('.small')?.textContent).toBe(`${t().ntf.tg} · 4/6`);
+      expect(groups[1].querySelector('.small')?.textContent).toBe(`${t().ntf.tg} · 6/9`);
       choose(select(groups[0]), 'line');
       fixture.detectChanges();
       expect(store().settings()?.sets).toEqual([
@@ -632,7 +632,7 @@ describe('NotifyPageComponent', () => {
       pill(groups[1], t().ntf.eFail).click();
       fixture.detectChanges();
       expect(store().settings()?.sets[0].groups['b'].events?.fail).toBe(false);
-      expect(groups[1].querySelector('.small')?.textContent).toBe(`${t().ntf.tg} · 3/6`);
+      expect(groups[1].querySelector('.small')?.textContent).toBe(`${t().ntf.tg} · 5/9`);
       expect(button(set, t().ntf.hideGroups)).toBeTruthy();
     });
 
@@ -662,7 +662,6 @@ describe('NotifyPageComponent', () => {
       TestBed.inject(I18nService).setLang('en');
       fixture.detectChanges();
       expect(el.querySelector('h1')?.textContent).toBe('Notifications');
-      expect(el.textContent).toContain('Screenshot attachments and offline alerts are saved');
     });
   });
 });

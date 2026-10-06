@@ -23,8 +23,7 @@ import { NotifySetRuleComponent } from './notify-set-rule.component';
 // "Notifications" (Telegram and LINE OA alerts): the two channels, which events go to the workspace's default
 // channel, a rule per link set and per group, and the chat commands card. Reading is for everyone; saving is
 // the admin's and needs the owner's plan to include notifications (the page then keeps its content but turns it
-// off, under a lock banner). The screenshot and "extension offline" events and the chat commands are saved but
-// not acted on yet, and the page says so.
+// off, under a lock banner). The chat commands are saved but not acted on yet, and the page says so.
 @Component({
   selector: 'app-notify-page',
   imports: [

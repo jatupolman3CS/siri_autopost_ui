@@ -22,7 +22,6 @@ import {
   NOTIFY_EVENTS,
   NotificationsStore,
   SENT_EVENTS,
-  UNSENT_EVENTS,
   channelOf,
   eventsOf,
   sentCount,
@@ -162,10 +161,10 @@ describe('NotificationsStore', () => {
     });
 
     it('counts only the events that are really sent', () => {
-      expect(UNSENT_EVENTS).toEqual(['shot', 'offline']);
-      expect(SENT_EVENTS).toHaveLength(NOTIFY_EVENTS.length - 2);
-      expect(sentCount(notifications().events)).toBe(4); // fail, round, startStop, block (shot and offline are on but not sent)
-      expect(sentCount({ ...notifications().events, success: true, quota: true })).toBe(6);
+      expect(SENT_EVENTS).toEqual(NOTIFY_EVENTS);
+      expect(NOTIFY_EVENTS).toContain('job');
+      expect(sentCount(notifications().events)).toBe(6); // fail, shot, round, startStop, block, offline (success, quota and job are off)
+      expect(sentCount({ ...notifications().events, success: true, quota: true, job: true })).toBe(9);
     });
   });
 

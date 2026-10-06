@@ -9393,6 +9393,10 @@
               "null",
               "string"
             ]
+          },
+          "shot": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -10044,6 +10048,10 @@
           },
           "quota": {
             "type": "boolean"
+          },
+          "job": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -11199,6 +11207,12 @@
             ]
           },
           "postUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "shot": {
             "type": [
               "null",
               "string"

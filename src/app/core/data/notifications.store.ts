@@ -24,12 +24,11 @@ export const NOTIFY_EVENTS = [
   'block',
   'offline',
   'quota',
+  'job',
 ] as const satisfies readonly (keyof ApiNotifyEvents)[];
 export type NotifyEventKey = (typeof NOTIFY_EVENTS)[number];
-/** Saved, but nothing sends them yet (the extension reports no screenshots and no "offline" signal). */
-export const UNSENT_EVENTS: readonly NotifyEventKey[] = ['shot', 'offline'];
-/** The events something sends today: what the "x/y events" counts are about. */
-export const SENT_EVENTS = NOTIFY_EVENTS.filter((k) => !UNSENT_EVENTS.includes(k));
+/** The events something sends today (all of them now): what the "x/y events" counts are about. */
+export const SENT_EVENTS: readonly NotifyEventKey[] = NOTIFY_EVENTS;
 
 /** How much the API accepts per field (Domain `TelegramChannel`/`NotificationSettings`): inputs stop here. */
 export const NOTIFY_LIMITS = { token: 200, target: 100, users: 300 } as const;

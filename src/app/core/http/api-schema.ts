@@ -6675,6 +6675,8 @@ export interface components {
       /** @default group */
       targetKind: string;
       pageTags?: null | string;
+      /** @default false */
+      shot: boolean;
     };
     JobMediaDto: {
       /** Format: uuid */
@@ -6841,6 +6843,8 @@ export interface components {
       block: boolean;
       offline: boolean;
       quota: boolean;
+      /** @default false */
+      job: boolean;
     };
     NotifyTestRequest: {
       channel: string;
@@ -7159,6 +7163,7 @@ export interface components {
       blocked: boolean;
       error: null | string;
       postUrl?: null | string;
+      shot?: null | string;
     };
     RevenueMonthDto: {
       /** Format: int32 */

@@ -68,6 +68,7 @@ export const NOTIFICATIONS = {
     block: true,
     offline: true,
     quota: false,
+    job: false,
   },
   sets: [],
   commandsOn: false,
