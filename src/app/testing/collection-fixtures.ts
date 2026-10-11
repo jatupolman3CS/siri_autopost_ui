@@ -112,6 +112,8 @@ export function apiLinkSet(over: Partial<ApiLinkSet> & { id: string }): ApiLinkS
     links: [],
     scheduleCount: 0,
     active: true,
+    randomOrder: true,
+    dailyPerGroup: 0,
     ...over,
   };
 }

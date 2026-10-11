@@ -1,8 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
+import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
+import { DevicesStore } from '../../core/data/devices.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { EXPORT_FILES } from '../../core/flow/download';
+import { ownerOfSet } from '../../core/flow/link-ownership';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
@@ -14,6 +17,7 @@ import { BulkLinksModalComponent } from './bulk-links-modal.component';
 import { CsvLinksModalComponent } from './csv-links-modal.component';
 import { LinkSetCardComponent } from './link-set-card.component';
 import { NewSetModalComponent } from './new-set-modal.component';
+import { OwnershipOverviewComponent } from './ownership-overview.component';
 import { Pager } from '../../shared/components/pager/pager';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 
@@ -32,6 +36,7 @@ type Dialog = 'set' | 'csv' | 'bulk';
     PermNoteComponent,
     LinkSetCardComponent,
     NewSetModalComponent,
+    OwnershipOverviewComponent,
     BulkLinksModalComponent,
     CsvLinksModalComponent,
   ],
@@ -43,11 +48,43 @@ export class TargetsPageComponent {
   private readonly router = inject(Router);
   private readonly notify = inject(NotificationService);
   protected readonly store = inject(LinkSetsStore);
+  private readonly accounts = inject(AccountsStore);
+  private readonly devices = inject(DevicesStore);
   protected readonly perm = inject(PermissionsService);
   protected readonly t = inject(I18nService).t;
 
   protected readonly pager = new Pager(20);
-  protected readonly setPage = computed(() => this.pager.slice(this.store.sets()));
+
+  /**
+   * The sets side by side with the extension that posts them: in the order of the extensions (the team page's), then the
+   * sets nobody posts, each set keeping its own order inside its extension. A heading names the extension.
+   */
+  private readonly ordered = computed(() => {
+    const accounts = this.accounts.list();
+    const rank = new Map(accounts.map((a, i) => [a.id, i]));
+    const rankOf = (setOwner: string | null) =>
+      setOwner === null
+        ? Number.MAX_SAFE_INTEGER
+        : (rank.get(setOwner) ?? Number.MAX_SAFE_INTEGER - 1);
+    return this.store
+      .sets()
+      .map((s, i) => ({ s, i, r: rankOf(ownerOfSet(s, accounts)) }))
+      .sort((a, b) => a.r - b.r || a.i - b.i)
+      .map((x) => x.s);
+  });
+  protected readonly setPage = computed(() => this.pager.slice(this.ordered()));
+
+  /** The extension's name above the first set of its group on this page; null for the sets that follow it. */
+  protected heading(index: number): string | null {
+    const page = this.setPage();
+    const owner = (i: number) => ownerOfSet(page[i], this.accounts.list());
+    if (index > 0 && owner(index) === owner(index - 1)) return null;
+    const flow = this.t().api.flow;
+    const id = owner(index);
+    if (!id) return flow.ownUnassigned;
+    const account = this.accounts.byId(id);
+    return account ? extensionNameOf(account, this.devices.list()) : flow.postAsMissing;
+  }
 
   protected readonly dialog = signal<Dialog | null>(null);
   /** The set a paste dialog adds to. */

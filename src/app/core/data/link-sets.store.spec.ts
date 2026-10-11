@@ -592,9 +592,37 @@ describe('LinkSetsStore', () => {
         name: 'Condo groups',
         postAsAccountId: 'acc-fb',
         accountIds: [],
+        randomOrder: true,
+        dailyPerGroup: 0,
       });
       req.flush({ ...SET, postAsAccountId: 'acc-fb' });
       expect(await done).toBe(true);
+    });
+
+    it('sends the rules of the set with it and goes back to the old ones when the save is refused', async () => {
+      await start([apiLinkSet({ id: 's1', links: [A, B], randomOrder: true, dailyPerGroup: 1 })]);
+      const done = store.updateSet('s1', { randomOrder: false, dailyPerGroup: 4 });
+      expect(store.byId('s1')).toMatchObject({ randomOrder: false, dailyPerGroup: 4 });
+      const req = http.expectOne(SET_URL('s1'));
+      expect(req.request.body).toMatchObject({ randomOrder: false, dailyPerGroup: 4 });
+      req.flush(null, { status: 422, statusText: 'Unprocessable Entity' });
+      expect(await done).toBe(false);
+      expect(store.byId('s1')).toMatchObject({ randomOrder: true, dailyPerGroup: 1 });
+    });
+
+    it('keeps the rules on screen while a newer change is on its way', async () => {
+      await start();
+      const first = store.updateSet('s1', { dailyPerGroup: 2 });
+      const second = store.updateSet('s1', { randomOrder: false });
+      const one = http.expectOne(SET_URL('s1'));
+      one.flush({ ...SET, dailyPerGroup: 2 });
+      expect(await first).toBe(true);
+      await settle();
+      expect(store.byId('s1')).toMatchObject({ randomOrder: false, dailyPerGroup: 2 });
+      const two = http.expectOne(SET_URL('s1'));
+      expect(two.request.body).toMatchObject({ randomOrder: false, dailyPerGroup: 2 });
+      two.flush({ ...SET, randomOrder: false, dailyPerGroup: 2 });
+      expect(await second).toBe(true);
     });
 
     it('goes back to the old account when the save is refused', async () => {
@@ -614,6 +642,8 @@ describe('LinkSetsStore', () => {
         name: 'Renamed',
         postAsAccountId: null,
         accountIds: [],
+        randomOrder: true,
+        dailyPerGroup: 0,
       });
       req.flush({ ...SET, name: 'Renamed' });
       expect(await done).toBe(true);
@@ -635,6 +665,8 @@ describe('LinkSetsStore', () => {
         name: 'Condo groups',
         postAsAccountId: 'acc-fb',
         accountIds: [],
+        randomOrder: true,
+        dailyPerGroup: 0,
       });
       // The first answer is not applied: a newer change is still on its way.
       one.flush({ ...SET, postAsAccountId: 'acc-fb' });
@@ -646,6 +678,8 @@ describe('LinkSetsStore', () => {
         name: 'Renamed',
         postAsAccountId: 'acc-fb',
         accountIds: [],
+        randomOrder: true,
+        dailyPerGroup: 0,
       });
       two.flush({ ...SET, name: 'Renamed', postAsAccountId: 'acc-fb' });
       expect(await second).toBe(true);

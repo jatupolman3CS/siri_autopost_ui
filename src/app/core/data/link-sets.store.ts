@@ -39,6 +39,10 @@ export interface SetEdit {
   name?: string;
   /** null = the first connected extension's Facebook account. */
   postAsAccountId?: string | null;
+  /** The groups of a round go out in a random order (a round never opens with the group the one before it opened with). */
+  randomOrder?: boolean;
+  /** Posts a day each group may get (0 to 50; 0 = no limit from the set). A link's own limit replaces it. */
+  dailyPerGroup?: number;
 }
 
 /** A link the engine would post to: switched on and a real Facebook group or page address. */
@@ -255,6 +259,8 @@ export class LinkSetsStore {
     const previous: SetEdit = {};
     if (patch.name !== undefined) previous.name = before.name;
     if (patch.postAsAccountId !== undefined) previous.postAsAccountId = before.postAsAccountId;
+    if (patch.randomOrder !== undefined) previous.randomOrder = before.randomOrder;
+    if (patch.dailyPerGroup !== undefined) previous.dailyPerGroup = before.dailyPerGroup;
     this.patchSet(id, patch);
     this.setOpCount.set(id, (this.setOpCount.get(id) ?? 0) + 1);
     const run = async (): Promise<boolean> => {
@@ -266,6 +272,8 @@ export class LinkSetsStore {
           name: set.name,
           postAsAccountId: set.postAsAccountId,
           accountIds: [],
+          randomOrder: set.randomOrder,
+          dailyPerGroup: set.dailyPerGroup,
         });
         if (this.ws.id() === wsId && (this.setOpCount.get(id) ?? 0) <= 1) this.mergeSet(saved);
         return true;
@@ -526,6 +534,8 @@ export class LinkSetsStore {
       ...server,
       name: own.name,
       postAsAccountId: own.postAsAccountId,
+      randomOrder: own.randomOrder,
+      dailyPerGroup: own.dailyPerGroup,
       links: edited ? withFlags(links) : links,
     };
   }

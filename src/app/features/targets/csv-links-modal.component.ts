@@ -152,6 +152,13 @@ export class CsvLinksModalComponent {
         bad ? 'info' : 'success',
         fmt(this.t().ts.csvDone, { n: r.links, s: r.sets, i: bad }),
       );
+      // One group, one extension: rows whose group another extension's set already holds were left out.
+      if (r.conflicts)
+        this.notify.show(
+          'warning',
+          fmt(this.t().api.flow.linksLeftOut, { n: r.conflicts, note: r.conflictNote ?? '' }),
+          9000,
+        );
       this.closed.emit();
     } catch {
       // The error interceptor has shown why; the rows stay in the box.

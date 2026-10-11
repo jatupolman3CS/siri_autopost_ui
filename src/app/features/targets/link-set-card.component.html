@@ -64,7 +64,9 @@
     </div>
   </div>
 
-  @if (more()) {
+  <app-set-owner [set]="set()" />
+
+  @if (showPostAs()) {
     <div class="postas" [attr.title]="perm.editHint() || null">
       <app-select-field
         [label]="t().ts.postAs"
@@ -73,9 +75,71 @@
         [disabled]="perm.readOnly()"
         (valueChange)="setPostAs($event)"
       />
+      @if (postAsStatus(); as s) {
+        @if (s.kind === 'unbound') {
+          <div class="callout warn status" role="status">
+            <i class="ph ph-warning" aria-hidden="true"></i>
+            <div class="grow">
+              <span>{{ s.text }}</span>
+              @if (perm.canAdmin()) {
+                <a
+                  class="su-btn su-btn-sm su-btn-secondary"
+                  routerLink="/app/team"
+                  [queryParams]="{ pair: 1 }"
+                  >{{ t().ov.pair }}</a
+                >
+              }
+            </div>
+          </div>
+        } @else {
+          <p
+            class="su-field-help status"
+            [class.ok]="s.kind === 'ready'"
+            [class.warn]="s.kind === 'offline' || s.kind === 'none'"
+          >
+            <i
+              class="ph"
+              [class.ph-check-circle]="s.kind === 'ready'"
+              [class.ph-warning]="s.kind === 'offline' || s.kind === 'none'"
+              [class.ph-info]="s.kind === 'auto'"
+              aria-hidden="true"
+            ></i
+            ><span>{{ s.text }}</span>
+          </p>
+        }
+      }
       <p class="su-field-help">{{ t().api.flow.postAsHint }}</p>
     </div>
   }
+
+  <div class="rules" [attr.title]="perm.editHint() || null">
+    <div class="small fw6">{{ t().api.flow.setRulesTitle }}</div>
+    <app-checkbox
+      [label]="t().api.flow.setRandomOrder"
+      [checked]="set().randomOrder"
+      [disabled]="perm.readOnly()"
+      (checkedChange)="setRandomOrder($event)"
+    />
+    <p class="su-field-help">
+      {{ t().api.flow.setRandomOrderHint }}
+      <a routerLink="/app/antiban">{{ t().nav.antiban }}</a>
+    </p>
+    <label class="cap">
+      <span>{{ t().api.flow.setDailyPerGroup }}</span>
+      <input
+        class="cell"
+        type="number"
+        min="0"
+        [max]="dailyMaxLimit"
+        [value]="set().dailyPerGroup"
+        [attr.aria-label]="t().api.flow.setDailyPerGroup"
+        [disabled]="perm.readOnly()"
+        (change)="setDailyPerGroup($event)"
+      />
+      <span>{{ t().api.flow.setDailyPerGroupUnit }}</span>
+    </label>
+    <p class="su-field-help">{{ t().api.flow.setDailyPerGroupHint }}</p>
+  </div>
 
   <div class="rows">
     @for (l of linkPage(); track l.id) {

@@ -14,6 +14,8 @@ export interface TipView {
   status: string;
   target: string;
   schedule: string;
+  /** The extension (browser) that posts it. */
+  extension: string;
   code: string;
   text: string;
   reason: string;
@@ -48,6 +50,11 @@ export interface TipView {
     @if (tp.schedule) {
       <div class="line">
         <span class="muted">{{ t().api.flow.tlTipSchedule }}</span> {{ tp.schedule }}
+      </div>
+    }
+    @if (tp.extension) {
+      <div class="line">
+        <span class="muted">{{ t().api.flow.tlTipExtension }}</span> {{ tp.extension }}
       </div>
     }
     @if (tp.text) {

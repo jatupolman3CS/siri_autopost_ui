@@ -127,7 +127,13 @@
               </button>
               <span class="fw5 fs14">{{ p.time }}</span>
               <span class="pico s24"><i class="ph" [class]="p.icon"></i></span>
-              <span class="small muted grow ellipsis">{{ p.platformName }} · {{ p.target }}</span>
+              <span class="small muted grow ellipsis"
+                >{{ p.platformName }}
+                @if (extensionOf(p.item.accountId); as ext) {
+                  · {{ ext }}
+                }
+                · {{ p.target }}</span
+              >
               <span class="status"
                 ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
               >

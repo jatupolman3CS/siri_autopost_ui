@@ -75,11 +75,103 @@ export const AP_I18N_FLOW = {
   // The "post as" select: the extension (a paired browser, shown by its name) that posts the set. Only a browser
   // that is paired can be chosen; the Facebook account it brings is what the API stores.
   postAsAuto: ['อัตโนมัติ: ส่วนขยายแรกที่เชื่อมต่อ', 'Automatic: the first connected extension'],
+  // The same choice once an extension is connected: it says which one the first connected extension is right now.
+  postAsAutoNow: [
+    'อัตโนมัติ: ส่วนขยายแรกที่เชื่อมต่อ (ตอนนี้ = {name})',
+    'Automatic: the first connected extension (now: {name})',
+  ],
+  // The status line under the select. A set that names an extension is posted by that browser and no other: while
+  // it is unbound the set waits (the API refuses a schedule for it), and while it is offline its posts wait.
+  postAsReady: ['ส่วนขยายนี้พร้อมโพสต์', 'This extension is ready to post'],
+  postAsWaiting: [
+    'ชุดนี้รอส่วนขยายที่เลือกไว้ ซึ่งยังไม่ได้เชื่อมต่อ และจะไม่ถูกส่งไปส่วนขยายอื่น ผูกเบราว์เซอร์นั้นอีกครั้งที่ ทีมและเวิร์กสเปซ > เพิ่มอุปกรณ์',
+    'This set is waiting for the extension you chose, which is not connected, and will not go to another extension. Pair that browser again under Team & workspaces > Add device',
+  ],
+  postAsOffline: [
+    'ส่วนขยายนี้ออฟไลน์อยู่ โพสต์ของชุดนี้จะรอจนกว่าจะกลับมาออนไลน์',
+    'This extension is offline. Posts of this set wait until it is back online',
+  ],
   postAsHint: [
     'เลือกส่วนขยายที่จะโพสต์ชุดนี้ เลือกได้เฉพาะส่วนขยายที่ผูกเครื่องแล้ว ส่วนขยายนี้โพสต์ลงทุกกลุ่มและเพจในชุด',
     'Choose the extension that posts this set. Only paired extensions can be chosen; it posts to every group and page in the set',
   ],
   postAsMissing: ['ส่วนขยายที่ไม่พบแล้ว', 'Extension no longer exists'],
+  // One link set, one extension; one group, one extension (2026-10-10). With two or more extensions connected there is
+  // no "automatic" any more: a set belongs to the extension a person picks, or it posts nothing.
+  postAsPick: [
+    'เลือกเครื่อง (ส่วนขยาย) ที่จะโพสต์ชุดนี้…',
+    'Choose the extension that posts this set…',
+  ],
+  postAsNone: [
+    'ชุดนี้ยังไม่ได้เลือกเครื่อง จึงยังไม่โพสต์ เลือกเครื่องในช่องด้านบน',
+    'This set has no extension yet, so nothing is posted. Choose one above',
+  ],
+  ownerLine: ['เครื่องที่โพสต์ชุดนี้: {name}', 'Posted by: {name}'],
+  // After a set's name in the schedule builder's list: which extension the set belongs to.
+  optExt: ['เครื่อง {name}', 'on {name}'],
+  ownerNone: ['ยังไม่ได้เลือกเครื่อง', 'No extension chosen'],
+  ownTitle: ['กลุ่มลิงก์ ↔ เครื่อง (ส่วนขยาย)', 'Link groups ↔ extensions'],
+  ownBody: [
+    'ชุดลิงก์หนึ่งชุดใช้เครื่องเดียว และกลุ่มหนึ่งกลุ่มอยู่กับเครื่องเดียว แต่ละเครื่องโพสต์เฉพาะกลุ่มในชุดที่ผูกกับมัน ไม่ดึงงานของเครื่องอื่นและไม่โพสต์ซ้ำกลุ่มเดียวกัน',
+    'One link set is posted by one extension, and one group belongs to one extension. Each extension posts only the groups of the sets tied to it: it never takes another extension’s work and no group is posted twice',
+  ],
+  ownSetsGroups: ['{s} ชุด · {g} กลุ่ม', '{s} sets · {g} groups'],
+  ownNoSets: ['ยังไม่มีชุดลิงก์ที่ผูกกับเครื่องนี้', 'No link set is tied to this extension yet'],
+  ownUnassigned: ['ยังไม่ได้เลือกเครื่อง', 'No extension chosen'],
+  ownUnassignedHint: [
+    'ชุดเหล่านี้ยังไม่โพสต์ เลือกเครื่องในการ์ดของแต่ละชุด',
+    'These sets do not post yet. Choose an extension on each set',
+  ],
+  ownOnline: ['ออนไลน์', 'Online'],
+  overlapTitle: [
+    'มี {n} กลุ่มอยู่ในชุดของหลายเครื่อง',
+    '{n} groups sit in the sets of more than one extension',
+  ],
+  overlapBody: [
+    'กลุ่มหนึ่งใช้ได้กับเครื่องเดียว เครื่องที่อยู่ก่อนในรายการเครื่องจะเป็นผู้โพสต์กลุ่มนั้น เครื่องอื่นจะข้าม นำกลุ่มออกจากชุดที่ไม่ต้องการเพื่อให้ชัดเจน',
+    'A group works with one extension. The extension listed first posts it and the others skip it. Remove the group from the set you do not want to keep it',
+  ],
+  overlapLine: [
+    '{g}: โพสต์โดย {keeper} · ข้ามที่ {skipped}',
+    '{g}: posted by {keeper} · skipped on {skipped}',
+  ],
+  overlapKeeps: [
+    'กลุ่มนี้อยู่ในชุดของเครื่องอื่นด้วย เครื่องนี้เป็นผู้โพสต์ เครื่องอื่นจะข้าม',
+    'This group is in another extension’s set too. This extension posts it; the other skips it',
+  ],
+  overlapSkipped: [
+    'ซ้ำกับชุด “{set}” ของเครื่อง “{ext}” เครื่องนี้จะไม่โพสต์กลุ่มนี้',
+    'Also in set “{set}” of extension “{ext}”. This extension will not post this group',
+  ],
+  overlapRemove: ['นำออกจากชุดนี้', 'Remove from this set'],
+  newSetExt: ['เครื่องที่จะโพสต์ชุดนี้', 'Extension that posts this set'],
+  newSetExtErr: ['เลือกเครื่องก่อนสร้างชุด', 'Choose an extension first'],
+  linksLeftOut: [
+    'ข้าม {n} กลุ่มที่อยู่ในชุดของเครื่องอื่นแล้ว: {note}',
+    'Left out {n} groups another extension already has: {note}',
+  ],
+  // The set's rules for its groups: the order they are posted in, and how many posts a day each one may get.
+  setRulesTitle: ['กติกาของกลุ่มในชุดนี้', 'Rules for the groups of this set'],
+  setRandomOrder: [
+    'สุ่มลำดับกลุ่มทุกรอบ ไม่เริ่มจากกลุ่มแรกเสมอ',
+    'Random group order every round, not always the first group first',
+  ],
+  setRandomOrderHint: [
+    'แต่ละรอบจะเรียงกลุ่มใหม่แบบสุ่ม และรอบใหม่จะไม่เริ่มจากกลุ่มเดียวกับรอบก่อนหน้า ปิดไว้ถ้าอยากให้โพสต์ตามลำดับในรายการ (ต้องเปิด “สุ่มลำดับกลุ่มปลายทาง” ที่หน้า Anti-ban ไว้ด้วย)',
+    'Every round puts the groups in a new random order, and a round never opens with the group the previous round opened with. Turn it off to post in the order of the list (the anti-ban setting “Shuffle the order of target groups” must be on too)',
+  ],
+  setDailyPerGroup: ['โพสต์ได้สูงสุดต่อกลุ่ม', 'Most posts per group'],
+  setDailyPerGroupUnit: ['ครั้ง/วัน', 'a day'],
+  setDailyPerGroupHint: [
+    '0 = ไม่จำกัด ใช้กับทุกกลุ่มในชุดนี้ ยกเว้นกลุ่มที่ตั้ง “สูงสุด/วัน” ของตัวเองไว้ ถ้าตารางมีเวลาโพสต์มากกว่าจำนวนนี้ ระบบจะสุ่มเลือกเวลาให้แต่ละกลุ่ม ไม่ใช่รอบแรกของวันเสมอไป',
+    '0 = no limit. Applies to every group of this set except groups with their own “Max/day”. When the schedule has more times than this, each group gets a random choice of them instead of always the first of the day',
+  ],
+  setRulesSaved: [
+    'บันทึกแล้ว โพสต์ที่ยังไม่ถึงเวลาจะถูกจัดใหม่ตามกติกานี้',
+    'Saved. Posts that are not due yet are queued again under these rules',
+  ],
+  // A link with no limit of its own follows the set's.
+  linkMaxFollowsSet: ['ตามชุด: {n}/วัน', 'Set: {n}/day'],
   // Group or page: the small label of a link row (the server tells them apart by the address).
   linkKindGroup: ['กลุ่ม', 'Group'],
   linkKindPage: ['เพจ', 'Page'],
@@ -763,6 +855,9 @@ export const AP_I18N_FLOW = {
   tlNextOtherDay: ['เลือกวันนี้เพื่อดูโพสต์ถัดไป', 'Pick today to see the next post'],
   tlFilterSchedule: ['ตารางโพสต์', 'Schedule'],
   tlFilterScheduleAll: ['ทุกตาราง', 'All schedules'],
+  // Which extension (browser) posts: one extension's posts at a time, and its name on the hover card.
+  tlFilterExtension: ['เครื่อง', 'Extension'],
+  tlFilterExtensionAll: ['ทุกเครื่อง', 'All extensions'],
   tlFilterStatus: ['สถานะ', 'Status'],
   tlLightAll: ['ทั้งหมด', 'All'],
   tlLightGreen: ['โพสต์แล้ว', 'Posted'],
@@ -802,6 +897,7 @@ export const AP_I18N_FLOW = {
   ],
   tlDot: ['{time} · {target} · {status}', '{time} · {target} · {status}'],
   tlTipSchedule: ['ตาราง', 'Schedule'],
+  tlTipExtension: ['เครื่อง', 'Extension'],
   tlTipTarget: ['กลุ่ม/เพจ', 'Group/page'],
   tlTipCode: ['รหัสกลุ่ม', 'Group code'],
   tlTipReason: ['สาเหตุ', 'Reason'],

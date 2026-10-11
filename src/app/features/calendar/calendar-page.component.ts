@@ -8,7 +8,9 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
 import { CollectionsStore } from '../../core/data/collections.store';
+import { DevicesStore } from '../../core/data/devices.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { STATUS_DOT } from '../../core/data/models';
 import { PostsStore, QueueItem } from '../../core/data/posts.store';
@@ -61,9 +63,21 @@ export class CalendarPageComponent {
   private readonly collections = inject(CollectionsStore);
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
+  private readonly accounts = inject(AccountsStore);
+  private readonly devices = inject(DevicesStore);
   protected readonly posts = inject(PostsStore);
   protected readonly perm = inject(PermissionsService);
   protected readonly actions = inject(PostActionsService);
+
+  /**
+   * The extension (browser) that posts a row, named only while two or more are connected (with one it is always the
+   * same): the calendar then tells which machine each post goes out from.
+   */
+  protected extensionOf(accountId: string): string {
+    if (this.accounts.connected().length < 2) return '';
+    const account = this.accounts.byId(accountId);
+    return account ? extensionNameOf(account, this.devices.list()) : '';
+  }
 
   protected readonly calY = signal(this.posts.now().getFullYear());
   protected readonly calM = signal(this.posts.now().getMonth());

@@ -6249,6 +6249,13 @@ export interface components {
       postAsAccountId: null | string;
       accountIds: string[];
       links: components['schemas']['BackupLinkDto'][];
+      /** @default true */
+      randomOrder: boolean;
+      /**
+       * Format: int32
+       * @default 0
+       */
+      dailyPerGroup: number;
     };
     BackupNotificationsDto: {
       channel: components['schemas']['NotifyChannel'];
@@ -6328,6 +6335,12 @@ export interface components {
       /** Format: int32 */
       invalid: number;
       set: components['schemas']['LinkSetDto'];
+      /**
+       * Format: int32
+       * @default 0
+       */
+      conflicts: number;
+      conflictNote?: null | string;
     };
     BulkMasterPostsResultDto: {
       /** Format: int32 */
@@ -6506,6 +6519,12 @@ export interface components {
       sets: number;
       /** Format: int32 */
       invalid: number;
+      /**
+       * Format: int32
+       * @default 0
+       */
+      conflicts: number;
+      conflictNote?: null | string;
     };
     CsvLinkRow: {
       set: string;
@@ -6655,6 +6674,8 @@ export interface components {
       /** Format: date-time */
       autoPausedUntil?: null | string;
       autoPauseReason?: null | string;
+      /** @default false */
+      sessionLost: boolean;
     };
     DeviceSyncDto: {
       /** Format: int32 */
@@ -6729,6 +6750,7 @@ export interface components {
     };
     HeartbeatRequest: {
       version: null | string;
+      sessionOk?: null | boolean;
     };
     IdsRequest: {
       ids: null | string[];
@@ -6842,6 +6864,13 @@ export interface components {
       /** Format: int32 */
       scheduleCount: number;
       active: boolean;
+      /** @default true */
+      randomOrder: boolean;
+      /**
+       * Format: int32
+       * @default 0
+       */
+      dailyPerGroup: number;
     };
     LogInCommand: {
       email: string;
@@ -6957,6 +6986,10 @@ export interface components {
       name: string;
       browser: null | string;
       version: null | string;
+      previousDeviceKey?: null | string;
+      /** Format: uuid */
+      previousAccountId?: null | string;
+      previousName?: null | string;
     };
     PairingCodeDto: {
       code: string;
@@ -7551,6 +7584,9 @@ export interface components {
       /** Format: uuid */
       postAsAccountId: null | string;
       accountIds: null | string[];
+      randomOrder?: null | boolean;
+      /** Format: int32 */
+      dailyPerGroup?: null | number;
     };
     UpdateMasterPostRequest: {
       text: string;

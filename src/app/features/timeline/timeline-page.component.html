@@ -70,6 +70,22 @@
           }
         </select>
       </label>
+      @if (extensionOptions().length > 2) {
+        <label class="field">
+          <span class="small muted">{{ t().api.flow.tlFilterExtension }}</span>
+          <select
+            class="su-select"
+            [value]="extensionId()"
+            (change)="extensionId.set($any($event.target).value)"
+          >
+            @for (o of extensionOptions(); track o.value) {
+              <option [value]="o.value" [selected]="o.value === extensionId()">
+                {{ o.label }}
+              </option>
+            }
+          </select>
+        </label>
+      }
       <div class="chips" role="group" [attr.aria-label]="t().api.flow.tlFilterStatus">
         <button
           type="button"

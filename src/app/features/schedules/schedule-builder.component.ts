@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
 import { CollectionsStore } from '../../core/data/collections.store';
+import { DevicesStore } from '../../core/data/devices.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { SchedulesStore } from '../../core/data/schedules.store';
+import { ownerOfSet } from '../../core/flow/link-ownership';
 import {
   AUTO_DELETE_DAY_OPTIONS,
   POST_REPEATS,
@@ -54,6 +57,8 @@ export class ScheduleBuilderComponent {
   private readonly notify = inject(NotificationService);
   private readonly collections = inject(CollectionsStore);
   private readonly linkSets = inject(LinkSetsStore);
+  private readonly accounts = inject(AccountsStore);
+  private readonly devices = inject(DevicesStore);
   private readonly schedules = inject(SchedulesStore);
   private readonly i18n = inject(I18nService);
   protected readonly form = inject(ScheduleFormService);
@@ -66,8 +71,16 @@ export class ScheduleBuilderComponent {
       .collections()
       .map((c) => ({ value: c.id, label: this.offLabel(c.name, c.active) })),
   );
+  // Each set is listed with the extension that posts it, so a schedule shows which machine its groups go to.
   protected readonly setOptions = computed<SelectOption[]>(() =>
-    this.linkSets.sets().map((s) => ({ value: s.id, label: this.offLabel(s.name, s.active) })),
+    this.linkSets.sets().map((s) => {
+      const owner = ownerOfSet(s, this.accounts.list());
+      const account = owner ? this.accounts.byId(owner) : undefined;
+      const on = account
+        ? ` · ${fmt(this.t().api.flow.optExt, { name: extensionNameOf(account, this.devices.list()) })}`
+        : '';
+      return { value: s.id, label: this.offLabel(s.name, s.active) + on };
+    }),
   );
   /** A switched-off collection or set stays in the list, marked: a schedule cannot be made from it. */
   private offLabel(name: string, active: boolean): string {

@@ -12,6 +12,7 @@ import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { parseBulkLinks } from '../../core/flow/group-links';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
+import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 
@@ -103,6 +104,13 @@ export class BulkLinksModalComponent {
           i: r.invalid,
         }),
       );
+      // One group, one extension: addresses another extension's set already holds were left out.
+      if (r.conflicts)
+        this.notify.show(
+          'warning',
+          fmt(this.t().api.flow.linksLeftOut, { n: r.conflicts, note: r.conflictNote ?? '' }),
+          9000,
+        );
       this.closed.emit();
     } catch {
       // The error interceptor has shown why; the pasted text stays.

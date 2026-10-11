@@ -12,7 +12,9 @@ import {
   ElementRef,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
 import { CollectionsStore } from '../../core/data/collections.store';
+import { DevicesStore } from '../../core/data/devices.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore, QueueItem } from '../../core/data/posts.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
@@ -117,6 +119,8 @@ export class TimelinePageComponent {
   private readonly injector = inject(Injector);
   protected readonly posts = inject(PostsStore);
   private readonly schedules = inject(SchedulesStore);
+  private readonly accounts = inject(AccountsStore);
+  private readonly devices = inject(DevicesStore);
   private readonly collections = inject(CollectionsStore);
   protected readonly perm = inject(PermissionsService);
   protected readonly t = this.i18n.t;
@@ -127,6 +131,8 @@ export class TimelinePageComponent {
 
   protected readonly selDay = signal(this.posts.todayKey());
   protected readonly scheduleId = signal('');
+  /** One extension's posts only ('' = every extension). */
+  protected readonly extensionId = signal('');
   protected readonly light = signal<'all' | PostLight>('all');
   protected readonly query = signal('');
   protected readonly zoom = signal<Zoom>(storedZoom());
@@ -180,7 +186,8 @@ export class TimelinePageComponent {
   private readonly scoped = computed<QueueItem[]>(() => {
     const list = this.posts.byDay().get(this.selDay()) ?? [];
     const sid = this.scheduleId();
-    return sid ? list.filter((p) => p.scheduleId === sid) : list;
+    const eid = this.extensionId();
+    return list.filter((p) => (!sid || p.scheduleId === sid) && (!eid || p.accountId === eid));
   });
 
   protected readonly kpi = computed(() => {
@@ -199,6 +206,19 @@ export class TimelinePageComponent {
     { value: '', label: this.t().api.flow.tlFilterScheduleAll },
     ...this.schedules.schedules().map((s) => ({ value: s.id, label: s.name })),
   ]);
+
+  /** The extensions that post: the connected ones, and a browser that was unbound while it still has posts on the day. */
+  protected readonly extensionOptions = computed(() => {
+    const day = this.posts.byDay().get(this.selDay()) ?? [];
+    const withPosts = new Set(day.map((p) => p.accountId));
+    return [
+      { value: '', label: this.t().api.flow.tlFilterExtensionAll },
+      ...this.accounts
+        .list()
+        .filter((a) => a.connected || withPosts.has(a.id))
+        .map((a) => ({ value: a.id, label: extensionNameOf(a, this.devices.list()) })),
+    ];
+  });
 
   protected readonly lightCounts = computed(() => {
     const out: Record<'all' | PostLight, number> = { all: 0, green: 0, yellow: 0, red: 0, grey: 0 };
@@ -377,6 +397,9 @@ export class TimelinePageComponent {
       status: t.status[p.status],
       target: p.target,
       schedule: schedule?.name ?? '',
+      extension: this.accounts.byId(p.accountId)
+        ? extensionNameOf(this.accounts.byId(p.accountId)!, this.devices.list())
+        : '',
       code: p.groupCode ?? '',
       text: text.length > 150 ? `${text.slice(0, 150)}…` : text,
       reason: [reason, p.detail].filter(Boolean).join(' · '),

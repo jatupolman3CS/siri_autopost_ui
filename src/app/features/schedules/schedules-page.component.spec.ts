@@ -731,9 +731,11 @@ describe('SchedulesPageComponent', () => {
         ['c2', 'Empty collection'],
         ['c3', 'Needs approval'],
       ]);
+      // Each set is listed with the extension that posts it (the only connected one here).
+      const on = ' · ' + fmt(t().api.flow.optExt, { name: 'Shop PC' });
       expect(options(t().sch.set)).toEqual([
-        ['s1', 'Condo groups'],
-        ['s2', 'No groups'],
+        ['s1', 'Condo groups' + on],
+        ['s2', 'No groups' + on],
       ]);
     });
 

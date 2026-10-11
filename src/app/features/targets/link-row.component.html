@@ -64,6 +64,9 @@
         [disabled]="perm.readOnly()"
         (change)="editMax($event)"
       />
+      @if (followNote(); as follow) {
+        <span class="follow">{{ follow }}</span>
+      }
     </label>
   </div>
   <button

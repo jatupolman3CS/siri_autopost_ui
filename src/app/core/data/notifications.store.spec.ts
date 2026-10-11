@@ -164,7 +164,9 @@ describe('NotificationsStore', () => {
       expect(SENT_EVENTS).toEqual(NOTIFY_EVENTS);
       expect(NOTIFY_EVENTS).toContain('job');
       expect(sentCount(notifications().events)).toBe(6); // fail, shot, round, startStop, block, offline (success, quota and job are off)
-      expect(sentCount({ ...notifications().events, success: true, quota: true, job: true })).toBe(9);
+      expect(sentCount({ ...notifications().events, success: true, quota: true, job: true })).toBe(
+        9,
+      );
     });
   });
 

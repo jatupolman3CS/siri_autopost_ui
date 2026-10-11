@@ -45,6 +45,14 @@ export class LinkRowComponent {
   protected readonly kindIcons = LINK_KIND_ICONS;
   private readonly urlInput = viewChild<ElementRef<HTMLInputElement>>('urlInput');
 
+  /** The set's own limit of posts a day per group: what a row with no limit of its own follows. */
+  protected readonly setCap = computed(() => this.store.byId(this.setId())?.dailyPerGroup ?? 0);
+  protected readonly followNote = computed(() =>
+    this.link().dailyMax === 0 && this.setCap() > 0
+      ? fmt(this.t().api.flow.linkMaxFollowsSet, { n: this.setCap() })
+      : '',
+  );
+
   /** What the row is called for a screen reader: its name, else the group in its address. */
   protected readonly label = computed(() => linkLabel(this.link()));
   /** Group or page, from the address (the row's `kind`, kept in step with the text while it is typed). */

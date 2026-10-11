@@ -25,3 +25,16 @@
 .min0 {
   min-width: 0;
 }
+
+// The name of the extension above the link sets it posts.
+.ext-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  > .ph {
+    color: var(--color-primary);
+  }
+}

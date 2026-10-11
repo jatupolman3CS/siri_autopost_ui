@@ -38,8 +38,78 @@
 }
 
 .postas {
-  width: 300px;
+  width: 380px;
   max-width: 100%;
+}
+// The line under the select that says whether the chosen extension can post (the global .su-field-help, or the
+// .callout for the one case that leaves the set waiting).
+.status {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  > .ph {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  &.ok > .ph {
+    color: var(--color-success);
+  }
+  &.warn > .ph {
+    color: var(--color-warning);
+  }
+}
+.callout.status {
+  margin-top: 8px;
+  .grow {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+  }
+}
+
+// The set's rules for its groups: random order and the most posts a day per group.
+.rules {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  .su-field-help {
+    margin: 0;
+  }
+}
+.cap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  .cell {
+    height: 44px;
+    width: 88px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: 14px;
+    &:focus-visible {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px var(--color-focus-ring);
+    }
+    &:disabled {
+      cursor: not-allowed;
+      background: var(--color-surface-muted);
+      color: var(--color-text-muted);
+    }
+  }
 }
 
 .rows {

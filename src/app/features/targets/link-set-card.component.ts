@@ -9,7 +9,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
 import { DevicesStore } from '../../core/data/devices.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
@@ -30,17 +30,25 @@ import {
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
 import { RenameModalComponent } from '../../shared/components/rename-modal/rename-modal.component';
 import { LinkRowComponent } from './link-row.component';
+import { SetOwnerComponent } from './set-owner.component';
 import { Pager } from '../../shared/components/pager/pager';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 
+/** What the line under the "post as" select says: see `postAsStatus`. */
+type PostAsStatus = 'ready' | 'offline' | 'unbound' | 'auto' | 'none';
+
 // One link set (the prototype's set card): its name and counts, the actions (add a link, paste several,
-// schedule with it, delete), the link rows of Facebook groups and pages, and under the "more options" toggle the
-// extension that posts the set and an example of what is written to a group with a code.
+// schedule with it, delete), the link rows of Facebook groups and pages, the extension that posts the set (under
+// the "more options" toggle for a workspace with one extension and no choice, always visible otherwise, with a
+// line saying whether that extension can post right now) and, under the toggle, an example of what is written to
+// a group with a code.
 @Component({
   selector: 'app-link-set-card',
   imports: [
+    RouterLink,
     PagerComponent,
     LinkRowComponent,
+    SetOwnerComponent,
     SelectFieldComponent,
     CheckboxComponent,
     RenameModalComponent,
@@ -66,6 +74,7 @@ export class LinkSetCardComponent {
   protected readonly t = inject(I18nService).t;
 
   protected readonly nameLimit = LINK_LIMITS.setName;
+  protected readonly dailyMaxLimit = LINK_LIMITS.dailyMax;
   protected readonly renameOpen = signal(false);
 
   /** The row that was just added: its address field takes the cursor. */
@@ -95,14 +104,46 @@ export class LinkSetCardComponent {
   );
 
   /**
+   * The extension a set with no choice goes to: the first connected account, in the order the API lists them (its
+   * sort order, then its name). A set that names an extension is posted by that browser and no other.
+   */
+  private readonly firstConnected = computed(() => this.accounts.connected()[0]);
+
+  /**
+   * The "post as" row shows in the open part only for a workspace with one extension and no choice; with two or
+   * more extensions, or a set that already names one, which browser posts the set must always be visible.
+   */
+  protected readonly showPostAs = computed(
+    () => this.more() || this.accounts.connected().length >= 2 || !!this.set().postAsAccountId,
+  );
+
+  /**
    * The extensions that can post the set, by the name of their browser ("Shop PC"): the paired ones (the API keeps
-   * a Facebook account for each, which is what a set stores), or "automatic" for the first connected one.
+   * a Facebook account for each, which is what a set stores), or "automatic" for the first connected one, which
+   * says who that is right now.
    */
   protected readonly postAsOptions = computed<SelectOption[]>(() => {
     const flow = this.t().api.flow;
     const devices = this.devices.list();
+    const first = this.firstConnected();
+    const several = this.accounts.connected().length >= 2;
+    // With two or more extensions there is no "automatic": the empty option is only the prompt of a set that still
+    // has no extension (the API refuses to leave a set without one), and goes away once one is chosen.
+    const empty: SelectOption[] =
+      several && this.set().postAsAccountId
+        ? []
+        : [
+            {
+              value: '',
+              label: several
+                ? flow.postAsPick
+                : first
+                  ? fmt(flow.postAsAutoNow, { name: extensionNameOf(first, devices) })
+                  : flow.postAsAuto,
+            },
+          ];
     const options: SelectOption[] = [
-      { value: '', label: flow.postAsAuto },
+      ...empty,
       ...this.accounts
         .connected()
         .map((a) => ({ value: a.id, label: extensionNameOf(a, devices) })),
@@ -119,6 +160,31 @@ export class LinkSetCardComponent {
       });
     }
     return options;
+  });
+
+  /**
+   * What the person should know about who posts the set, under the select: the chosen extension is ready, offline
+   * (its posts wait) or not connected (the set waits and never moves to another extension), or an automatic set
+   * says where it goes now that there is a choice. Null when there is nothing to add, and while the accounts or
+   * the browsers have not arrived (a pinned set must not flash a warning on load).
+   */
+  protected readonly postAsStatus = computed<{ kind: PostAsStatus; text: string } | null>(() => {
+    const flow = this.t().api.flow;
+    const connected = this.accounts.connected();
+    const chosen = this.set().postAsAccountId;
+    if (!chosen) {
+      // Several extensions and no choice: the API posts nothing for the set until a person picks one.
+      if (connected.length < 2) return null;
+      return { kind: 'none', text: flow.postAsNone };
+    }
+    if (!this.accounts.loaded()) return null;
+    if (!connected.some((a) => a.id === chosen))
+      return { kind: 'unbound', text: flow.postAsWaiting };
+    const device = this.devices.list().find((d) => d.accountId === chosen);
+    if (!device) return null;
+    return device.online
+      ? { kind: 'ready', text: flow.postAsReady }
+      : { kind: 'offline', text: flow.postAsOffline };
   });
 
   /** What is written to a group that has a code: the code, the post text, the collection's footer and tags. */
@@ -184,9 +250,33 @@ export class LinkSetCardComponent {
     }
   }
 
+  /** The groups of a round go out in a random order; the schedules of the set queue their posts again under the rule. */
+  protected async setRandomOrder(on: boolean): Promise<void> {
+    if (this.perm.readOnly() || on === this.set().randomOrder) return;
+    await this.saveRules({ randomOrder: on });
+  }
+
+  /** The most posts a day each group of the set may get: a whole number from 0 (no limit) to 50. */
+  protected async setDailyPerGroup(event: Event): Promise<void> {
+    if (this.perm.readOnly()) return;
+    const input = event.target as HTMLInputElement;
+    const n = Math.max(0, Math.min(LINK_LIMITS.dailyMax, parseInt(input.value, 10) || 0));
+    input.value = String(n);
+    if (n === this.set().dailyPerGroup) return;
+    await this.saveRules({ dailyPerGroup: n });
+  }
+
+  private async saveRules(patch: { randomOrder?: boolean; dailyPerGroup?: number }): Promise<void> {
+    if (!(await this.store.updateSet(this.set().id, patch))) return;
+    this.notify.success(this.t().api.flow.setRulesSaved);
+    void this.injector.get(SchedulesStore).refresh();
+  }
+
   protected async setPostAs(value: string): Promise<void> {
     const next = value || null;
     if (next === this.set().postAsAccountId) return;
+    // The API refuses "no extension" while two or more are connected (it would be a guess): keep the current one.
+    if (!next && this.accounts.connected().length >= 2) return;
     await this.store.setPostAs(this.set().id, next);
   }
 }

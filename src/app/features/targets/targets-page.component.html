@@ -45,10 +45,15 @@
     </div>
   </div>
 
+  <app-ownership-overview />
+
   @if (!store.loaded()) {
     <p class="muted fs14" role="status">{{ t().api.loading }}</p>
   } @else {
-    @for (s of setPage(); track s.id) {
+    @for (s of setPage(); track s.id; let i = $index) {
+      @if (heading(i); as h) {
+        <h2 class="ext-heading"><i class="ph ph-desktop" aria-hidden="true"></i>{{ h }}</h2>
+      }
       <app-link-set-card [set]="s" (bulk)="open('bulk', s.id)" />
     } @empty {
       <app-empty-state

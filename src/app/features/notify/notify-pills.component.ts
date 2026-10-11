@@ -78,5 +78,4 @@ export class NotifyPillsComponent {
   protected readonly t = inject(I18nService).t;
   protected readonly keys = NOTIFY_EVENTS;
   protected readonly labels = LABELS;
-
 }

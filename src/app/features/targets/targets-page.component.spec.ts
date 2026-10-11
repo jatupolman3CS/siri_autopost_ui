@@ -548,6 +548,8 @@ describe('TargetsPageComponent', () => {
     });
 
     const openMore = (opts: Parameters<typeof open>[0] = {}) => open({ ...opts, simple: false });
+    // The automatic choice names the first connected extension.
+    const autoLabel = (name: string) => fmt(t().api.flow.postAsAutoNow, { name });
 
     it('list the paired extensions by the name of their browser, with the automatic choice first', async () => {
       const { el } = await openMore();
@@ -555,7 +557,7 @@ describe('TargetsPageComponent', () => {
       expect(postas.querySelector('label')?.textContent).toContain(t().ts.postAs);
       const select = postas.querySelector<HTMLSelectElement>('select')!;
       expect([...select.options].map((o) => [o.value, o.textContent])).toEqual([
-        ['', t().api.flow.postAsAuto],
+        ['', autoLabel('Shop PC')],
         ['acc-fb', 'Shop PC'],
       ]);
       expect(select.value).toBe('');
@@ -568,11 +570,11 @@ describe('TargetsPageComponent', () => {
         [...cards(el)[0].querySelectorAll<HTMLOptionElement>('.postas option')].map(
           (o) => o.textContent,
         );
-      expect(options()).toEqual([t().api.flow.postAsAuto, 'Back office']);
+      expect(options()).toEqual([autoLabel('Back office'), 'Back office']);
       TestBed.inject(DevicesStore).list.set([]);
       fixture.detectChanges();
       // No device knows it yet: the account's name without its "Facebook · " prefix stands in.
-      expect(options()).toEqual([t().api.flow.postAsAuto, 'Shop PC']);
+      expect(options()).toEqual([autoLabel('Shop PC'), 'Shop PC']);
     });
 
     it('list every paired extension, and none that no browser posts for', async () => {
@@ -583,8 +585,9 @@ describe('TargetsPageComponent', () => {
       TestBed.inject(AccountsStore).list.update((l) => [...l, laptop]);
       fixture.detectChanges();
       const options = [...cards(el)[0].querySelectorAll<HTMLOptionElement>('.postas option')];
+      // Two extensions: no "automatic", only the prompt of a set that has none yet.
       expect(options.map((o) => o.textContent)).toEqual([
-        t().api.flow.postAsAuto,
+        t().api.flow.postAsPick,
         'Shop PC',
         'Laptop',
       ]);
@@ -617,6 +620,8 @@ describe('TargetsPageComponent', () => {
         name: 'Condo groups',
         postAsAccountId: 'acc-fb',
         accountIds: [],
+        randomOrder: true,
+        dailyPerGroup: 0,
       });
       req.flush({ ...SET, postAsAccountId: 'acc-fb' });
       await settle();

@@ -2,6 +2,7 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
+import { DevicesStore } from '../../core/data/devices.store';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { DraftStore } from '../../core/data/draft.store';
 import { PostsStore } from '../../core/data/posts.store';
@@ -52,6 +53,7 @@ describe('CalendarPageComponent', () => {
     TestBed.inject(PostsStore);
     TestBed.inject(CollectionsStore);
     TestBed.inject(AccountsStore); // the page's post actions know which browsers are paired
+    TestBed.inject(DevicesStore); // and the rows name the extension once there are two
     await signIn(http, { posts, collections: [COLLECTION] });
     const fixture = TestBed.createComponent(CalendarPageComponent);
     if (day) fixture.componentRef.setInput('day', day);
@@ -462,6 +464,41 @@ describe('CalendarPageComponent', () => {
     });
   });
 
+  describe('which extension posts a row', () => {
+    const shop = { ...ACCOUNTS[0], id: 'acc-page', name: 'Facebook · Shop PC', connected: true };
+    const laptop = { ...shop, id: 'acc-fb2', name: 'Facebook · Laptop' };
+    const label = (row: HTMLElement) =>
+      row.querySelector('.ellipsis')?.textContent?.replace(/\s+/g, ' ').trim();
+
+    it('names the extension on every row once two extensions are connected', async () => {
+      const { fixture, el } = await open([
+        apiPost({ id: 'a', scheduledAt: at(9), status: 'queued', target: 'Group A' }),
+        apiPost({
+          id: 'b',
+          scheduledAt: at(10),
+          status: 'queued',
+          target: 'Group B',
+          accountId: 'acc-fb2',
+        }),
+      ]);
+      TestBed.inject(AccountsStore).list.set([shop, laptop]);
+      await tick(fixture);
+      expect(rows(el).map(label)).toEqual([
+        'Facebook · Shop PC · Group A',
+        'Facebook · Laptop · Group B',
+      ]);
+    });
+
+    it('stays as it was with one extension: it would be the same on every row', async () => {
+      const { fixture, el } = await open([
+        apiPost({ id: 'a', scheduledAt: at(9), status: 'queued', target: 'Group A' }),
+      ]);
+      TestBed.inject(AccountsStore).list.set([shop]);
+      await tick(fixture);
+      expect(rows(el).map(label)).toEqual(['Facebook · Group A']);
+    });
+  });
+
   describe('post now', () => {
     const run = (row: HTMLElement) =>
       row.querySelector<HTMLButtonElement>('[data-testid="cal-run"]')!;
@@ -508,6 +545,7 @@ describe('CalendarPageComponent', () => {
       TestBed.inject(PostsStore);
       TestBed.inject(CollectionsStore);
       TestBed.inject(AccountsStore);
+      TestBed.inject(DevicesStore);
       await signIn(http, {
         posts: [apiPost({ id: 'q', scheduledAt: at(9), status: 'queued' })],
         collections: [COLLECTION],

@@ -347,6 +347,64 @@ describe('TimelinePageComponent', () => {
       await tick(fixture);
       expect(rowNames(el)).toEqual(['Condo posts']);
     });
+
+    it('shows one extension’s posts at a time once two extensions post, and names the extension on the hover card', async () => {
+      const { fixture, el } = await open({
+        posts: [
+          apiPost({
+            id: 'shop',
+            scheduledAt: at(9),
+            status: 'success',
+            scheduleId: 's1',
+            target: 'Group A',
+          }),
+          apiPost({
+            id: 'laptop',
+            scheduledAt: at(10),
+            status: 'queued',
+            scheduleId: 's1',
+            target: 'Group B',
+            accountId: 'acc-fb2',
+          }),
+        ],
+      });
+      const shop = { ...ACCOUNTS[0], id: 'acc-page', name: 'Facebook · Shop PC', connected: true };
+      const laptop = { ...shop, id: 'acc-fb2', name: 'Facebook · Laptop' };
+      TestBed.inject(AccountsStore).list.set([shop, laptop]);
+      await tick(fixture);
+
+      const select = [...el.querySelectorAll<HTMLSelectElement>('select')].find((s) =>
+        [...s.options].some((o) => o.textContent?.trim() === t().api.flow.tlFilterExtensionAll),
+      )!;
+      expect([...select.options].map((o) => o.textContent?.trim())).toEqual([
+        t().api.flow.tlFilterExtensionAll,
+        'Shop PC',
+        'Laptop',
+      ]);
+      expect(dots(el).map((d) => d.getAttribute('data-post'))).toEqual(['shop', 'laptop']);
+
+      select.value = 'acc-fb2';
+      select.dispatchEvent(new Event('change'));
+      await tick(fixture);
+      expect(dots(el).map((d) => d.getAttribute('data-post'))).toEqual(['laptop']);
+      // The counters follow the chosen extension.
+      expect(kpi(el, 'all')).toBe('1');
+
+      dot(el, 'laptop').dispatchEvent(new Event('mouseenter'));
+      await tick(fixture);
+      const tip = fixture.nativeElement.querySelector('[data-testid="tip"]') as HTMLElement;
+      expect(tip.textContent).toContain(t().api.flow.tlTipExtension);
+      expect(tip.textContent).toContain('Laptop');
+    });
+
+    it('has no extension filter while only one extension posts', async () => {
+      const { el } = await open();
+      expect(
+        [...el.querySelectorAll('select')].some((s) =>
+          [...s.options].some((o) => o.textContent?.trim() === t().api.flow.tlFilterExtensionAll),
+        ),
+      ).toBe(false);
+    });
   });
 
   describe('moving around', () => {
