@@ -242,6 +242,18 @@ export class LinkSetsStore {
     this.sets.update((l) => l.map((s) => (s.id === id ? { ...s, active: saved.active } : s)));
   }
 
+  /**
+   * Hands the set to another extension in the middle of the day (waits for the server): its waiting posts move with it,
+   * keeping their times and texts. Resolves to how many posts moved; rejects when the API refuses (422: the extension is
+   * not paired, already has the set, or a group of the set belongs to a third extension).
+   */
+  async handOver(id: string, accountId: string): Promise<number> {
+    const wsId = this.requireWs();
+    const done = await this.api.handOverLinkSet(wsId, id, accountId);
+    if (this.ws.id() === wsId) this.mergeSet(done.set);
+    return done.moved;
+  }
+
   /** The Facebook account whose browser posts the set (null = the first connected one). */
   setPostAs(id: string, accountId: string | null): Promise<boolean> {
     return this.updateSet(id, { postAsAccountId: accountId });

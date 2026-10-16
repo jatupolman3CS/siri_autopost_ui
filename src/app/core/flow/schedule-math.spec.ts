@@ -4,6 +4,8 @@ import {
   bestHours,
   BUMP_HOUR_OPTIONS,
   dayMatches,
+  GAP_JITTER,
+  gapPlan,
   hhmm,
   HORIZON_DAYS,
   hourChips,
@@ -674,5 +676,42 @@ describe('bestHours', () => {
     expect(bestHours(['09:00', '09:10', '10:00', '11:00'], 1)).toEqual(['09:00']);
     expect(bestHours(['09:00'], 0)).toEqual([]);
     expect(bestHours(['09:00'], -1)).toEqual([]);
+  });
+});
+
+describe('gapPlan', () => {
+  it('has nothing to say without a gap, a group or a time', () => {
+    expect(gapPlan(0, 5, 10, ['09:00'])).toBeNull();
+    expect(gapPlan(10, 0, 0, ['09:00'])).toBeNull();
+    expect(gapPlan(10, 5, 5, [])).toBeNull();
+  });
+
+  it('counts how long a round and the whole day take at the least, and about when the day ends', () => {
+    // 6 groups, 10 minutes apart: a round takes 50 minutes; two rounds a day take 110 minutes in one line.
+    const plan = gapPlan(10, 6, 12, ['09:00', '18:00'])!;
+    expect(plan.roundMin).toBe(50);
+    expect(plan.dayMin).toBe(110);
+    expect(plan.endMin).toBe(9 * 60 + Math.round(110 * (1 + GAP_JITTER / 2)));
+    expect(plan.overlap).toBe(false);
+    expect(plan.pastMidnight).toBe(false);
+  });
+
+  it('sees a round that is still going when the next time comes', () => {
+    // 72 groups, 10 minutes apart: a round takes 710 minutes, but the next time is 3 hours later.
+    expect(gapPlan(10, 72, 144, ['09:00', '12:00'])!.overlap).toBe(true);
+    expect(gapPlan(10, 6, 12, ['09:00', '10:00'])!.overlap).toBe(false); // 50 minutes fit in the hour
+    expect(gapPlan(10, 7, 14, ['09:00', '10:00'])!.overlap).toBe(true); // 60 minutes, and one more gap, do not fit
+  });
+
+  it('sees a day that runs past midnight, and where it ends', () => {
+    const plan = gapPlan(10, 72, 72, ['18:00'])!; // one round of 71 gaps from 18:00
+    expect(plan.pastMidnight).toBe(true);
+    expect(plan.endMin).toBeGreaterThanOrEqual(1440);
+    expect(hhmm(plan.endMin)).toBe('07:19'); // 18:00 + 710 min x 1.125 = 799 min
+  });
+
+  it('says one round of a single group takes no time', () => {
+    const plan = gapPlan(30, 1, 1, ['09:00'])!;
+    expect([plan.roundMin, plan.dayMin]).toEqual([0, 0]);
   });
 });

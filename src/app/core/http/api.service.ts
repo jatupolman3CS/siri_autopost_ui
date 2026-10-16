@@ -57,6 +57,7 @@ export type ApiUpdateMasterPost = S['UpdateMasterPostRequest'];
 export type ApiBulkPostAction = S['BulkPostAction'];
 export type ApiApprovalAction = S['ApprovalAction'];
 export type ApiLinkSet = S['LinkSetDto'];
+export type ApiHandOverResult = S['HandOverResultDto'];
 export type ApiSetLink = S['SetLinkDto'];
 export type ApiBulkLinksResult = S['BulkLinksResultDto'];
 export type ApiCsvLinkRow = S['CsvLinkRow'];
@@ -611,6 +612,16 @@ export class ApiService {
   updateLinkSet(ws: string, id: string, body: S['UpdateLinkSetRequest']) {
     return run(this.http.put<ApiLinkSet>(`/api/workspaces/${ws}/link-sets/${id}`, body));
   }
+  /**
+   * Hands a link set to another extension in the middle of the day: its waiting posts move with their times and texts.
+   * A refusal (422: not paired, already has the set, a group belongs to a third extension) is shown by the caller.
+   */
+  handOverLinkSet(ws: string, id: string, accountId: string) {
+    const body: S['HandOverRequest'] = { accountId };
+    return run(
+      this.http.post<ApiHandOverResult>(`/api/workspaces/${ws}/link-sets/${id}/handover`, body),
+    );
+  }
   deleteLinkSet(ws: string, id: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/link-sets/${id}`));
   }
@@ -744,6 +755,14 @@ export class ApiService {
   }
   renameSchedule(ws: string, id: string, name: string) {
     return run(this.http.put<ApiSchedule>(`/api/workspaces/${ws}/schedules/${id}/name`, { name }));
+  }
+  /**
+   * Minutes between two groups of a schedule (0 = the workspace's smart delay, 1-120 = at least that many). The server
+   * lays out the posts the schedule still has queued again; calling it with the same number spreads them again.
+   */
+  setScheduleSpacing(ws: string, id: string, groupGapMinutes: number) {
+    const body: S['SpacingRequest'] = { groupGapMinutes };
+    return run(this.http.put<ApiSchedule>(`/api/workspaces/${ws}/schedules/${id}/spacing`, body));
   }
   deleteSchedule(ws: string, id: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/schedules/${id}`));

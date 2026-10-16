@@ -14,6 +14,9 @@ import { Pager } from '../../shared/components/pager/pager';
 import { RenameModalComponent } from '../../shared/components/rename-modal/rename-modal.component';
 import { PagerComponent } from '../../shared/components/pager/pager.component';
 import { ScheduleDotsComponent } from './schedule-dots.component';
+import { ScheduleSpacingModalComponent } from './schedule-spacing-modal.component';
+import { ApiSchedule } from '../../core/http/api.service';
+import { SettingsStore } from '../../core/data/settings.store';
 
 const DOTS_KEY = 'ap-sch-dots';
 
@@ -31,7 +34,13 @@ function readDots(): boolean {
 // change something are an editor's.
 @Component({
   selector: 'app-schedule-list',
-  imports: [PagerComponent, EmptyStateComponent, RenameModalComponent, ScheduleDotsComponent],
+  imports: [
+    PagerComponent,
+    EmptyStateComponent,
+    RenameModalComponent,
+    ScheduleDotsComponent,
+    ScheduleSpacingModalComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './schedule-list.component.html',
   styleUrl: './schedule-list.component.scss',
@@ -42,10 +51,18 @@ export class ScheduleListComponent {
   private readonly collections = inject(CollectionsStore);
   private readonly linkSets = inject(LinkSetsStore);
   private readonly posts = inject(PostsStore);
+  private readonly settings = inject(SettingsStore);
   private readonly i18n = inject(I18nService);
   protected readonly store = inject(SchedulesStore);
   protected readonly perm = inject(PermissionsService);
   protected readonly t = this.i18n.t;
+
+  /** The schedule whose "minutes between groups" dialog is open. */
+  protected readonly spacing = signal<ApiSchedule | null>(null);
+
+  protected openSpacing(id: string): void {
+    this.spacing.set(this.store.byId(id) ?? null);
+  }
 
   /** The schedule whose rename dialog is open. */
   protected readonly renaming = signal<{ id: string; name: string } | null>(null);
@@ -84,6 +101,9 @@ export class ScheduleListComponent {
         today,
         collection: this.collections.byId(s.collectionId),
         set: this.linkSets.byId(s.linkSetId),
+        delay: this.settings.loaded()
+          ? { min: this.settings.ab().min, max: this.settings.ab().max }
+          : undefined,
       }),
     );
   });

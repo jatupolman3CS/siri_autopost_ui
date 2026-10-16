@@ -575,6 +575,77 @@ describe('SchedulesPageComponent', () => {
     });
   });
 
+  describe('the spacing of a schedule that exists', () => {
+    const spacingButton = (el: HTMLElement) =>
+      rowsOf(el)[0].querySelector<HTMLButtonElement>('[data-testid="spacing-btn"]')!;
+    const gapLine = (el: HTMLElement) =>
+      rowsOf(el)[0].querySelector('[data-testid="spacing-line"]')?.textContent?.trim();
+
+    it('says how far apart the groups are posted', async () => {
+      const { el } = await open({ schedules: [{ ...MORNING, groupGapMinutes: 15 }] });
+      expect(gapLine(el)).toBe(fmt(t().api.flow.schGapLine, { n: 15 }));
+    });
+
+    it('sets the minutes through the dialog, lays out the queue again and keeps the dialog shut after', async () => {
+      const { fixture, el } = await open();
+      spacingButton(el).click();
+      fixture.detectChanges();
+      await settle();
+      expect(el.querySelector('app-schedule-spacing-modal .su-modal-panel')).not.toBeNull();
+      pick(select(el, t().api.flow.schGapLabel), '20');
+      fixture.detectChanges();
+      el.querySelector<HTMLFormElement>('#spacing-form')!.requestSubmit();
+      await settle();
+      const req = http.expectOne(`${SCHEDULES_URL}/sc1/spacing`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ groupGapMinutes: 20 });
+      req.flush({ ...MORNING, groupGapMinutes: 20 });
+      await settle();
+      answerChangeRefresh(http);
+      await settle();
+      fixture.detectChanges();
+      expect(gapLine(el)).toBe(fmt(t().api.flow.schGapLine, { n: 20 }));
+      expect(el.querySelector('app-schedule-spacing-modal .su-modal-panel')).toBeNull();
+      expect(toasts().map((x) => x.message)).toContain(
+        fmt(t().api.flow.schGapSaved, { s: 'Morning posts', n: 20 }),
+      );
+    });
+
+    it('offers to spread the queued posts again when the number is the one it has', async () => {
+      const { fixture, el } = await open({ schedules: [{ ...MORNING, groupGapMinutes: 10 }] });
+      spacingButton(el).click();
+      fixture.detectChanges();
+      await settle();
+      const save = el.querySelector<HTMLButtonElement>('[data-testid="gap-save"]')!;
+      expect(save.textContent?.trim()).toBe(t().api.flow.schGapRespread);
+    });
+
+    it('keeps the dialog open with the reason when the server refuses', async () => {
+      const { fixture, el } = await open();
+      spacingButton(el).click();
+      fixture.detectChanges();
+      await settle();
+      pick(select(el, t().api.flow.schGapLabel), '20');
+      fixture.detectChanges();
+      el.querySelector<HTMLFormElement>('#spacing-form')!.requestSubmit();
+      await settle();
+      http
+        .expectOne(`${SCHEDULES_URL}/sc1/spacing`)
+        .flush({ title: 'no way' }, { status: 422, statusText: 'Unprocessable' });
+      await settle();
+      fixture.detectChanges();
+      expect(el.querySelector('app-schedule-spacing-modal .su-modal-panel')).not.toBeNull();
+      expect(el.querySelector('app-schedule-spacing-modal .su-field-err')?.textContent).toContain(
+        'no way',
+      );
+    });
+
+    it('is off for a viewer', async () => {
+      const { el } = await open({ role: 'viewer' });
+      expect(spacingButton(el).disabled).toBe(true);
+    });
+  });
+
   describe('rename', () => {
     const renameButton = (el: HTMLElement) =>
       rowsOf(el)[0].querySelector<HTMLButtonElement>('.btns .ibtn')!;
@@ -692,8 +763,8 @@ describe('SchedulesPageComponent', () => {
     it('starts with the six basic fields, today as the start date and an empty summary', async () => {
       const { fixture, el } = await open();
       await openBuilder(el, fixture);
-      const labels = [...builder(el)!.querySelectorAll('.grid:first-of-type label')].map((l) =>
-        l.textContent?.trim(),
+      const labels = [...builder(el)!.querySelectorAll('.builder > .grid:first-of-type label')].map(
+        (l) => l.textContent?.trim(),
       );
       expect(labels).toEqual([
         t().sch.name,
@@ -1088,9 +1159,90 @@ describe('SchedulesPageComponent', () => {
       utcOffsetMinutes: utcOffsetMinutes(),
       startNow: false,
       repeat: 'recent',
+      groupGapMinutes: 0,
       ...over,
     });
     const NEW = apiSchedule({ id: 'new', name: 'Condo posts → Condo groups' });
+
+    it('sends the minutes between two groups when one is chosen, and says what it means', async () => {
+      const { fixture, el } = await open();
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      // Not chosen: the smart delay, said with its range, and 0 goes out.
+      expect(el.querySelector('[data-testid="gap-note"]')?.textContent).toContain('–');
+      pick(select(el, t().api.flow.schGapLabel), '15');
+      fixture.detectChanges();
+      expect(el.querySelector('[data-testid="gap-note"]')?.textContent).toContain(
+        fmt(t().api.flow.schGapN, { n: 15 }).replace(/ต่อกลุ่ม| per group/, ''),
+      );
+      expect(summary(el)).toContain('15');
+      create(el).click();
+      await settle();
+      const req = http.expectOne(SCHEDULES_URL);
+      expect(req.request.body).toEqual(body({ groupGapMinutes: 15 }));
+      req.flush(apiScheduleCreated(NEW, { created: 28, firstAt: '2026-10-06T02:00:00Z' }));
+      await settle();
+      answerChangeRefresh(http);
+      await settle();
+      expect(navigate).toHaveBeenCalled();
+    });
+
+    it('takes a number of minutes of its own, from 1 to 120', async () => {
+      const { fixture, el } = await open();
+      vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      await openBuilder(el, fixture);
+      await pair(el, fixture);
+      expect(field(el, t().api.flow.schGapCustomLabel)).toBeUndefined();
+      pick(select(el, t().api.flow.schGapLabel), 'custom');
+      fixture.detectChanges();
+      expect(input(el, t().api.flow.schGapCustomLabel).value).toBe('10'); // starts at 10
+      type(input(el, t().api.flow.schGapCustomLabel), '999');
+      fixture.detectChanges();
+      expect(input(el, t().api.flow.schGapCustomLabel).value).toBe('120'); // not more than the server takes
+      type(input(el, t().api.flow.schGapCustomLabel), '25');
+      fixture.detectChanges();
+      create(el).click();
+      await settle();
+      const req = http.expectOne(SCHEDULES_URL);
+      expect(req.request.body).toEqual(body({ groupGapMinutes: 25 }));
+      req.flush(apiScheduleCreated(NEW, { created: 28 }));
+      await settle();
+      answerChangeRefresh(http);
+      await settle();
+    });
+
+    it('warns when a day runs past midnight or a round outlasts the time to the next one', async () => {
+      const five = apiLinkSet({
+        id: 's3',
+        name: 'Five groups',
+        links: [1, 2, 3, 4, 5].map((i) =>
+          apiSetLink({ id: `g${i}`, name: `G${i}`, url: `https://www.facebook.com/groups/g${i}` }),
+        ),
+      });
+      const { fixture, el } = await open({ simple: false, linkSets: [S1, S2, five] });
+      await openBuilder(el, fixture);
+      await pair(el, fixture, 'c1', 's3');
+      const warnings = () => [...el.querySelectorAll('.gapwarn')].map((w) => w.textContent ?? '');
+      pick(select(el, t().api.flow.schGapLabel), 'custom');
+      fixture.detectChanges();
+      type(input(el, t().api.flow.schGapCustomLabel), '100');
+      fixture.detectChanges();
+      // 10 posts a day, 100 minutes apart, from 09:00: the day goes on past midnight.
+      expect(warnings()).toHaveLength(1);
+      expect(warnings()[0]).toContain('01:53'); // 09:00 + 900 min x 1.125 = 1012.5, rounded up
+      // Times an hour apart, rounds of over eight hours: the second round waits for the first.
+      chip(el, '18:00').click();
+      chip(el, '10:00').click();
+      fixture.detectChanges();
+      expect(warnings().some((w) => w.includes(t().api.flow.schGapOverlap.slice(0, 20)))).toBe(
+        true,
+      );
+      // A gap the day holds easily has nothing to warn about.
+      pick(select(el, t().api.flow.schGapLabel), '3');
+      fixture.detectChanges();
+      expect(warnings()).toHaveLength(0);
+    });
 
     it('sends the pairing and the default times, then goes to the calendar on the first post day', async () => {
       const { fixture, el } = await open();

@@ -272,6 +272,36 @@ describe('SchedulesStore', () => {
     });
   });
 
+  describe('spacing between groups', () => {
+    it('sets the minutes: PUT spacing, replaces the schedule with the answer and reads the queue again', async () => {
+      await start();
+      const done = store.setSpacing('a', 15);
+      await settle();
+      expect(store.isBusy('a')).toBe(true);
+      const req = http.expectOne(`${SCHEDULES_URL}/a/spacing`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual({ groupGapMinutes: 15 });
+      req.flush({ ...A, groupGapMinutes: 15 });
+      await settle();
+      const asked = answerChangeRefresh(http);
+      expect(asked.posts > 0).toBe(true); // the server laid out the queued posts again: the queue is read
+      const saved = await done;
+      expect(saved.groupGapMinutes).toBe(15);
+      expect(store.byId('a')?.groupGapMinutes).toBe(15);
+      expect(store.isBusy('a')).toBe(false);
+    });
+
+    it('keeps the schedule as it was when the server refuses, and is not busy any more', async () => {
+      await start();
+      const done = store.setSpacing('a', 15);
+      await settle();
+      http.expectOne(`${SCHEDULES_URL}/a/spacing`).flush('x', { status: 500, statusText: 'x' });
+      await expect(done).rejects.toBeInstanceOf(HttpErrorResponse);
+      expect(store.byId('a')?.groupGapMinutes).toBe(0);
+      expect(store.isBusy('a')).toBe(false);
+    });
+  });
+
   describe('best times', () => {
     const BEST_URL = (ws = 'ws-1') => `/api/workspaces/${ws}/schedules/best-times`;
     const switchTo = async (id: string) => {

@@ -289,6 +289,57 @@ export function overridesFromInput(
   return { overrides, bad };
 }
 
+/** What the server adds on top of a gap at random (Schedule.GroupGapJitter): a gap of 10 becomes 10 to 12.5 minutes. */
+export const GAP_JITTER = 0.25;
+
+/** What a gap between two groups makes of a day (see `gapPlan`). */
+export interface GapPlan {
+  gap: number;
+  members: number;
+  /** Minutes one round takes at the least (every gap exactly the minimum). */
+  roundMin: number;
+  /** Minutes the day's posts take at the least, all rounds in one line. */
+  dayMin: number;
+  /** About when the last post of the day goes out (minutes after midnight, 1440 and more = the next day), the jitter's average counted. */
+  endMin: number;
+  /** A round is still going when the next time comes: the next round waits for it (it starts later than its time). */
+  overlap: boolean;
+  /** The day's line runs past midnight. */
+  pastMidnight: boolean;
+}
+
+/**
+ * What a gap of `gap` minutes between groups makes of a day: how long a round and the whole day take at the least, about
+ * when the last post goes out, and whether rounds run into each other or the day into the night. Null without a gap, a
+ * group or a time. Mirrors the server's layout (`ScheduleSpacing`): the rounds of a day follow one another in a line.
+ */
+export function gapPlan(
+  gap: number,
+  members: number,
+  perDay: number,
+  slots: readonly string[],
+): GapPlan | null {
+  if (!(gap > 0) || members <= 0 || slots.length === 0) return null;
+  const roundMin = Math.max(0, members - 1) * gap;
+  const dayMin = Math.max(0, perDay - 1) * gap;
+  const first = toMinutes(slots[0]) ?? 0;
+  const endMin = first + Math.round(dayMin * (1 + GAP_JITTER / 2));
+  let nearest = Infinity;
+  for (let i = 1; i < slots.length; i++) {
+    nearest = Math.min(nearest, (toMinutes(slots[i]) ?? 0) - (toMinutes(slots[i - 1]) ?? 0));
+  }
+  return {
+    gap,
+    members,
+    roundMin,
+    dayMin,
+    endMin,
+    // The next round opens one gap after the last group of the one before it, not on the very minute.
+    overlap: slots.length > 1 && roundMin + gap > nearest,
+    pastMidnight: endMin >= MINUTES_PER_DAY,
+  };
+}
+
 /** Slots, posts per day and number of members with their own times, for a schedule's summary line. */
 export function scheduleCadence(
   schedule: ScheduleLike,

@@ -44,6 +44,7 @@ export function apiSchedule(over: Partial<ApiSchedule> & { id: string }): ApiSch
     startNow: false,
     repeat: 'recent',
     bump: NO_BUMP,
+    groupGapMinutes: 0,
     ...over,
   };
 }
@@ -76,6 +77,7 @@ export function saveBody(over: Partial<ApiSaveSchedule> = {}): ApiSaveSchedule {
     overrides: {},
     utcOffsetMinutes: utcOffsetMinutes(),
     startNow: false,
+    groupGapMinutes: 0,
     ...over,
   };
 }

@@ -6,6 +6,7 @@ import { DevicesStore } from '../../core/data/devices.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { SchedulesStore } from '../../core/data/schedules.store';
+import { SettingsStore } from '../../core/data/settings.store';
 import { ownerOfSet } from '../../core/flow/link-ownership';
 import {
   AUTO_DELETE_DAY_OPTIONS,
@@ -25,6 +26,7 @@ import {
   SelectOption,
 } from '../../shared/components/select-field/select-field.component';
 import { ScheduleBumpComponent } from './schedule-bump.component';
+import { gapLines, gapOptions } from './schedule-gap';
 import { ScheduleFormService, SCHEDULE_NAME_MAX } from './schedule-form.service';
 import { ScheduleOverridesComponent } from './schedule-overrides.component';
 import { SchedulePatternComponent } from './schedule-pattern.component';
@@ -60,6 +62,7 @@ export class ScheduleBuilderComponent {
   private readonly accounts = inject(AccountsStore);
   private readonly devices = inject(DevicesStore);
   private readonly schedules = inject(SchedulesStore);
+  private readonly settings = inject(SettingsStore);
   private readonly i18n = inject(I18nService);
   protected readonly form = inject(ScheduleFormService);
   protected readonly perm = inject(PermissionsService);
@@ -133,6 +136,15 @@ export class ScheduleBuilderComponent {
     { value: 'time', label: this.t().api.flow.schStartAtTime },
     { value: 'now', label: this.t().api.flow.schStartNow },
   ]);
+  /** "Automatic", the usual gaps and "custom": how far apart two groups are posted. */
+  protected readonly gapOptions = computed<SelectOption[]>(() => gapOptions(this.t()));
+  /** What the chosen gap means in words, and what is worth knowing before creating (see `gapLines`). */
+  private readonly gapText = computed(() => {
+    const ab = this.settings.ab();
+    return gapLines(this.t(), this.form.gap(), this.form.spread(), { min: ab.min, max: ab.max });
+  });
+  protected readonly gapNote = computed(() => this.gapText().note);
+  protected readonly gapWarnings = computed(() => this.gapText().warnings);
   protected readonly startLabel = computed(() =>
     this.form.isOnce() ? this.t().sch.onceDate : this.t().sch.start,
   );

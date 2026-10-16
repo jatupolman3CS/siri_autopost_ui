@@ -15,6 +15,7 @@ import {
   ScheduleLike,
   ScheduleMode,
   addDays,
+  gapPlan,
   hourChips,
   isTimesMode,
   normalizeTimes,
@@ -28,6 +29,7 @@ import {
   utcOffsetMinutes,
 } from '../../core/flow/schedule-math';
 import { ApiSaveSchedule } from '../../core/http/api.service';
+import { GAP_MAX, gapChoiceOf } from './schedule-gap';
 import { INPUT_LIMITS } from '../../core/http/input-limits';
 import { fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
@@ -120,6 +122,14 @@ export class ScheduleFormService {
   /** The images per bump the person asked for; `bumpEach` is what it comes to with the images chosen. */
   readonly bumpEachWanted = signal(1);
   readonly del = signal(0);
+  /**
+   * Minutes between one group and the next ("how far apart per group"); 0 = the workspace's smart delay (a random
+   * gap between its Min and Max, set on the anti-ban page). With a number the server keeps every post at least
+   * that far from the one before it (plus up to a quarter more, at random) and lays the day's rounds on one line.
+   */
+  readonly gap = signal(0);
+  /** "Custom…" was picked in the select, so the minutes box shows (even for a number the select also offers). */
+  readonly gapCustom = signal(false);
   readonly error = signal('');
   /** The "more" section was opened (true) or closed (false) by hand; null follows simple mode. */
   readonly moreOverride = signal<boolean | null>(null);
@@ -152,6 +162,8 @@ export class ScheduleFormService {
   readonly isOnce = computed(() => this.mode() === 'once');
   readonly isDrip = computed(() => this.mode() === 'drip');
   readonly isNow = computed(() => this.startMode() === 'now');
+  /** The select's value: the minutes of a preset ('0' = the smart delay), or 'custom'. */
+  readonly gapChoice = computed(() => gapChoiceOf(this.gap(), this.gapCustom()));
 
   readonly collection = computed(() => this.collections.byId(this.collectionId()));
   readonly set = computed(() => this.linkSets.byId(this.linkSetId()));
@@ -210,6 +222,14 @@ export class ScheduleFormService {
     const limit = this.settings.ab().limits.fb;
     return n > limit ? { n, limit } : null;
   });
+  /**
+   * What the chosen gap makes of a day (null without a gap, a link set or a time): how long one round takes at
+   * least, how long all the day's posts do, about when the last one goes out, and whether a round is still going
+   * when the next time comes (the next round then waits for it) or the day runs past midnight.
+   */
+  readonly spread = computed(() =>
+    gapPlan(this.gap(), this.members().length, this.perDay(), this.slots()),
+  );
   /** The quick-pick chips: 06:00 to 22:00 and every other time already chosen. */
   readonly chips = computed(() => hourChips(CHIP_FROM_HOUR, CHIP_TO_HOUR, this.times()));
 
@@ -220,7 +240,9 @@ export class ScheduleFormService {
     const m = this.members().length;
     if (this.isNow() && this.isOnce()) {
       const ab = this.settings.ab();
-      return fmt(t.api.flow.schSummaryNow, { m, a: ab.min, b: ab.max });
+      return this.gap() > 0
+        ? fmt(t.api.flow.schSummaryNowGap, { m, g: this.gap() })
+        : fmt(t.api.flow.schSummaryNow, { m, a: ab.min, b: ab.max });
     }
     if (this.isOnce()) {
       const p = parseDateKey(this.start() || this.posts.todayKey());
@@ -233,6 +255,8 @@ export class ScheduleFormService {
       });
     }
     const ab = this.settings.ab();
+    if (this.gap() > 0)
+      return fmt(t.api.flow.schSummaryGap, { n, m, p: this.usablePosts(), g: this.gap() });
     return fmt(t.sch.summary, { n, m, p: this.usablePosts(), a: ab.min, b: ab.max });
   });
 
@@ -285,6 +309,8 @@ export class ScheduleFormService {
     this.bumpMedia.set([]);
     this.bumpEachWanted.set(1);
     this.del.set(0);
+    this.gap.set(0);
+    this.gapCustom.set(false);
     this.error.set('');
     this.open.set(false);
   }
@@ -355,6 +381,22 @@ export class ScheduleFormService {
     if (!best.length) return;
     this.times.set(best);
     this.error.set('');
+  }
+
+  /** The select: a preset's minutes ('0' = the smart delay) or 'custom' (a number box opens, starting at 10). */
+  pickGap(value: string): void {
+    if (value === 'custom') {
+      this.gapCustom.set(true);
+      if (this.gap() === 0) this.gap.set(10);
+      return;
+    }
+    this.gapCustom.set(false);
+    this.gap.set(clamp(parseInt(value, 10) || 0, 0, GAP_MAX));
+  }
+
+  /** The custom box: 1 to 120 minutes (an empty or odd box counts as 1; the smart delay is the select's first option). */
+  setGap(raw: string): void {
+    this.gap.set(clamp(parseInt(raw, 10) || 1, 1, GAP_MAX));
   }
 
   setEvery(raw: string): void {
@@ -483,6 +525,7 @@ export class ScheduleFormService {
       overrides: overrides.overrides,
       utcOffsetMinutes: utcOffsetMinutes(),
       startNow: this.isNow(),
+      groupGapMinutes: clamp(this.gap(), 0, GAP_MAX),
     };
   }
 

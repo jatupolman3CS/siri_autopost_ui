@@ -15,6 +15,8 @@ import { RouterLink } from '@angular/router';
 import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { DevicesStore } from '../../core/data/devices.store';
+import { LinkSetsStore } from '../../core/data/link-sets.store';
+import { ownerOfSet } from '../../core/flow/link-ownership';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore, QueueItem } from '../../core/data/posts.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
@@ -25,6 +27,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { PostDetailModalComponent } from '../posts/post-detail-modal.component';
 import { LIGHTS, PostLight, isOverdue, lightOf } from '../posts/post-light';
+import { TimelineHandoverModalComponent } from './timeline-handover-modal.component';
 import { TimelineSummaryComponent, TlNext } from './timeline-summary.component';
 import { TimelineTipComponent, TipView } from './timeline-tip.component';
 import {
@@ -101,6 +104,7 @@ interface RowView {
     EmptyStateComponent,
     PermNoteComponent,
     PostDetailModalComponent,
+    TimelineHandoverModalComponent,
     TimelineSummaryComponent,
     TimelineTipComponent,
   ],
@@ -122,6 +126,7 @@ export class TimelinePageComponent {
   private readonly accounts = inject(AccountsStore);
   private readonly devices = inject(DevicesStore);
   private readonly collections = inject(CollectionsStore);
+  private readonly linkSets = inject(LinkSetsStore);
   protected readonly perm = inject(PermissionsService);
   protected readonly t = this.i18n.t;
 
@@ -137,6 +142,8 @@ export class TimelinePageComponent {
   protected readonly query = signal('');
   protected readonly zoom = signal<Zoom>(storedZoom());
   protected readonly selectedId = signal<string | null>(null);
+  /** The "change extension in the middle of the day" dialog is open. */
+  protected readonly handOverOpen = signal(false);
   protected readonly tip = signal<{ id: string; x: number; y: number; below: boolean } | null>(
     null,
   );
@@ -218,6 +225,18 @@ export class TimelinePageComponent {
         .filter((a) => a.connected || withPosts.has(a.id))
         .map((a) => ({ value: a.id, label: extensionNameOf(a, this.devices.list()) })),
     ];
+  });
+
+  /**
+   * A link set can be handed to another extension: there is a set whose posting extension is not the only connected
+   * one. Needs at least one connected extension and a set that has somewhere to go.
+   */
+  protected readonly canHandOver = computed(() => {
+    const connected = this.accounts.connected();
+    if (!connected.length) return false;
+    return this.linkSets
+      .sets()
+      .some((s) => connected.some((a) => a.id !== ownerOfSet(s, this.accounts.list())));
   });
 
   protected readonly lightCounts = computed(() => {

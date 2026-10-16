@@ -21,6 +21,17 @@ describe('scheduleView', () => {
   });
   afterEach(() => localStorage.clear());
 
+  it('says how far apart the groups are posted: its own gap, or the random delay of the workspace', () => {
+    const own = scheduleView(apiSchedule({ id: 'a', groupGapMinutes: 15 }), ctx());
+    expect(own.hasGap).toBe(true);
+    expect(own.spacing).toBe('at least 15 min between groups');
+    const auto = scheduleView(apiSchedule({ id: 'a' }), ctx({ delay: { min: 3, max: 12 } }));
+    expect(auto.hasGap).toBe(false);
+    expect(auto.spacing).toBe('random delay of 3–12 min between groups');
+    // The delay is not known yet (the anti-ban settings have not arrived): no line rather than a wrong one.
+    expect(scheduleView(apiSchedule({ id: 'a' }), ctx()).spacing).toBe('');
+  });
+
   it('names the pair and the icon, with dashes for a collection or set that is gone', () => {
     const v = scheduleView(apiSchedule({ id: 'a' }), ctx());
     expect(v.pair).toBe('Condo → Groups');

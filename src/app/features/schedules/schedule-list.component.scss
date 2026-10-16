@@ -45,7 +45,8 @@
   gap: 2px;
   flex-wrap: wrap;
 }
-.bump-line {
+.bump-line,
+.spacing-line {
   display: flex;
   align-items: center;
   gap: 6px;

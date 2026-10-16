@@ -16,6 +16,10 @@ export interface ScheduleView {
   cadence: string;
   /** The bump, e.g. "bump 2h × 2 · 1 image each"; empty when the schedule does not bump. */
   bump: string;
+  /** "at least 10 min between groups", or "random delay 3–12 min" while the schedule follows the smart delay. */
+  spacing: string;
+  /** The schedule has a gap of its own. */
+  hasGap: boolean;
   /** The setting that is saved but not applied yet (auto-delete), with that said; empty when it is not set. */
   stored: string;
   todayLabel: string;
@@ -42,6 +46,8 @@ export function scheduleView(
     today: string;
     collection?: Pick<ApiCollection, 'name' | 'icon'>;
     set?: Pick<ApiLinkSet, 'name'>;
+    /** The workspace's smart delay (minutes), for a schedule without a gap of its own. */
+    delay?: { min: number; max: number };
   },
 ): ScheduleView {
   const { t, li } = ctx;
@@ -99,6 +105,13 @@ export function scheduleView(
     pair: `${ctx.collection?.name ?? '—'} → ${ctx.set?.name ?? '—'}`,
     cadence,
     bump,
+    spacing:
+      s.groupGapMinutes > 0
+        ? fmt(f.schGapLine, { n: s.groupGapMinutes })
+        : ctx.delay
+          ? fmt(f.schGapLineAuto, { a: ctx.delay.min, b: ctx.delay.max })
+          : '',
+    hasGap: s.groupGapMinutes > 0,
     stored,
     todayLabel: fmt(t.sch.today, { n: s.todayCount }),
     nextLabel: `${t.sch.nextRun}: ${nextOk ? `${fmtDate(next, li)} ${hm(next)}` : '—'}`,

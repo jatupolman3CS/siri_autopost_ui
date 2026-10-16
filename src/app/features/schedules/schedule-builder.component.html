@@ -54,6 +54,33 @@
     </p>
   }
 
+  <div class="gap" data-testid="gap">
+    <div class="grid">
+      <app-select-field
+        [label]="t().api.flow.schGapLabel"
+        [options]="gapOptions()"
+        [disabled]="perm.readOnly()"
+        [value]="form.gapChoice()"
+        (valueChange)="form.pickGap($event)"
+      />
+      @if (form.gapChoice() === 'custom') {
+        <app-input-field
+          [label]="t().api.flow.schGapCustomLabel"
+          type="number"
+          [disabled]="perm.readOnly()"
+          [value]="'' + form.gap()"
+          (valueChange)="form.setGap($event)"
+        />
+      }
+    </div>
+    <p class="su-field-help" data-testid="gap-note">
+      <i class="ph ph-info" aria-hidden="true"></i>{{ gapNote() }}
+    </p>
+    @for (w of gapWarnings(); track w) {
+      <p class="gapwarn" role="status"><i class="ph ph-warning" aria-hidden="true"></i>{{ w }}</p>
+    }
+  </div>
+
   <div>
     <button
       type="button"

@@ -4369,6 +4369,65 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/link-sets/{id}/handover": {
+      "post": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandOverRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandOverRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandOverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HandOverResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/link-sets/{id}/active": {
       "put": {
         "tags": [
@@ -6194,6 +6253,75 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/schedules/{id}/spacing": {
+      "put": {
+        "tags": [
+          "Schedules"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpacingRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpacingRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpacingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/schedules/{id}": {
       "delete": {
         "tags": [
@@ -7650,6 +7778,11 @@
                 "$ref": "#/components/schemas/BumpPlanDto"
               }
             ]
+          },
+          "groupGapMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -9376,6 +9509,34 @@
             "items": {
               "$ref": "#/components/schemas/GroupLinkDto"
             }
+          }
+        }
+      },
+      "HandOverRequest": {
+        "required": [
+          "accountId"
+        ],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "HandOverResultDto": {
+        "required": [
+          "set",
+          "moved"
+        ],
+        "type": "object",
+        "properties": {
+          "set": {
+            "$ref": "#/components/schemas/LinkSetDto"
+          },
+          "moved": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -11610,6 +11771,11 @@
                 "$ref": "#/components/schemas/BumpPlanDto"
               }
             ]
+          },
+          "groupGapMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -11794,6 +11960,11 @@
                 "$ref": "#/components/schemas/BumpPlanDto"
               }
             ]
+          },
+          "groupGapMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -12085,6 +12256,18 @@
           },
           "active": {
             "type": "boolean"
+          }
+        }
+      },
+      "SpacingRequest": {
+        "required": [
+          "groupGapMinutes"
+        ],
+        "type": "object",
+        "properties": {
+          "groupGapMinutes": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

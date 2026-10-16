@@ -28,6 +28,11 @@
           <div class="fw6">{{ r.name }}</div>
           <div class="small muted">{{ r.pair }}</div>
           <div class="small muted">{{ r.cadence }}</div>
+          @if (r.spacing) {
+            <div class="small muted spacing-line" data-testid="spacing-line">
+              <i class="ph ph-timer" aria-hidden="true"></i>{{ r.spacing }}
+            </div>
+          }
           @if (r.bump) {
             <div class="small muted bump-line">
               <i class="ph ph-arrow-fat-lines-up" aria-hidden="true"></i>{{ r.bump }}
@@ -54,6 +59,17 @@
             (click)="renaming.set({ id: r.id, name: r.name })"
           >
             <i class="ph ph-pencil-simple"></i>
+          </button>
+          <button
+            type="button"
+            class="ibtn"
+            data-testid="spacing-btn"
+            [disabled]="perm.readOnly() || store.isBusy(r.id)"
+            [attr.title]="perm.editHint() || t().api.flow.schGapEdit"
+            [attr.aria-label]="t().api.flow.schGapEdit + ': ' + r.name"
+            (click)="openSpacing(r.id)"
+          >
+            <i class="ph ph-timer"></i>
           </button>
           <button type="button" class="su-btn su-btn-sm su-btn-ghost" (click)="viewCalendar(r)">
             {{ t().sch.viewCal }}
@@ -93,6 +109,8 @@
     <app-pager [pager]="pager" />
   }
 </section>
+
+<app-schedule-spacing-modal [schedule]="spacing()" (closed)="spacing.set(null)" />
 
 <app-rename-modal
   [open]="renaming() !== null"

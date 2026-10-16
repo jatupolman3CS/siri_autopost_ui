@@ -16,6 +16,35 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
+.gap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  .su-field-help {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    > .ph {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+  }
+}
+.gapwarn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text);
+  > .ph {
+    margin-top: 1px;
+    flex-shrink: 0;
+    font-size: 16px;
+    color: var(--color-warning);
+  }
+}
 .stored {
   display: flex;
   align-items: flex-start;

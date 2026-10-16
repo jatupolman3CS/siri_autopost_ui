@@ -252,6 +252,62 @@ export const AP_I18N_FLOW = {
   ],
   schOverLimitLink: ['ไปหน้ากันแบน', 'Open anti-ban'],
 
+  // How far apart two groups are posted (2026-10-13): a schedule keeps its groups a number of minutes apart, or follows the
+  // workspace's smart delay (a random gap between its Min and Max).
+  schGapLabel: ['ห่างกันกี่นาทีต่อ 1 กลุ่ม', 'Minutes between two groups'],
+  schGapAuto: ['ตามค่าหน่วงอัตโนมัติ (สุ่ม)', 'Automatic delay (random)'],
+  schGapN: ['{n} นาทีต่อกลุ่ม', '{n} min per group'],
+  schGapCustom: ['กำหนดเอง…', 'Custom…'],
+  schGapCustomLabel: ['จำนวนนาที (1–120)', 'Minutes (1–120)'],
+  schGapAutoNote: [
+    'กลุ่มถัดไปเว้นแบบสุ่ม {a}–{b} นาที (ตั้งช่วงได้ที่หน้ากันแบน) บางคู่อาจอยู่ใกล้กัน ถ้าอยากให้ห่างกันสม่ำเสมอ เลือกจำนวนนาที',
+    'The next group waits a random {a}–{b} min (set on the anti-ban page). Some pairs can land close together: pick a number of minutes to keep them evenly apart',
+  ],
+  schGapNoteShort: [
+    'แต่ละกลุ่มห่างกันอย่างน้อย {n} นาที (สุ่มเพิ่มได้ไม่เกิน 25% ให้เหมือนคนโพสต์)',
+    'Every group is at least {n} min after the one before (up to 25% more at random, like a person)',
+  ],
+  schGapNote: [
+    'แต่ละกลุ่มห่างกันอย่างน้อย {n} นาที (สุ่มเพิ่มได้ไม่เกิน 25% ให้เหมือนคนโพสต์) 1 รอบ {m} กลุ่ม ใช้เวลาอย่างน้อย {d} รอบของวันเรียงต่อกันเป็นแถวเดียว ไม่ซ้อนกัน และเครื่องจะไม่โพสต์ถี่กว่านี้แม้มีงานค้างสะสม',
+    'Every group is at least {n} min after the one before (up to 25% more at random, like a person). A round of {m} groups takes at least {d}. The rounds of a day follow one another in a single line, and the browser never posts faster than this even with a backlog',
+  ],
+  schGapOverlap: [
+    'รอบหนึ่งใช้เวลานานกว่าช่วงถึงเวลาถัดไป รอบถัดไปจะเริ่มหลังรอบก่อนหน้าจบ (ช้ากว่าเวลาที่ตั้งไว้) ลดจำนวนนาทีหรือจำนวนกลุ่มถ้าอยากให้ตรงเวลา',
+    'A round lasts longer than the time to the next one. The next round starts after the one before it ends (later than the time you set); lower the minutes or the groups to keep to the times',
+  ],
+  schGapMidnight: [
+    'โพสต์ของวันหนึ่งเรียงไปถึงราว {t} (ข้ามเที่ยงคืน ใช้เวลาอย่างน้อย {d}) ลดจำนวนนาที จำนวนกลุ่ม หรือจำนวนรอบ',
+    "A day's posts run until about {t} (past midnight, at least {d}). Lower the minutes, the groups or the rounds",
+  ],
+  schGapEdit: ['ตั้งระยะห่างระหว่างกลุ่ม', 'Set the minutes between groups'],
+  schGapLine: ['ห่างกันอย่างน้อย {n} นาทีต่อกลุ่ม', 'at least {n} min between groups'],
+  schGapLineAuto: ['หน่วงสุ่ม {a}–{b} นาทีต่อกลุ่ม', 'random delay of {a}–{b} min between groups'],
+  schGapModalTitle: ['ระยะห่างระหว่างกลุ่ม · {s}', 'Minutes between groups · {s}'],
+  schGapModalNote: [
+    'เมื่อบันทึก ระบบจัดเวลาของโพสต์ที่ยังค้างคิวในตารางนี้ใหม่ทันที (โพสต์เดิม ข้อความเดิม ไม่สร้างซ้ำ) โพสต์ที่โพสต์ไปแล้ว กำลังโพสต์ หรือสั่งโพสต์เดี๋ยวนี้ ไม่ถูกแตะ',
+    'On save the posts this schedule still has queued are laid out again at once (same posts, same texts, nothing made twice). Posts that went out, are being posted or were asked to post now are left alone',
+  ],
+  schGapSave: ['บันทึกและจัดเวลาใหม่', 'Save and lay out again'],
+  schGapRespread: ['จัดเวลาโพสต์ที่ค้างคิวใหม่', 'Spread the queued posts again'],
+  schGapSaved: [
+    'ตั้งระยะห่าง {n} นาทีต่อกลุ่มให้ “{s}” แล้ว และจัดเวลาโพสต์ที่ค้างคิวใหม่',
+    'Set {n} min between groups for “{s}” and laid out its queued posts again',
+  ],
+  schGapSavedAuto: [
+    'ให้ “{s}” ใช้ค่าหน่วงอัตโนมัติแล้ว และจัดเวลาโพสต์ที่ค้างคิวใหม่',
+    '“{s}” now follows the automatic delay; its queued posts were laid out again',
+  ],
+  schGapDurHM: ['{h} ชม. {m} นาที', '{h} h {m} min'],
+  schGapDurM: ['{m} นาที', '{m} min'],
+  schSummaryGap: [
+    'แต่ละวัน: {n} งาน ({m} ปลายทาง) หมุนเวียน {p} โพสต์ ห่างกันอย่างน้อย {g} นาทีต่อกลุ่ม',
+    'Each day: {n} tasks across {m} targets, rotating {p} posts, at least {g} min per group',
+  ],
+  schSummaryNowGap: [
+    'เริ่มทันที: {m} ปลายทาง ทีละที่ ห่างกันอย่างน้อย {g} นาที',
+    'Starts now: {m} targets one by one, at least {g} min apart',
+  ],
+
   // Hand-over to the extension: the panel of the schedules page. A schedule hands its posts to the extension one
   // at a time (the extension asks every 30 s) with its text, images and target: what it posts is exactly what the
   // schedule says, and how it behaves while posting is set on the anti-ban page.
@@ -902,6 +958,39 @@ export const AP_I18N_FLOW = {
   tlTipCode: ['รหัสกลุ่ม', 'Group code'],
   tlTipReason: ['สาเหตุ', 'Reason'],
   tlTipClick: ['คลิกเพื่อดูรายละเอียดและสั่งงาน', 'Click for details and actions'],
+
+  // Change extension in the middle of the day (timeline): a link set is handed to another extension and its waiting posts go along.
+  tlHandBtn: ['ย้ายชุดไปเครื่องอื่น', 'Move a set to another extension'],
+  tlHandHint: [
+    'เปลี่ยนเครื่องที่โพสต์ชุดลิงก์กลางทาง โพสต์ที่ค้างคิวย้ายตามไป',
+    'Change the extension that posts a link set in the middle of the day; its waiting posts move along',
+  ],
+  tlHandTitle: ['ย้ายชุดลิงก์ไปเครื่องอื่นกลางทาง', 'Hand a link set to another extension'],
+  tlHandIntro: [
+    'เครื่องเดิมปิด ถูกบล็อก หรืออยากให้อีกเครื่องโพสต์แทน เลือกชุดลิงก์และเครื่องใหม่ เครื่องใหม่จะโพสต์ชุดนี้ต่อจากตอนนี้ทันที',
+    'The old extension is off, blocked, or you want another one to carry on: pick the link set and the new extension. The new one posts this set from now on',
+  ],
+  tlHandSet: ['ชุดลิงก์', 'Link set'],
+  tlHandFrom: ['ตอนนี้ใช้เครื่อง', 'Now posted by'],
+  tlHandTo: ['ย้ายไปเครื่อง', 'Move to'],
+  tlHandNobody: ['ยังไม่ได้เลือก', 'none chosen'],
+  tlHandOnline: ['ออนไลน์', 'online'],
+  tlHandOffline: ['ออฟไลน์', 'offline'],
+  tlHandUnbound: ['ถูกยกเลิกการผูกแล้ว', 'unbound'],
+  tlHandWaiting: ['รอคิว {n} โพสต์', '{n} post(s) waiting'],
+  tlHandNoTarget: [
+    'ไม่มีเครื่องอื่นที่เชื่อมอยู่ให้ย้ายไป ผูกเครื่องเพิ่มที่หน้าทีมและเวิร์กสเปซก่อน',
+    'No other connected extension to move it to. Pair one on the team page first',
+  ],
+  tlHandKeep: [
+    'โพสต์ที่ค้างคิวย้ายไปพร้อมเวลาเดิมและข้อความเดิม (ไม่สร้างใหม่) โพสต์ที่โพสต์ไปแล้วหรือกำลังโพสต์อยู่ยังเป็นของเครื่องเดิม และกลุ่มหนึ่งใช้ได้กับเครื่องเดียวเสมอ',
+    'Waiting posts move with their times and texts (nothing is made again). Posts already sent or being posted stay with the old extension, and a group still belongs to one extension only',
+  ],
+  tlHandGo: ['ย้ายเดี๋ยวนี้', 'Move now'],
+  tlHandDone: [
+    'ย้ายชุด “{s}” ไปเครื่อง {to} แล้ว โพสต์ที่ค้างคิว {n} รายการไปด้วย',
+    'Moved “{s}” to {to}; {n} waiting post(s) went along',
+  ],
 
   // Dots of a schedule (schedules page)
   sdToggle: ['จุดโพสต์ของวัน', 'Post dots of the day'],

@@ -8,7 +8,7 @@ import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PostsStore } from '../../core/data/posts.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
-import { ApiPost } from '../../core/http/api.service';
+import { ApiAccount, ApiLinkSet, ApiPost } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
@@ -21,7 +21,12 @@ import {
   settle,
   signIn,
 } from '../../testing/api-testing';
-import { apiCollection, apiCollectionPost } from '../../testing/collection-fixtures';
+import {
+  apiCollection,
+  apiCollectionPost,
+  apiLinkSet,
+  apiSetLink,
+} from '../../testing/collection-fixtures';
 import { apiSchedule } from '../../testing/schedules.fixtures';
 import { TimelinePageComponent } from './timeline-page.component';
 
@@ -113,6 +118,9 @@ describe('TimelinePageComponent', () => {
       schedule?: string;
       role?: 'owner' | 'viewer';
       paired?: boolean;
+      linkSets?: ApiLinkSet[];
+      /** The accounts of the workspace instead of the one paired browser. */
+      accounts?: ApiAccount[];
     } = {},
   ) {
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -132,9 +140,11 @@ describe('TimelinePageComponent', () => {
       posts: over.posts ?? POSTS,
       collections: [CONDO, PLANTS],
       schedules: SCHEDULES,
+      linkSets: over.linkSets,
       workspace: { role: over.role ?? 'owner' },
     });
-    if (over.paired !== false)
+    if (over.accounts) TestBed.inject(AccountsStore).list.set(over.accounts);
+    else if (over.paired !== false)
       TestBed.inject(AccountsStore).list.set([{ ...ACCOUNTS[0], connected: true }]);
     const fixture = TestBed.createComponent(TimelinePageComponent);
     if (over.day) fixture.componentRef.setInput('day', over.day);
@@ -172,6 +182,190 @@ describe('TimelinePageComponent', () => {
       TestBed.resetTestingModule();
       localStorage.clear();
     }
+  });
+
+  describe('change extension in the middle of the day', () => {
+    const SHOP: ApiAccount = {
+      ...ACCOUNTS[0],
+      id: 'acc-a',
+      name: 'Facebook · Shop PC',
+      connected: true,
+    };
+    const HOME: ApiAccount = {
+      ...ACCOUNTS[0],
+      id: 'acc-b',
+      name: 'Facebook · Home PC',
+      connected: true,
+    };
+    const SET = apiLinkSet({
+      id: 'ls1',
+      name: 'Condo groups',
+      postAsAccountId: 'acc-a',
+      links: [
+        apiSetLink({ id: 'l1' }),
+        apiSetLink({ id: 'l2', url: 'https://www.facebook.com/groups/two' }),
+      ],
+    });
+    const WAITING = [
+      apiPost({
+        id: 'w1',
+        scheduledAt: at(23, 15),
+        status: 'queued',
+        scheduleId: 's1',
+        linkId: 'l1',
+        accountId: 'acc-a',
+      }),
+      apiPost({
+        id: 'w2',
+        scheduledAt: at(23, 40),
+        status: 'queued',
+        scheduleId: 's1',
+        linkId: 'l2',
+        accountId: 'acc-a',
+      }),
+      apiPost({
+        id: 'w3',
+        scheduledAt: at(9),
+        status: 'success',
+        scheduleId: 's1',
+        linkId: 'l1',
+        accountId: 'acc-a',
+      }),
+    ];
+    const handBtn = (el: HTMLElement) =>
+      el.querySelector<HTMLButtonElement>('[data-testid="handover-btn"]');
+    const modal = (el: HTMLElement) =>
+      el.querySelector('app-timeline-handover-modal .su-modal-panel');
+    const targetSelect = (el: HTMLElement) =>
+      [...el.querySelectorAll<HTMLSelectElement>('app-timeline-handover-modal select')][1];
+    const submit = (el: HTMLElement) =>
+      el.querySelector<HTMLFormElement>('#handover-form')!.requestSubmit();
+    const answerRefresh = () => {
+      for (const r of http.match(
+        (x) => x.url.startsWith(`/api/workspaces/${WS}/posts`) && x.method === 'GET',
+      ))
+        r.flush(WAITING);
+      for (const r of http.match(`/api/workspaces/${WS}/errors`)) r.flush([]);
+    };
+
+    it('offers the move when a set can go to another connected extension', async () => {
+      const { el } = await open({ posts: WAITING, accounts: [SHOP, HOME], linkSets: [SET] });
+      expect(handBtn(el)).not.toBeNull();
+    });
+
+    it('offers nothing when the only connected extension already has every set', async () => {
+      const { el } = await open({ posts: WAITING, accounts: [SHOP], linkSets: [SET] });
+      expect(handBtn(el)).toBeNull();
+    });
+
+    it('offers to move the set of an extension that was unbound to the one that is connected', async () => {
+      const { el } = await open({
+        posts: WAITING,
+        accounts: [{ ...SHOP, connected: false }, HOME],
+        linkSets: [SET],
+      });
+      expect(handBtn(el)).not.toBeNull();
+    });
+
+    it('is off for a viewer', async () => {
+      const { el } = await open({
+        role: 'viewer',
+        posts: WAITING,
+        accounts: [SHOP, HOME],
+        linkSets: [SET],
+      });
+      expect(handBtn(el)!.disabled).toBe(true);
+    });
+
+    it('opens with the set, who has it now and what waits, and the other extension to move to', async () => {
+      const { fixture, el } = await open({
+        posts: WAITING,
+        accounts: [SHOP, HOME],
+        linkSets: [SET],
+      });
+      handBtn(el)!.click();
+      await tick(fixture);
+      expect(modal(el)).not.toBeNull();
+      const from = el.querySelector('[data-testid="hand-from"]')!.textContent!;
+      expect(from).toContain('Shop PC');
+      expect(from).toContain(fmt(t().api.flow.tlHandWaiting, { n: 2 })); // the two queued posts of its groups
+      expect(targetSelect(el).value).toBe('acc-b');
+      expect([...targetSelect(el).options].map((o) => o.textContent?.trim())).toEqual(['Home PC']);
+    });
+
+    it('moves the set: asks the API, reads the posts again and says how many went along', async () => {
+      const { fixture, el } = await open({
+        posts: WAITING,
+        accounts: [SHOP, HOME],
+        linkSets: [SET],
+      });
+      handBtn(el)!.click();
+      await tick(fixture);
+      submit(el);
+      await settle();
+      const req = http.expectOne(`/api/workspaces/${WS}/link-sets/ls1/handover`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ accountId: 'acc-b' });
+      req.flush({ set: { ...SET, postAsAccountId: 'acc-b' }, moved: 2 });
+      await settle();
+      answerRefresh();
+      await tick(fixture);
+      expect(TestBed.inject(LinkSetsStore).byId('ls1')?.postAsAccountId).toBe('acc-b');
+      expect(
+        TestBed.inject(NotificationService)
+          .toasts()
+          .map((x) => x.message),
+      ).toContain(fmt(t().api.flow.tlHandDone, { s: 'Condo groups', to: 'Home PC', n: 2 }));
+      expect(modal(el)).toBeNull();
+    });
+
+    it('keeps the dialog open with the reason when the server refuses', async () => {
+      const { fixture, el } = await open({
+        posts: WAITING,
+        accounts: [SHOP, HOME],
+        linkSets: [SET],
+      });
+      handBtn(el)!.click();
+      await tick(fixture);
+      submit(el);
+      await settle();
+      http
+        .expectOne(`/api/workspaces/${WS}/link-sets/ls1/handover`)
+        .flush(
+          { title: 'กลุ่มหนึ่งใช้ได้กับเครื่องเดียว' },
+          { status: 422, statusText: 'Unprocessable' },
+        );
+      await tick(fixture);
+      expect(modal(el)).not.toBeNull();
+      expect(el.querySelector('app-timeline-handover-modal .su-field-err')?.textContent).toContain(
+        'เครื่องเดียว',
+      );
+      expect(TestBed.inject(LinkSetsStore).byId('ls1')?.postAsAccountId).toBe('acc-a');
+    });
+
+    it('starts with the set of the extension the timeline is filtered to', async () => {
+      const other = apiLinkSet({
+        id: 'ls2',
+        name: 'Home groups',
+        postAsAccountId: 'acc-b',
+        links: [apiSetLink({ id: 'm1', url: 'https://www.facebook.com/groups/home' })],
+      });
+      const { fixture, el } = await open({
+        posts: WAITING,
+        accounts: [SHOP, HOME],
+        linkSets: [SET, other],
+      });
+      const filter = [...el.querySelectorAll<HTMLSelectElement>('select')].find((s) =>
+        [...s.options].some((o) => o.value === 'acc-b'),
+      )!;
+      filter.value = 'acc-b';
+      filter.dispatchEvent(new Event('change'));
+      await tick(fixture);
+      handBtn(el)!.click();
+      await tick(fixture);
+      expect(el.querySelector('[data-testid="hand-from"]')!.textContent).toContain('Home PC');
+      expect(targetSelect(el).value).toBe('acc-a');
+    });
   });
 
   describe('the board', () => {

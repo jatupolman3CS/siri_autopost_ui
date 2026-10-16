@@ -4065,6 +4065,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/link-sets/{id}/handover': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['HandOverRequest'];
+          'text/json': components['schemas']['HandOverRequest'];
+          'application/*+json': components['schemas']['HandOverRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['HandOverResultDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/link-sets/{id}/active': {
     parameters: {
       query?: never;
@@ -5568,6 +5612,59 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/schedules/{id}/spacing': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SpacingRequest'];
+          'text/json': components['schemas']['SpacingRequest'];
+          'application/*+json': components['schemas']['SpacingRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ScheduleDto'];
+          };
+        };
+        /** @description Bad Request */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['ValidationProblemDetails'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/schedules/{id}': {
     parameters: {
       query?: never;
@@ -6299,6 +6396,11 @@ export interface components {
       utcOffsetMinutes: number;
       repeat?: components['schemas']['PostRepeat'];
       bump?: null | components['schemas']['BumpPlanDto'];
+      /**
+       * Format: int32
+       * @default 0
+       */
+      groupGapMinutes: number;
     };
     BackupSetNotifyRuleDto: {
       linkSet: string;
@@ -6747,6 +6849,15 @@ export interface components {
     };
     GroupsRequest: {
       groups: components['schemas']['GroupLinkDto'][];
+    };
+    HandOverRequest: {
+      /** Format: uuid */
+      accountId: string;
+    };
+    HandOverResultDto: {
+      set: components['schemas']['LinkSetDto'];
+      /** Format: int32 */
+      moved: number;
     };
     HeartbeatRequest: {
       version: null | string;
@@ -7348,6 +7459,11 @@ export interface components {
       startNow: boolean;
       repeat?: components['schemas']['PostRepeat'];
       bump?: null | components['schemas']['BumpPlanDto'];
+      /**
+       * Format: int32
+       * @default 0
+       */
+      groupGapMinutes: number;
     };
     ScheduleCreatedDto: {
       schedule: components['schemas']['ScheduleDto'];
@@ -7403,6 +7519,11 @@ export interface components {
       startNow: boolean;
       repeat?: components['schemas']['PostRepeat'];
       bump?: null | components['schemas']['BumpPlanDto'];
+      /**
+       * Format: int32
+       * @default 0
+       */
+      groupGapMinutes: number;
     };
     /** @enum {unknown} */
     ScheduleMode: 'daily' | 'weekdays' | 'weekend' | 'interval' | 'drip' | 'once';
@@ -7484,6 +7605,10 @@ export interface components {
       /** Format: int32 */
       usedCount: number;
       active: boolean;
+    };
+    SpacingRequest: {
+      /** Format: int32 */
+      groupGapMinutes: number;
     };
     StartPaymentRequest: {
       plan: components['schemas']['PlanKey'];

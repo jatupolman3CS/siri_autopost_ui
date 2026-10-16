@@ -223,6 +223,26 @@ export class SchedulesStore {
     }
   }
 
+  /**
+   * Sets the minutes between two groups (0 = the workspace's smart delay, up to 120). The server lays out the posts the
+   * schedule still has queued again with it (nothing is made again), so the queue is read afterwards. Called with the
+   * number it already has it spreads the queued posts again. Rejects when the API refuses.
+   */
+  async setSpacing(id: string, minutes: number): Promise<ApiSchedule> {
+    const wsId = this.requireWs();
+    this.mark(id, true);
+    try {
+      const saved = await this.api.setScheduleSpacing(wsId, id, minutes);
+      if (this.ws.id() === wsId) {
+        this.schedules.update((l) => l.map((s) => (s.id === id ? saved : s)));
+        await this.posts.refresh();
+      }
+      return saved;
+    } finally {
+      this.mark(id, false);
+    }
+  }
+
   /** Deletes a schedule and its future queued posts (posts already sent stay in the history). */
   async remove(id: string): Promise<void> {
     const wsId = this.requireWs();

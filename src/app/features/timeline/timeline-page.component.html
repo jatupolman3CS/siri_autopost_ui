@@ -138,6 +138,18 @@
       <button type="button" class="su-btn su-btn-sm su-btn-secondary gonow" (click)="goNow()">
         <i class="ph ph-crosshair" aria-hidden="true"></i>{{ t().api.flow.tlGoNow }}
       </button>
+      @if (canHandOver()) {
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-secondary gonow"
+          data-testid="handover-btn"
+          [disabled]="perm.readOnly()"
+          [attr.title]="perm.editHint() || t().api.flow.tlHandHint"
+          (click)="handOverOpen.set(true)"
+        >
+          <i class="ph ph-arrows-left-right" aria-hidden="true"></i>{{ t().api.flow.tlHandBtn }}
+        </button>
+      }
     </div>
   </section>
 
@@ -251,3 +263,9 @@
 }
 
 <app-post-detail-modal [postId]="selectedId()" (closed)="selectedId.set(null)" />
+
+<app-timeline-handover-modal
+  [open]="handOverOpen()"
+  [prefer]="extensionId()"
+  (closed)="handOverOpen.set(false)"
+/>

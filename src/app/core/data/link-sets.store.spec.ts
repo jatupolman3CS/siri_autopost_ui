@@ -625,6 +625,30 @@ describe('LinkSetsStore', () => {
       expect(await second).toBe(true);
     });
 
+    it('hands the set to another extension: POST handover, the set follows the answer, the count of moved posts comes back', async () => {
+      await start();
+      const done = store.handOver('s1', 'acc-2');
+      const req = http.expectOne(`${SET_URL('s1')}/handover`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ accountId: 'acc-2' });
+      req.flush({ set: { ...SET, postAsAccountId: 'acc-2' }, moved: 41 });
+      expect(await done).toBe(41);
+      expect(store.byId('s1')?.postAsAccountId).toBe('acc-2');
+    });
+
+    it('leaves the set with its extension when the hand-over is refused, and says so to the caller', async () => {
+      await start();
+      const done = store.handOver('s1', 'acc-2');
+      http
+        .expectOne(`${SET_URL('s1')}/handover`)
+        .flush(
+          { title: 'กลุ่มหนึ่งใช้ได้กับเครื่องเดียว' },
+          { status: 422, statusText: 'Unprocessable' },
+        );
+      await expect(done).rejects.toBeTruthy();
+      expect(store.byId('s1')?.postAsAccountId).toBe(SET.postAsAccountId);
+    });
+
     it('goes back to the old account when the save is refused', async () => {
       await start();
       const done = store.setPostAs('s1', 'acc-fb');
