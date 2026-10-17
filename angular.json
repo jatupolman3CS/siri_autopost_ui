@@ -53,6 +53,11 @@
                 "glob": "**/*",
                 "input": "src/assets",
                 "output": "assets"
+              },
+              {
+                "glob": "**/*",
+                "input": "src/public",
+                "output": ""
               }
             ],
             "styles": [
@@ -74,9 +79,9 @@
                   // bigger, and all of it ships in the first bundle. Strings the design lacks go in the lazy
                   // packs (i18n.flow.ts, i18n.engine.ts), which stay out of it. Raised to 760kB on 2026-10-06:
                   // the plan packages (seven limits, six functions, a comparison table) and the in-app payment
-                  // window put their strings in the first bundle.
+                  // Raised to 770kB on 2026-10-17: SEO service and dynamic metadata management.
                   "type": "initial",
-                  "maximumWarning": "760kB",
+                  "maximumWarning": "770kB",
                   "maximumError": "1MB"
                 },
                 {

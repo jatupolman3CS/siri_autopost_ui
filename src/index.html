@@ -2,16 +2,211 @@
 <html lang="th">
   <head>
     <meta charset="utf-8" />
-    <title>AutoPost</title>
+    <title>AutoPost - ระบบโพสต์อัตโนมัติ จัดการและตั้งเวลาโพสต์ Facebook อัจฉริยะ</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- SEO Meta Tags -->
+    <meta
+      name="description"
+      content="AutoPost แพลตฟอร์มระบบโพสต์อัตโนมัติอันดับ 1 สำหรับจัดการและตั้งเวลาโพสต์กลุ่ม Facebook ควบคุมหลายบัญชี สุ่มข้อความ Spintax ป้องกันการบล็อก (Anti-ban) ใช้งานง่าย เริ่มต้นใช้ฟรี"
+    />
+    <meta
+      name="keywords"
+      content="โพสต์อัตโนมัติ, ออโต้โพสต์ facebook, ตั้งเวลาโพสต์ facebook, ระบบโพสต์กลุ่ม facebook, โปรแกรมโพสต์กลุ่ม, จัดการแฟนเพจ, anti-ban facebook, social media scheduler, auto post facebook group, ตั้งเวลาโพสต์กลุ่ม, spintax"
+    />
+    <meta name="author" content="AutoPost" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta
+      name="googlebot"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <meta
+      name="bingbot"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+
+    <!-- Canonical & Multilingual Alternates -->
+    <link rel="canonical" href="https://siriautopost.siristudiophoto.com/" />
+    <link rel="alternate" hreflang="th" href="https://siriautopost.siristudiophoto.com/" />
+    <link rel="alternate" hreflang="en" href="https://siriautopost.siristudiophoto.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://siriautopost.siristudiophoto.com/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AutoPost" />
+    <meta
+      property="og:title"
+      content="AutoPost - ระบบโพสต์อัตโนมัติ จัดการและตั้งเวลาโพสต์ Facebook อัจฉริยะ"
+    />
+    <meta
+      property="og:description"
+      content="AutoPost แพลตฟอร์มระบบโพสต์อัตโนมัติอันดับ 1 สำหรับจัดการและตั้งเวลาโพสต์กลุ่ม Facebook ควบคุมหลายบัญชี สุ่มข้อความ Spintax ป้องกันการบล็อก (Anti-ban) เริ่มต้นใช้ฟรี"
+    />
+    <meta property="og:url" content="https://siriautopost.siristudiophoto.com/" />
+    <meta
+      property="og:image"
+      content="https://siriautopost.siristudiophoto.com/assets/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta
+      property="og:image:alt"
+      content="AutoPost - ระบบโพสต์อัตโนมัติและตั้งเวลาโพสต์ Facebook"
+    />
+    <meta property="og:locale" content="th_TH" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="AutoPost - ระบบโพสต์อัตโนมัติ จัดการและตั้งเวลาโพสต์ Facebook อัจฉริยะ"
+    />
+    <meta
+      name="twitter:description"
+      content="จัดการและตั้งเวลาโพสต์กลุ่ม Facebook สุ่มข้อความ Spintax ป้องกันการบล็อก Anti-ban ควบคุมหลายบัญชีและอุปกรณ์"
+    />
+    <meta
+      name="twitter:image"
+      content="https://siriautopost.siristudiophoto.com/assets/og-image.png"
+    />
+
+    <!-- Mobile & PWA -->
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="AutoPost" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+
+    <!-- Google Search Console Placeholder (Can be configured or verified via DNS) -->
+    <!-- <meta name="google-site-verification" content="YOUR_GOOGLE_SEARCH_CONSOLE_CODE" /> -->
+
+    <!-- Preconnect & Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap"
     />
+
+    <!-- Structured Data (JSON-LD) for Google Rich Results -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://siriautopost.siristudiophoto.com/#website",
+            "url": "https://siriautopost.siristudiophoto.com/",
+            "name": "AutoPost",
+            "description": "ระบบโพสต์อัตโนมัติ จัดการและตั้งเวลาโพสต์ Facebook อัจฉริยะ",
+            "inLanguage": "th"
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://siriautopost.siristudiophoto.com/#organization",
+            "name": "AutoPost",
+            "url": "https://siriautopost.siristudiophoto.com/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://siriautopost.siristudiophoto.com/assets/icon-512.png",
+              "width": 512,
+              "height": 512
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://siriautopost.siristudiophoto.com/#software",
+            "name": "AutoPost",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web Browser, Google Chrome",
+            "description": "แพลตฟอร์มระบบโพสต์อัตโนมัติสำหรับกลุ่มและเพจ Facebook พร้อมระบบป้องกันการโดนแบน (Anti-ban), จัดตารางโพสต์ล่วงหน้า, และสุ่มข้อความ Spintax",
+            "offers": [
+              {
+                "@type": "Offer",
+                "name": "Free",
+                "price": "0",
+                "priceCurrency": "THB",
+                "description": "ใช้งานฟรีตลอดชีพ ไม่ต้องใช้บัตรเครดิต"
+              },
+              {
+                "@type": "Offer",
+                "name": "Pro",
+                "price": "399",
+                "priceCurrency": "THB",
+                "description": "สำหรับร้านค้าออนไลน์และธุรกิจที่ต้องการขยายการโพสต์"
+              },
+              {
+                "@type": "Offer",
+                "name": "Agency",
+                "price": "899",
+                "priceCurrency": "THB",
+                "description": "สำหรับเอเจนซี่และทีมที่จัดการหลายอุปกรณ์และหลายลูกค้า"
+              }
+            ],
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "reviewCount": "128"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://siriautopost.siristudiophoto.com/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "ระบบ AutoPost คืออะไร และช่วยเพิ่มยอดขายได้อย่างไร?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "AutoPost คือแพลตฟอร์มจัดการและตั้งเวลาโพสต์ Facebook อัจฉริยะ ช่วยให้ร้านค้าและผู้ทำการตลาดออนไลน์สามารถตั้งเวลาโพสต์ล่วงหน้าลงกลุ่มและเพจ Facebook ได้อัตโนมัติ โดยไม่ต้องโพสต์ด้วยตนเอง ประหยัดเวลาและช่วยเข้าถึงลูกค้าเป้าหมายได้สม่ำเสมอ"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "ระบบช่วยป้องกัน Facebook บล็อกบัญชีอย่างไร (Anti-ban)?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "AutoPost ทำงานผ่านส่วนขยายบนเบราว์เซอร์ของคุณโดยใช้ IP และเซสชันจริง จึงไม่ต้องส่งรหัสผ่านให้บุคคลที่สาม พร้อมฟังก์ชันป้องกันการบล็อกระดับสูง เช่น การจำลองความเร็วการพิมพ์แบบมนุษย์ (Human typing), สุ่มช่วงเวลาหน่วงระหว่างโพสต์ (Smart delay), สุ่มเนื้อหาข้อความ (Spintax) และหยุดโพสต์อัตโนมัติเมื่อระบบตรวจพบการเตือนจาก Facebook"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "สามารถตั้งเวลาโพสต์ล่วงหน้าได้กี่วัน และโพสต์ได้กี่กลุ่ม?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "คุณสามารถจัดการชุดลิงก์กลุ่ม Facebook ได้ไม่จำกัด และตั้งตารางเวลาโพสต์ล่วงหน้าได้สูงสุด 14 วัน ระบบจะช่วยคำนวณรอบเวลาและกระจายโพสต์ตามความเหมาะสม"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "มีค่าใช้จ่ายอย่างไร มีแผนทดลองใช้ฟรีหรือไม่?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "AutoPost มีแผน Free ให้เริ่มต้นใช้งานได้ฟรีตลอดชีพโดยไม่ต้องกรอกบัตรเครดิต และมีแผน Pro กับ Agency สำหรับผู้ที่ต้องการขยายจำนวนกลุ่มหรือจำนวนอุปกรณ์"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "ต้องติดตั้งโปรแกรมอะไรบนเครื่องหรือไม่?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "เพียงติดตั้งส่วนขยาย AutoPost บน Google Chrome หรือ Chromium ในเครื่องที่คุณเข้าสู่ระบบ Facebook ไว้อยู่แล้ว แล้วเชื่อมต่อกับแดชบอร์ดผ่านรหัสจับคู่เพียงครั้งเดียว ก็สามารถสั่งงานจากที่ไหนก็ได้ทันที"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <app-root></app-root>

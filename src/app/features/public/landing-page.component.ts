@@ -70,6 +70,56 @@ export class LandingPageComponent {
     ];
   });
 
+  protected readonly lang = this.i18n.lang;
+  protected readonly faqs = computed(() => {
+    const isThai = this.i18n.lang() === 'th';
+    return isThai
+      ? [
+          {
+            q: 'ระบบ AutoPost คืออะไร และช่วยเพิ่มยอดขายได้อย่างไร?',
+            a: 'AutoPost คือแพลตฟอร์มจัดการและตั้งเวลาโพสต์ Facebook อัจฉริยะ ช่วยให้ร้านค้าและผู้ทำการตลาดออนไลน์สามารถตั้งเวลาโพสต์ล่วงหน้าลงกลุ่มและเพจ Facebook ได้อัตโนมัติ โดยไม่ต้องโพสต์ด้วยตนเอง ประหยัดเวลาและช่วยเข้าถึงลูกค้าเป้าหมายได้สม่ำเสมอ',
+          },
+          {
+            q: 'ระบบช่วยป้องกัน Facebook บล็อกบัญชีอย่างไร (Anti-ban)?',
+            a: 'AutoPost ทำงานผ่านส่วนขยายบนเบราว์เซอร์ของคุณโดยใช้ IP และเซสชันจริง จึงไม่ต้องส่งรหัสผ่านให้บุคคลที่สาม พร้อมฟังก์ชันป้องกันการบล็อกระดับสูง เช่น การจำลองความเร็วการพิมพ์แบบมนุษย์ (Human typing), สุ่มช่วงเวลาหน่วงระหว่างโพสต์ (Smart delay), สุ่มเนื้อหาข้อความ (Spintax) และหยุดโพสต์อัตโนมัติเมื่อระบบตรวจพบการเตือนจาก Facebook',
+          },
+          {
+            q: 'สามารถตั้งเวลาโพสต์ล่วงหน้าได้กี่วัน และโพสต์ได้กี่กลุ่ม?',
+            a: 'คุณสามารถจัดการชุดลิงก์กลุ่ม Facebook ได้ไม่จำกัด และตั้งตารางเวลาโพสต์ล่วงหน้าได้สูงสุด 14 วัน ระบบจะช่วยคำนวณรอบเวลาและกระจายโพสต์ตามความเหมาะสม',
+          },
+          {
+            q: 'มีค่าใช้จ่ายอย่างไร มีแผนทดลองใช้ฟรีหรือไม่?',
+            a: 'AutoPost มีแผน Free ให้เริ่มต้นใช้งานได้ฟรีตลอดชีพโดยไม่ต้องกรอกบัตรเครดิต และมีแผน Pro กับ Agency สำหรับผู้ที่ต้องการขยายจำนวนกลุ่มหรือจำนวนอุปกรณ์',
+          },
+          {
+            q: 'ต้องติดตั้งโปรแกรมอะไรบนเครื่องหรือไม่?',
+            a: 'เพียงติดตั้งส่วนขยาย AutoPost บน Google Chrome หรือ Chromium ในเครื่องที่คุณเข้าสู่ระบบ Facebook ไว้อยู่แล้ว แล้วเชื่อมต่อกับแดชบอร์ดผ่านรหัสจับคู่เพียงครั้งเดียว ก็สามารถสั่งงานจากที่ไหนก็ได้ทันที',
+          },
+        ]
+      : [
+          {
+            q: 'What is AutoPost and how does it help grow sales?',
+            a: 'AutoPost is a smart Facebook scheduling and automation platform designed to help online sellers and marketers schedule posts to Facebook groups and pages automatically, saving time and reaching audiences consistently.',
+          },
+          {
+            q: 'How does the system prevent Facebook account bans (Anti-ban)?',
+            a: 'AutoPost operates through your browser extension using your real IP and session, keeping your passwords safe. It incorporates advanced anti-ban safeguards including human typing simulation, smart random delays, spintax message variations, and automatic pausing upon warnings.',
+          },
+          {
+            q: 'How many days in advance can I schedule, and to how many groups?',
+            a: 'You can manage unlimited group link sets and schedule posts up to 14 days in advance with automatic pacing and queue distribution.',
+          },
+          {
+            q: 'How much does it cost, and is there a free plan?',
+            a: 'AutoPost offers a permanent free tier with no credit card required, as well as Pro and Agency tiers for scaling groups and multiple devices.',
+          },
+          {
+            q: 'Do I need to install any software on my computer?',
+            a: 'Simply install the AutoPost extension in Google Chrome where you are already signed in to Facebook, and pair with the dashboard once using a pairing code.',
+          },
+        ];
+  });
+
   protected readonly tiers = computed<PlanCard[]>(() => {
     const t = this.t();
     return tierViews(this.admin.plans(), this.settings.bill().cycle, t).map((p) => ({

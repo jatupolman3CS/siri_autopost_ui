@@ -2,6 +2,7 @@ import { Injectable, effect, inject, untracked } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
 import { I18nService } from '../i18n/i18n.service';
+import { SeoService } from './seo.service';
 
 const BRAND = 'AutoPost';
 
@@ -16,12 +17,14 @@ export function lookup(dict: unknown, path: string): string | null {
 }
 
 // Page titles come from the dictionary: a route's `title` is the dotted path of its text ("nav.overview"),
-// so the tab follows the language switch like the rest of the app. A route without one is just "AutoPost".
+// so the tab follows the language switch like the rest of the app. A route without one gets an optimized SEO title.
 @Injectable({ providedIn: 'root' })
 export class DictionaryTitleStrategy extends TitleStrategy {
   private readonly title = inject(Title);
   private readonly i18n = inject(I18nService);
+  private readonly seo = inject(SeoService);
   private path: string | undefined;
+  private lastUrl = '/';
 
   constructor() {
     super();
@@ -33,11 +36,14 @@ export class DictionaryTitleStrategy extends TitleStrategy {
 
   override updateTitle(snapshot: RouterStateSnapshot): void {
     this.path = this.buildTitle(snapshot);
+    this.lastUrl = snapshot.url;
     this.apply();
   }
 
   private apply(): void {
     const text = this.path ? lookup(this.i18n.t(), this.path) : null;
-    this.title.setTitle(text ? `${text} · ${BRAND}` : BRAND);
+    const pageTitle = text ? `${text} · ${BRAND}` : this.seo.getDefaultTitle(this.i18n.lang());
+    this.title.setTitle(pageTitle);
+    this.seo.updateMeta(pageTitle, text, this.lastUrl);
   }
 }

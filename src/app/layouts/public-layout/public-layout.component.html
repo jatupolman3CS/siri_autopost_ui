@@ -11,6 +11,9 @@
         <button type="button" class="navlink" (click)="scrollTo('ap-pricing')">
           {{ t().land.navPricing }}
         </button>
+        <button type="button" class="navlink" (click)="scrollTo('ap-faq')">
+          {{ lang() === 'th' ? 'คำถามที่พบบ่อย' : 'FAQ' }}
+        </button>
       }
       <div class="switch"><app-lang-theme-switch /></div>
       <a class="su-btn su-btn-sm su-btn-ghost" routerLink="/login">{{ t().land.login }}</a>

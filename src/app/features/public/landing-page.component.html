@@ -108,6 +108,32 @@
     <app-plan-cards [cards]="tiers()" (choose)="startTrial($event)" />
   </section>
 
+  <section id="ap-faq" class="wrap pad">
+    <div class="faq-head">
+      <h2 class="flush">
+        {{ lang() === 'th' ? 'คำถามที่พบบ่อย (FAQ)' : 'Frequently Asked Questions (FAQ)' }}
+      </h2>
+      <p class="sub">
+        {{
+          lang() === 'th'
+            ? 'รวมคำถามยอดนิยมเกี่ยวกับการโพสต์อัตโนมัติ ความปลอดภัยบัญชี และการตั้งเวลา Facebook'
+            : 'Everything you need to know about automated posting, Facebook anti-ban safety, and scheduling'
+        }}
+      </p>
+    </div>
+    <div class="faq-list">
+      @for (item of faqs(); track item.q) {
+        <details class="faq-item panel">
+          <summary class="faq-question fw6">
+            <span>{{ item.q }}</span>
+            <i class="ph ph-caret-down"></i>
+          </summary>
+          <p class="faq-answer">{{ item.a }}</p>
+        </details>
+      }
+    </div>
+  </section>
+
   <section class="wrap cta-wrap">
     <div class="panel cta">
       <h2 class="flush">{{ t().land.ctaTitle }}</h2>

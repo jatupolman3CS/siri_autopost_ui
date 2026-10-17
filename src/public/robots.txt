@@ -1,0 +1,14 @@
+# Robots.txt for AutoPost
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /signup
+Allow: /report/
+
+# Disallow private user workspace & backend APIs
+Disallow: /app/
+Disallow: /api/
+Disallow: /connect-extension
+
+# Sitemaps
+Sitemap: https://siriautopost.siristudiophoto.com/sitemap.xml

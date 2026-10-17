@@ -15,7 +15,9 @@ import { LangThemeSwitchComponent } from '../lang-theme-switch.component';
 })
 export class PublicLayoutComponent {
   private readonly router = inject(Router);
-  protected readonly t = inject(I18nService).t;
+  private readonly i18n = inject(I18nService);
+  protected readonly t = this.i18n.t;
+  protected readonly lang = this.i18n.lang;
   protected readonly isLanding = toSignal(
     this.router.events.pipe(
       filter((e) => e instanceof NavigationEnd),
