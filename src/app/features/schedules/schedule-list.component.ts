@@ -88,13 +88,25 @@ export class ScheduleListComponent {
     }
   }
 
+  /** Filter to show active schedules by default; cancelled schedules can be viewed if selected. */
+  protected readonly statusFilter = signal<'active' | 'cancelled'>('active');
+
+  protected readonly activeCount = computed(
+    () => this.store.schedules().filter((s) => s.active).length,
+  );
+  protected readonly cancelledCount = computed(
+    () => this.store.schedules().filter((s) => !s.active).length,
+  );
+
   protected readonly pager = new Pager(20);
   protected readonly page = computed(() => this.pager.slice(this.rows()));
   protected readonly rows = computed<ScheduleView[]>(() => {
     const t = this.t();
     const li = this.i18n.li();
     const today = this.posts.todayKey();
-    return this.store.schedules().map((s) =>
+    const showCancelled = this.statusFilter() === 'cancelled' && this.cancelledCount() > 0;
+    const list = this.store.schedules().filter((s) => (showCancelled ? !s.active : s.active));
+    return list.map((s) =>
       scheduleView(s, {
         t,
         li,

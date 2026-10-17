@@ -1,6 +1,32 @@
 <section class="panel" [attr.aria-label]="t().sch.listTitle">
   <div class="head">
-    <h2 class="h2">{{ t().sch.listTitle }}</h2>
+    <div class="title-group">
+      <h2 class="h2">{{ t().sch.listTitle }}</h2>
+      @if (cancelledCount() > 0) {
+        <div class="chips" role="group" [attr.aria-label]="t().sch.listTitle">
+          <button
+            type="button"
+            class="pick"
+            data-testid="filter-active"
+            [class.on]="statusFilter() === 'active'"
+            [attr.aria-pressed]="statusFilter() === 'active'"
+            (click)="statusFilter.set('active')"
+          >
+            {{ t().sch.active }} ({{ activeCount() }})
+          </button>
+          <button
+            type="button"
+            class="pick"
+            data-testid="filter-cancelled"
+            [class.on]="statusFilter() === 'cancelled'"
+            [attr.aria-pressed]="statusFilter() === 'cancelled'"
+            (click)="statusFilter.set('cancelled')"
+          >
+            {{ t().sch.pausedL }} ({{ cancelledCount() }})
+          </button>
+        </div>
+      }
+    </div>
     @if (store.schedules().length) {
       <button
         type="button"

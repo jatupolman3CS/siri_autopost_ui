@@ -161,7 +161,14 @@ export class TimelinePageComponent {
     });
     effect(() => {
       const s = this.schedule();
-      if (s) this.scheduleId.set(s);
+      if (s) {
+        if (this.schedules.loaded()) {
+          const sched = this.schedules.byId(s);
+          this.scheduleId.set(sched && sched.active ? s : '');
+        } else {
+          this.scheduleId.set(s);
+        }
+      }
     });
     // The month of the shown day (the months around today are there from the start).
     effect(() => {
@@ -194,7 +201,16 @@ export class TimelinePageComponent {
     const list = this.posts.byDay().get(this.selDay()) ?? [];
     const sid = this.scheduleId();
     const eid = this.extensionId();
-    return list.filter((p) => (!sid || p.scheduleId === sid) && (!eid || p.accountId === eid));
+    const schedulesLoaded = this.schedules.loaded();
+    return list.filter((p) => {
+      if (sid && p.scheduleId !== sid) return false;
+      if (eid && p.accountId !== eid) return false;
+      if (schedulesLoaded && p.scheduleId) {
+        const s = this.schedules.byId(p.scheduleId);
+        if (!s || !s.active) return false;
+      }
+      return true;
+    });
   });
 
   protected readonly kpi = computed(() => {
@@ -211,7 +227,10 @@ export class TimelinePageComponent {
 
   protected readonly scheduleOptions = computed(() => [
     { value: '', label: this.t().api.flow.tlFilterScheduleAll },
-    ...this.schedules.schedules().map((s) => ({ value: s.id, label: s.name })),
+    ...this.schedules
+      .schedules()
+      .filter((s) => s.active)
+      .map((s) => ({ value: s.id, label: s.name })),
   ]);
 
   /** The extensions that post: the connected ones, and a browser that was unbound while it still has posts on the day. */
@@ -263,9 +282,18 @@ export class TimelinePageComponent {
   private readonly nextPost = computed<QueueItem | null>(() => {
     const sid = this.scheduleId();
     const now = this.posts.now().getTime();
+    const schedulesLoaded = this.schedules.loaded();
     const queued = this.posts
       .items()
-      .filter((p) => p.status === 'queued' && (!sid || p.scheduleId === sid))
+      .filter((p) => {
+        if (p.status !== 'queued') return false;
+        if (sid && p.scheduleId !== sid) return false;
+        if (schedulesLoaded && p.scheduleId) {
+          const s = this.schedules.byId(p.scheduleId);
+          if (!s || !s.active) return false;
+        }
+        return true;
+      })
       .sort((a, b) => a.dt.getTime() - b.dt.getTime());
     return queued.find((p) => p.dt.getTime() >= now - 60_000) ?? queued[0] ?? null;
   });
@@ -300,9 +328,10 @@ export class TimelinePageComponent {
     const now = this.posts.now();
     const nextId = this.nextPost()?.id ?? '';
     const px = this.pxPerHour();
+    const activeSchedules = this.schedules.schedules().filter((s) => s.active);
     const built = buildRows(
       this.shown(),
-      this.schedules.schedules(),
+      activeSchedules,
       this.collections.collections().map((c) => c.id),
       px,
     );

@@ -8,7 +8,7 @@ import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PostsStore } from '../../core/data/posts.store';
 import { SchedulesStore } from '../../core/data/schedules.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
-import { ApiAccount, ApiLinkSet, ApiPost } from '../../core/http/api.service';
+import { ApiAccount, ApiLinkSet, ApiPost, ApiSchedule } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
 import { NotificationService } from '../../core/services/notification.service';
@@ -121,6 +121,7 @@ describe('TimelinePageComponent', () => {
       linkSets?: ApiLinkSet[];
       /** The accounts of the workspace instead of the one paired browser. */
       accounts?: ApiAccount[];
+      schedules?: ApiSchedule[];
     } = {},
   ) {
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -139,7 +140,7 @@ describe('TimelinePageComponent', () => {
     await signIn(http, {
       posts: over.posts ?? POSTS,
       collections: [CONDO, PLANTS],
-      schedules: SCHEDULES,
+      schedules: over.schedules ?? SCHEDULES,
       linkSets: over.linkSets,
       workspace: { role: over.role ?? 'owner' },
     });
@@ -540,6 +541,42 @@ describe('TimelinePageComponent', () => {
       select.dispatchEvent(new Event('change'));
       await tick(fixture);
       expect(rowNames(el)).toEqual(['Condo posts']);
+    });
+
+    it('does not show cancelled schedules in the filter or their posts on the board', async () => {
+      // s2 is cancelled (active: false)
+      const { fixture, el } = await open({
+        schedules: [
+          apiSchedule({ id: 's1', name: 'Morning condo', collectionId: 'c1', active: true }),
+          apiSchedule({ id: 's2', name: 'Plant rounds', collectionId: 'c2', active: false }),
+        ],
+      });
+      const select = el.querySelector<HTMLSelectElement>('select')!;
+      expect([...select.options].map((o) => o.textContent?.trim())).toEqual([
+        t().api.flow.tlFilterScheduleAll,
+        'Morning condo',
+      ]);
+      // Posts of s2 (plant rounds: late, soon, skip) must not be on the board
+      const postIds = dots(el).map((d) => d.getAttribute('data-post'));
+      expect(postIds).not.toContain('late');
+      expect(postIds).not.toContain('soon');
+      expect(postIds).not.toContain('skip');
+      // Only active schedule s1 posts and solo (no schedule) post remain
+      expect(postIds).toEqual(['ok', 'bad', 'solo']);
+    });
+
+    it('does not show posts from deleted schedules', async () => {
+      // Only s1 exists in schedules; s2 was deleted
+      const { el } = await open({
+        schedules: [
+          apiSchedule({ id: 's1', name: 'Morning condo', collectionId: 'c1', active: true }),
+        ],
+      });
+      const postIds = dots(el).map((d) => d.getAttribute('data-post'));
+      expect(postIds).not.toContain('late');
+      expect(postIds).not.toContain('soon');
+      expect(postIds).not.toContain('skip');
+      expect(rowNames(el)).not.toContain(t().api.flow.tlRowGone);
     });
 
     it('shows one extension’s posts at a time once two extensions post, and names the extension on the hover card', async () => {

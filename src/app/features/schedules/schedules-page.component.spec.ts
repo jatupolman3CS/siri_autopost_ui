@@ -438,7 +438,10 @@ describe('SchedulesPageComponent', () => {
 
     it('shows a paused schedule as paused, with no next run, and offers to resume it', async () => {
       const paused = apiSchedule({ id: 'sc2', name: 'Paused one', active: false });
-      const { el } = await open({ schedules: [paused] });
+      const { fixture, el } = await open({ schedules: [paused] });
+      expect(rowsOf(el)).toHaveLength(0);
+      el.querySelector<HTMLButtonElement>('[data-testid="filter-cancelled"]')!.click();
+      fixture.detectChanges();
       const row = rowsOf(el)[0];
       expect(row.querySelector('.status')?.textContent?.trim()).toBe(t().sch.pausedL);
       expect(row.querySelector('.when .small')?.textContent).toBe(`${t().sch.nextRun}: —`);
@@ -456,7 +459,10 @@ describe('SchedulesPageComponent', () => {
         slots: ['14:00'],
         perDay: 2,
       });
-      const { el } = await open({ schedules: [once] });
+      const { fixture, el } = await open({ schedules: [once] });
+      expect(rowsOf(el)).toHaveLength(0);
+      el.querySelector<HTMLButtonElement>('[data-testid="filter-cancelled"]')!.click();
+      fixture.detectChanges();
       const row = rowsOf(el)[0];
       expect(row.querySelector('.status')?.textContent?.trim()).toBe(t().api.flow.schFinished);
       expect(button(row, t().sch.resume)).toBeUndefined();
@@ -523,13 +529,18 @@ describe('SchedulesPageComponent', () => {
       expect(answerChangeRefresh(http).posts).toBeGreaterThan(0);
       await settle();
       fixture.detectChanges();
-      expect(rowsOf(el)[0].querySelector('.status')?.textContent?.trim()).toBe(t().sch.pausedL);
+      expect(rowsOf(el)).toHaveLength(0);
       expect(toasts().map((x) => x.message)).toContain(fmt(t().sch.paused, { s: 'Morning posts' }));
+      el.querySelector<HTMLButtonElement>('[data-testid="filter-cancelled"]')!.click();
+      fixture.detectChanges();
+      expect(rowsOf(el)[0].querySelector('.status')?.textContent?.trim()).toBe(t().sch.pausedL);
     });
 
     it('resumes: calls the API with active=true and toasts', async () => {
       const paused = { ...MORNING, active: false, nextRunAt: null };
       const { fixture, el } = await open({ schedules: [paused] });
+      el.querySelector<HTMLButtonElement>('[data-testid="filter-cancelled"]')!.click();
+      fixture.detectChanges();
       button(rowsOf(el)[0], t().sch.resume)!.click();
       await settle();
       const req = http.expectOne(`${SCHEDULES_URL}/sc1/active`);
