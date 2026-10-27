@@ -23,8 +23,8 @@ export const AP_I18N_LINE = {
   // ---- The roster page (/app/line-chats) ------------------------------------------------------------------------
   chatTitle: ['แชทลูกค้า LINE', 'LINE customer chats'],
   chatSub: [
-    'รายชื่อลูกค้าที่เคยคุยกับ LINE Official Account ของร้าน ส่วนขยายอ่านรายชื่อจากหน้า LINE Official Account Manager ในเครื่องของคุณ ระบบเก็บแค่ชื่อ ป้ายกำกับ และเวลาคุยล่าสุด ไม่เก็บข้อความของลูกค้า',
-    'The customers who have chatted with the shop’s LINE Official Account. The extension reads the list from LINE Official Account Manager in your own browser. Only the name, labels and time of the last chat are kept, never what a customer wrote',
+    'รายชื่อลูกค้าที่เคยคุยกับ LINE Official Account ของร้าน ส่วนขยายอ่านรายชื่อจากหน้า “รายชื่อติดต่อ” ของ LINE Official Account Manager ในเครื่องของคุณ ครั้งเดียวตอนเชื่อมต่อ แล้วซิงก์ให้เองวันละครั้ง ระบบเก็บแค่ชื่อ ป้ายกำกับ และวันที่คุยล่าสุด ไม่เก็บข้อความของลูกค้า',
+    'The customers who have chatted with the shop’s LINE Official Account. The extension reads the list from the “Contacts” page of LINE Official Account Manager in your own browser, once when you connect and then once a day. Only the name, labels and date of the last chat are kept, never what a customer wrote',
   ],
   chatLockedTitle: [
     'แชท LINE ใช้ได้ในแพ็กเกจ {plan} ขึ้นไป',
@@ -95,12 +95,34 @@ export const AP_I18N_LINE = {
   chatChange: ['เปลี่ยน LINE OA', 'Change LINE OA'],
   chatChangeTitle: ['เปลี่ยน LINE OA ของเครื่องนี้', 'Change this machine’s LINE OA'],
   chatChangeBody: [
-    'ระบบจะเลิกผูก LINE OA “{oa}” กับเครื่อง {name}: รายชื่อแชทของ OA นี้ที่ซิงก์ไว้จะถูกลบ งานส่งแชทที่ค้างอยู่จะล้มเหลว (Facebook ไม่ถูกแตะ) จากนั้นเปิดหน้าสถานะของส่วนขยาย วางลิงก์ของ OA ใหม่จาก chat.line.biz ในช่อง “วางลิงก์ LINE OA” แล้วกด “ใช้ LINE OA ในเครื่องนี้”',
-    'This unlinks the LINE OA “{oa}” from {name}: the synced chat list of this OA is deleted and unfinished chat sends fail (Facebook is untouched). Then open the extension’s status page, paste the new OA’s chat.line.biz link into “Paste LINE OA link” and press “Use LINE OA on this machine”',
+    'ระบบจะเลิกผูก LINE OA “{oa}” กับเครื่อง {name}: รายชื่อแชทของ OA นี้ที่ซิงก์ไว้จะถูกลบ งานส่งแชทที่ค้างอยู่จะล้มเหลว (Facebook ไม่ถูกแตะ) แล้วเชื่อม LINE OA ใหม่ตามลิงก์ที่วาง และอ่านรายชื่อลูกค้าของ OA ใหม่',
+    'This unlinks the LINE OA “{oa}” from {name}: the synced chat list of this OA is deleted and unfinished chat sends fail (Facebook is untouched). Then the OA from the pasted link is connected and its customer list is read',
   ],
   chatChangeDone: [
     '{name}: เลิกผูก LINE OA แล้ว เปิดหน้าสถานะของส่วนขยายเพื่อเชื่อม LINE OA ใหม่',
     '{name}: LINE OA unlinked. Open the extension’s status page to connect a new one',
+  ],
+  // The "connect a LINE OA" card: paste the OA's address, the browser reads the customers once, then daily.
+  chatLinkTitle: ['เชื่อมต่อ LINE OA', 'Connect a LINE OA'],
+  chatLinkHelp: [
+    'เปิด LINE Official Account Manager ใน Chrome ที่ล็อกอินไว้ คัดลอกลิงก์ของ OA (เช่น https://chat.line.biz/Uxxxxxxxx/) มาวางที่นี่ ระบบจะอ่านรายชื่อลูกค้าจากหน้ารายชื่อติดต่อครั้งเดียว แล้วซิงก์ซ้ำให้เองวันละครั้ง',
+    'Open LINE Official Account Manager in the signed-in Chrome, copy the OA’s address (for example https://chat.line.biz/Uxxxxxxxx/) and paste it here. The customer list is read once from the contacts page and then synced again by itself once a day',
+  ],
+  chatLinkLabel: ['ลิงก์ LINE OA', 'LINE OA link'],
+  chatLinkPh: ['https://chat.line.biz/Uxxxxxxxx/', 'https://chat.line.biz/Uxxxxxxxx/'],
+  chatLinkBtn: ['เชื่อมต่อและดึงรายชื่อลูกค้า', 'Connect and read the customers'],
+  chatLinkBad: [
+    'ลิงก์ไม่ถูกต้อง วางลิงก์จาก chat.line.biz เช่น https://chat.line.biz/Uxxxxxxxx/',
+    'Not a valid link. Paste an address from chat.line.biz, for example https://chat.line.biz/Uxxxxxxxx/',
+  ],
+  chatLinkDevice: ['เครื่องที่ใช้', 'Machine'],
+  chatLinkSent: [
+    'สั่ง {name} แล้ว: กำลังเชื่อม LINE OA และอ่านรายชื่อลูกค้า รายชื่อจะขึ้นที่นี่ภายในไม่กี่นาที (ถ้าส่วนขยายยังไม่ได้รับอนุญาตให้ใช้ chat.line.biz หน้าสถานะจะเปิดขึ้นในเครื่องนั้นให้กดอนุญาต)',
+    'Sent to {name}: it is connecting the LINE OA and reading the customers. They appear here within a few minutes (if the extension is not yet allowed to use chat.line.biz, its status page opens on that machine to allow it)',
+  ],
+  chatDailyNote: [
+    'ส่วนขยายซิงก์รายชื่อลูกค้าให้เองวันละครั้ง (กด “ซิงก์รายชื่อแชทตอนนี้” เมื่ออยากให้อัปเดตทันที)',
+    'The extension syncs the customer list by itself once a day (press “Sync the chat list now” to update at once)',
   ],
   chatConnect: ['เชื่อมต่อ LINE OA', 'Connect LINE OA'],
   chatConnectSent: [
@@ -110,8 +132,8 @@ export const AP_I18N_LINE = {
   chatConnectOffline: ['เครื่องนี้ออฟไลน์อยู่', 'This machine is offline'],
   chatConnectTitle: ['เครื่องที่ยังไม่ได้เชื่อม LINE OA', 'Machines not connected to a LINE OA'],
   chatNoLineBody: [
-    'เปิดหน้าสถานะของส่วนขยายในเครื่องที่ล็อกอิน LINE Official Account Manager แล้วกด “ใช้ LINE OA ในเครื่องนี้” จากนั้นรายชื่อแชทจะขึ้นที่นี่หลังซิงก์',
-    'Open the extension’s status page on the machine that is signed in to LINE Official Account Manager and press “Use LINE OA on this machine”. The chat list appears here after it syncs',
+    'จับคู่ส่วนขยายในเครื่องที่ล็อกอิน LINE Official Account Manager ไว้ที่หน้าทีมก่อน แล้วกลับมาวางลิงก์ LINE OA ที่หน้านี้',
+    'Pair the extension on the machine that is signed in to LINE Official Account Manager (Team page) first, then come back and paste the LINE OA link here',
   ],
 
   // Filters.

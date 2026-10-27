@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { LINE_ACCOUNT_PREFIX } from '../../core/data/accounts.store';
 import { DevicesStore, LineState, lineStateOf } from '../../core/data/devices.store';
 import { PermissionsService } from '../../core/data/permissions.service';
+import { lineOaIdOf } from '../../core/flow/line-chats';
 import { hm } from '../../core/i18n/format';
 import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.line';
@@ -26,24 +27,77 @@ interface LineDeviceRow {
   syncBlocked: string;
 }
 
-// The "status card" of the chat roster: each paired browser that is logged in to a LINE Official Account, with whether it
-// can send (ready / waiting for the LINE login / resting after failed sends), how many chats it synced and when, and the
-// "sync the chat list now" button (the `syncLineChats` device command, an editor's). It reads the device list only; the
-// roster below it reads the chats.
+// The LINE page's top cards. (1) "Connect a LINE OA": the person pastes the Official Account's address from LINE Official
+// Account Manager (https://chat.line.biz/<id>/) and says which paired browser should use it; that browser reads the customer
+// list from LINE's contacts page once and then again every day (the `connectLine` device command). A browser that holds
+// another OA is let go of first, after a confirmation. (2) The "status card": each browser with its OA (ready / waiting for
+// the LINE login / resting after failed sends), how many customers it synced and when, and "sync the list now" (the
+// `syncLineChats` command, an editor's). It reads the device list only; the roster below it reads the chats.
 @Component({
   selector: 'app-line-status',
   imports: [EmptyStateComponent, ConfirmModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (!devices.loaded()) {
-      <p class="muted small" role="status">—</p>
-    } @else if (!rows().length) {
+    @if (devices.loaded() && !devices.list().length) {
       <app-empty-state
         icon="ph-chat-circle-text"
         [heading]="t().api.line.chatNoLineTitle"
         [description]="t().api.line.chatNoLineBody"
       />
-    } @else {
+    } @else if (devices.loaded()) {
+      <section
+        class="panel st connect"
+        [attr.aria-label]="t().api.line.chatLinkTitle"
+        data-testid="connect"
+      >
+        <div class="fw6">{{ t().api.line.chatLinkTitle }}</div>
+        <p class="small muted">{{ t().api.line.chatLinkHelp }}</p>
+        <div class="form">
+          @if (devices.list().length > 1) {
+            <label class="field">
+              <span class="su-field-label">{{ t().api.line.chatLinkDevice }}</span>
+              <select
+                class="su-select"
+                [disabled]="perm.readOnly()"
+                [value]="deviceId()"
+                (change)="pickDevice($any($event.target).value)"
+              >
+                @for (d of devices.list(); track d.id) {
+                  <option [value]="d.id">{{ d.name }}</option>
+                }
+              </select>
+            </label>
+          }
+          <label class="field grow">
+            <span class="su-field-label">{{ t().api.line.chatLinkLabel }}</span>
+            <input
+              class="su-input"
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              [placeholder]="t().api.line.chatLinkPh"
+              [disabled]="perm.readOnly()"
+              [value]="link()"
+              (input)="link.set($any($event.target).value)"
+              (keydown.enter)="connect()"
+            />
+          </label>
+          <button
+            type="button"
+            class="su-btn su-btn-sm su-btn-primary"
+            [disabled]="!!connectBlocked() || busy().has('connect')"
+            [attr.title]="connectBlocked() || null"
+            (click)="connect()"
+          >
+            <i class="ph ph-plugs-connected"></i>{{ t().api.line.chatLinkBtn }}
+          </button>
+        </div>
+        @if (link().trim() && !oaId()) {
+          <p class="small bad" role="alert">{{ t().api.line.chatLinkBad }}</p>
+        }
+      </section>
+    }
+    @if (rows().length) {
       <section class="panel st" [attr.aria-label]="t().api.line.chatStatusTitle">
         <div class="fw6">{{ t().api.line.chatStatusTitle }}</div>
         <ul>
@@ -68,59 +122,47 @@ interface LineDeviceRow {
               >
                 <i class="ph ph-arrows-clockwise"></i>{{ t().api.line.chatSyncNow }}
               </button>
-              <button
-                type="button"
-                class="su-btn su-btn-sm su-btn-ghost"
-                [disabled]="perm.readOnly()"
-                [attr.title]="perm.readOnly() ? perm.editHint() : null"
-                (click)="changing.set(r)"
-              >
-                <i class="ph ph-swap"></i>{{ t().api.line.chatChange }}
-              </button>
             </li>
           }
         </ul>
+        <p class="small muted">{{ t().api.line.chatDailyNote }}</p>
       </section>
     }
     <app-confirm-modal
       [open]="!!changing()"
       [title]="t().api.line.chatChangeTitle"
       [body]="changeBody()"
-      [confirmLabel]="t().api.line.chatChange"
-      [action]="disconnect"
+      [confirmLabel]="t().api.line.chatLinkBtn"
+      [action]="confirmChange"
       (closed)="changing.set(null)"
     />
-    @if (devices.loaded() && unconnected().length) {
-      <section class="panel st" [attr.aria-label]="t().api.line.chatConnectTitle">
-        <div class="fw6">{{ t().api.line.chatConnectTitle }}</div>
-        <ul>
-          @for (d of unconnected(); track d.id) {
-            <li>
-              <div class="who">
-                <span class="fw6">{{ d.name }}</span>
-              </div>
-              <button
-                type="button"
-                class="su-btn su-btn-sm su-btn-primary"
-                [disabled]="!!d.blocked || busy().has(d.id)"
-                [attr.title]="d.blocked || null"
-                (click)="connect(d)"
-              >
-                <i class="ph ph-plugs-connected"></i>{{ t().api.line.chatConnect }}
-              </button>
-            </li>
-          }
-        </ul>
-      </section>
-    }
   `,
   styles: `
     :host {
-      display: block;
+      display: grid;
+      gap: 12px;
     }
     .st {
       display: grid;
       gap: 8px;
+    }
+    .st p {
+      margin: 0;
+    }
+    .form {
+      display: flex;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 10px 12px;
+    }
+    .field {
+      display: grid;
+      gap: 4px;
+      min-width: 180px;
+    }
+    .field.grow {
+      flex: 1;
+      min-width: 260px;
     }
     ul {
       margin: 0;
@@ -176,6 +218,9 @@ interface LineDeviceRow {
     .muted {
       color: var(--color-text-muted);
     }
+    .bad {
+      color: var(--color-danger);
+    }
   `,
 })
 export class LineStatusComponent {
@@ -184,9 +229,78 @@ export class LineStatusComponent {
   protected readonly perm = inject(PermissionsService);
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
-  /** Browsers whose "sync now" was sent a moment ago (the button waits a few seconds, not for the sync itself). */
+  /** Names of what was just sent (a browser id, or 'connect'): its button waits a few seconds, not for the browser itself. */
   protected readonly busy = signal<ReadonlySet<string>>(new Set());
 
+  // ---- connect / change the OA ----
+  protected readonly link = signal('');
+  private readonly picked = signal('');
+  /** The browser the OA is for: the one picked, else the first. */
+  protected readonly deviceId = computed(() => {
+    const list = this.devices.list();
+    return list.some((d) => d.id === this.picked()) ? this.picked() : (list[0]?.id ?? '');
+  });
+  protected readonly oaId = computed(() => lineOaIdOf(this.link()));
+  private readonly device = computed(() =>
+    this.devices.list().find((d) => d.id === this.deviceId()),
+  );
+  /** The browser holds another OA than the pasted one: connecting means letting go of it first. */
+  private readonly replacing = computed(() => {
+    const line = this.device()?.line;
+    const id = this.oaId();
+    return !!line && !!id && line.botId.toLowerCase() !== id.toLowerCase();
+  });
+  /** '' when "connect" is on; else why it is off. */
+  protected readonly connectBlocked = computed(() => {
+    const l = this.t().api.line;
+    if (this.perm.readOnly()) return this.perm.editHint();
+    const d = this.device();
+    if (!d) return l.chatNoLineTitle;
+    if (!d.online) return l.chatConnectOffline;
+    return this.oaId() ? '' : l.chatLinkBad;
+  });
+  /** The row whose OA the pasted link would replace (the confirm dialog is open for it). */
+  protected readonly changing = signal<LineDeviceRow | null>(null);
+  protected readonly changeBody = computed(() => {
+    const r = this.changing();
+    return r ? fmt(this.t().api.line.chatChangeBody, { oa: r.oa, name: r.name }) : '';
+  });
+
+  protected pickDevice(id: string): void {
+    this.picked.set(id);
+  }
+
+  protected async connect(): Promise<void> {
+    if (this.connectBlocked() || this.busy().has('connect')) return;
+    const row = this.rows().find((r) => r.id === this.deviceId());
+    if (this.replacing() && row) {
+      this.changing.set(row); // the person confirms letting go of the old OA first
+      return;
+    }
+    await this.send(false);
+  }
+
+  /** The confirm dialog's action: let go of the old OA, then connect the pasted one. */
+  protected readonly confirmChange = async (): Promise<void> => {
+    await this.send(true);
+  };
+
+  private async send(letGo: boolean): Promise<void> {
+    const d = this.device();
+    if (!d) return;
+    this.mark('connect');
+    try {
+      await this.devices.connectLine(d.id, this.link(), letGo);
+      this.notify.success(fmt(this.t().api.line.chatLinkSent, { name: d.name }));
+      this.link.set('');
+    } catch {
+      // The error interceptor has shown why.
+    } finally {
+      this.release('connect');
+    }
+  }
+
+  // ---- the status card ----
   protected readonly rows = computed<LineDeviceRow[]>(() => {
     const t = this.t();
     const line = t.api.line;
@@ -235,75 +349,33 @@ export class LineStatusComponent {
     });
   });
 
-  /** Paired browsers that have not switched LINE OA on yet, each with a button that opens the extension's setup there. */
-  protected readonly unconnected = computed(() =>
-    this.devices
-      .list()
-      .filter((d) => !d.line)
-      .map((d) => ({
-        id: d.id,
-        name: d.name,
-        blocked: this.perm.readOnly()
-          ? this.perm.editHint()
-          : !d.online
-            ? this.t().api.line.chatConnectOffline
-            : '',
-      })),
-  );
-
-  protected async connect(d: { id: string; name: string; blocked: string }): Promise<void> {
-    if (d.blocked || this.busy().has(d.id)) return;
-    this.busy.update((s) => new Set(s).add(d.id));
-    try {
-      await this.devices.openLineSetup(d.id);
-      this.notify.success(fmt(this.t().api.line.chatConnectSent, { name: d.name }));
-    } catch {
-      // The error interceptor has shown why.
-    } finally {
-      setTimeout(
-        () =>
-          this.busy.update((s) => {
-            const next = new Set(s);
-            next.delete(d.id);
-            return next;
-          }),
-        3000,
-      );
-    }
-  }
-
-  /** The row whose LINE OA is being changed (the confirm dialog is open for it). */
-  protected readonly changing = signal<LineDeviceRow | null>(null);
-  protected readonly changeBody = computed(() => {
-    const r = this.changing();
-    return r ? fmt(this.t().api.line.chatChangeBody, { oa: r.oa, name: r.name }) : '';
-  });
-  protected readonly disconnect = async (): Promise<void> => {
-    const r = this.changing();
-    if (!r) return;
-    await this.devices.disconnectLine(r.id);
-    this.notify.success(fmt(this.t().api.line.chatChangeDone, { name: r.name }));
-  };
-
   protected async sync(row: LineDeviceRow): Promise<void> {
     if (row.syncBlocked || this.busy().has(row.id)) return;
-    this.busy.update((s) => new Set(s).add(row.id));
+    this.mark(row.id);
     try {
       await this.devices.syncLineChats(row.id);
       this.notify.success(fmt(this.t().api.line.chatSyncSent, { name: row.name }));
     } catch {
       // The error interceptor has shown why (for example the browser is not paired any more).
     } finally {
-      // A short pause so a double click does not queue two syncs; the extension limits them to one in ten minutes anyway.
-      setTimeout(
-        () =>
-          this.busy.update((s) => {
-            const next = new Set(s);
-            next.delete(row.id);
-            return next;
-          }),
-        3000,
-      );
+      this.release(row.id);
     }
+  }
+
+  private mark(key: string): void {
+    this.busy.update((s) => new Set(s).add(key));
+  }
+
+  /** A short pause so a double click does not queue two commands; the extension limits syncs to one in ten minutes anyway. */
+  private release(key: string): void {
+    setTimeout(
+      () =>
+        this.busy.update((s) => {
+          const next = new Set(s);
+          next.delete(key);
+          return next;
+        }),
+      3000,
+    );
   }
 }

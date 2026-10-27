@@ -32,6 +32,24 @@ export function lineChatTarget(raw: string | null | undefined): LineChatTarget |
     : null;
 }
 
+/** The first path segments of chat.line.biz that are pages of the site, not an Official Account. */
+const OA_RESERVED = new Set(['login', 'static', 'oauth', 'api', 'assets', 'logout']);
+
+/**
+ * The Official Account id in a pasted address: `https://chat.line.biz/<id>/` (or any page under it: /chat/..., /contact), with or
+ * without the scheme, or just the id; '' when the text is none of these. Mirrors `lineBotIdFromLink` of the extension
+ * (client/background.js): keep them in step.
+ */
+export function lineOaIdOf(raw: string | null | undefined): string {
+  const text = String(raw ?? '').trim();
+  if (!text) return '';
+  const m = /^(?:https?:\/\/)?(?:www\.)?chat\.line\.biz\/([A-Za-z0-9_@-]{3,64})(?:[/?#].*)?$/i.exec(
+    text,
+  );
+  if (m) return OA_RESERVED.has(m[1].toLowerCase()) ? '' : m[1];
+  return /^[A-Za-z0-9_@-]{3,64}$/.test(text) && !OA_RESERVED.has(text.toLowerCase()) ? text : '';
+}
+
 /** The canonical address of a chat, or '' when the text is not a chat address. */
 export function normalizeChatUrl(raw: string | null | undefined): string {
   return lineChatTarget(raw)?.url ?? '';

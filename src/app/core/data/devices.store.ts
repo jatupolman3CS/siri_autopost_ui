@@ -201,6 +201,19 @@ export class DevicesStore {
   }
 
   /**
+   * "Connect LINE OA": the person pasted the OA's address (`https://chat.line.biz/<id>/`) on the web. The browser (the
+   * `connectLine` command) takes that OA, reads the customer list from LINE's contacts page once and then again every day.
+   * A browser that already holds ANOTHER OA is let go of first (`disconnectLine`: its chat list is deleted), because the web
+   * keeps one OA per browser.
+   */
+  async connectLine(id: string, link: string, letGoOfCurrent = false): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    if (letGoOfCurrent) await this.disconnectLine(id);
+    await this.api.sendDeviceCommand(wsId, id, 'connectLine', { link: link.trim() });
+  }
+
+  /**
    * "Change LINE OA": the server lets go of the browser's LINE account (its chats go, Facebook stays) and tells the extension
    * to forget the OA (the `resetLine` command); the browser can then connect another one from its status page.
    */

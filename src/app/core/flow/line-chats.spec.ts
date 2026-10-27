@@ -1,4 +1,5 @@
 import {
+  lineOaIdOf,
   channelOf,
   chatLabel,
   duplicateChatFlags,
@@ -117,5 +118,25 @@ describe('by channel', () => {
     expect(duplicateFlagsFor('line', chats)).toEqual([false, true]);
     // The Facebook parser does not know a chat address, so nothing is "the same" there.
     expect(duplicateFlagsFor('fb', chats)).toEqual([false, false]);
+  });
+
+  it('reads the Official Account id out of a pasted address or takes a bare id', () => {
+    const id = 'U2d228b0a8bd98a2838a5f540b511739b';
+    expect(lineOaIdOf(`https://chat.line.biz/${id}/`)).toBe(id);
+    expect(lineOaIdOf(`chat.line.biz/${id}/contact`)).toBe(id);
+    expect(
+      lineOaIdOf(`  https://chat.line.biz/${id}/chat/U0f1bf2aab0356bff804c7a103e91d62c?x=1 `),
+    ).toBe(id);
+    expect(lineOaIdOf(id)).toBe(id);
+    expect(lineOaIdOf('@shop_bot')).toBe('@shop_bot');
+    for (const bad of [
+      '',
+      '  ',
+      'https://example.com/abc123',
+      'https://chat.line.biz/login',
+      'a b',
+      'ab',
+    ])
+      expect(lineOaIdOf(bad)).toBe('');
   });
 });

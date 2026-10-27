@@ -295,7 +295,18 @@ describe('LineChatsPageComponent', () => {
 
   describe('the status of the browsers', () => {
     const syncButton = (el: HTMLElement) =>
-      el.querySelector<HTMLButtonElement>('app-line-status button')!;
+      el.querySelector<HTMLButtonElement>('app-line-status .su-btn-secondary')!;
+    const linkBox = (el: HTMLElement) =>
+      el.querySelector<HTMLInputElement>('app-line-status [data-testid="connect"] input')!;
+    const connectButton = (el: HTMLElement) =>
+      el.querySelector<HTMLButtonElement>(
+        'app-line-status [data-testid="connect"] .su-btn-primary',
+      )!;
+    const paste = (el: HTMLElement, text: string) => {
+      const box = linkBox(el);
+      box.value = text;
+      box.dispatchEvent(new Event('input'));
+    };
 
     it('names the Official Account, the browser, the chats synced and when', async () => {
       const { el } = await open({ devices: [apiLineDevice({}, { chatCount: 41 })] });
@@ -337,7 +348,9 @@ describe('LineChatsPageComponent', () => {
           apiLineDevice({ id: 'dev-2', name: 'Laptop' }, { ready: false, sessionLost: true }),
         ],
       });
-      const buttons = [...el.querySelectorAll<HTMLButtonElement>('app-line-status .su-btn-secondary')];
+      const buttons = [
+        ...el.querySelectorAll<HTMLButtonElement>('app-line-status .su-btn-secondary'),
+      ];
       expect(buttons.map((b) => b.disabled)).toEqual([true, true]);
       expect(buttons[0].title).toBe(t().api.line.chatDeviceOffline);
       expect(buttons[1].title).toBe(t().api.line.chatSyncNeedsLogin);
@@ -346,15 +359,69 @@ describe('LineChatsPageComponent', () => {
       expect(text).toContain(t().api.line.chatStateLoginHint);
     });
 
-    it('has a change-LINE-OA button on every connected browser that opens the confirm dialog', async () => {
-      const { el, fixture } = await open({ devices: [apiLineDevice()] });
-      const change = [...el.querySelectorAll<HTMLButtonElement>('app-line-status .su-btn-ghost')].find((b) =>
-        b.textContent?.includes(t().api.line.chatChange),
-      )!;
-      expect(change.disabled).toBe(false);
-      change.click();
+    it('connects a browser to the LINE OA of a pasted link with the connectLine command', async () => {
+      const { fixture, el } = await open({
+        devices: [apiDevice()],
+        chats: apiLineChatPage([], { accounts: [] }),
+      });
+      expect(connectButton(el).disabled).toBe(true); // nothing pasted yet
+      paste(el, 'https://chat.line.biz/U2d228b0a8bd98a2838a5f540b511739b/contact');
       fixture.detectChanges();
+      expect(connectButton(el).disabled).toBe(false);
+      connectButton(el).click();
+      fixture.detectChanges();
+      const req = http.expectOne(
+        (x) => x.method === 'POST' && x.url === `${WS_BASE}/devices/dev-1/commands`,
+      );
+      expect(req.request.body).toEqual({
+        cmd: 'connectLine',
+        args: { link: 'https://chat.line.biz/U2d228b0a8bd98a2838a5f540b511739b/contact' },
+      });
+      req.flush({ id: 'c3', cmd: 'connectLine', status: 'pending' });
+      await settle();
+      expect(toasts()).toContain(fmt(t().api.line.chatLinkSent, { name: 'Shop PC' }));
+    });
+
+    it('refuses an address that is not a LINE OA link, with the reason', async () => {
+      const { fixture, el } = await open({
+        devices: [apiDevice()],
+        chats: apiLineChatPage([], { accounts: [] }),
+      });
+      paste(el, 'https://example.com/whatever');
+      fixture.detectChanges();
+      expect(connectButton(el).disabled).toBe(true);
+      expect(el.querySelector('app-line-status')!.textContent).toContain(t().api.line.chatLinkBad);
+    });
+
+    it('lets go of the OA a browser holds before connecting a different one, after a confirmation', async () => {
+      const { fixture, el } = await open({ devices: [apiLineDevice({}, { botId: '@shop_bot' })] });
+      paste(el, 'https://chat.line.biz/Unewoa0123456789abcdef/');
+      fixture.detectChanges();
+      connectButton(el).click();
+      fixture.detectChanges();
+      // Nothing is sent until the person confirms.
+      http.expectNone((x) => x.method === 'DELETE');
       expect(el.ownerDocument.body.textContent).toContain(t().api.line.chatChangeTitle);
+      const confirm = [
+        ...el.ownerDocument.body.querySelectorAll<HTMLButtonElement>(
+          '.su-modal .su-btn-primary, [role="dialog"] .su-btn-primary',
+        ),
+      ].find((b) => b.textContent?.includes(t().api.line.chatLinkBtn))!;
+      confirm.click();
+      await settle();
+      http
+        .expectOne((x) => x.method === 'DELETE' && x.url === `${WS_BASE}/devices/dev-1/line`)
+        .flush(apiDevice());
+      await settle();
+      const req = http.expectOne(
+        (x) => x.method === 'POST' && x.url === `${WS_BASE}/devices/dev-1/commands`,
+      );
+      expect(req.request.body).toEqual({
+        cmd: 'connectLine',
+        args: { link: 'https://chat.line.biz/Unewoa0123456789abcdef/' },
+      });
+      req.flush({ id: 'c4', cmd: 'connectLine', status: 'pending' });
+      await settle();
     });
 
     it('says a LINE account that is resting, with the time it rests until', async () => {
@@ -371,15 +438,12 @@ describe('LineChatsPageComponent', () => {
         devices: [apiDevice()],
         chats: apiLineChatPage([], { accounts: [] }),
       });
-      expect(el.querySelector('app-line-status app-empty-state')?.textContent).toContain(
-        t().api.line.chatNoLineTitle,
+      // The connect card says how: paste the OA's link.
+      expect(el.querySelector('app-line-status [data-testid="connect"]')!.textContent).toContain(
+        t().api.line.chatLinkHelp,
       );
       expect(el.textContent).not.toContain(t().api.line.chatEmptyTitle);
       expect(rows(el)).toHaveLength(0);
-      // The browser is listed with a button that opens its extension's LINE setup.
-      const connect = el.querySelector<HTMLButtonElement>('app-line-status .su-btn-primary')!;
-      expect(connect.textContent).toContain(t().api.line.chatConnect);
-      expect(connect.disabled).toBe(false);
     });
 
     it('says the list fills after the sync when a browser is connected but no chat is there yet', async () => {
