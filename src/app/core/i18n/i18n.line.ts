@@ -71,8 +71,8 @@ export const AP_I18N_LINE = {
   chatChange: ['เปลี่ยน LINE OA', 'Change LINE OA'],
   chatChangeTitle: ['เปลี่ยน LINE OA ของเครื่องนี้', 'Change this machine’s LINE OA'],
   chatChangeBody: [
-    'ระบบจะเลิกผูก LINE OA “{oa}” กับเครื่อง {name}: รายชื่อแชทของ OA นี้ที่ซิงก์ไว้จะถูกลบ งานส่งแชทที่ค้างอยู่จะล้มเหลว (Facebook ไม่ถูกแตะ) จากนั้นเปิดหน้าสถานะของส่วนขยาย ล็อกอิน LINE ด้วยบัญชีใหม่ที่ chat.line.biz แล้วกด “ใช้ LINE OA ในเครื่องนี้”',
-    'This unlinks the LINE OA “{oa}” from {name}: the synced chat list of this OA is deleted and unfinished chat sends fail (Facebook is untouched). Then open the extension’s status page, sign in to the new account at chat.line.biz and press “Use LINE OA on this machine”',
+    'ระบบจะเลิกผูก LINE OA “{oa}” กับเครื่อง {name}: รายชื่อแชทของ OA นี้ที่ซิงก์ไว้จะถูกลบ งานส่งแชทที่ค้างอยู่จะล้มเหลว (Facebook ไม่ถูกแตะ) จากนั้นเปิดหน้าสถานะของส่วนขยาย วางลิงก์ของ OA ใหม่จาก chat.line.biz ในช่อง “วางลิงก์ LINE OA” แล้วกด “ใช้ LINE OA ในเครื่องนี้”',
+    'This unlinks the LINE OA “{oa}” from {name}: the synced chat list of this OA is deleted and unfinished chat sends fail (Facebook is untouched). Then open the extension’s status page, paste the new OA’s chat.line.biz link into “Paste LINE OA link” and press “Use LINE OA on this machine”',
   ],
   chatChangeDone: [
     '{name}: เลิกผูก LINE OA แล้ว เปิดหน้าสถานะของส่วนขยายเพื่อเชื่อม LINE OA ใหม่',
