@@ -33,6 +33,27 @@ export type ApiPairingCode = S['PairingCodeDto'];
 export type ApiPlanSetting = S['PlanDto'];
 export type ApiTransaction = S['TransactionDto'];
 export type ApiBilling = S['BillingDto'];
+export interface ApiBillingProfile {
+  notifyFailed: boolean;
+  notifyExpiring: boolean;
+  notifyRenewal: boolean;
+  card: {
+    brand: string;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+    expired: boolean;
+    expiresSoon: boolean;
+  } | null;
+  paymentsConnected: boolean;
+}
+export interface ApiPublicStats {
+  postsSent7d: number;
+  postsFailed7d: number;
+  successRate7d: number | null;
+  devicesActive24h: number;
+  days: { date: string; sent: number; failed: number }[];
+}
 export type ApiPlanChange = S['PlanChangeDto'];
 export type ApiMember = S['MemberDto'];
 export type ApiRole = S['WorkspaceRole'];
@@ -47,6 +68,8 @@ export type ApiHealth = S['PlatformHealthDto'];
 export type ApiAuditEntry = S['AuditEntryDto'];
 export type ApiAuditAction = S['AuditAction'];
 export type ApiDeviceCommand = S['DeviceCommandDto'];
+export type ApiDeviceLive = S['DeviceLiveDto'];
+export type ApiDeviceLog = S['DeviceLogDto'];
 export type ApiCollection = S['CollectionDto'];
 export type ApiCollectionSettings = S['CollectionSettingsDto'];
 export type ApiCollectionPost = S['CollectionPostDto'];
@@ -134,6 +157,34 @@ export class ApiService {
   /** Plan, renewal date and card of the signed-in customer. */
   billing() {
     return run(this.http.get<ApiBilling>('/api/billing'));
+  }
+  billingProfile() {
+    return run(this.http.get<ApiBillingProfile>('/api/billing/profile'));
+  }
+  saveBillingNotifications(notifications: {
+    notifyFailed: boolean;
+    notifyExpiring: boolean;
+    notifyRenewal: boolean;
+  }) {
+    return run(
+      this.http.put<ApiBillingProfile>('/api/billing/profile/notifications', notifications),
+    );
+  }
+  savePaymentMethod(card: {
+    brand: string | null;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+  }) {
+    return run(
+      this.http.put<ApiBillingProfile>('/api/billing/profile/payment-method', card, quiet),
+    );
+  }
+  removePaymentMethod() {
+    return run(this.http.delete<ApiBillingProfile>('/api/billing/profile/payment-method'));
+  }
+  publicStats() {
+    return run(this.http.get<ApiPublicStats>('/api/public/stats', quiet));
   }
   invoices() {
     return run(this.http.get<ApiTransaction[]>('/api/billing/invoices'));
@@ -329,6 +380,14 @@ export class ApiService {
   devices(ws: string, background = false) {
     return run(
       this.http.get<ApiDevice[]>(`/api/workspaces/${ws}/devices`, background ? quiet : {}),
+    );
+  }
+  deviceLive(ws: string, device: string, background = false) {
+    return run(
+      this.http.get<ApiDeviceLive>(
+        `/api/workspaces/${ws}/devices/${device}/live`,
+        background ? quiet : {},
+      ),
     );
   }
   createPairingCode(ws: string) {

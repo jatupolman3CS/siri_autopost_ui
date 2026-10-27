@@ -11,7 +11,6 @@ import {
   ApiTransaction,
 } from '../http/api.service';
 import { loadWithRetry } from './loading';
-import { DESIGN_PLANS } from './plans';
 import {
   Customer,
   DiscountKey,
@@ -25,6 +24,7 @@ import {
   isPlanFeature,
 } from './models';
 import { SessionStore } from './session.store';
+import { DESIGN_PLANS } from './plans';
 
 export type AdminAction = 'suspend' | 'ban' | 'refund' | 'assist' | 'restore';
 /** How many entries of the platform-wide activity log are read (plan and promo changes are the ones shown). */
@@ -97,8 +97,6 @@ const toPromo = (p: ApiPromo): Promo => ({
 });
 
 /** Until /api/plans answers (the app initializer waits for it, so pages never render with these). */
-const NOT_LOADED: PlanLimits = { price: 0, accounts: 0, posts: 0, devices: 0, seats: 0 };
-
 function toPlans(list: ApiPlanSetting[]): Record<PlanKey, PlanLimits> {
   const out = structuredClone(DESIGN_PLANS);
   for (const p of list)
@@ -131,8 +129,9 @@ export class AdminStore {
   readonly customers = signal<Customer[]>([]);
   readonly transactions = signal<Transaction[]>([]);
   readonly promos = signal<Promo[]>([]);
-  /** The design's values until /api/plans answers. */
+  /** The design values until /api/plans answers. */
   readonly plans = signal<Record<PlanKey, PlanLimits>>(structuredClone(DESIGN_PLANS));
+  readonly plansLoaded = signal(false);
   readonly subs = signal<Record<'basic' | 'pro' | 'agency', number>>({
     basic: 0,
     pro: 0,

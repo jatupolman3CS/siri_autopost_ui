@@ -83,6 +83,13 @@ describe('BillingPageComponent', () => {
     const fixture = TestBed.createComponent(BillingPageComponent);
     for (const [k, v] of Object.entries(inputs)) fixture.componentRef.setInput(k, v);
     fixture.detectChanges();
+    http.expectOne('/api/billing/profile').flush({
+      notifyFailed: true,
+      notifyExpiring: true,
+      notifyRenewal: false,
+      card: null,
+      paymentsConnected: false,
+    });
     await settle();
     http.expectOne('/api/billing').flush({ ...BILLING, plan, ...billing });
     http.expectOne('/api/billing/invoices').flush([CHARGE]);

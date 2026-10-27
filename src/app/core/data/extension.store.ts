@@ -29,6 +29,7 @@ export class ExtensionStore {
   readonly simulated = this.settings.simulatedOffline.asReadonly();
   /** No browser is paired yet. Unknown until /engine answers. */
   readonly unpaired = computed(() => this.settings.loaded() && this.settings.devices() === 0);
+  readonly paused = computed(() => this.liveDevice.device()?.jobsPaused ?? false);
   readonly busy = signal(false);
   /** When this session saw the extension go offline (unknown after a reload). */
   readonly offlineSince = signal<Date | null>(null);
@@ -69,5 +70,18 @@ export class ExtensionStore {
     const r = await this.api.skipWaiting(wsId);
     await this.posts.refresh();
     this.notify.info(fmt(this.i18n.t().off.toastSkipped, { n: r.affected }));
+  }
+
+  async togglePause(): Promise<void> {
+    const device = this.liveDevice.device();
+    if (!device || this.busy()) return;
+    const pause = !device.jobsPaused;
+    this.busy.set(true);
+    try {
+      await this.devices.update(device.id, { jobsPaused: pause });
+      this.notify.info(pause ? this.i18n.t().api.jobsPausedNote : this.i18n.t().api.jobsResumedNote);
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

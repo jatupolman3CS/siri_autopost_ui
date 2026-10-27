@@ -30,11 +30,28 @@ export class LandingPageComponent {
 
   // The landing page promises Facebook groups and pages only; LINE chats are a workspace feature (Pro and above).
   protected readonly platforms = [PLATFORMS.fb];
-  // The product preview runs on the design's sample posts (guests have no workspace).
-  private readonly now = new Date();
-  private readonly sample = computed(() => samplePosts(this.now, this.i18n.li()).map(withDay));
-  private readonly sampleToday = computed(
-    () => groupByDay(this.sample()).get(dkey(this.now)) ?? [],
+  private readonly publicStats = inject(PublicStatsStore);
+  protected readonly stats = this.publicStats.state;
+  protected readonly kpis = computed(() => {
+    const labels = this.t().api;
+    const stats = this.publicStats.stats();
+    return [
+      { label: labels.landSent, value: stats ? stats.postsSent7d.toLocaleString() : '—' },
+      {
+        label: labels.landRate,
+        value: stats?.successRate7d == null ? '—' : `${stats.successRate7d.toFixed(1)}%`,
+      },
+      {
+        label: labels.landDevices,
+        value: stats ? stats.devicesActive24h.toLocaleString() : '—',
+      },
+    ];
+  });
+  protected readonly bars = computed(() =>
+    this.publicStats.bars().map((bar) => ({
+      ...bar,
+      label: dayNames(this.i18n.li())[bar.date.getDay()],
+    })),
   );
 
   constructor() {

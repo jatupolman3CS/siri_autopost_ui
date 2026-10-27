@@ -20,6 +20,7 @@ export type CustomerStatus = 'active' | 'trial' | 'pastdue' | 'suspended' | 'ban
 export type TxType = 'charge' | 'refund' | 'failed';
 export type DiscountKey = 'd10' | 'd20' | 'd30' | 'dFree';
 export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
+export type AgoKey = 'now' | 'h2' | 'yesterday' | 'd3' | 'd12';
 
 export interface Platform {
   name: string;
@@ -206,6 +207,13 @@ export interface CustomerDevice {
   i: string;
 }
 
+export interface SeedCustomerDevice {
+  n: string;
+  b: string;
+  s: AgoKey;
+  i: string;
+}
+
 export interface CustomerJobs {
   ok: number;
   failed: number;
@@ -256,6 +264,11 @@ export interface Customer {
   /** End of the current billing period; with cancelAtPeriodEnd, when the plan ends. */
   renewsAt?: Date | null;
   cancelAtPeriodEnd?: boolean;
+}
+
+export interface SeedCustomer extends Omit<Customer, 'lastActive' | 'devices'> {
+  active: AgoKey;
+  devices: SeedCustomerDevice[];
 }
 
 export interface Transaction {

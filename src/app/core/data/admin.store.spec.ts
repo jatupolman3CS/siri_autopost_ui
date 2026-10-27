@@ -57,10 +57,54 @@ const tx = (over: Partial<ApiTransaction> = {}): ApiTransaction => ({
 });
 
 const PLANS = [
-  { key: 'free', price: 0, accounts: 1, posts: 10, devices: 1, seats: 1 },
-  { key: 'basic', price: 290, accounts: 2, posts: 30, devices: 1, seats: 1 },
-  { key: 'pro', price: 790, accounts: 10, posts: null, devices: 3, seats: 1 },
-  { key: 'agency', price: 1990, accounts: null, posts: null, devices: null, seats: 10 },
+  {
+    key: 'free',
+    price: 0,
+    accounts: 1,
+    posts: 10,
+    devices: 1,
+    seats: 1,
+    groups: 20,
+    images: 20,
+    libraryPosts: 20,
+    features: [],
+  },
+  {
+    key: 'basic',
+    price: 290,
+    accounts: 2,
+    posts: 30,
+    devices: 1,
+    seats: 1,
+    groups: 100,
+    images: 100,
+    libraryPosts: 100,
+    features: [],
+  },
+  {
+    key: 'pro',
+    price: 790,
+    accounts: 10,
+    posts: null,
+    devices: 3,
+    seats: 1,
+    groups: 300,
+    images: 1000,
+    libraryPosts: 1000,
+    features: ['advanced_anti_ban', 'notifications', 'auto_reply', 'ai'],
+  },
+  {
+    key: 'agency',
+    price: 1990,
+    accounts: null,
+    posts: null,
+    devices: null,
+    seats: 10,
+    groups: null,
+    images: null,
+    libraryPosts: null,
+    features: ['advanced_anti_ban', 'notifications', 'auto_reply', 'ai', 'bump', 'client_reports'],
+  },
 ];
 
 const HEALTH: ApiHealth = {
@@ -93,21 +137,6 @@ const SUMMARY = {
   agency: 0,
   revenue: [{ year: 2026, month: 9, amount: 790 }],
 };
-const PLANS = [
-  {
-    key: 'pro',
-    price: 790,
-    accounts: 10,
-    posts: null,
-    devices: 3,
-    seats: 1,
-    groups: 300,
-    images: 1000,
-    libraryPosts: 1000,
-    features: ['advanced_anti_ban', 'notifications', 'auto_reply', 'ai', 'someday'],
-  },
-];
-
 describe('AdminStore', () => {
   let http: HttpTestingController;
   let admin: AdminStore;
@@ -186,6 +215,10 @@ describe('AdminStore', () => {
       posts: null,
       devices: null,
       seats: 10,
+      groups: null,
+      images: null,
+      libraryPosts: null,
+      features: ['advanced_anti_ban', 'notifications', 'auto_reply', 'ai', 'bump', 'client_reports'],
     });
     expect(admin.health()?.latestExtension).toBe('2.5.0');
   });
@@ -359,7 +392,7 @@ describe('AdminStore', () => {
       images: 1000,
       libraryPosts: 1000,
     });
-    req.flush({ ...PLANS[0], devices: null });
+    req.flush({ ...PLANS.find((plan) => plan.key === 'pro')!, devices: null });
     const { served } = await finish(done);
     expect(served).toContain('/api/admin/health');
     expect(served).toContain('/api/admin/audit'); // the platform-wide log, no customer
@@ -385,14 +418,14 @@ describe('AdminStore', () => {
     const done = admin.setPlanField('pro', 'groups', 500);
     const req = http.expectOne('/api/admin/plans/pro');
     expect(req.request.body).toMatchObject({ groups: 500, images: 1000, libraryPosts: 1000 });
-    req.flush({ ...PLANS[0], groups: 500 });
+    req.flush({ ...PLANS.find((plan) => plan.key === 'pro')!, groups: 500 });
     await finish(done);
     expect(admin.plans().pro.groups).toBe(500);
 
     const more = admin.setPlanField('pro', 'images', 0);
     const again = http.expectOne('/api/admin/plans/pro');
     expect(again.request.body).toMatchObject({ groups: 500, images: null });
-    again.flush({ ...PLANS[0], groups: 500, images: null });
+    again.flush({ ...PLANS.find((plan) => plan.key === 'pro')!, groups: 500, images: null });
     await finish(more);
     expect(admin.plans().pro.images).toBeNull();
   });

@@ -43,8 +43,7 @@ describe('DeviceLiveStore', () => {
   async function start(devices: ApiDevice[]) {
     http = provideApiTesting();
     store = TestBed.inject(DeviceLiveStore);
-    await signIn(http);
-    http.expectOne(`/api/workspaces/${WS}/devices`).flush(devices);
+    await signIn(http, { devices });
     await settle();
   }
 

@@ -595,6 +595,13 @@ export const AP_I18N_EXTRA = {
   ptestOffShort: ['ปิด', 'off'],
   ptestAccounts: ['{n} บัญชี', '{n} account(s)'],
 
+  landTitle: ['สถิติการใช้งานจริง', 'Real usage'],
+  landSent: ['โพสต์สำเร็จใน 7 วัน', 'Posts sent in 7 days'],
+  landRate: ['อัตราสำเร็จ', 'Success rate'],
+  landDevices: ['อุปกรณ์ที่ใช้งานใน 24 ชม.', 'Active devices in 24 hours'],
+  landUnavailable: ['โหลดสถิติไม่ได้ในขณะนี้', 'Statistics are unavailable right now'],
+  landLoading: ['กำลังโหลดสถิติ…', 'Loading statistics…'],
+
   // Error page: retry many failed posts at once
   errSelectPage: ['เลือกทั้งหน้านี้', 'Select this page'],
   errSelectOne: ['เลือกโพสต์นี้', 'Select this post'],
