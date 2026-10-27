@@ -123,8 +123,23 @@ function whenText(d: Date, li: number, now: Date): string {
                   <div class="small">
                     <span [class]="'state ' + stateClass(o)">{{ stateText(o) }}</span>
                   </div>
+                  <div class="small muted">
+                    {{ o.active ? t().api.line.oaActive : t().api.line.oaInactive }}
+                  </div>
                 </div>
                 <div class="oa-tools">
+                  @if (!o.active) {
+                    <button
+                      type="button"
+                      class="su-btn su-btn-sm su-btn-primary"
+                      [disabled]="perm.readOnly()"
+                      [attr.title]="perm.editHint() || null"
+                      (click)="use(o)"
+                    >
+                      <i class="ph ph-plugs-connected" aria-hidden="true"></i>
+                      {{ t().api.line.oaUse }}
+                    </button>
+                  }
                   <button
                     type="button"
                     class="su-btn su-btn-sm su-btn-secondary"
@@ -332,6 +347,13 @@ export class LineOasPageComponent implements OnInit {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  protected async use(o: ApiLineOa): Promise<void> {
+    const line = this.t().api.line;
+    if (await this.store.use(o.id))
+      this.notify.success(fmt(line.oaUseSent, { name: this.shortName(o) }));
+    else this.notify.error(line.oaUseFailed);
   }
 
   protected async sync(o: ApiLineOa): Promise<void> {

@@ -133,6 +133,7 @@ export function apiLineOa(over: Partial<ApiLineOa> = {}): ApiLineOa {
     syncedAt: null,
     sessionLost: false,
     linkSetCount: 0,
+    active: true,
     ...over,
   };
 }

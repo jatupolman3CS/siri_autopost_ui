@@ -4676,6 +4676,41 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/line/oas/{id}/use": {
+      "post": {
+        "tags": [
+          "LineOas"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": { }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/line/oas/{id}": {
       "delete": {
         "tags": [
@@ -10976,7 +11011,8 @@
           "chats",
           "syncedAt",
           "sessionLost",
-          "linkSetCount"
+          "linkSetCount",
+          "active"
         ],
         "type": "object",
         "properties": {
@@ -11029,6 +11065,9 @@
           "linkSetCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "active": {
+            "type": "boolean"
           }
         }
       },

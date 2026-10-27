@@ -801,6 +801,10 @@ export class ApiService {
   syncLineOa(ws: string, id: string) {
     return run(this.http.post<void>(`/api/workspaces/${ws}/line/oas/${id}/sync`, {}, quiet));
   }
+  /** Tells the browser of an Official Account to work for that OA from now on. Editors. */
+  useLineOa(ws: string, id: string) {
+    return run(this.http.post<void>(`/api/workspaces/${ws}/line/oas/${id}/use`, {}, quiet));
+  }
   /** Takes an Official Account out of the list (its customers go too). Admins. */
   removeLineOa(ws: string, id: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/line/oas/${id}`));

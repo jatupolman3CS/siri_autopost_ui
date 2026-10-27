@@ -324,7 +324,15 @@ export const AP_I18N_LINE = {
   oaCustomers: ['ลูกค้า {n} คน', '{n} customers'],
   oaSets: ['ใช้ใน {n} ชุดโพสต์', 'Used by {n} link sets'],
   oaNoSets: ['ยังไม่มีชุดโพสต์ใช้', 'No link set uses it'],
-  oaSync: ['อ่านรายชื่อใหม่', 'Read again'],
+  oaSync: ['บังคับซิงก์ตอนนี้', 'Force sync now'],
+  oaActive: ['เครื่องกำลังใช้ OA นี้', 'The machine works for this OA'],
+  oaInactive: [
+    'เครื่องยังไม่ได้เลือกใช้ OA นี้ (แชทของ OA นี้จะรอจนกว่าจะเลือก)',
+    'The machine is not working for this OA (its chats wait until you choose it)',
+  ],
+  oaUse: ['ใช้ OA นี้', 'Use this OA'],
+  oaUseSent: ['สั่งให้เครื่องเปลี่ยนไปใช้ {name} แล้ว', 'Told the machine to switch to {name}'],
+  oaUseFailed: ['สั่งเปลี่ยน OA ไม่สำเร็จ', 'Could not switch the OA'],
   oaSyncSent: [
     'สั่งให้เครื่องอ่านรายชื่อของ {name} แล้ว รายชื่อจะอัปเดตเมื่ออ่านเสร็จ',
     'Told the machine to read {name}. The list updates when it is done',

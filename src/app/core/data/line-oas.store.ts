@@ -119,6 +119,18 @@ export class LineOasStore {
     }
   }
 
+  /** Tells the OA's browser to work for that OA from now on. Answers whether the API took it. */
+  async use(id: string): Promise<boolean> {
+    const wsId = this.ws.id();
+    if (!wsId) return false;
+    try {
+      await this.api.useLineOa(wsId, id);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   /** Removes an OA. Rejects with the API's reason (a link set uses it, posts are queued). */
   async remove(id: string): Promise<void> {
     const wsId = this.ws.id();
