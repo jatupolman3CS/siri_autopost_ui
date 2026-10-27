@@ -12,39 +12,70 @@ const ACCOUNT_EVENTS = [
   'device.paired',
   'device.revoked',
   'post',
+  // A browser that syncs its LINE chats has a LINE account by then.
+  'device.line_chats',
 ];
 /** The event stream keeps the list fresh; this poll only runs while the stream is down. */
 const FALLBACK_POLL_MS = 60_000;
 
 /** Prefix of the Facebook account a paired browser brings (SocialAccount.ForDevice in the API). */
 const DEVICE_ACCOUNT_PREFIX = 'Facebook · ';
+/** Prefix of the LINE Official Account a browser reports ("LINE · <OA name>"). */
+export const LINE_ACCOUNT_PREFIX = 'LINE · ';
+
+/** The device list entry (a browser) that brings an account: its Facebook account, or the LINE account in its `line`. */
+export function deviceOfAccount<D extends Pick<ApiDevice, 'accountId' | 'line'>>(
+  accountId: string,
+  devices: readonly D[],
+): D | undefined {
+  return devices.find((d) => d.accountId === accountId || d.line?.accountId === accountId);
+}
 
 /**
  * What a person calls the extension an account belongs to: the name of its browser ("Shop PC"), not the
- * account's "Facebook · Shop PC". The device list is asked first (a rename shows there at once); the account's
- * own name, without its prefix, stands in while the devices have not arrived or the browser was unbound.
+ * account's "Facebook · Shop PC" or "LINE · Shop OA". The device list is asked first (a rename shows there at once,
+ * for the browser's LINE account too); the account's own name, without its prefix, stands in while the devices have
+ * not arrived or the browser was unbound.
  */
 export function extensionNameOf(
   account: Pick<SocialAccount, 'id' | 'name'>,
-  devices: readonly Pick<ApiDevice, 'accountId' | 'name'>[],
+  devices: readonly Pick<ApiDevice, 'accountId' | 'name' | 'line'>[],
 ): string {
-  const device = devices.find((d) => d.accountId === account.id);
+  const device = deviceOfAccount(account.id, devices);
   if (device) return device.name;
-  return account.name.startsWith(DEVICE_ACCOUNT_PREFIX)
-    ? account.name.slice(DEVICE_ACCOUNT_PREFIX.length)
+  for (const prefix of [DEVICE_ACCOUNT_PREFIX, LINE_ACCOUNT_PREFIX])
+    if (account.name.startsWith(prefix)) return account.name.slice(prefix.length);
+  return account.name;
+}
+
+/** The Official Account's own name: the account's name without "LINE · " ("" when it has none). */
+export function lineOaName(account: Pick<SocialAccount, 'name'>): string {
+  return account.name.startsWith(LINE_ACCOUNT_PREFIX)
+    ? account.name.slice(LINE_ACCOUNT_PREFIX.length)
     : account.name;
 }
 
-// The Facebook accounts of the current workspace: one for each paired browser (its sign-in health, the groups it
-// synced), which stays in the list with its history after the browser is unbound.
+// The accounts of the current workspace: the Facebook account of each paired browser (its sign-in health, the groups it
+// synced), which stays in the list with its history after the browser is unbound, and the LINE Official Account a
+// browser reports when it is logged in to LINE (platform 'line', named "LINE · <OA name>").
 @Injectable({ providedIn: 'root' })
 export class AccountsStore {
   private readonly api = inject(ApiService);
   private readonly ws = inject(WorkspaceStore);
 
   readonly list = signal<SocialAccount[]>([]);
-  /** The accounts a browser posts for: the only ones that can post a link set or take a test post. */
-  readonly connected = computed(() => this.list().filter((a) => a.connected));
+  /**
+   * The FACEBOOK accounts a browser posts for: the only ones that can post a Facebook link set or take a Facebook test
+   * post, and what every "extension" select lists. LINE accounts are NOT in it (see `connectedLine`): a browser's LINE
+   * account is not another extension.
+   */
+  readonly connected = computed(() =>
+    this.list().filter((a) => a.connected && a.platform === 'fb'),
+  );
+  /** The LINE Official Accounts of the workspace (one per browser that is logged in to LINE), even when unbound. */
+  readonly lineAccounts = computed(() => this.list().filter((a) => a.platform === 'line'));
+  /** The LINE accounts a browser posts chats for: the only ones that can post a LINE link set. */
+  readonly connectedLine = computed(() => this.lineAccounts().filter((a) => a.connected));
   /** The list for the current workspace has arrived (the schedules page waits for it). */
   readonly loaded = signal(false);
 

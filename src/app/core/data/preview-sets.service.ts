@@ -1,4 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { LinkChannel, channelOf } from '../flow/line-chats';
 import { LinkSetsStore } from './link-sets.store';
 
 /** What the post editor's preview needs of one link of a set. */
@@ -14,6 +15,8 @@ export interface PreviewLink {
 export interface PreviewSet {
   id: string;
   name: string;
+  /** 'line': the links are customers' chats (a name is the customer's), which the preview composes without a group code line. */
+  channel: LinkChannel;
   links: readonly PreviewLink[];
 }
 
@@ -27,6 +30,7 @@ export class PreviewSetsService {
     this.store.sets().map((s) => ({
       id: s.id,
       name: s.name,
+      channel: channelOf(s),
       links: s.links.map((l) => ({
         name: l.name,
         url: l.url,

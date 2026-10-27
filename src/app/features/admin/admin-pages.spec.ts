@@ -412,11 +412,12 @@ describe('admin pages', () => {
           t().api.planFeature.advanced_anti_ban,
           t().api.planFeature.notifications,
           t().api.planFeature.auto_reply,
+          t().api.planFeature.line_chat,
           t().api.planFeature.bump,
           t().api.planFeature.client_reports,
         ]);
-        expect(pro.map(([, on]) => on)).toEqual([true, true, true, true, false, false]);
-        expect(pro[4][2]).toBe(t().api.planNotIncluded);
+        expect(pro.map(([, on]) => on)).toEqual([true, true, true, true, true, false, false]);
+        expect(pro[5][2]).toBe(t().api.planNotIncluded);
         expect(feats('Premium').every(([, on]) => on === true)).toBe(true);
         // Nothing to type into: only the numbers are inputs.
         expect(planCard(el, 'Pro').querySelectorAll('.feats input')).toHaveLength(0);

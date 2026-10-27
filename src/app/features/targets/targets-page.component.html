@@ -47,6 +47,24 @@
 
   <app-ownership-overview />
 
+  @if (hasLineSets()) {
+    <p class="callout" role="note">
+      <i class="ph ph-info" aria-hidden="true"></i><span>{{ t().api.line.chatManualNote }}</span>
+    </p>
+    <div class="seg" role="group" [attr.aria-label]="t().api.line.chatFilterLabel">
+      @for (o of channelOptions(); track o.key) {
+        <button
+          type="button"
+          [class.on]="channelFilter() === o.key"
+          [attr.aria-pressed]="channelFilter() === o.key"
+          (click)="setChannelFilter(o.key)"
+        >
+          {{ o.label }}
+        </button>
+      }
+    </div>
+  }
+
   @if (!store.loaded()) {
     <p class="muted fs14" role="status">{{ t().api.loading }}</p>
   } @else {
@@ -54,7 +72,7 @@
       @if (heading(i); as h) {
         <h2 class="ext-heading"><i class="ph ph-desktop" aria-hidden="true"></i>{{ h }}</h2>
       }
-      <app-link-set-card [set]="s" (bulk)="open('bulk', s.id)" />
+      <app-link-set-card [set]="s" (bulk)="open('bulk', s.id)" (chats)="open('chats', s.id)" />
     } @empty {
       <app-empty-state
         icon="ph-link"
@@ -71,3 +89,6 @@
 <app-new-set-modal [open]="dialog() === 'set'" (closed)="close()" />
 <app-bulk-links-modal [open]="dialog() === 'bulk'" [setId]="dialogSet()" (closed)="close()" />
 <app-csv-links-modal [open]="dialog() === 'csv'" (closed)="close()" />
+@if (dialog() === 'chats' && dialogSet(); as setId) {
+  <app-import-line-chats-modal [setId]="setId" (closed)="close()" />
+}

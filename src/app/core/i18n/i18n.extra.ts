@@ -323,6 +323,7 @@ export const AP_I18N_EXTRA = {
     advanced_anti_ban: ['Anti-ban ขั้นสูง', 'Advanced anti-ban'],
     notifications: ['แจ้งเตือน Telegram / LINE', 'Notifications (Telegram / LINE)'],
     auto_reply: ['ตอบกลับอัตโนมัติ', 'Auto-reply'],
+    line_chat: ['ส่งแชทลูกค้า LINE OA', 'LINE OA customer chats'],
     bump: ['ดันโพสต์อัตโนมัติ', 'Auto bump'],
     client_reports: ['รายงานส่งลูกค้า', 'Client reports'],
   },
@@ -432,6 +433,8 @@ export const AP_I18N_EXTRA = {
   // The post library (step 1 of the flow): the sidebar item, the route title and the stepper.
   postsNav: ['คลังโพสต์', 'Post library'],
   tlNav: ['ไทม์ไลน์โพสต์', 'Post timeline'],
+  // The LINE OA customer-chat roster: the sidebar item and the route title (the rest is in the lazy pack i18n.line.ts).
+  lineChatNav: ['แชท LINE', 'LINE chats'],
   flowPosts: ['เขียนและจัดการโพสต์', 'Write and manage posts'],
   flowPostsB: ['เปิด/ปิด ตั้งเวลาเอง ดูผลทีละโพสต์', 'On/off, own timing, results post by post'],
   nextToCollections: ['จัดโพสต์เข้าชุดโพสต์', 'Put the posts into a collection'],

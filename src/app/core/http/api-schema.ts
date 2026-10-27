@@ -2221,6 +2221,47 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/device/line/chats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SyncLineChatsRequest'];
+          'text/json': components['schemas']['SyncLineChatsRequest'];
+          'application/*+json': components['schemas']['SyncLineChatsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': number;
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/device/jobs/claim': {
     parameters: {
       query?: never;
@@ -3935,6 +3976,95 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/line/chats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          accountId?: string;
+          q?: string;
+          label?: string;
+          activeWithinDays?: number;
+          doNotSend?: boolean;
+          page?: number;
+          pageSize?: number;
+        };
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['LineChatPageDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/line/chats/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['UpdateLineChatRequest'];
+          'text/json': components['schemas']['UpdateLineChatRequest'];
+          'application/*+json': components['schemas']['UpdateLineChatRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['LineChatDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/link-sets': {
     parameters: {
       query?: never;
@@ -4328,6 +4458,50 @@ export interface paths {
           'application/json': components['schemas']['BulkLinksRequest'];
           'text/json': components['schemas']['BulkLinksRequest'];
           'application/*+json': components['schemas']['BulkLinksRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['BulkLinksResultDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/link-sets/{id}/links/from-line-chats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['ImportLineChatsRequest'];
+          'text/json': components['schemas']['ImportLineChatsRequest'];
+          'application/*+json': components['schemas']['ImportLineChatsRequest'];
         };
       };
       responses: {
@@ -6235,6 +6409,7 @@ export interface components {
       advanced: components['schemas']['AdvancedAntiBanDto'];
       /** @default normal */
       typingSpeed: string;
+      lineChat?: null | components['schemas']['LineChatAntiBanDto'];
     };
     /** @enum {unknown} */
     ApprovalAction: 'request' | 'approve' | 'reject';
@@ -6353,6 +6528,7 @@ export interface components {
        * @default 0
        */
       dailyPerGroup: number;
+      channel?: components['schemas']['Platform'];
     };
     BackupNotificationsDto: {
       channel: components['schemas']['NotifyChannel'];
@@ -6401,6 +6577,7 @@ export interface components {
        * @default 0
        */
       groupGapMinutes: number;
+      lineOptions?: null | components['schemas']['LineOptionsDto'];
     };
     BackupSetNotifyRuleDto: {
       linkSet: string;
@@ -6443,6 +6620,11 @@ export interface components {
        */
       conflicts: number;
       conflictNote?: null | string;
+      /**
+       * Format: int32
+       * @default 0
+       */
+      skippedDoNotSend: number;
     };
     BulkMasterPostsResultDto: {
       /** Format: int32 */
@@ -6599,6 +6781,7 @@ export interface components {
       name: string;
       /** Format: uuid */
       postAsAccountId: null | string;
+      channel?: null | components['schemas']['Platform'];
     };
     CreateMasterPostRequest: {
       text: string;
@@ -6716,6 +6899,7 @@ export interface components {
       /** Format: date-time */
       autoPausedUntil?: null | string;
       autoPauseReason?: null | string;
+      line?: null | components['schemas']['DeviceLineSummaryDto'];
     };
     DeviceEventDto: {
       /** Format: int64 */
@@ -6732,6 +6916,24 @@ export interface components {
       head: number;
       events: components['schemas']['DeviceEventDto'][];
       more: boolean;
+    };
+    DeviceLineSummaryDto: {
+      /** Format: uuid */
+      accountId: string;
+      name: string;
+      handle: string;
+      botId: string;
+      ready: boolean;
+      /** Format: date-time */
+      readyAt: null | string;
+      /** Format: date-time */
+      restUntil: null | string;
+      /** Format: date-time */
+      syncedAt: null | string;
+      /** Format: int32 */
+      chatCount: number;
+      /** @default false */
+      sessionLost: boolean;
     };
     DeviceLiveDto: {
       /** Format: uuid */
@@ -6778,6 +6980,11 @@ export interface components {
       autoPauseReason?: null | string;
       /** @default false */
       sessionLost: boolean;
+      /** @default false */
+      lineSessionLost: boolean;
+      /** Format: uuid */
+      lineAccountId?: null | string;
+      lineNote?: null | string;
     };
     DeviceSyncDto: {
       /** Format: int32 */
@@ -6836,6 +7043,12 @@ export interface components {
     };
     /** @enum {unknown} */
     FooterPosition: 'end' | 'top';
+    FromLineChatsFilter: {
+      q?: null | string;
+      label?: null | string;
+      /** Format: int32 */
+      activeWithinDays?: null | number;
+    };
     GoogleLogInRequest: {
       idToken: string;
     };
@@ -6862,6 +7075,8 @@ export interface components {
     HeartbeatRequest: {
       version: null | string;
       sessionOk?: null | boolean;
+      line?: null | components['schemas']['LineHeartbeatRequest'];
+      lineSessionOk?: null | boolean;
     };
     IdsRequest: {
       ids: null | string[];
@@ -6880,6 +7095,14 @@ export interface components {
       /** Format: uuid */
       accountId: string;
       urls: string[];
+    };
+    ImportLineChatsRequest: {
+      /** Format: uuid */
+      accountId: string;
+      chatIds?: null | string[];
+      filter?: null | components['schemas']['FromLineChatsFilter'];
+      /** @default false */
+      allMatching: boolean;
     };
     InviteRequest: {
       email: string;
@@ -6900,6 +7123,10 @@ export interface components {
       pageTags?: null | string;
       /** @default false */
       shot: boolean;
+      /** @default fb */
+      channel: string;
+      bubbles?: null | string[];
+      line?: null | components['schemas']['LineJobOptionsDto'];
     };
     JobMediaDto: {
       /** Format: uuid */
@@ -6956,6 +7183,75 @@ export interface components {
       /** Format: int32 */
       libraryPosts: null | number;
     };
+    LineChatAccountSummaryDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** Format: uuid */
+      deviceId: null | string;
+      ready: boolean;
+    };
+    LineChatAntiBanDto: {
+      /**
+       * Format: int32
+       * @default 45
+       */
+      minGapSeconds: number;
+      /**
+       * Format: int32
+       * @default 120
+       */
+      maxGapSeconds: number;
+    };
+    LineChatDto: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      accountId: string;
+      name: string;
+      url: string;
+      labels: string[];
+      /** Format: date-time */
+      lastMessageAt: null | string;
+      unread: boolean;
+      doNotSend: boolean;
+      /** Format: int32 */
+      linkedSetCount: number;
+    };
+    LineChatPageDto: {
+      items: components['schemas']['LineChatDto'][];
+      /** Format: int32 */
+      total: number;
+      labels: string[];
+      accounts: components['schemas']['LineChatAccountSummaryDto'][];
+    };
+    LineHeartbeatRequest: {
+      ready: boolean;
+      botId?: null | string;
+      oaName?: null | string;
+    };
+    LineJobOptionsDto: {
+      /** Format: int32 */
+      skipIfActiveMinutes: number;
+      imagesFirst: boolean;
+      allowedFrom: string;
+      allowedTo: string;
+    };
+    LineOptionsDto: {
+      /** @default 09:00 */
+      allowedFrom: string;
+      /** @default 20:00 */
+      allowedTo: string;
+      /**
+       * Format: int32
+       * @default 30
+       */
+      skipIfActiveMinutes: number;
+      /** @default false */
+      splitBubbles: boolean;
+      /** @default false */
+      imagesFirst: boolean;
+    };
     LineSettingsDto: {
       on: boolean;
       token: null | string;
@@ -6982,6 +7278,7 @@ export interface components {
        * @default 0
        */
       dailyPerGroup: number;
+      channel?: components['schemas']['Platform'];
     };
     LogInCommand: {
       email: string;
@@ -7217,7 +7514,7 @@ export interface components {
       libraryPosts: null | number;
     };
     /** @enum {unknown} */
-    Platform: 'fb';
+    Platform: 'fb' | 'line';
     PlatformHealthDto: {
       /** Format: int32 */
       mrr: number;
@@ -7263,6 +7560,8 @@ export interface components {
     PlatformLimitsDto: {
       /** Format: int32 */
       fb: number;
+      /** Format: int32 */
+      line?: null | number;
     };
     /** @enum {unknown} */
     PostApproval: 'draft' | 'pending' | 'approved';
@@ -7296,6 +7595,11 @@ export interface components {
       isTest: boolean;
       /** @default false */
       rushed: boolean;
+      /**
+       * Format: int32
+       * @default 0
+       */
+      deferCount: number;
     };
     /** @enum {unknown} */
     PostOrder: 'shuffle' | 'rotate';
@@ -7400,6 +7704,11 @@ export interface components {
       error: null | string;
       postUrl?: null | string;
       shot?: null | string;
+      /** @default false */
+      skip: boolean;
+      /** Format: int32 */
+      deferMinutes?: null | number;
+      reason?: null | string;
     };
     RetryPostsRequest: {
       postIds: string[];
@@ -7464,6 +7773,7 @@ export interface components {
        * @default 0
        */
       groupGapMinutes: number;
+      lineOptions?: null | components['schemas']['LineOptionsDto'];
     };
     ScheduleCreatedDto: {
       schedule: components['schemas']['ScheduleDto'];
@@ -7524,6 +7834,7 @@ export interface components {
        * @default 0
        */
       groupGapMinutes: number;
+      lineOptions?: null | components['schemas']['LineOptionsDto'];
     };
     /** @enum {unknown} */
     ScheduleMode: 'daily' | 'weekdays' | 'weekend' | 'interval' | 'drip' | 'once';
@@ -7563,6 +7874,7 @@ export interface components {
       duplicate: boolean;
       /** @default group */
       kind: string;
+      channel?: components['schemas']['Platform'];
     };
     SetNotifyRuleDto: {
       /** Format: uuid */
@@ -7619,6 +7931,20 @@ export interface components {
     StatusRequest: {
       status: components['schemas']['CustomerStatus'];
     };
+    SyncLineChatDto: {
+      userId: string;
+      name: string;
+      labels?: null | string[];
+      /** Format: date-time */
+      lastMessageAt?: null | string;
+      unread?: null | boolean;
+    };
+    SyncLineChatsRequest: {
+      botId: string;
+      oaName: string;
+      complete: boolean;
+      chats: components['schemas']['SyncLineChatDto'][];
+    };
     SyncRequest: {
       version: null | string;
       state: null | components['schemas']['JsonElement'];
@@ -7647,7 +7973,7 @@ export interface components {
     };
     TestPostRequest: {
       /** Format: uuid */
-      linkSetId: string;
+      linkSetId: null | string;
       /** Format: uuid */
       linkId: null | string;
       /** Format: uuid */
@@ -7659,6 +7985,8 @@ export interface components {
       text: null | string;
       /** Format: uuid */
       deviceId?: null | string;
+      /** Format: uuid */
+      chatId?: null | string;
     };
     TransactionDto: {
       /** Format: uuid */
@@ -7696,6 +8024,9 @@ export interface components {
       name: null | string;
       jobsPaused: null | boolean;
     };
+    UpdateLineChatRequest: {
+      doNotSend: boolean;
+    };
     UpdateLinkRequest: {
       name: null | string;
       url: null | string;
@@ -7712,6 +8043,7 @@ export interface components {
       randomOrder?: null | boolean;
       /** Format: int32 */
       dailyPerGroup?: null | number;
+      channel?: null | components['schemas']['Platform'];
     };
     UpdateMasterPostRequest: {
       text: string;
@@ -7781,6 +8113,8 @@ export interface components {
       clientReports: boolean;
       ai: boolean;
       bump: boolean;
+      /** @default false */
+      lineChat: boolean;
     };
     /** @enum {unknown} */
     WorkspaceRole: 'viewer' | 'editor' | 'admin' | 'owner';

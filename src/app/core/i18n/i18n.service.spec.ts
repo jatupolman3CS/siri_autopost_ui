@@ -241,13 +241,25 @@ describe('lazy dictionary packs', () => {
     expect(service.t().api.engine.planLocked).toBe('Available on {plan} and above');
   });
 
+  it('adds t().api.line the same way, and the roster title is in the shared strings before it loads', async () => {
+    localStorage.clear();
+    const service = TestBed.inject(I18nService);
+    // The route title and the sidebar label resolve with no pack loaded (DictionaryTitleStrategy).
+    expect(service.t().api.lineChatNav).toBeTruthy();
+    await import('./i18n.line');
+    expect(service.t().api.line.storedOnlyBadge).toBe('บันทึกเท่านั้น');
+    service.setLang('en');
+    expect(service.t().api.line.planLocked).toBe('Available on {plan} and above');
+  });
+
   it('keeps every pack side by side: registering one does not drop another', async () => {
     localStorage.clear();
     const service = TestBed.inject(I18nService);
-    await Promise.all([import('./i18n.flow'), import('./i18n.engine')]);
+    await Promise.all([import('./i18n.flow'), import('./i18n.engine'), import('./i18n.line')]);
     const api = service.t().api;
     expect(api.flow.storedOnly).toBeTruthy();
     expect(api.engine.storedOnly).toBeTruthy();
+    expect(api.line.storedOnly).toBeTruthy();
     // A pack never leaks into the shared strings.
     expect(api.save).toBe('บันทึกการตั้งค่า');
   });
@@ -255,9 +267,11 @@ describe('lazy dictionary packs', () => {
   it('gives every leaf of the packs and of the fixes both languages with the same {placeholders}', async () => {
     const { AP_I18N_FLOW } = await import('./i18n.flow');
     const { AP_I18N_ENGINE } = await import('./i18n.engine');
+    const { AP_I18N_LINE } = await import('./i18n.line');
     const all = [
       ...pairs(AP_I18N_FLOW, 'flow'),
       ...pairs(AP_I18N_ENGINE, 'engine'),
+      ...pairs(AP_I18N_LINE, 'line'),
       ...pairs(AP_I18N_FIXES, 'fixes'),
     ];
     expect(all.length).toBeGreaterThan(30);
@@ -271,7 +285,8 @@ describe('lazy dictionary packs', () => {
   it('says plainly that a stored-only setting is applied by nothing (not just "the extension")', async () => {
     const { AP_I18N_FLOW } = await import('./i18n.flow');
     const { AP_I18N_ENGINE } = await import('./i18n.engine');
-    for (const pack of [AP_I18N_FLOW, AP_I18N_ENGINE]) {
+    const { AP_I18N_LINE } = await import('./i18n.line');
+    for (const pack of [AP_I18N_FLOW, AP_I18N_ENGINE, AP_I18N_LINE]) {
       const [th, en] = pack.storedOnly;
       expect(en).toMatch(/only/i);
       expect(en).toMatch(/nothing applies/i);
@@ -286,7 +301,8 @@ describe('lazy dictionary packs', () => {
     // The pack files are edited by different pages, so the hints every page needs are repeated in each pack.
     const { AP_I18N_FLOW } = await import('./i18n.flow');
     const { AP_I18N_ENGINE } = await import('./i18n.engine');
-    for (const pack of [AP_I18N_FLOW, AP_I18N_ENGINE])
+    const { AP_I18N_LINE } = await import('./i18n.line');
+    for (const pack of [AP_I18N_FLOW, AP_I18N_ENGINE, AP_I18N_LINE])
       for (const key of ['storedOnly', 'storedOnlyBadge', 'planLocked'] as const)
         expect(pack[key], key).toBeDefined();
   });

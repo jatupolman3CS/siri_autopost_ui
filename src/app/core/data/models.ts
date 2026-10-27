@@ -1,8 +1,14 @@
 // Domain types for the AutoPost dashboard. Bilingual values are [th, en] pairs.
 export type L10n = readonly [string, string];
 
-/** Only Facebook groups and pages are posted to for now; the other social platforms are a later phase. */
+/** The platform keys of the design's seed data: only Facebook (the other social platforms are a later phase). */
 export type PlatformKey = 'fb';
+/**
+ * What a post, an account or a link set can be for: Facebook groups and pages, or a LINE Official Account's customer
+ * chats. `PlatformKey` stays 'fb' because the generated seed types are built on it; everything that comes from the API
+ * (posts, accounts, link set channels) uses this one.
+ */
+export type PostPlatform = PlatformKey | 'line';
 export type PlanKey = 'free' | 'basic' | 'pro' | 'agency';
 export type Role = 'guest' | 'user' | 'admin';
 export type Health = 'ok' | 'warn' | 'relogin';
@@ -42,16 +48,19 @@ export interface Workspace {
   ai: boolean;
   /** The owner's plan includes bumping posts (Premium, key `agency`). */
   bump: boolean;
+  /** The owner's plan includes LINE Official Account customer chats (`line_chat`, Pro and above). */
+  lineChat: boolean;
 }
 
 /**
- * A Facebook account the API lists: one for each paired browser ("Facebook · <browser name>"). It keeps its
+ * An account the API lists: the Facebook account of each paired browser ("Facebook · <browser name>") and, when the
+ * browser also drives a LINE Official Account, a second one ("LINE · <OA name>", platform 'line'). It keeps its
  * history when its browser is unbound, but cannot post until a browser is paired again.
  */
 export interface SocialAccount {
   id: string;
-  /** Always 'fb' (the API still sends it). */
-  platform: PlatformKey;
+  /** 'fb', or 'line' for the LINE Official Account a browser is logged in to. */
+  platform: PostPlatform;
   name: string;
   handle: string;
   /** Where posts go when the account has no groups (its timeline). */
@@ -157,7 +166,13 @@ export interface Device {
 
 /** The functions a plan can include (the keys of `features` in /api/plans); an unknown key is ignored. */
 export type PlanFeature =
-  'advanced_anti_ban' | 'notifications' | 'auto_reply' | 'ai' | 'bump' | 'client_reports';
+  | 'advanced_anti_ban'
+  | 'notifications'
+  | 'auto_reply'
+  | 'ai'
+  | 'bump'
+  | 'client_reports'
+  | 'line_chat';
 
 /** In the order a plan card and the comparison table list them. */
 export const PLAN_FEATURES: readonly PlanFeature[] = [
@@ -165,6 +180,7 @@ export const PLAN_FEATURES: readonly PlanFeature[] = [
   'advanced_anti_ban',
   'notifications',
   'auto_reply',
+  'line_chat',
   'bump',
   'client_reports',
 ];
@@ -396,6 +412,7 @@ export interface SeedData {
     | 'clientReports'
     | 'ai'
     | 'bump'
+    | 'lineChat'
   >[];
   platforms: Record<PlatformKey, Platform>;
   groups: string[];
@@ -440,7 +457,7 @@ export interface PostItem {
   id: string;
   dt: Date;
   accountId: string;
-  platform: PlatformKey;
+  platform: PostPlatform;
   target: string;
   text: string;
   mediaIds: string[];
@@ -465,6 +482,8 @@ export interface PostItem {
   isTest?: boolean;
   /** Asked to post now (jumped the queue) and still waiting for its browser to take it. */
   rushed?: boolean;
+  /** LINE chat posts: how many times the extension moved it later because the customer was mid-conversation. */
+  deferCount?: number;
 }
 
 export interface ErrorItem extends PostItem {

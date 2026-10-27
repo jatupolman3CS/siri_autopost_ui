@@ -1,0 +1,93 @@
+<div class="page">
+  <div class="page-head">
+    <div class="intro">
+      <h1>{{ t().api.line.chatTitle }}</h1>
+      <p>{{ t().api.line.chatSub }}</p>
+      <app-perm-note level="edit" />
+    </div>
+  </div>
+
+  @if (locked()) {
+    <app-feature-lock [heading]="lockTitle()" [body]="t().api.line.chatLockedBody" />
+  } @else {
+    <app-line-status />
+
+    @if (!store.loaded()) {
+      <p class="muted fs14" role="status">
+        {{ store.failed() ? t().api.line.chatLoadFailed : t().api.line.chatLoading }}
+        @if (store.failed()) {
+          <button type="button" class="su-btn su-btn-sm su-btn-secondary" (click)="store.retry()">
+            {{ t().api.line.chatRetry }}
+          </button>
+        }
+      </p>
+    } @else if (!store.total() && !store.filtered()) {
+      @if (hasLineDevice()) {
+        <app-empty-state
+          icon="ph-chat-circle-text"
+          [heading]="t().api.line.chatEmptyTitle"
+          [description]="t().api.line.chatEmptyBody"
+        />
+      }
+    } @else {
+      <section class="panel tools">
+        <div class="find">
+          <app-input-field
+            [label]="t().api.line.chatSearch"
+            [placeholder]="t().api.line.chatSearchPh"
+            [value]="store.q()"
+            (valueChange)="store.setSearch($event)"
+            (keydown.enter)="store.applySearch()"
+          />
+          @if (accountOptions().length > 2) {
+            <app-select-field
+              [label]="t().api.line.chatAccount"
+              [options]="accountOptions()"
+              [value]="store.accountId()"
+              (valueChange)="store.setAccount($event)"
+            />
+          }
+          <app-select-field
+            [label]="t().api.line.chatLabelFilter"
+            [options]="labelOptions()"
+            [value]="store.label()"
+            (valueChange)="store.setLabel($event)"
+          />
+          <app-select-field
+            [label]="t().api.line.chatRecent"
+            [options]="recentOptions()"
+            [value]="recentValue()"
+            (valueChange)="setRecent($event)"
+          />
+          <app-select-field
+            [label]="t().api.line.chatDnsFilter"
+            [options]="dnsOptions()"
+            [value]="dnsValue()"
+            (valueChange)="setDns($event)"
+          />
+        </div>
+        <div class="foot">
+          <span class="small muted" role="status">{{ shown() }}</span>
+          @if (store.filtered()) {
+            <button
+              type="button"
+              class="su-btn su-btn-sm su-btn-ghost"
+              (click)="store.clearFilters()"
+            >
+              {{ t().api.line.chatClearFilters }}
+            </button>
+          }
+        </div>
+      </section>
+
+      <section class="panel list" [attr.aria-label]="t().api.line.chatTitle">
+        @for (c of store.chats(); track c.id) {
+          <app-line-chat-row [chat]="c" />
+        } @empty {
+          <p class="nomatch">{{ t().api.line.chatNoMatch }}</p>
+        }
+      </section>
+      <app-pager [pager]="store.pager" />
+    }
+  }
+</div>

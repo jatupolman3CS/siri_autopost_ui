@@ -90,6 +90,23 @@ describe('SettingsStore', () => {
           scheduledAt: ago(1),
           publishedAt: ago(1),
         }),
+        // Two LINE chats sent by the connected LINE account: they count against the LINE limit, not the Facebook one.
+        apiPost({
+          id: 'l1',
+          accountId: 'acc-line',
+          platform: 'line',
+          status: 'success',
+          scheduledAt: ago(1),
+          publishedAt: ago(1),
+        }),
+        apiPost({
+          id: 'l2',
+          accountId: 'acc-line',
+          platform: 'line',
+          status: 'success',
+          scheduledAt: ago(5),
+          publishedAt: ago(5),
+        }),
       ],
     });
   });
@@ -106,12 +123,72 @@ describe('SettingsStore', () => {
     expect(store.used24h()).toBe(0);
   });
 
+  it('counts Facebook posts and LINE chats apart, each against its own limit', () => {
+    const accounts = TestBed.inject(AccountsStore);
+    const account = (id: string, platform: 'fb' | 'line', connected: boolean) => ({
+      ...ACCOUNTS[0],
+      id,
+      platform,
+      connected,
+    });
+    accounts.list.set([account('acc-page', 'fb', true), account('acc-line', 'line', true)]);
+    expect(store.usedByPlatform()).toEqual({ fb: 2, line: 2 });
+    // The Facebook figure is what the Facebook limit has always been compared with.
+    expect(store.used24h()).toBe(2);
+    accounts.list.set([account('acc-page', 'fb', true), account('acc-line', 'line', false)]);
+    expect(store.usedByPlatform()).toEqual({ fb: 2, line: 0 });
+  });
+
   it('starts from the workspace settings once they have arrived', () => {
     expect(store.loaded()).toBe(true);
     expect(store.ab().min).toBe(3);
-    // One Facebook limit, and a typing speed.
-    expect(Object.keys(store.ab().limits)).toEqual(['fb']);
+    // A limit for Facebook posts and one for LINE chats, the LINE gap, and a typing speed.
+    expect(Object.keys(store.ab().limits)).toEqual(['fb', 'line']);
     expect(store.ab().typingSpeed).toBe('normal');
+  });
+
+  describe('LINE chats', () => {
+    const ANTI_BAN = `/api/workspaces/${WS}/engine/anti-ban`;
+
+    it('has the server defaults before the settings arrive: 100 chats a day, 45 to 120 seconds apart', () => {
+      expect(defaultAntiBan().limits).toEqual({ fb: 40, line: 100 });
+      expect(defaultAntiBan().lineChat).toEqual({ minGapSeconds: 45, maxGapSeconds: 120 });
+    });
+
+    it('reads the LINE limit and gap the server holds', async () => {
+      const loading = store.load(WS);
+      const e = engine(3, 0);
+      http.expectOne(`/api/workspaces/${WS}/engine`).flush({
+        ...e,
+        antiBan: {
+          ...e.antiBan,
+          limits: { fb: 25, line: 60 },
+          lineChat: { minGapSeconds: 50, maxGapSeconds: 90 },
+        },
+      });
+      await loading;
+      expect(store.ab().limits).toEqual({ fb: 25, line: 60 });
+      expect(store.ab().lineChat).toEqual({ minGapSeconds: 50, maxGapSeconds: 90 });
+    });
+
+    it('falls back to the defaults for a server that sends neither (it predates LINE chats)', async () => {
+      const loading = store.load(WS);
+      http.expectOne(`/api/workspaces/${WS}/engine`).flush(engine(3, 0));
+      await loading;
+      expect(store.ab().limits).toEqual({ fb: 25, line: 100 });
+      expect(store.ab().lineChat).toEqual({ minGapSeconds: 45, maxGapSeconds: 120 });
+    });
+
+    it('sends both with the other anti-ban settings, so saving never drops them', async () => {
+      store.patchAb({ limits: { ...store.ab().limits, line: 80 } });
+      store.patchAb({ lineChat: { minGapSeconds: 60, maxGapSeconds: 150 } });
+      const saving = store.saveAb();
+      const req = http.expectOne((r) => r.method === 'PUT' && r.url === ANTI_BAN);
+      expect(req.request.body.limits).toEqual({ fb: 40, line: 80 });
+      expect(req.request.body.lineChat).toEqual({ minGapSeconds: 60, maxGapSeconds: 150 });
+      req.flush(engine(3, 0));
+      await saving;
+    });
   });
 
   describe('typing speed', () => {
@@ -143,7 +220,7 @@ describe('SettingsStore', () => {
       const saving = store.saveAb();
       const req = http.expectOne((r) => r.method === 'PUT' && r.url === ANTI_BAN);
       expect(req.request.body.typingSpeed).toBe('slow');
-      expect(req.request.body.limits).toEqual({ fb: 40 });
+      expect(req.request.body.limits).toEqual({ fb: 40, line: 100 });
       // A plan below Pro keeps the old speed: what comes back is shown.
       req.flush(engine(3, 0, 'normal'));
       await saving;

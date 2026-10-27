@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { AccountsStore } from '../../core/data/accounts.store';
 import { ExtensionStore } from '../../core/data/extension.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
@@ -54,6 +55,7 @@ export class AppLayoutComponent {
   protected readonly ext = inject(ExtensionStore);
   protected readonly perm = inject(PermissionsService);
   private readonly posts = inject(PostsStore);
+  private readonly accounts = inject(AccountsStore);
   private readonly settings = inject(SettingsStore);
   protected readonly prefs = inject(UiPrefsService);
 
@@ -111,6 +113,16 @@ export class AppLayoutComponent {
     const posts = item('posts', 'composer', 'ph-note-pencil', { label: this.t().api.postsNav });
     // Every post of the day on one board, by the minute (the label comes from the api texts like the library's).
     const timeline = item('timeline', 'calendar', 'ph-chart-line', { label: this.t().api.tlNav });
+    // The shop's LINE customers: only where the plan has LINE chats or a browser already reports a LINE Official Account
+    // (a lapsed plan keeps the page, which then shows its lock banner).
+    const lineChats: NavItem[] =
+      this.workspaces.current()?.lineChat || this.accounts.lineAccounts().length
+        ? [
+            item('line-chats', 'targets', 'ph-chat-circle-text', {
+              label: this.t().api.lineChatNav,
+            }),
+          ]
+        : [];
     if (simple)
       return [
         {
@@ -120,6 +132,7 @@ export class AppLayoutComponent {
             posts,
             item('collections', 'collections', 'ph-folders'),
             item('targets', 'targets', 'ph-users-four'),
+            ...lineChats,
             item('schedules', 'schedules', 'ph-calendar-check'),
             item('calendar', 'calendar', 'ph-calendar-blank'),
             timeline,
@@ -137,6 +150,7 @@ export class AppLayoutComponent {
           posts,
           item('collections', 'collections', 'ph-folders'),
           item('targets', 'targets', 'ph-users-four'),
+          ...lineChats,
           item('schedules', 'schedules', 'ph-calendar-check'),
           item('calendar', 'calendar', 'ph-calendar-blank'),
           timeline,

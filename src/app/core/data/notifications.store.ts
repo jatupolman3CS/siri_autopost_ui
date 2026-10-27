@@ -8,6 +8,7 @@ import {
   ApiSetLink,
   ApiTelegramChat,
 } from '../http/api.service';
+import { channelOf as linkChannelOf } from '../flow/line-chats';
 import { problemMessage } from '../http/problem-details';
 import { LinkSetsStore, isActiveLink } from './link-sets.store';
 import { CollectionsStore } from './collections.store';
@@ -159,8 +160,11 @@ export class NotificationsStore {
    * once the workspaces have arrived: before that nothing is locked, so the lock does not flash on a reload.
    */
   readonly locked = computed(() => this.ws.loaded() && !this.ws.current()?.notifications);
-  /** The workspace's link sets (the per-set rules are about these). */
-  readonly sets = this.linkSets.sets;
+  /**
+   * The workspace's Facebook link sets (the per-set rules are about these). A LINE set is left out: its rows are customers'
+   * chats, not groups, and an alert about one customer is not something the rules per group describe.
+   */
+  readonly sets = computed(() => this.linkSets.sets().filter((s) => linkChannelOf(s) === 'fb'));
   readonly setsLoaded = this.linkSets.loaded;
 
   /** Something on screen differs from what is saved (a typed or removed token counts). */
@@ -198,7 +202,7 @@ export class NotificationsStore {
     if (!s) return out;
     const tgReady = this.telegramReady();
     const lineReady = this.lineReady();
-    for (const set of this.linkSets.sets())
+    for (const set of this.sets())
       for (const link of groupsOf(set)) {
         out.n++;
         const ch = channelOf(s, set.id, link.id);
@@ -216,7 +220,7 @@ export class NotificationsStore {
     const s = this.settings();
     if (!s) return [];
     const missing = new Set<NotifyChannelKey>();
-    for (const set of this.linkSets.sets())
+    for (const set of this.sets())
       for (const link of groupsOf(set)) {
         const ch = channelOf(s, set.id, link.id);
         if (usesChannel(ch, 'tg') && !this.telegramReady()) missing.add('tg');

@@ -1,12 +1,18 @@
 import {
+  MAX_BUBBLES,
+  MAX_BUBBLE_LENGTH,
   MAX_COMPOSED_LENGTH,
   MAX_SPIN_ROUNDS,
   MAX_VARIANTS,
   buildSpin,
   compose,
+  composeChat,
+  composeChatSegments,
+  composeChatText,
   composeFull,
   composeSegments,
   hasCodeTag,
+  hasNameTag,
   hasSpin,
   insertAt,
   insertCodeTag,
@@ -17,6 +23,8 @@ import {
   spin,
   spinCount,
   spinVariants,
+  splitBubbles,
+  tooManyBubbles,
   wrapSpin,
 } from './compose';
 
@@ -80,12 +88,19 @@ describe('hasSpin / postFlags', () => {
     expect(hasSpin(null)).toBe(false);
   });
 
-  it('reports both flags', () => {
-    expect(postFlags('{a|b} {{code}}')).toEqual({ hasCode: true, hasSpin: true });
-    expect(postFlags('{a|b}')).toEqual({ hasCode: false, hasSpin: true });
-    expect(postFlags('{{ รหัส }}')).toEqual({ hasCode: true, hasSpin: false });
-    expect(postFlags('plain')).toEqual({ hasCode: false, hasSpin: false });
-    expect(postFlags(undefined)).toEqual({ hasCode: false, hasSpin: false });
+  it('reports the three flags', () => {
+    const flags = (hasCode: boolean, hasSpin: boolean, hasName = false) => ({
+      hasCode,
+      hasSpin,
+      hasName,
+    });
+    expect(postFlags('{a|b} {{code}}')).toEqual(flags(true, true));
+    expect(postFlags('{a|b}')).toEqual(flags(false, true));
+    expect(postFlags('{{ รหัส }}')).toEqual(flags(true, false));
+    expect(postFlags('สวัสดีคุณ {{name}}')).toEqual(flags(false, false, true));
+    expect(postFlags('{{ชื่อ}} {{code}} {a|b}')).toEqual(flags(true, true, true));
+    expect(postFlags('plain')).toEqual(flags(false, false));
+    expect(postFlags(undefined)).toEqual(flags(false, false));
   });
 });
 
@@ -614,6 +629,11 @@ describe('lintSpin', () => {
     expect(kinds('{a|b}{c| |d}')).toEqual([]);
   });
 
+  it('treats the customer-name tag like the code tag: fine outside a group, never spun inside one', () => {
+    expect(lintSpin('สวัสดีคุณ {{name}} {{ชื่อ}} {{code}}')).toEqual([]);
+    expect(kinds('{สวัสดี {{name}}|หวัดดี {{ชื่อ}}}')).toEqual(['codeInGroup']);
+  });
+
   it('finds a code tag inside a group, which the server never spins', () => {
     expect(kinds('{ซื้อ {{code}}|สั่ง {{code}}}')).toEqual(['codeInGroup']);
     expect(kinds('{x|{a|b} {{code}}}')).toEqual(['codeInGroup']);
@@ -735,6 +755,119 @@ describe('composeSegments', () => {
 
   it('ignores private-use characters a person pasted in', () => {
     expect(joined(composeSegments('ab{c|d}', '', null, first))).toBe('abc');
+  });
+});
+
+// LINE customer chats: the same vectors as the server's PostComposerTests (chat mode), so the web preview, the
+// extension's text and the API agree.
+describe('chat mode (mirror of PostComposer ComposeMode.Chat)', () => {
+  it('sees the customer-name tag in both spellings', () => {
+    for (const t of [
+      '{{name}}',
+      '{{ name }}',
+      '{{NAME}}',
+      '{{ชื่อ}}',
+      '{{ ชื่อ }}',
+      'a {{Name}} b',
+    ])
+      expect(hasNameTag(t), t).toBe(true);
+    for (const t of ['{{code}}', '{name}', '{{na me}}', '', null, undefined])
+      expect(hasNameTag(t), String(t)).toBe(false);
+  });
+
+  it('replaces the name and code tags (Chat_mode_replaces_name_and_code_tags)', () => {
+    const template = 'สวัสดีคุณ {{name}} ({{ชื่อ}})\nรหัสลูกค้า {{code}} ({{รหัส}})';
+    expect(composeChatText(template, 'สมชาย', 'C01')).toBe(
+      'สวัสดีคุณ สมชาย (สมชาย)\nรหัสลูกค้า C01 (C01)',
+    );
+  });
+
+  it('removes a tag that stands alone on its line when its value is empty', () => {
+    const template = 'สวัสดีครับ\n{{name}}\nยินดีต้อนรับ\n{{code}}\nขอบคุณครับ';
+    expect(composeChatText(template, '', '')).toBe('สวัสดีครับ\nยินดีต้อนรับ\nขอบคุณครับ');
+    expect(composeChatText(template, '   ', null)).toBe('สวัสดีครับ\nยินดีต้อนรับ\nขอบคุณครับ');
+    // Inline, an empty tag just leaves nothing.
+    expect(composeChatText('คุณ {{name}}!', '', '')).toBe('คุณ !');
+  });
+
+  it('trims the name and the code and never reads $ in a name as a pattern', () => {
+    expect(composeChatText('{{name}}|{{code}}', '  $& พี่  ', ' c1 ')).toBe('$& พี่|c1');
+  });
+
+  it('never makes the code the first line, adds no footer or hashtags (Chat_mode_never_adds_footer_*)', () => {
+    expect(composeChat('ข้อความหลัก', 'สมชาย', 'CODE123', first)).toBe('ข้อความหลัก');
+    // A group post of the same text would start with the code.
+    expect(composeFull('ข้อความหลัก', 'CODE123', null, first)).toBe('CODE123\nข้อความหลัก');
+  });
+
+  it('resolves spintax first, like a group post, from the same random source', () => {
+    const text = 'คุณ {{name}} {สวัสดี|หวัดดี}';
+    expect(composeChat(text, 'มะลิ', '', first)).toBe('คุณ มะลิ สวัสดี');
+    expect(composeChat(text, 'มะลิ', '', last)).toBe('คุณ มะลิ หวัดดี');
+    expect(composeChat('ไม่มีอะไร', null, null)).toBe('ไม่มีอะไร');
+    expect(composeChat(undefined, 'x', 'y')).toBe('');
+  });
+
+  it('marks the words spintax picked in the preview and joins to exactly what composeChat writes', () => {
+    const text = 'คุณ {{name}} {สวัสดี|หวัดดี}!';
+    const segs = composeChatSegments(text, 'มะลิ', 'c', last);
+    expect(segs.map((x) => x.text).join('')).toBe(composeChat(text, 'มะลิ', 'c', last));
+    expect(segs.filter((x) => x.spun).map((x) => x.text)).toEqual(['หวัดดี']);
+  });
+
+  describe('splitBubbles', () => {
+    it('is one bubble when not splitting and under the limit (SplitBubbles_returns_single_bubble_*)', () => {
+      const text = 'ข้อความบรรทัด 1\n\nข้อความบรรทัด 2';
+      expect(splitBubbles(text, false)).toEqual([text]);
+    });
+
+    it('splits at blank lines when asked, dropping empty paragraphs (SplitBubbles_splits_on_blank_lines_*)', () => {
+      expect(splitBubbles('บับเบิ้ล 1\n\nบับเบิ้ล 2\n\n\nบับเบิ้ล 3', true)).toEqual([
+        'บับเบิ้ล 1',
+        'บับเบิ้ล 2',
+        'บับเบิ้ล 3',
+      ]);
+      expect(splitBubbles('a\r\n\r\nb\n \n c ', true)).toEqual(['a', 'b', 'c']);
+    });
+
+    it('merges the shortest neighbours down to five bubbles, keeping the order (SplitBubbles_merges_*)', () => {
+      const bubbles = splitBubbles('1\n\n2\n\n3\n\n4\n\n5\n\n6\n\n7', true);
+      expect(bubbles.length).toBeLessThanOrEqual(MAX_BUBBLES);
+      expect(bubbles[0]).toContain('1');
+      expect(bubbles.at(-1)).toContain('7');
+      // Each merge joins the pair with the least text; the first of equal pairs wins.
+      expect(bubbles).toEqual(['1\n\n2', '3\n\n4', '5', '6', '7']);
+    });
+
+    it('gives nothing for an empty text', () => {
+      expect(splitBubbles('', true)).toEqual([]);
+      expect(splitBubbles('  \n\n ', false)).toEqual([]);
+      expect(splitBubbles(null, true)).toEqual([]);
+    });
+
+    it('cuts a text over the limit even when not splitting: at the last blank line, else line break, else space', () => {
+      const a = 'ก'.repeat(3000);
+      const b = 'ข'.repeat(3000);
+      expect(splitBubbles(a + '\n\n' + b, false)).toEqual([a, b]);
+      expect(splitBubbles(a + '\n' + b, false)).toEqual([a, b]);
+      expect(splitBubbles(a + ' ' + b, false)).toEqual([a, b]);
+      // No place to cut: a hard cut at the limit.
+      const solid = splitBubbles('x'.repeat(MAX_BUBBLE_LENGTH + 10), false);
+      expect(solid.map((x) => x.length)).toEqual([MAX_BUBBLE_LENGTH, 10]);
+    });
+
+    it('cuts a paragraph over the limit too', () => {
+      const long = 'ก'.repeat(MAX_BUBBLE_LENGTH + 1);
+      expect(splitBubbles('a\n\n' + long, true)).toEqual(['a', 'ก'.repeat(MAX_BUBBLE_LENGTH), 'ก']);
+    });
+
+    it('does not cut a bubble of exactly the limit, and says when more than five are needed', () => {
+      const exact = 'ก'.repeat(MAX_BUBBLE_LENGTH);
+      expect(splitBubbles(exact, false)).toEqual([exact]);
+      const huge = splitBubbles((exact + '\n\n').repeat(6) + 'ข', true);
+      expect(tooManyBubbles(huge)).toBe(true);
+      expect(tooManyBubbles(['a', 'b'])).toBe(false);
+    });
   });
 });
 

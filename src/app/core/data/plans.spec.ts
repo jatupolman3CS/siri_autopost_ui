@@ -35,11 +35,11 @@ describe('plan cards', () => {
       expect(DESIGN_PLANS.free.price).toBe(0);
     });
 
-    it('give the functions: none below Pro, four on Pro, all six on Premium', () => {
+    it('give the functions: none below Pro, five on Pro, all seven on Premium', () => {
       expect(DESIGN_PLANS.free.features).toEqual([]);
       expect(DESIGN_PLANS.basic.features).toEqual([]);
       expect([...DESIGN_PLANS.pro.features].sort()).toEqual(
-        ['advanced_anti_ban', 'ai', 'auto_reply', 'notifications'].sort(),
+        ['advanced_anti_ban', 'ai', 'auto_reply', 'line_chat', 'notifications'].sort(),
       );
       expect([...DESIGN_PLANS.agency.features].sort()).toEqual([...PLAN_FEATURES].sort());
     });
@@ -101,15 +101,22 @@ describe('plan cards', () => {
         ['advanced_anti_ban', true],
         ['notifications', true],
         ['auto_reply', true],
+        ['line_chat', true],
         ['bump', false],
         ['client_reports', false],
       ]);
     });
 
-    it('puts AI, anti-ban, notifications and auto-reply on Pro and everything on Premium only', () => {
+    it('puts AI, anti-ban, notifications, auto-reply and LINE chats on Pro and everything on Premium only', () => {
       expect(included('free')).toEqual([]);
       expect(included('basic')).toEqual([]);
-      expect(included('pro')).toEqual(['ai', 'advanced_anti_ban', 'notifications', 'auto_reply']);
+      expect(included('pro')).toEqual([
+        'ai',
+        'advanced_anti_ban',
+        'notifications',
+        'auto_reply',
+        'line_chat',
+      ]);
       expect(included('agency')).toEqual(PLAN_FEATURES);
     });
 
@@ -125,6 +132,7 @@ describe('plan cards', () => {
         'Advanced anti-ban',
         'Notifications (Telegram / LINE)',
         'Auto-reply',
+        'LINE OA customer chats',
         'Auto bump',
         'Client reports',
       ]);
@@ -136,8 +144,8 @@ describe('plan cards', () => {
       const views = tierViews(plans({ pro: { devices: 7 } }), 'month', t());
       expect(views.map((v) => v.k)).toEqual(['free', 'basic', 'pro', 'agency']);
       expect(views[2].limits.find((l) => l.key === 'devices')?.value).toBe('7');
-      expect(views[2].features.filter((f) => f.included)).toHaveLength(4);
-      expect(views.every((v) => v.limits.length === 7 && v.features.length === 6)).toBe(true);
+      expect(views[2].features.filter((f) => f.included)).toHaveLength(5);
+      expect(views.every((v) => v.limits.length === 7 && v.features.length === 7)).toBe(true);
     });
 
     it('calls the top plan Premium and says who each plan is good for', () => {
@@ -164,7 +172,7 @@ describe('plan cards', () => {
     it('has a row per number and per function and a cell per plan, in plan order', () => {
       const rows = compareRows(plans(), t());
       expect(rows.limits).toHaveLength(7);
-      expect(rows.features).toHaveLength(6);
+      expect(rows.features).toHaveLength(7);
       expect(rows.limits.every((r) => r.cells.length === 4)).toBe(true);
       const groups = rows.limits.find((r) => r.key === 'groups')!;
       expect(groups.cells.map((c) => c.value)).toEqual(['10', '50', '300', 'Unlimited']);

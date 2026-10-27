@@ -27,8 +27,22 @@ export const AUTO_DELETE_DAY_OPTIONS: readonly number[] = [0, 3, 7, 14];
 export const DRIP_MAX_COUNT = 12;
 export const MINUTES_PER_DAY = 1440;
 
+/**
+ * The hours a LINE chat schedule may send in (`LineOptions.AllowedFrom` / `AllowedTo` of the API), `HH:mm` in the
+ * schedule's local time. The window may wrap midnight (22:00 to 06:00).
+ */
+export interface LineWindow {
+  from: string;
+  to: string;
+}
+
+/** The API's default allowed hours of a LINE schedule. */
+export const DEFAULT_LINE_WINDOW: LineWindow = { from: '09:00', to: '20:00' };
+
 /** The part of a schedule the math reads (a `ScheduleDto`, or the builder's form state). */
 export interface ScheduleLike {
+  /** LINE schedules only: a time outside the window is moved to the window's start (see `slotsOf`). */
+  lineWindow?: LineWindow | null;
   mode: ScheduleMode;
   times?: readonly string[] | null;
   everyHours?: number | null;
@@ -157,11 +171,48 @@ function intervalSlots(s: ScheduleLike): string[] {
 }
 
 /**
- * The times of one day, `HH:mm` ascending. Daily, weekdays and weekend use their chosen times;
- * once uses its time; interval starts at the first time and repeats every N hours until midnight;
- * drip spreads its count between the from and to times (one post lands in the middle).
+ * Whether a time of day is inside the allowed hours (both ends included, to the minute), as the API's
+ * `Schedule.AllowsLineAt`: a window that starts after it ends (22:00 to 06:00) runs through midnight. No window
+ * allows every time; a text that is no time is outside any window.
  */
-export function slotsOf(schedule: ScheduleLike): string[] {
+export function inWindow(
+  time: string | null | undefined,
+  window: LineWindow | null | undefined,
+): boolean {
+  if (!window) return true;
+  const m = toMinutes(time);
+  if (m === null) return false;
+  const a = toMinutes(window.from) ?? 0;
+  const b = toMinutes(window.to) ?? MINUTES_PER_DAY - 1;
+  return a <= b ? m >= a && m <= b : m >= a || m <= b;
+}
+
+/** The window is one the API accepts: both times are exactly `HH:mm` (00:00 to 23:59) and they differ. */
+export function validWindow(window: LineWindow | null | undefined): boolean {
+  if (!window) return false;
+  const strict = /^([01]\d|2[0-3]):[0-5]\d$/;
+  return strict.test(window.from) && strict.test(window.to) && window.from !== window.to;
+}
+
+/**
+ * Where a time lands under the allowed hours: itself inside the window, else the window's start (the API's schedule
+ * moves a slot outside the hours to the next start of the window, plus a few random minutes it does not show here).
+ */
+export function clampToWindow(time: string, window: LineWindow | null | undefined): string {
+  if (!window || inWindow(time, window)) return time;
+  const start = toMinutes(window.from);
+  return start === null ? time : hhmm(start);
+}
+
+/**
+ * A day's times under the allowed hours: the ones outside move to the window's start, none is dropped (the API makes a
+ * post for every time, later), so the number of posts a day stays the same. Ascending; a clamped time may repeat.
+ */
+function underWindow(times: string[], window: LineWindow | null | undefined): string[] {
+  return window ? times.map((t) => clampToWindow(t, window)).sort() : times;
+}
+
+function baseSlots(schedule: ScheduleLike): string[] {
   switch (schedule.mode) {
     case 'drip':
       return dripSlots(schedule);
@@ -174,6 +225,16 @@ export function slotsOf(schedule: ScheduleLike): string[] {
     default:
       return normalizeTimes(schedule.times);
   }
+}
+
+/**
+ * The times of one day, `HH:mm` ascending. Daily, weekdays and weekend use their chosen times;
+ * once uses its time; interval starts at the first time and repeats every N hours until midnight;
+ * drip spreads its count between the from and to times (one post lands in the middle). A LINE schedule's
+ * `lineWindow` moves the times outside its allowed hours to the start of the window (see `underWindow`).
+ */
+export function slotsOf(schedule: ScheduleLike): string[] {
+  return underWindow(baseSlots(schedule), schedule.lineWindow);
 }
 
 /** True for the modes whose times are picked one by one (daily, weekdays, weekend). */
@@ -254,7 +315,7 @@ export function overrideKeyOfLink(linkId: string): string {
 /** The times one member posts at: its own override when it has one, else the schedule's slots. */
 export function memberSlots(schedule: ScheduleLike, memberKey: string): string[] {
   const own = normalizeTimes(schedule.overrides?.[memberKey]);
-  return own.length ? own : slotsOf(schedule);
+  return own.length ? underWindow(own, schedule.lineWindow) : slotsOf(schedule);
 }
 
 /** Posts per day over the given members. */
@@ -306,6 +367,8 @@ export interface GapPlan {
   overlap: boolean;
   /** The day's line runs past midnight. */
   pastMidnight: boolean;
+  /** LINE chats only: the day's line runs past the end of the allowed hours (the API moves the rest to the next day's start). */
+  pastWindow?: boolean;
 }
 
 /**
@@ -338,6 +401,39 @@ export function gapPlan(
     overlap: slots.length > 1 && roundMin + gap > nearest,
     pastMidnight: endMin >= MINUTES_PER_DAY,
   };
+}
+
+/**
+ * The seconds variant of `gapPlan` for a LINE chat schedule whose gap is automatic: the workspace's LINE gap, a random
+ * time between `minSeconds` and `maxSeconds` after the chat before it (anti-ban settings `lineChat`). `gap` and the
+ * minutes of the result are minutes with a fraction (a 45 s gap is 0.75); the guaranteed figures use the shortest gap,
+ * `endMin` the average one. With the schedule's allowed hours (`window`) it also says whether the day's line runs past
+ * the end of them, when the API moves the chats still to send to the start of the next day. Null without a gap, a chat
+ * or a time. A schedule with its own gap in minutes (`groupGapMinutes`) uses `gapPlan`.
+ */
+export function chatGapPlan(
+  minSeconds: number,
+  maxSeconds: number,
+  members: number,
+  perDay: number,
+  slots: readonly string[],
+  window?: LineWindow | null,
+): GapPlan | null {
+  if (!(minSeconds > 0)) return null;
+  const longest = Math.max(minSeconds, maxSeconds);
+  const base = gapPlan(minSeconds / 60, members, perDay, slots);
+  if (!base) return null;
+  const first = toMinutes(slots[0]) ?? 0;
+  const endMin = first + Math.round((Math.max(0, perDay - 1) * (minSeconds + longest)) / 2 / 60);
+  let pastWindow = false;
+  if (window && validWindow(window)) {
+    const start = toMinutes(window.from) ?? 0;
+    const stop = toMinutes(window.to) ?? MINUTES_PER_DAY - 1;
+    // A window through midnight ends the next morning, unless the day's line starts in that morning part already.
+    const end = stop >= start || first <= stop ? stop : stop + MINUTES_PER_DAY;
+    pastWindow = endMin > end;
+  }
+  return { ...base, endMin, pastMidnight: endMin >= MINUTES_PER_DAY, pastWindow };
 }
 
 /** Slots, posts per day and number of members with their own times, for a schedule's summary line. */

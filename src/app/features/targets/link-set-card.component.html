@@ -1,8 +1,18 @@
 <section class="panel card" [class.off-item]="!set().active" [attr.aria-label]="set().name">
   <div class="head">
-    <span class="ico" aria-hidden="true"><i class="ph ph-link"></i></span>
+    <span class="ico" aria-hidden="true"
+      ><i class="ph" [class.ph-link]="!isLine()" [class.ph-chat-circle-text]="isLine()"></i
+    ></span>
     <div class="title">
       <div class="fw6">{{ set().name }}</div>
+      @if (isLine()) {
+        <div class="badge">
+          <app-chip tone="accent"
+            ><i class="ph ph-chat-circle-text" aria-hidden="true"></i
+            >{{ t().api.line.chatBadge }}</app-chip
+          >
+        </div>
+      }
       <div class="small muted">{{ meta() }}</div>
       @if (!set().active) {
         <div class="small off-note">{{ t().api.setOffHint }}</div>
@@ -25,24 +35,37 @@
       >
         <i class="ph ph-pencil-simple"></i>
       </button>
-      <button
-        type="button"
-        class="su-btn su-btn-sm su-btn-ghost"
-        [disabled]="perm.readOnly()"
-        [attr.title]="perm.editHint() || null"
-        (click)="addLink()"
-      >
-        <i class="ph ph-plus"></i>{{ t().ts.addLink }}
-      </button>
-      <button
-        type="button"
-        class="su-btn su-btn-sm su-btn-ghost"
-        [disabled]="perm.readOnly()"
-        [attr.title]="perm.editHint() || null"
-        (click)="bulk.emit()"
-      >
-        <i class="ph ph-clipboard-text"></i>{{ t().ts.bulk }}
-      </button>
+      @if (isLine()) {
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-secondary"
+          data-testid="import-chats"
+          [disabled]="perm.readOnly() || !!importHint()"
+          [attr.title]="importHint() || null"
+          (click)="chats.emit()"
+        >
+          <i class="ph ph-chat-circle-text"></i>{{ t().api.line.chatImport }}
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          [disabled]="perm.readOnly()"
+          [attr.title]="perm.editHint() || null"
+          (click)="addLink()"
+        >
+          <i class="ph ph-plus"></i>{{ t().ts.addLink }}
+        </button>
+        <button
+          type="button"
+          class="su-btn su-btn-sm su-btn-ghost"
+          [disabled]="perm.readOnly()"
+          [attr.title]="perm.editHint() || null"
+          (click)="bulk.emit()"
+        >
+          <i class="ph ph-clipboard-text"></i>{{ t().ts.bulk }}
+        </button>
+      }
       <button
         type="button"
         class="su-btn su-btn-sm su-btn-secondary"
@@ -95,12 +118,12 @@
           <p
             class="su-field-help status"
             [class.ok]="s.kind === 'ready'"
-            [class.warn]="s.kind === 'offline' || s.kind === 'none'"
+            [class.warn]="s.kind === 'offline' || s.kind === 'none' || s.kind === 'login'"
           >
             <i
               class="ph"
               [class.ph-check-circle]="s.kind === 'ready'"
-              [class.ph-warning]="s.kind === 'offline' || s.kind === 'none'"
+              [class.ph-warning]="s.kind === 'offline' || s.kind === 'none' || s.kind === 'login'"
               [class.ph-info]="s.kind === 'auto'"
               aria-hidden="true"
             ></i
@@ -108,37 +131,51 @@
           </p>
         }
       }
-      <p class="su-field-help">{{ t().api.flow.postAsHint }}</p>
+      <p class="su-field-help">{{ postAsHint() }}</p>
     </div>
   }
 
   <div class="rules" [attr.title]="perm.editHint() || null">
-    <div class="small fw6">{{ t().api.flow.setRulesTitle }}</div>
+    <div class="small fw6">
+      {{ isLine() ? t().api.line.chatRulesTitle : t().api.flow.setRulesTitle }}
+    </div>
     <app-checkbox
-      [label]="t().api.flow.setRandomOrder"
+      [label]="isLine() ? t().api.line.chatRandomOrder : t().api.flow.setRandomOrder"
       [checked]="set().randomOrder"
       [disabled]="perm.readOnly()"
       (checkedChange)="setRandomOrder($event)"
     />
     <p class="su-field-help">
-      {{ t().api.flow.setRandomOrderHint }}
-      <a routerLink="/app/antiban">{{ t().nav.antiban }}</a>
+      @if (isLine()) {
+        {{ t().api.line.chatRandomOrderHint }}
+      } @else {
+        {{ t().api.flow.setRandomOrderHint }}
+        <a routerLink="/app/antiban">{{ t().nav.antiban }}</a>
+      }
     </p>
     <label class="cap">
-      <span>{{ t().api.flow.setDailyPerGroup }}</span>
+      <span>{{
+        isLine() ? t().api.line.chatDailyPerCustomer : t().api.flow.setDailyPerGroup
+      }}</span>
       <input
         class="cell"
         type="number"
         min="0"
         [max]="dailyMaxLimit"
         [value]="set().dailyPerGroup"
-        [attr.aria-label]="t().api.flow.setDailyPerGroup"
+        [attr.aria-label]="
+          isLine() ? t().api.line.chatDailyPerCustomer : t().api.flow.setDailyPerGroup
+        "
         [disabled]="perm.readOnly()"
         (change)="setDailyPerGroup($event)"
       />
-      <span>{{ t().api.flow.setDailyPerGroupUnit }}</span>
+      <span>{{
+        isLine() ? t().api.line.chatDailyPerCustomerUnit : t().api.flow.setDailyPerGroupUnit
+      }}</span>
     </label>
-    <p class="su-field-help">{{ t().api.flow.setDailyPerGroupHint }}</p>
+    <p class="su-field-help">
+      {{ isLine() ? t().api.line.chatDailyPerCustomerHint : t().api.flow.setDailyPerGroupHint }}
+    </p>
   </div>
 
   <div class="rows">
@@ -146,7 +183,7 @@
       <app-link-row [setId]="set().id" [link]="l" [focus]="l.id === newId()" />
     }
     @if (!set().links.length) {
-      <p class="empty">{{ t().ts.empty }}</p>
+      <p class="empty">{{ isLine() ? t().api.line.chatSetEmpty : t().ts.empty }}</p>
     }
   </div>
   <app-pager [pager]="pager" />

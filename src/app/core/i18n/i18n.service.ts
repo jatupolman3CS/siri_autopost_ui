@@ -3,6 +3,7 @@ import { AP_I18N } from './i18n.data';
 import type { AP_I18N_ENGINE } from './i18n.engine';
 import { AP_I18N_EXTRA } from './i18n.extra';
 import type { AP_I18N_FLOW } from './i18n.flow';
+import type { AP_I18N_LINE } from './i18n.line';
 import { AP_I18N_FIXES, Fixes } from './i18n.fixes';
 
 const isNode = (v: unknown): v is Record<string, unknown> =>
@@ -25,12 +26,14 @@ export function applyFixes<T>(base: T, fixes: Fixes<T>): T {
  * has been imported (see registerPack):
  *  - flow: collections, link sets, schedules, post editor, calendar and overview additions (i18n.flow.ts)
  *  - engine: test post, notifications, auto-reply, reports, anti-ban additions and backup (i18n.engine.ts)
+ *  - line: LINE Official Account customer chats: the roster page, chat link sets, the import dialog (i18n.line.ts)
  * A pack is typed here but only exists at run time after its module has been imported, so every file that
  * reads t().api.<name> must `import './i18n.<name>'`; the packs stay out of the first bundle that way.
  */
 export interface Packs {
   flow: typeof AP_I18N_FLOW;
   engine: typeof AP_I18N_ENGINE;
+  line: typeof AP_I18N_LINE;
 }
 export type PackName = keyof Packs;
 

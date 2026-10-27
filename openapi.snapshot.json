@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5101/"
+      "url": "http://localhost:5100/"
     }
   ],
   "paths": {
@@ -2243,6 +2243,46 @@
         }
       }
     },
+    "/api/device/line/chats": {
+      "put": {
+        "tags": [
+          "DeviceApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncLineChatsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncLineChatsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncLineChatsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/device/jobs/claim": {
       "post": {
         "tags": [
@@ -4196,6 +4236,150 @@
         }
       }
     },
+    "/api/workspaces/{wsId}/line/chats": {
+      "get": {
+        "tags": [
+          "LineChats"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "accountId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "label",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "activeWithinDays",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "doNotSend",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LineChatPageDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/line/chats/{id}": {
+      "put": {
+        "tags": [
+          "LineChats"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLineChatRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLineChatRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLineChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LineChatDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/workspaces/{wsId}/link-sets": {
       "get": {
         "tags": [
@@ -4744,6 +4928,65 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/BulkLinksRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkLinksResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces/{wsId}/link-sets/{id}/links/from-line-chats": {
+      "post": {
+        "tags": [
+          "LinkSets"
+        ],
+        "parameters": [
+          {
+            "name": "wsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportLineChatsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportLineChatsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportLineChatsRequest"
               }
             }
           },
@@ -7171,6 +7414,16 @@
           "typingSpeed": {
             "type": "string",
             "default": "normal"
+          },
+          "lineChat": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LineChatAntiBanDto"
+              }
+            ]
           }
         }
       },
@@ -7607,6 +7860,9 @@
             "type": "integer",
             "format": "int32",
             "default": 0
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Platform"
           }
         }
       },
@@ -7783,6 +8039,16 @@
             "type": "integer",
             "format": "int32",
             "default": 0
+          },
+          "lineOptions": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LineOptionsDto"
+              }
+            ]
           }
         }
       },
@@ -7937,6 +8203,11 @@
               "null",
               "string"
             ]
+          },
+          "skippedDoNotSend": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -8596,6 +8867,16 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "channel": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Platform"
+              }
+            ]
           }
         }
       },
@@ -9034,6 +9315,16 @@
               "null",
               "string"
             ]
+          },
+          "line": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DeviceLineSummaryDto"
+              }
+            ]
           }
         }
       },
@@ -9087,6 +9378,67 @@
           },
           "more": {
             "type": "boolean"
+          }
+        }
+      },
+      "DeviceLineSummaryDto": {
+        "required": [
+          "accountId",
+          "name",
+          "handle",
+          "botId",
+          "ready",
+          "readyAt",
+          "restUntil",
+          "syncedAt",
+          "chatCount"
+        ],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "botId": {
+            "type": "string"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "readyAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "restUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "syncedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "chatCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sessionLost": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -9259,6 +9611,23 @@
           "sessionLost": {
             "type": "boolean",
             "default": false
+          },
+          "lineSessionLost": {
+            "type": "boolean",
+            "default": false
+          },
+          "lineAccountId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "lineNote": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -9450,6 +9819,30 @@
           "top"
         ]
       },
+      "FromLineChatsFilter": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "activeWithinDays": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "GoogleLogInRequest": {
         "required": [
           "idToken"
@@ -9557,6 +9950,22 @@
               "null",
               "boolean"
             ]
+          },
+          "line": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LineHeartbeatRequest"
+              }
+            ]
+          },
+          "lineSessionOk": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -9633,6 +10042,42 @@
           }
         }
       },
+      "ImportLineChatsRequest": {
+        "required": [
+          "accountId"
+        ],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "chatIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "filter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FromLineChatsFilter"
+              }
+            ]
+          },
+          "allMatching": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
       "InviteRequest": {
         "required": [
           "email",
@@ -9698,6 +10143,29 @@
           "shot": {
             "type": "boolean",
             "default": false
+          },
+          "channel": {
+            "type": "string",
+            "default": "fb"
+          },
+          "bubbles": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "line": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LineJobOptionsDto"
+              }
+            ]
           }
         }
       },
@@ -9911,6 +10379,208 @@
           }
         }
       },
+      "LineChatAccountSummaryDto": {
+        "required": [
+          "id",
+          "name",
+          "deviceId",
+          "ready"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "ready": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LineChatAntiBanDto": {
+        "type": "object",
+        "properties": {
+          "minGapSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "default": 45
+          },
+          "maxGapSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "default": 120
+          }
+        }
+      },
+      "LineChatDto": {
+        "required": [
+          "id",
+          "accountId",
+          "name",
+          "url",
+          "labels",
+          "lastMessageAt",
+          "unread",
+          "doNotSend",
+          "linkedSetCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lastMessageAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "unread": {
+            "type": "boolean"
+          },
+          "doNotSend": {
+            "type": "boolean"
+          },
+          "linkedSetCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "LineChatPageDto": {
+        "required": [
+          "items",
+          "total",
+          "labels",
+          "accounts"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineChatDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineChatAccountSummaryDto"
+            }
+          }
+        }
+      },
+      "LineHeartbeatRequest": {
+        "required": [
+          "ready"
+        ],
+        "type": "object",
+        "properties": {
+          "ready": {
+            "type": "boolean"
+          },
+          "botId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "oaName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "LineJobOptionsDto": {
+        "required": [
+          "skipIfActiveMinutes",
+          "imagesFirst",
+          "allowedFrom",
+          "allowedTo"
+        ],
+        "type": "object",
+        "properties": {
+          "skipIfActiveMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "imagesFirst": {
+            "type": "boolean"
+          },
+          "allowedFrom": {
+            "type": "string"
+          },
+          "allowedTo": {
+            "type": "string"
+          }
+        }
+      },
+      "LineOptionsDto": {
+        "type": "object",
+        "properties": {
+          "allowedFrom": {
+            "type": "string",
+            "default": "09:00"
+          },
+          "allowedTo": {
+            "type": "string",
+            "default": "20:00"
+          },
+          "skipIfActiveMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "default": 30
+          },
+          "splitBubbles": {
+            "type": "boolean",
+            "default": false
+          },
+          "imagesFirst": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
       "LineSettingsDto": {
         "required": [
           "on",
@@ -9998,6 +10668,9 @@
             "type": "integer",
             "format": "int32",
             "default": 0
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Platform"
           }
         }
       },
@@ -10916,7 +11589,8 @@
       },
       "Platform": {
         "enum": [
-          "fb"
+          "fb",
+          "line"
         ]
       },
       "PlatformHealthDto": {
@@ -11052,6 +11726,13 @@
         "properties": {
           "fb": {
             "type": "integer",
+            "format": "int32"
+          },
+          "line": {
+            "type": [
+              "null",
+              "integer"
+            ],
             "format": "int32"
           }
         }
@@ -11189,6 +11870,11 @@
           "rushed": {
             "type": "boolean",
             "default": false
+          },
+          "deferCount": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -11550,6 +12236,23 @@
               "null",
               "string"
             ]
+          },
+          "skip": {
+            "type": "boolean",
+            "default": false
+          },
+          "deferMinutes": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -11776,6 +12479,16 @@
             "type": "integer",
             "format": "int32",
             "default": 0
+          },
+          "lineOptions": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LineOptionsDto"
+              }
+            ]
           }
         }
       },
@@ -11965,6 +12678,16 @@
             "type": "integer",
             "format": "int32",
             "default": 0
+          },
+          "lineOptions": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LineOptionsDto"
+              }
+            ]
           }
         }
       },
@@ -12104,6 +12827,9 @@
           "kind": {
             "type": "string",
             "default": "group"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Platform"
           }
         }
       },
@@ -12315,6 +13041,69 @@
           }
         }
       },
+      "SyncLineChatDto": {
+        "required": [
+          "userId",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "labels": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "lastMessageAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "unread": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "SyncLineChatsRequest": {
+        "required": [
+          "botId",
+          "oaName",
+          "complete",
+          "chats"
+        ],
+        "type": "object",
+        "properties": {
+          "botId": {
+            "type": "string"
+          },
+          "oaName": {
+            "type": "string"
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "chats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncLineChatDto"
+            }
+          }
+        }
+      },
       "SyncRequest": {
         "required": [
           "version",
@@ -12447,7 +13236,10 @@
         "type": "object",
         "properties": {
           "linkSetId": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
           },
           "linkId": {
@@ -12482,6 +13274,13 @@
             ]
           },
           "deviceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "chatId": {
             "type": [
               "null",
               "string"
@@ -12642,6 +13441,17 @@
           }
         }
       },
+      "UpdateLineChatRequest": {
+        "required": [
+          "doNotSend"
+        ],
+        "type": "object",
+        "properties": {
+          "doNotSend": {
+            "type": "boolean"
+          }
+        }
+      },
       "UpdateLinkRequest": {
         "required": [
           "name",
@@ -12719,6 +13529,16 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "channel": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Platform"
+              }
+            ]
           }
         }
       },
@@ -12979,6 +13799,10 @@
           },
           "bump": {
             "type": "boolean"
+          },
+          "lineChat": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -13064,6 +13888,9 @@
     },
     {
       "name": "Library"
+    },
+    {
+      "name": "LineChats"
     },
     {
       "name": "LinkSets"

@@ -11,28 +11,32 @@
     <input
       class="cell"
       [value]="link().name"
-      [placeholder]="t().ts.namePh"
-      [attr.aria-label]="t().ts.namePh"
+      [placeholder]="isChat() ? t().api.line.chatNamePh : t().ts.namePh"
+      [attr.aria-label]="isChat() ? t().api.line.chatNamePh : t().ts.namePh"
       [maxLength]="limits.name"
       [disabled]="perm.readOnly()"
       (input)="edit('name', $event)"
     />
     <div class="urlwrap">
-      <input
-        #urlInput
-        class="cell"
-        [class.bad]="!!note()"
-        [class.has-kind]="showKind()"
-        [value]="link().url"
-        [placeholder]="t().ts.urlPh"
-        [attr.aria-label]="t().ts.urlPh"
-        [attr.aria-invalid]="note() ? true : null"
-        [attr.aria-describedby]="note() ? 'note-' + link().id : null"
-        [maxLength]="limits.url"
-        [disabled]="perm.readOnly()"
-        spellcheck="false"
-        (input)="edit('url', $event)"
-      />
+      @if (isChat()) {
+        <span class="ro" [attr.title]="link().url">{{ link().url }}</span>
+      } @else {
+        <input
+          #urlInput
+          class="cell"
+          [class.bad]="!!note()"
+          [class.has-kind]="showKind()"
+          [value]="link().url"
+          [placeholder]="t().ts.urlPh"
+          [attr.aria-label]="t().ts.urlPh"
+          [attr.aria-invalid]="note() ? true : null"
+          [attr.aria-describedby]="note() ? 'note-' + link().id : null"
+          [maxLength]="limits.url"
+          [disabled]="perm.readOnly()"
+          spellcheck="false"
+          (input)="edit('url', $event)"
+        />
+      }
       @if (showKind()) {
         <app-chip
           class="kind"
@@ -43,15 +47,17 @@
         >
       }
     </div>
-    <input
-      class="cell"
-      [value]="link().code"
-      [placeholder]="t().ts.codePh"
-      [attr.aria-label]="t().ts.codePh"
-      [maxLength]="limits.code"
-      [disabled]="perm.readOnly()"
-      (input)="edit('code', $event)"
-    />
+    @if (!isChat() || link().code) {
+      <input
+        class="cell"
+        [value]="link().code"
+        [placeholder]="t().ts.codePh"
+        [attr.aria-label]="t().ts.codePh"
+        [maxLength]="limits.code"
+        [disabled]="perm.readOnly()"
+        (input)="edit('code', $event)"
+      />
+    }
     <label class="max" [attr.title]="t().ts.maxTitle">
       <span>{{ t().ts.maxLabel }}</span>
       <input

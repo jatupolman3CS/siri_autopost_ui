@@ -3,6 +3,7 @@ import {
   ApiBulkLinksResult,
   ApiCsvImportResult,
   ApiCsvLinkRow,
+  ApiImportLineChats,
   ApiLinkSet,
   ApiService,
   ApiSetLink,
@@ -10,13 +11,22 @@ import {
 import { ComposeSettings } from '../flow/compose';
 import { EXPORT_FILES, downloadCsv } from '../flow/download';
 import { duplicateUrlFlags, linkKindOf, linksToCsv, normalizeGroupUrl } from '../flow/group-links';
+import { LinkChannel, channelOf } from '../flow/line-chats';
 import { CollectionsStore } from './collections.store';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
 /** How much the API accepts per field of a set and its links (Domain `LinkSet`/`SetLink`): inputs stop here. */
-export const LINK_LIMITS = { setName: 120, name: 200, url: 300, code: 100, dailyMax: 50 } as const;
+export const LINK_LIMITS = {
+  setName: 120,
+  name: 200,
+  url: 300,
+  code: 100,
+  dailyMax: 50,
+  /** Customer chats in one LINE link set (LinkSet.MaxLinksFor(line)); a Facebook set holds 200 groups. */
+  chatLinks: 2000,
+} as const;
 /** How long an edit waits for the next keystroke before the whole link row is saved. */
 export const EDIT_DEBOUNCE_MS = 600;
 /** Events that move a link's health (the engine switched it off, it went pending, it was enabled again). */
@@ -45,7 +55,7 @@ export interface SetEdit {
   dailyPerGroup?: number;
 }
 
-/** A link the engine would post to: switched on and a real Facebook group or page address. */
+/** A link the engine would post to: switched on and a real Facebook group or page address (or a LINE chat address). */
 export const isActiveLink = (l: Pick<ApiSetLink, 'enabled' | 'valid'>): boolean =>
   l.enabled && l.valid;
 
@@ -66,9 +76,12 @@ export function firstCodedLink(set: ApiLinkSet): ApiSetLink | undefined {
 /**
  * The address checks the server answers with (`valid`, `duplicate`, `kind`) worked out again from the addresses,
  * so a row edited here is flagged (and called a group or a page) before its save comes back. Rows that did not
- * change keep their identity.
+ * change keep their identity. A LINE set's rows are left as the server flagged them: a chat's address is read-only
+ * (only the customer's name is edited), so nothing here can change its flags, and the Facebook parser would call
+ * every chat address invalid.
  */
-function withFlags(links: ApiSetLink[]): ApiSetLink[] {
+function withFlags(links: ApiSetLink[], channel: LinkChannel = 'fb'): ApiSetLink[] {
+  if (channel === 'line') return links;
   const dup = duplicateUrlFlags(links);
   return links.map((l, i) => {
     const valid = normalizeGroupUrl(l.url) !== '';
@@ -215,9 +228,14 @@ export class LinkSetsStore {
     this.moreOpen.update((m) => ({ ...m, [id]: open }));
   }
 
-  async createSet(name: string, postAsAccountId?: string | null): Promise<ApiLinkSet> {
+  /** Creates an empty set. `channel` 'line' makes a set of LINE customer chats (the API checks the plan and the account). */
+  async createSet(
+    name: string,
+    postAsAccountId?: string | null,
+    channel: LinkChannel = 'fb',
+  ): Promise<ApiLinkSet> {
     const wsId = this.requireWs();
-    const set = await this.api.createLinkSet(wsId, name, postAsAccountId);
+    const set = await this.api.createLinkSet(wsId, name, postAsAccountId, channel);
     if (this.ws.id() === wsId) this.sets.update((l) => [...l, set]);
     return set;
   }
@@ -315,7 +333,9 @@ export class LinkSetsStore {
     const link = await this.api.addLink(wsId, setId);
     if (this.ws.id() !== wsId) return null;
     this.sets.update((list) =>
-      list.map((s) => (s.id === setId ? { ...s, links: withFlags([...s.links, link]) } : s)),
+      list.map((s) =>
+        s.id === setId ? { ...s, links: withFlags([...s.links, link], channelOf(s)) } : s,
+      ),
     );
     return link;
   }
@@ -394,6 +414,18 @@ export class LinkSetsStore {
     return result;
   }
 
+  /**
+   * Puts LINE chats into a chat set: the picked ones (`chatIds`) or every chat that matches a filter (`allMatching`).
+   * Answers how many were added, repeated, left out for the owner's "do not send" mark or held by another extension.
+   * Rejects when the API refuses (plan, channel, 2,000 links); the dialog shows the reason.
+   */
+  async importChats(setId: string, body: ApiImportLineChats): Promise<ApiBulkLinksResult> {
+    const wsId = this.requireWs();
+    const result = await this.api.importLineChats(wsId, setId, body);
+    if (this.ws.id() === wsId) this.mergeSet(result.set);
+    return result;
+  }
+
   /** CSV rows `set, name, url, code` (group or page addresses): missing sets are created by name. Reads the sets again afterwards. */
   async importCsv(rows: ApiCsvLinkRow[]): Promise<ApiCsvImportResult> {
     const wsId = this.requireWs();
@@ -402,9 +434,15 @@ export class LinkSetsStore {
     return result;
   }
 
-  /** Saves every link of every set as `autopost-links.csv`; false when the browser could not start the download. */
+  /**
+   * Saves every link of every Facebook set as `autopost-links.csv`; false when the browser could not start the download.
+   * LINE sets are left out: their rows are customers, and the CSV import reads group addresses only.
+   */
   exportCsv(): boolean {
-    return downloadCsv(EXPORT_FILES.links, linksToCsv(this.sets()));
+    return downloadCsv(
+      EXPORT_FILES.links,
+      linksToCsv(this.sets().filter((s) => channelOf(s) === 'fb')),
+    );
   }
 
   // ---- internals --------------------------------------------------------------------------------------------
@@ -421,7 +459,9 @@ export class LinkSetsStore {
 
   private setLinks(setId: string, change: (links: ApiSetLink[]) => ApiSetLink[]): void {
     this.sets.update((list) =>
-      list.map((s) => (s.id === setId ? { ...s, links: withFlags(change(s.links)) } : s)),
+      list.map((s) =>
+        s.id === setId ? { ...s, links: withFlags(change(s.links), channelOf(s)) } : s,
+      ),
     );
   }
 
@@ -548,7 +588,7 @@ export class LinkSetsStore {
       postAsAccountId: own.postAsAccountId,
       randomOrder: own.randomOrder,
       dailyPerGroup: own.dailyPerGroup,
-      links: edited ? withFlags(links) : links,
+      links: edited ? withFlags(links, channelOf(server)) : links,
     };
   }
 }

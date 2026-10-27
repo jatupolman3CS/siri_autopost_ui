@@ -9,11 +9,12 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
+import { AccountsStore, deviceOfAccount, extensionNameOf } from '../../core/data/accounts.store';
 import { DevicesStore } from '../../core/data/devices.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore } from '../../core/data/posts.store';
+import { channelOf } from '../../core/flow/line-chats';
 import { ownerOfSet } from '../../core/flow/link-ownership';
 import { problemMessage } from '../../core/http/problem-details';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
@@ -145,8 +146,10 @@ export class TimelineHandoverModalComponent {
     const set = this.linkSets.byId(setId);
     if (!set) return [];
     const owner = ownerOfSet(set, this.accounts.list());
-    return this.accounts
-      .connected()
+    // A set goes to a browser of its own kind: Facebook sets to Facebook accounts, chat sets to LINE accounts.
+    const posters =
+      channelOf(set) === 'line' ? this.accounts.connectedLine() : this.accounts.connected();
+    return posters
       .filter((a) => a.id !== owner)
       .map((a) => ({ id: a.id, name: extensionNameOf(a, this.devices.list()) }));
   }
@@ -188,7 +191,7 @@ export class TimelineHandoverModalComponent {
     if (!owner) return { name: this.t().api.flow.tlHandNobody, state: '' };
     const f = this.t().api.flow;
     const account = this.accounts.byId(owner);
-    const device = this.devices.list().find((d) => d.accountId === owner);
+    const device = deviceOfAccount(owner, this.devices.list());
     const state = !account?.connected
       ? f.tlHandUnbound
       : device?.online

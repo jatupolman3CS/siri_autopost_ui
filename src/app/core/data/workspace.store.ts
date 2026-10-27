@@ -24,6 +24,8 @@ export class WorkspaceStore {
    */
   readonly aiLocked = computed(() => this.loaded() && !this.current()?.ai);
   readonly bumpLocked = computed(() => this.loaded() && !this.current()?.bump);
+  /** The owner's plan has no LINE customer chats (`line_chat`, Pro and above). */
+  readonly lineChatLocked = computed(() => this.loaded() && !this.current()?.lineChat);
   private readonly userId = computed(() => this.session.user()?.id ?? null);
   private lastUser: string | null = null;
   private lastPlan: string | null = null;

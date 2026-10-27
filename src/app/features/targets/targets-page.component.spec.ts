@@ -682,7 +682,11 @@ describe('TargetsPageComponent', () => {
       fixture.detectChanges();
       modalButtons()[1].click();
       const req = http.expectOne({ method: 'POST', url: SETS_URL });
-      expect(req.request.body).toEqual({ name: 'Villas', postAsAccountId: null });
+      expect(req.request.body).toEqual({
+        name: 'Villas',
+        postAsAccountId: null,
+        channel: 'fb',
+      });
       req.flush(apiLinkSet({ id: 's2', name: 'Villas' }));
       await settle();
       fixture.detectChanges();

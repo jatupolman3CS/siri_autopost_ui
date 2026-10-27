@@ -87,6 +87,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/targets/targets-page.component').then((m) => m.TargetsPageComponent),
       },
+      // The customers of the shop's LINE Official Account (the chat roster); the strings are in the lazy pack "line".
+      {
+        path: 'line-chats',
+        title: 'api.lineChatNav',
+        loadComponent: () =>
+          import('./features/line/line-chats-page.component').then((m) => m.LineChatsPageComponent),
+      },
       {
         path: 'schedules',
         title: 'nav.schedules',

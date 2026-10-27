@@ -42,6 +42,8 @@ export const WORKSPACE: ApiWorkspace = {
   // A Pro owner: the AI writer yes, bumping (Premium) no.
   ai: true,
   bump: false,
+  // A Pro owner: LINE chats are in the plan.
+  lineChat: true,
 };
 
 export const USER: ApiUser = {
@@ -119,6 +121,7 @@ export function apiPost(over: Partial<ApiPost> & { id: string; scheduledAt: stri
     targetUrl: null,
     isTest: false,
     rushed: false,
+    deferCount: 0,
     ...over,
   };
 }
@@ -258,7 +261,8 @@ export function answerWorkspaceLoads(
       antiBan: {
         min: 3,
         max: 12,
-        limits: { fb: 40 },
+        limits: { fb: 40, line: 100 },
+        lineChat: { minGapSeconds: 45, maxGapSeconds: 120 },
         typing: true,
         typingSpeed: 'normal',
         scroll: true,

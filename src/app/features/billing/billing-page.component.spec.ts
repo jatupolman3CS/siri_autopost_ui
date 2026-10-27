@@ -202,6 +202,7 @@ describe('BillingPageComponent', () => {
         t().api.planFeature.advanced_anti_ban,
         t().api.planFeature.notifications,
         t().api.planFeature.auto_reply,
+        t().api.planFeature.line_chat,
         t().api.planFeature.bump,
         t().api.planFeature.client_reports,
       ]);

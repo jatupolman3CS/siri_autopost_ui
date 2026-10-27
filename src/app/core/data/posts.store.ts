@@ -45,6 +45,7 @@ export function toItem(p: ApiPost): PostItem {
     groupCode: p.code ?? null,
     isTest: p.isTest ?? false,
     rushed: p.rushed ?? false,
+    deferCount: p.deferCount ?? 0,
   };
 }
 

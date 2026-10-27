@@ -19,6 +19,7 @@ export function apiLink(over: Partial<ApiSetLink> & { id: string }): ApiSetLink 
     duplicate: false,
     // The server tells a group from a page by the address ("group" while the address is not valid).
     kind: linkKindOf(url),
+    channel: 'fb',
     ...over,
   };
 }
@@ -33,6 +34,7 @@ export function apiLinkSet(over: Partial<ApiLinkSet> & { id: string }): ApiLinkS
     active: true,
     randomOrder: true,
     dailyPerGroup: 0,
+    channel: 'fb',
     ...over,
   };
 }

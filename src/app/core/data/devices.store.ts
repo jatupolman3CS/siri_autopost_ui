@@ -1,12 +1,19 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
-import { ApiDevice, ApiPairingCode, ApiService } from '../http/api.service';
+import { ApiDevice, ApiDeviceLine, ApiPairingCode, ApiService } from '../http/api.service';
 import { INPUT_LIMITS } from '../http/input-limits';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 
-/** Events that change what the device list shows: presence, pairing, a rename or a pause. */
-const DEVICE_EVENTS = ['device.online', 'device.paired', 'device.revoked', 'device.updated'];
+/** Events that change what the device list shows: presence, pairing, a rename, a pause or a LINE chat sync. */
+const DEVICE_EVENTS = [
+  'device.online',
+  'device.paired',
+  'device.revoked',
+  'device.updated',
+  // The browser synced its LINE chat list: the chat count and the sync time of the device change.
+  'device.line_chats',
+];
 /** The event stream keeps the list fresh; this poll only runs while the stream is down. */
 const FALLBACK_POLL_MS = 60_000;
 /** An automatic pause ends without any event: the clock it is compared with moves this often. */
@@ -20,6 +27,21 @@ export function autoPauseOf(
   if (!d.autoPausedUntil) return null;
   const until = new Date(d.autoPausedUntil);
   return until.getTime() > now.getTime() ? { until, reason: d.autoPauseReason ?? '' } : null;
+}
+
+/**
+ * Where a browser's LINE Official Account stands: `login` = the browser is not logged in to LINE OA Manager (it said so,
+ * or it has not reported ready lately: the extension is off or LINE is not switched on in it), `resting` = the engine
+ * rests the LINE account for a few hours after failed sends, `ready` = chats can go out.
+ */
+export type LineState = 'login' | 'resting' | 'ready';
+
+export function lineStateOf(
+  line: Pick<ApiDeviceLine, 'ready' | 'sessionLost' | 'restUntil'>,
+  now: Date,
+): LineState {
+  if (line.sessionLost || !line.ready) return 'login';
+  return line.restUntil && new Date(line.restUntil).getTime() > now.getTime() ? 'resting' : 'ready';
 }
 
 // Browsers with the extension paired to the current workspace, and the pairing code flow.
@@ -155,6 +177,17 @@ export class DevicesStore {
     const wsId = this.ws.id();
     if (!wsId) return;
     await this.api.sendDeviceCommand(wsId, id, 'takeJobs');
+  }
+
+  /**
+   * Tells a browser to read its LINE chat list now (the `syncLineChats` command): it opens LINE OA Manager in its posting
+   * window, scrolls the chat list and sends the names, labels and last-message times (never message text). The command is
+   * answered at once; the list arrives later as a `device.line_chats` event.
+   */
+  async syncLineChats(id: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    await this.api.sendDeviceCommand(wsId, id, 'syncLineChats');
   }
 
   async revoke(id: string): Promise<void> {

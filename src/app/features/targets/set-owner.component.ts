@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
+import { AccountsStore, deviceOfAccount, extensionNameOf } from '../../core/data/accounts.store';
 import { DevicesStore } from '../../core/data/devices.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { PermissionsService } from '../../core/data/permissions.service';
@@ -7,6 +7,7 @@ import { groupOverlaps, ownerOfSet } from '../../core/flow/link-ownership';
 import { ApiLinkSet } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
+import '../../core/i18n/i18n.line';
 
 interface OverlapRow {
   key: string;
@@ -152,7 +153,7 @@ export class SetOwnerComponent {
   /** Whether the browser is online; null while it is unbound or the browsers have not arrived. */
   protected readonly online = computed(() => {
     const id = this.owner();
-    return this.devices.list().find((d) => d.accountId === id)?.online ?? null;
+    return id ? (deviceOfAccount(id, this.devices.list())?.online ?? null) : null;
   });
 
   private readonly overlaps = computed(() =>
@@ -171,16 +172,26 @@ export class SetOwnerComponent {
       const account = this.accounts.byId(owner);
       return account ? extensionNameOf(account, this.devices.list()) : flow.postAsMissing;
     };
+    const line = this.t().api.line;
     return this.overlaps().map((o) => {
+      const chat = o.channel === 'line';
       const mine = o.skipped.find((h) => h.setId === this.set().id);
       return mine
         ? {
             key: o.key,
             name: o.name,
             skippedLinkId: mine.linkId,
-            text: fmt(flow.overlapSkipped, { set: o.keeper.setName, ext: nameOf(o.keeper.owner) }),
+            text: fmt(chat ? line.chatOverlapSkipped : flow.overlapSkipped, {
+              set: o.keeper.setName,
+              ext: nameOf(o.keeper.owner),
+            }),
           }
-        : { key: o.key, name: o.name, skippedLinkId: null, text: flow.overlapKeeps };
+        : {
+            key: o.key,
+            name: o.name,
+            skippedLinkId: null,
+            text: chat ? line.chatOverlapKeeps : flow.overlapKeeps,
+          };
     });
   });
 

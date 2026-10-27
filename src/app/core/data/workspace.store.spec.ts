@@ -51,15 +51,24 @@ describe('WorkspaceStore', () => {
     it('lock only once the workspaces have arrived, so a banner does not flash on a reload', async () => {
       expect(ws.aiLocked()).toBe(false);
       expect(ws.bumpLocked()).toBe(false);
-      await signIn(http, { workspace: { ai: false, bump: false } });
+      expect(ws.lineChatLocked()).toBe(false);
+      await signIn(http, { workspace: { ai: false, bump: false, lineChat: false } });
       expect(ws.aiLocked()).toBe(true);
       expect(ws.bumpLocked()).toBe(true);
+      expect(ws.lineChatLocked()).toBe(true);
     });
 
     it('open for a plan that has them', async () => {
-      await signIn(http, { workspace: { ai: true, bump: true } });
+      await signIn(http, { workspace: { ai: true, bump: true, lineChat: true } });
       expect(ws.aiLocked()).toBe(false);
       expect(ws.bumpLocked()).toBe(false);
+      expect(ws.lineChatLocked()).toBe(false);
+    });
+
+    it('carry the LINE chat flag of the owner plan (Pro and above) and lock it for a plan without', async () => {
+      await signIn(http, { workspace: { lineChat: false } });
+      expect(ws.current()?.lineChat).toBe(false);
+      expect(ws.lineChatLocked()).toBe(true);
     });
 
     it('follow the owner plan, not the signed-in member: a Pro owner has AI but not bumping', async () => {

@@ -11,7 +11,13 @@ import {
 } from './models';
 
 /** What the Pro plan includes besides its numbers (PlanFeatures.For in the API). */
-const PRO_FEATURES: PlanFeature[] = ['advanced_anti_ban', 'notifications', 'auto_reply', 'ai'];
+const PRO_FEATURES: PlanFeature[] = [
+  'advanced_anti_ban',
+  'notifications',
+  'auto_reply',
+  'ai',
+  'line_chat',
+];
 
 /**
  * The packages as the API ships them, shown until /api/plans answers (the API's values replace them).

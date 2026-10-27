@@ -6,7 +6,9 @@ import { provideApiTesting, settle } from '../../testing/api-testing';
 import { LandingPageComponent } from './landing-page.component';
 
 // The landing page promises Facebook groups and pages and nothing else: the other social platforms are a later
-// phase, so neither its copy nor its icons name them. Its preview runs on the design's sample posts.
+// phase, so neither its copy nor its icons name them. Its preview runs on the design's sample posts. (LINE OA
+// customer chats are one line of the Pro plan's function list, which the plan cards print; the page promises no
+// platform with it.)
 describe('LandingPageComponent', () => {
   let http: HttpTestingController;
 
@@ -55,7 +57,7 @@ describe('LandingPageComponent', () => {
       TestBed.inject(I18nService).setLang(lang);
       fixture.detectChanges();
       expect(el.textContent, lang).not.toMatch(
-        /Instagram|TikTok|Threads|LINE OA|\bX\b|โซเชียล|social (account|network)/i,
+        /Instagram|TikTok|Threads|\bX\b|โซเชียล|social (account|network)/i,
       );
     }
     TestBed.inject(I18nService).setLang('th');

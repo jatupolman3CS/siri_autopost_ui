@@ -2,7 +2,10 @@
 // becomes the first line, spintax `{a|b|c}` is resolved innermost first (at most 50 rounds), then
 // the collection's footer and hashtags are added unless the text already holds them. The text is
 // never cut: a result that is too long is the caller's problem to report (the server refuses it).
-// The second half of the file is for the post editor (insert at the caret, spintax checks and counts, the
+// LINE customer chats have their own mode (`composeChat`, mirror of `PostComposer`'s chat mode): spintax, `{{name}}` /
+// `{{ชื่อ}}` for the customer's name and `{{code}}` if the link has one, and nothing else - no code as a first line, never
+// a footer, hashtags or page tags - and `splitBubbles` cuts the text into the bubbles the extension sends. Keep both in step.
+// The last part of the file is for the post editor (insert at the caret, spintax checks and counts, the
 // preview's highlighted segments); it reads the same rules and has no server counterpart.
 
 /** A random source: returns a number in [0, 1), like Math.random. */
@@ -17,6 +20,8 @@ export interface ComposeSettings {
 export interface PostFlags {
   hasCode: boolean;
   hasSpin: boolean;
+  /** Has the customer-name tag `{{name}}` / `{{ชื่อ}}` (LINE chats). */
+  hasName: boolean;
 }
 
 /** `{{code}}` or `{{ รหัส }}`, any case, any inner spaces. */
@@ -24,6 +29,10 @@ const CODE_TAG = /\{\{\s*(?:code|รหัส)\s*\}\}/i;
 const CODE_TAG_ALL = /\{\{\s*(?:code|รหัส)\s*\}\}/gi;
 /** A line that holds nothing but the tag. */
 const CODE_TAG_LINE = /^[ \t]*\{\{\s*(?:code|รหัส)\s*\}\}[ \t]*(?:\r?\n|$)/gim;
+/** `{{name}}` or `{{ ชื่อ }}`: the customer's name in a LINE chat. */
+const NAME_TAG = /\{\{\s*(?:name|ชื่อ)\s*\}\}/i;
+const NAME_TAG_ALL = /\{\{\s*(?:name|ชื่อ)\s*\}\}/gi;
+const NAME_TAG_LINE = /^[ \t]*\{\{\s*(?:name|ชื่อ)\s*\}\}[ \t]*(?:\r?\n|$)/gim;
 /** An innermost spintax group: braces with a pipe and no braces inside. */
 const SPIN_GROUP = /\{([^{}]*\|[^{}]*)\}/;
 const SPIN_GROUP_ALL = /\{([^{}]*\|[^{}]*)\}/g;
@@ -43,8 +52,13 @@ export function hasSpin(text: string | null | undefined): boolean {
   return SPIN_GROUP.test(String(text ?? ''));
 }
 
+/** True when the text has the customer-name tag (`{{name}}` / `{{ชื่อ}}`). */
+export function hasNameTag(text: string | null | undefined): boolean {
+  return NAME_TAG.test(String(text ?? ''));
+}
+
 export function postFlags(text: string | null | undefined): PostFlags {
-  return { hasCode: hasCodeTag(text), hasSpin: hasSpin(text) };
+  return { hasCode: hasCodeTag(text), hasSpin: hasSpin(text), hasName: hasNameTag(text) };
 }
 
 /** Picks one option of a group body (`a|b|c`) uniformly with `rnd`. */
@@ -112,6 +126,128 @@ function composeWith(
   const tags = String(settings?.hashtags ?? '').trim();
   if (tags && !plain(body).includes(tags)) body = body + '\n' + tags;
   return body;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// LINE customer chats (mirror of PostComposer's chat mode)
+// ---------------------------------------------------------------------------------------------------------
+
+/** The longest a single chat bubble may be (`PostComposer.MaxBubbleLength`). */
+export const MAX_BUBBLE_LENGTH = 5000;
+/** The most bubbles one chat post may have (`PostComposer.MaxBubbles`): a text that needs more is refused by the server. */
+export const MAX_BUBBLES = 5;
+
+/**
+ * Chat mode of `PostComposer.Compose`, for a text whose spintax is already resolved: the customer's name replaces
+ * every `{{name}}` / `{{ชื่อ}}` and the link's code every `{{code}}` / `{{รหัส}}`; a tag alone on its line takes the line
+ * with it when its value is empty (no blank line). Unlike a group post the code never becomes the first line, and
+ * there is no footer, no hashtag and no page tag.
+ */
+export function composeChatText(
+  text: string | null | undefined,
+  name: string | null | undefined,
+  code: string | null | undefined,
+): string {
+  let body = String(text ?? '');
+  const n = String(name ?? '').trim();
+  const c = String(code ?? '').trim();
+  // Function replacers, so `$` in a name is never read as a replacement pattern.
+  if (NAME_TAG.test(body)) {
+    if (!n) body = body.replace(NAME_TAG_LINE, '');
+    body = body.replace(NAME_TAG_ALL, () => n);
+  }
+  if (CODE_TAG.test(body)) {
+    if (!c) body = body.replace(CODE_TAG_LINE, '');
+    body = body.replace(CODE_TAG_ALL, () => c);
+  }
+  return body;
+}
+
+/**
+ * The full text of one message to one customer: spintax resolved, then `composeChatText`. The server takes only this
+ * text from a chat's post (a collection's footer and hashtags are never added), so there are no settings to pass.
+ */
+export function composeChat(
+  text: string | null | undefined,
+  name: string | null | undefined,
+  code: string | null | undefined,
+  rnd: Rnd = Math.random,
+): string {
+  return composeChatText(spin(text, rnd), name, code);
+}
+
+/**
+ * Cuts one piece to bubbles of at most `maxLen` characters, at the last blank line, else the last line break, else the
+ * last space before the limit (a hard cut when there is none). Mirror of `PostComposer.SplitChunk`.
+ */
+function splitChunk(s: string, maxLen = MAX_BUBBLE_LENGTH): string[] {
+  const out: string[] = [];
+  let remaining = s.trim();
+  while (remaining.length > maxLen) {
+    const window = remaining.slice(0, maxLen);
+    let at = window.lastIndexOf('\n\n');
+    let skip = 2;
+    if (at < 0) {
+      at = window.lastIndexOf('\n');
+      skip = 1;
+    }
+    if (at < 0) {
+      for (let j = window.length - 1; j >= 0; j--) {
+        if (/\s/.test(window[j])) {
+          at = j;
+          skip = 1;
+          break;
+        }
+      }
+    }
+    if (at <= 0) {
+      at = maxLen;
+      skip = 0;
+    }
+    const piece = remaining.slice(0, at).trim();
+    if (piece) out.push(piece);
+    remaining = remaining.slice(at + skip).trim();
+  }
+  if (remaining) out.push(remaining);
+  return out;
+}
+
+/**
+ * The bubbles a chat text is sent as, mirror of `PostComposer.SplitBubbles`: a text longer than `MAX_BUBBLE_LENGTH` is
+ * always cut; with `split` it is also cut at blank lines (empty paragraphs dropped) and the shortest neighbours are
+ * merged until at most `MAX_BUBBLES` are left. A text that still needs more than `MAX_BUBBLES` is returned as it is
+ * (the server refuses it as too long: check `bubbleCount > MAX_BUBBLES`). Empty text gives no bubble.
+ */
+export function splitBubbles(text: string | null | undefined, split: boolean): string[] {
+  const raw = String(text ?? '').trim();
+  if (!raw) return [];
+  if (!split) return splitChunk(raw);
+  const parts = raw
+    .split(/\r?\n\s*\r?\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (!parts.length) return [];
+  const bubbles = parts.flatMap((p) => splitChunk(p));
+  while (bubbles.length > MAX_BUBBLES) {
+    let best = -1;
+    let shortest = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < bubbles.length - 1; i++) {
+      const combined = bubbles[i].length + bubbles[i + 1].length;
+      if (combined < shortest) {
+        shortest = combined;
+        best = i;
+      }
+    }
+    if (best < 0) break;
+    bubbles[best] = bubbles[best] + '\n\n' + bubbles[best + 1];
+    bubbles.splice(best + 1, 1);
+  }
+  return bubbles.flatMap((b) => splitChunk(b));
+}
+
+/** A chat text that needs more bubbles than the server allows (it refuses such a post as too long). */
+export function tooManyBubbles(bubbles: readonly string[]): boolean {
+  return bubbles.length > MAX_BUBBLES;
 }
 
 /**
@@ -250,7 +386,8 @@ export interface SpinIssue {
   text: string;
 }
 
-const CODE_TAG_STICKY = /\{\{\s*(?:code|รหัส)\s*\}\}/iy;
+/** A code or customer-name tag, matched at one position (the spintax check treats the two alike). */
+const CODE_TAG_STICKY = /\{\{\s*(?:code|รหัส|name|ชื่อ)\s*\}\}/iy;
 const SNIPPET_LENGTH = 24;
 
 /**
@@ -344,6 +481,15 @@ export interface ComposedSegment {
 const SPUN_OPEN = '';
 const SPUN_CLOSE = '';
 
+/** `spin` with every picked text wrapped in the two marker characters (the same picks as `spin` with the same `rnd`). */
+function markSpin(t: string | null | undefined, r: Rnd): string {
+  let s = String(t ?? '').replace(PRIVATE_USE, '');
+  for (let round = 0; round < MAX_SPIN_ROUNDS && SPIN_GROUP.test(s); round++) {
+    s = s.replace(SPIN_GROUP_ALL, (_m, body: string) => SPUN_OPEN + pick(body, r) + SPUN_CLOSE);
+  }
+  return s;
+}
+
 /**
  * `composeFull` for the preview: the same text, cut into segments so the words that spintax picked can be
  * highlighted. Nothing but the marking differs: the segments joined are exactly what `composeFull` writes with
@@ -355,15 +501,22 @@ export function composeSegments(
   settings: ComposeSettings | null | undefined,
   rnd: Rnd = Math.random,
 ): ComposedSegment[] {
-  const mark = (t: string | null | undefined, r: Rnd): string => {
-    let s = String(t ?? '').replace(PRIVATE_USE, '');
-    for (let round = 0; round < MAX_SPIN_ROUNDS && SPIN_GROUP.test(s); round++) {
-      s = s.replace(SPIN_GROUP_ALL, (_m, body: string) => SPUN_OPEN + pick(body, r) + SPUN_CLOSE);
-    }
-    return s;
-  };
   const unmark = (s: string) => s.replaceAll(SPUN_OPEN, '').replaceAll(SPUN_CLOSE, '');
-  const marked = composeWith(text, code, settings, rnd, mark, unmark);
+  return segmentsOf(composeWith(text, code, settings, rnd, markSpin, unmark));
+}
+
+/** `composeChat` for the preview of a customer chat: the segments joined are exactly what `composeChat` writes with the same `rnd`. */
+export function composeChatSegments(
+  text: string | null | undefined,
+  name: string | null | undefined,
+  code: string | null | undefined,
+  rnd: Rnd = Math.random,
+): ComposedSegment[] {
+  return segmentsOf(composeChatText(markSpin(text, rnd), name, code));
+}
+
+/** Cuts a text that holds the marker characters into plain and spun stretches. */
+function segmentsOf(marked: string): ComposedSegment[] {
   const segments: ComposedSegment[] = [];
   let depth = 0;
   let current = '';

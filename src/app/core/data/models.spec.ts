@@ -17,11 +17,13 @@ describe('accountKind', () => {
   });
 });
 
-// Only Facebook groups and pages are posted to for now: the other platforms are a later phase.
+// Facebook groups and pages and LINE OA customer chats are posted to; the other platforms are a later phase. The
+// design's sample data (the landing page's preview) stays Facebook only.
 describe('platforms', () => {
-  it('knows Facebook and nothing else', () => {
-    expect(Object.keys(PLATFORMS)).toEqual(['fb']);
+  it('knows Facebook and LINE OA and nothing else', () => {
+    expect(Object.keys(PLATFORMS)).toEqual(['fb', 'line']);
     expect(PLATFORMS.fb).toEqual({ name: 'Facebook', icon: 'ph-facebook-logo' });
+    expect(PLATFORMS.line).toEqual({ name: 'LINE OA', icon: 'ph-chat-circle-text' });
     expect(Object.keys(SEED.platforms)).toEqual(['fb']);
   });
 

@@ -15,13 +15,15 @@ import { ApiSetLink } from '../../core/http/api.service';
 import { LinkKind, linkLabel } from '../../core/flow/group-links';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
+import '../../core/i18n/i18n.line';
 import { NotificationService } from '../../core/services/notification.service';
 import { CheckboxComponent } from '../../shared/components/checkbox/checkbox.component';
 import { ChipComponent } from '../../shared/components/chip/chip.component';
 
 // One link of a set (the prototype's row): switch, name, address (with a small "group" or "page" chip: the
 // server tells them apart by the address), group code and daily cap on a grid of up to four columns, a remove
-// button, then the notes under it (not a Facebook group or page / repeated address) and the health line (waiting for approval, switched off, "enable again"). Every edit goes straight to the
+// button. A row of a LINE chat set (kind "chat") is a customer: the name as LINE shows it (editable), the chat address
+// as plain text (it is never typed: chats come from the import), a "chat" chip, no code field unless the row has one, the cap, then the notes under it (not a Facebook group or page / repeated address) and the health line (waiting for approval, switched off, "enable again"). Every edit goes straight to the
 // store, which saves the whole row shortly after the last keystroke. The address and its notes come from
 // the row (`valid`/`duplicate`: the server's answer, worked out again locally while it is being edited).
 @Component({
@@ -55,10 +57,13 @@ export class LinkRowComponent {
 
   /** What the row is called for a screen reader: its name, else the group in its address. */
   protected readonly label = computed(() => linkLabel(this.link()));
-  /** Group or page, from the address (the row's `kind`, kept in step with the text while it is typed). */
-  protected readonly kind = computed<LinkKind>(() =>
-    this.link().kind === 'page' ? 'page' : 'group',
-  );
+  /** Group, page or (a LINE customer) chat, from the row's `kind` (kept in step with the text while it is typed). */
+  protected readonly kind = computed<LinkKind | 'chat'>(() => {
+    const kind = this.link().kind;
+    return kind === 'page' || kind === 'chat' ? kind : 'group';
+  });
+  /** The row is a LINE customer chat: its address is shown, not edited. */
+  protected readonly isChat = computed(() => this.kind() === 'chat');
   /** The chip says what the address is only when it is one: an empty or wrong address has no kind to show. */
   protected readonly showKind = computed(() => {
     const l = this.link();
@@ -66,16 +71,19 @@ export class LinkRowComponent {
   });
   protected readonly kindLabel = computed(() => {
     const f = this.t().api.flow;
+    if (this.kind() === 'chat') return this.t().api.line.chatKind;
     return this.kind() === 'page' ? f.linkKindPage : f.linkKindGroup;
   });
   protected readonly kindHint = computed(() => {
     const f = this.t().api.flow;
+    if (this.kind() === 'chat') return this.t().api.line.chatKindHint;
     return this.kind() === 'page' ? f.linkKindPageHint : f.linkKindGroupHint;
   });
   /** The note under the row: an address that is not a group or page, or one the set already has. */
   protected readonly note = computed(() => {
     const l = this.link();
-    if (l.url.trim() && !l.valid) return this.t().ts.invalidUrl;
+    if (l.url.trim() && !l.valid)
+      return this.isChat() ? this.t().api.line.chatInvalidUrl : this.t().ts.invalidUrl;
     return l.duplicate ? this.t().ts.dup : '';
   });
   protected readonly health = computed(() => {

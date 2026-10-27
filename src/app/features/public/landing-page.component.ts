@@ -30,7 +30,8 @@ export class LandingPageComponent {
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
 
-  protected readonly platforms = Object.values(PLATFORMS);
+  // The landing page promises Facebook groups and pages only; LINE chats are a workspace feature (Pro and above).
+  protected readonly platforms = [PLATFORMS.fb];
   // The product preview runs on the design's sample posts (guests have no workspace).
   private readonly now = new Date();
   private readonly sample = computed(() => samplePosts(this.now, this.i18n.li()).map(withDay));

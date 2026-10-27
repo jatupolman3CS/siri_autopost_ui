@@ -17,6 +17,7 @@ import {
 } from '../../testing/engine.fixtures';
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import { apiLink, apiLinkSet } from '../../testing/link-sets.fixtures';
+import { apiChatLink, apiLineSet } from '../../testing/line.fixtures';
 import { DeviceEventsService } from './device-events.service';
 import {
   NOTIFY_EVENTS,
@@ -79,6 +80,18 @@ describe('NotificationsStore', () => {
     it('is locked below Pro (the owner plan flag of the workspace), not by the signed-in role', async () => {
       await start({ workspace: { notifications: false } });
       expect(store.locked()).toBe(true);
+    });
+
+    it('leaves a LINE chat set out of the per-set rules and the counts: its rows are customers, not groups', async () => {
+      await start({
+        sets: [
+          SET,
+          apiLineSet({ id: 'ls', links: [apiChatLink({ id: 'c1' }), apiChatLink({ id: 'c2' })] }),
+        ],
+      });
+      expect(store.sets().map((s) => s.id)).toEqual(['s1']);
+      // The two groups of the Facebook set that are on; the two chats do not count.
+      expect(store.summary().n).toBe(2);
     });
 
     it('is not locked on a plan with notifications', async () => {

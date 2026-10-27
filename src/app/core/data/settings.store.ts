@@ -10,11 +10,19 @@ import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
 export type TypingSpeed = 'slow' | 'normal' | 'fast';
 export const TYPING_SPEEDS: readonly TypingSpeed[] = ['slow', 'normal', 'fast'];
 
+/** The pause between two LINE chats, in seconds: a random time between the two numbers (the API accepts 1 to 3600 each). */
+export type LineChatGap = NonNullable<ApiAntiBan['lineChat']>;
+
+/** The platforms that have a daily limit: Facebook posts and LINE chats (each counted on its own). */
+export type LimitPlatform = 'fb' | 'line';
+
 export interface AntiBanSettings {
   min: number;
   max: number;
-  /** Facebook posts per 24 hours (the only platform for now; the API's range is 1 to 500). */
-  limits: Record<'fb', number>;
+  /** Posts (Facebook) and chats (LINE) per 24 hours; the API's range is 1 to 500 for each. */
+  limits: Record<LimitPlatform, number>;
+  /** LINE chats: how long the extension waits between two chats (the minutes above are for Facebook posts). */
+  lineChat: LineChatGap;
   typing: boolean;
   /** Typing speed, a Pro setting like the other behaviour switches (the server keeps the old value below Pro). */
   typingSpeed: TypingSpeed;
@@ -54,7 +62,8 @@ export function defaultAntiBan(): AntiBanSettings {
   return {
     min: 3,
     max: 12,
-    limits: { fb: 40 },
+    limits: { fb: 40, line: 100 },
+    lineChat: defaultLineChat(),
     typing: true,
     typingSpeed: 'normal',
     scroll: true,
@@ -63,6 +72,11 @@ export function defaultAntiBan(): AntiBanSettings {
     warmup: false,
     advanced: defaultAdvanced(),
   };
+}
+
+/** The server's defaults for the pause between two LINE chats (45 to 120 seconds). */
+export function defaultLineChat(): LineChatGap {
+  return { minGapSeconds: 45, maxGapSeconds: 120 };
 }
 
 /** The server's defaults for the advanced rules. */
@@ -109,11 +123,12 @@ export class SettingsStore {
   readonly devicesOnline = signal(0);
 
   /**
-   * Facebook posts that went out in the last 24 hours on the accounts a device posts for: what the server counts
-   * against the daily limit (success and posts waiting for a group admin).
+   * What went out in the last 24 hours on the accounts a device posts for, per platform: what the server counts
+   * against each daily limit (success and posts waiting for a group admin). Facebook posts and LINE chats are counted
+   * apart, each against its own limit.
    */
-  readonly used24h = computed(() => {
-    let used = 0;
+  readonly usedByPlatform = computed<Record<LimitPlatform, number>>(() => {
+    const used: Record<LimitPlatform, number> = { fb: 0, line: 0 };
     const connected = new Set(
       this.accounts
         .list()
@@ -125,10 +140,12 @@ export class SettingsStore {
       if (p.status !== 'success' && p.status !== 'pending') continue;
       if (!connected.has(p.accountId) || !p.publishedAt || p.publishedAt.getTime() < since)
         continue;
-      used++;
+      used[p.platform === 'line' ? 'line' : 'fb']++;
     }
     return used;
   });
+  /** Facebook posts of the last 24 hours (`usedByPlatform().fb`): what the Facebook limit counts. */
+  readonly used24h = computed(() => this.usedByPlatform().fb);
 
   constructor() {
     whenWorkspaceChanges((id) => {
@@ -215,11 +232,13 @@ export class SettingsStore {
   }
 
   private apply(e: ApiEngine): void {
-    const { autoPause, typingSpeed, ...rest } = e.antiBan;
+    const { autoPause, typingSpeed, lineChat, limits, ...rest } = e.antiBan;
     // The advanced rules always come with the settings; the defaults only guard an answer that lacks them (and
-    // a typing speed this app does not know).
+    // a typing speed this app does not know). A server without LINE chats sends neither the LINE limit nor the gap.
     this.ab.set({
       ...rest,
+      limits: { fb: limits.fb, line: limits.line ?? defaultAntiBan().limits.line },
+      lineChat: { ...defaultLineChat(), ...lineChat },
       autopause: autoPause,
       typingSpeed: TYPING_SPEEDS.find((s) => s === typingSpeed) ?? 'normal',
       advanced: { ...defaultAdvanced(), ...rest.advanced },

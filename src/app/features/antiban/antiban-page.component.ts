@@ -168,7 +168,8 @@ export class AntibanPageComponent {
   protected setLimit(input: HTMLInputElement): void {
     const fb = Math.min(MAX_LIMIT, Math.max(1, parseInt(input.value, 10) || 1));
     input.value = String(fb);
-    this.settings.patchAb({ limits: { fb } });
+    // The LINE limit lives beside it: keep it (the whole object is replaced).
+    this.settings.patchAb({ limits: { ...this.ab().limits, fb } });
   }
 
   protected setSpeed(v: string): void {

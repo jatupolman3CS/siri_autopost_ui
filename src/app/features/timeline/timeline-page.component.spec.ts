@@ -27,6 +27,7 @@ import {
   apiLinkSet,
   apiSetLink,
 } from '../../testing/collection-fixtures';
+import { LINE_CONNECTED, apiLineSet } from '../../testing/line.fixtures';
 import { apiSchedule } from '../../testing/schedules.fixtures';
 import { TimelinePageComponent } from './timeline-page.component';
 
@@ -257,6 +258,30 @@ describe('TimelinePageComponent', () => {
     it('offers nothing when the only connected extension already has every set', async () => {
       const { el } = await open({ posts: WAITING, accounts: [SHOP], linkSets: [SET] });
       expect(handBtn(el)).toBeNull();
+    });
+
+    it('never offers a LINE chat set to a Facebook extension: it can only go to another LINE account', async () => {
+      const chats = apiLineSet({ id: 'cs', postAsAccountId: LINE_CONNECTED.id });
+      // One LINE account, one Facebook extension: the chat set has nowhere to go (and the Facebook set has none either).
+      const { el } = await open({ posts: [], accounts: [SHOP, LINE_CONNECTED], linkSets: [chats] });
+      expect(handBtn(el)).toBeNull();
+    });
+
+    it('offers a LINE chat set to a second LINE account, not to the Facebook extensions', async () => {
+      const branch = { ...LINE_CONNECTED, id: 'acc-line2', name: 'LINE · Branch OA' };
+      const chats = apiLineSet({ id: 'cs', postAsAccountId: LINE_CONNECTED.id });
+      const { fixture, el } = await open({
+        posts: [],
+        accounts: [SHOP, HOME, LINE_CONNECTED, branch],
+        linkSets: [chats],
+      });
+      handBtn(el)!.click();
+      await tick(fixture);
+      const targets = [
+        ...(el.querySelectorAll<HTMLSelectElement>('app-timeline-handover-modal select')[1]
+          ?.options ?? []),
+      ].map((o) => o.textContent?.trim());
+      expect(targets).toEqual(['Branch OA']);
     });
 
     it('offers to move the set of an extension that was unbound to the one that is connected', async () => {

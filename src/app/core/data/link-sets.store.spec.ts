@@ -553,7 +553,8 @@ describe('LinkSetsStore', () => {
       await start();
       const done = store.createSet('Fresh');
       const req = http.expectOne(SETS_URL);
-      expect(req.request.body).toEqual({ name: 'Fresh', postAsAccountId: null });
+      // The channel is always sent: the API insists on it once the workspace has a LINE account.
+      expect(req.request.body).toEqual({ name: 'Fresh', postAsAccountId: null, channel: 'fb' });
       req.flush(apiLinkSet({ id: 's9', name: 'Fresh' }));
       expect((await done).id).toBe('s9');
       expect(store.sets().map((s) => s.id)).toEqual(['s1', 's9']);

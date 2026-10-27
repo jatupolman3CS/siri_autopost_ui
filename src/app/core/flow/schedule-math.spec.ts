@@ -3,13 +3,18 @@ import {
   AUTO_DELETE_DAY_OPTIONS,
   bestHours,
   BUMP_HOUR_OPTIONS,
+  chatGapPlan,
+  clampToWindow,
   dayMatches,
+  DEFAULT_LINE_WINDOW,
   GAP_JITTER,
   gapPlan,
   hhmm,
   HORIZON_DAYS,
   hourChips,
+  inWindow,
   isTimesMode,
+  type LineWindow,
   localDateKey,
   memberSlots,
   normalizeTimes,
@@ -26,6 +31,7 @@ import {
   taskCountPerDay,
   toMinutes,
   utcOffsetMinutes,
+  validWindow,
   weekdayOf,
 } from './schedule-math';
 
@@ -713,5 +719,139 @@ describe('gapPlan', () => {
   it('says one round of a single group takes no time', () => {
     const plan = gapPlan(30, 1, 1, ['09:00'])!;
     expect([plan.roundMin, plan.dayMin]).toEqual([0, 0]);
+  });
+});
+
+// LINE chat schedules send inside allowed hours only (Schedule.AllowsLineAt / LineOptions of the API).
+describe('allowed hours of a LINE schedule', () => {
+  const day: LineWindow = { from: '09:00', to: '20:00' };
+  const night: LineWindow = { from: '22:00', to: '06:00' };
+
+  it('has the API default of 09:00 to 20:00', () => {
+    expect(DEFAULT_LINE_WINDOW).toEqual(day);
+  });
+
+  it('allows a time from the first to the last minute of the window, both included', () => {
+    for (const t of ['09:00', '12:30', '20:00']) expect(inWindow(t, day), t).toBe(true);
+    for (const t of ['08:59', '20:01', '00:00', '23:59']) expect(inWindow(t, day), t).toBe(false);
+  });
+
+  it('runs through midnight when the window starts after it ends', () => {
+    for (const t of ['22:00', '23:59', '00:00', '03:15', '06:00'])
+      expect(inWindow(t, night), t).toBe(true);
+    for (const t of ['06:01', '12:00', '21:59']) expect(inWindow(t, night), t).toBe(false);
+  });
+
+  it('allows every time without a window and no text that is not a time', () => {
+    expect(inWindow('03:00', null)).toBe(true);
+    expect(inWindow('03:00', undefined)).toBe(true);
+    expect(inWindow('25:00', day)).toBe(false);
+    expect(inWindow('', day)).toBe(false);
+  });
+
+  it('accepts a window with two different times only', () => {
+    expect(validWindow(day)).toBe(true);
+    expect(validWindow(night)).toBe(true);
+    expect(validWindow({ from: '09:00', to: '09:00' })).toBe(false);
+    expect(validWindow({ from: '9am', to: '20:00' })).toBe(false);
+    expect(validWindow(null)).toBe(false);
+  });
+
+  it('moves a time outside the window to the start of the window and leaves the others', () => {
+    expect(clampToWindow('07:30', day)).toBe('09:00');
+    expect(clampToWindow('21:00', day)).toBe('09:00');
+    expect(clampToWindow('12:00', day)).toBe('12:00');
+    expect(clampToWindow('12:00', night)).toBe('22:00');
+    expect(clampToWindow('07:30', null)).toBe('07:30');
+  });
+
+  it('keeps the times a schedule posts at inside the window, none dropped, so the count a day stays', () => {
+    const s: ScheduleLike = {
+      mode: 'daily',
+      times: ['07:00', '08:00', '12:00', '21:30'],
+      lineWindow: day,
+    };
+    expect(slotsOf(s)).toEqual(['09:00', '09:00', '09:00', '12:00']);
+    expect(slotsOf({ ...s, lineWindow: null })).toEqual(['07:00', '08:00', '12:00', '21:30']);
+    expect(taskCountPerDay(s, ['a', 'b'])).toBe(8);
+    expect(scheduleCadence(s, ['a', 'b']).perDay).toBe(8);
+  });
+
+  it('applies the window to a member with its own times too, and to interval and drip schedules', () => {
+    const s: ScheduleLike = {
+      mode: 'daily',
+      times: ['10:00'],
+      overrides: { a: ['06:00', '23:00'] },
+      lineWindow: day,
+    };
+    expect(memberSlots(s, 'a')).toEqual(['09:00', '09:00']);
+    expect(memberSlots(s, 'b')).toEqual(['10:00']);
+    const interval: ScheduleLike = {
+      mode: 'interval',
+      firstTime: '06:00',
+      everyHours: 6,
+      lineWindow: day,
+    };
+    // 06:00 moves to 09:00; 12:00 and 18:00 are inside.
+    expect(slotsOf(interval)).toEqual(['09:00', '12:00', '18:00']);
+    const drip: ScheduleLike = {
+      mode: 'drip',
+      dripFrom: '07:00',
+      dripTo: '11:00',
+      dripCount: 3,
+      lineWindow: day,
+    };
+    expect(slotsOf(drip)).toEqual(['09:00', '09:00', '11:00']);
+  });
+
+  it('shows the moved times in the day preview', () => {
+    const s: ScheduleLike = { mode: 'daily', times: ['07:00'], lineWindow: day };
+    const [d] = previewDays(s, ['a'], THU, 1);
+    expect(d.slots).toEqual([{ time: '09:00', members: ['a'] }]);
+    expect(d.tasks).toBe(1);
+  });
+});
+
+describe('chatGapPlan (the seconds variant of gapPlan)', () => {
+  const day: LineWindow = { from: '09:00', to: '20:00' };
+
+  it('has nothing to say without a gap, a chat or a time', () => {
+    expect(chatGapPlan(0, 120, 5, 5, ['09:00'])).toBeNull();
+    expect(chatGapPlan(45, 120, 0, 0, ['09:00'])).toBeNull();
+    expect(chatGapPlan(45, 120, 5, 5, [])).toBeNull();
+  });
+
+  it('counts a day at the shortest gap and ends it at the average one, in minutes', () => {
+    // 21 chats a round, one round: 20 gaps of at least 45 s = 15 min; on average (45+120)/2 s = 82.5 s = 27.5 min.
+    const plan = chatGapPlan(45, 120, 21, 21, ['09:00'])!;
+    expect(plan.gap).toBeCloseTo(0.75);
+    expect(plan.roundMin).toBeCloseTo(15);
+    expect(plan.dayMin).toBeCloseTo(15);
+    expect(plan.endMin).toBe(9 * 60 + Math.round(27.5));
+    expect(plan.overlap).toBe(false);
+    expect(plan.pastMidnight).toBe(false);
+  });
+
+  it('says when the line runs past the end of the allowed hours', () => {
+    // 2 rounds of 100 chats, 45-120 s apart: about 200 x 82.5 s = 275 min from 18:00 goes past 20:00 and midnight.
+    const late = chatGapPlan(45, 120, 100, 200, ['18:00'], day)!;
+    expect(late.pastWindow).toBe(true);
+    expect(late.pastMidnight).toBe(false);
+    const fits = chatGapPlan(45, 120, 20, 20, ['09:00'], day)!;
+    expect(fits.pastWindow).toBe(false);
+    expect(chatGapPlan(45, 120, 20, 20, ['09:00'])!.pastWindow).toBe(false);
+  });
+
+  it('knows a window through midnight ends the next morning', () => {
+    const night: LineWindow = { from: '22:00', to: '06:00' };
+    // 22:00 + 60 chats at 82.5 s = about 82 min: inside the night, still before 06:00 next day.
+    expect(chatGapPlan(45, 120, 60, 60, ['22:00'], night)!.pastWindow).toBe(false);
+    // The same line from 04:30 (the morning part of the window) is over by 06:00 only if it is short.
+    expect(chatGapPlan(45, 120, 200, 200, ['04:30'], night)!.pastWindow).toBe(true);
+  });
+
+  it('sees rounds that run into each other', () => {
+    // 100 chats at 45 s = 74 min, next round 1 hour later.
+    expect(chatGapPlan(45, 120, 100, 200, ['09:00', '10:00'])!.overlap).toBe(true);
   });
 });

@@ -56,6 +56,14 @@ export type ApiCreateMasterPost = S['CreateMasterPostRequest'];
 export type ApiUpdateMasterPost = S['UpdateMasterPostRequest'];
 export type ApiBulkPostAction = S['BulkPostAction'];
 export type ApiApprovalAction = S['ApprovalAction'];
+export type ApiLineChat = S['LineChatDto'];
+export type ApiLineChatPage = S['LineChatPageDto'];
+export type ApiLineChatAccount = S['LineChatAccountSummaryDto'];
+export type ApiImportLineChats = S['ImportLineChatsRequest'];
+export type ApiLineChatFilter = S['FromLineChatsFilter'];
+export type ApiLineOptions = S['LineOptionsDto'];
+/** What the device list says of a browser's LINE Official Account (absent: the browser has none). */
+export type ApiDeviceLine = S['DeviceLineSummaryDto'];
 export type ApiLinkSet = S['LinkSetDto'];
 export type ApiHandOverResult = S['HandOverResultDto'];
 export type ApiSetLink = S['SetLinkDto'];
@@ -599,8 +607,18 @@ export class ApiService {
       this.http.get<ApiLinkSet[]>(`/api/workspaces/${ws}/link-sets`, background ? quiet : {}),
     );
   }
-  createLinkSet(ws: string, name: string, postAsAccountId?: string | null) {
-    const body: S['CreateLinkSetRequest'] = { name, postAsAccountId: postAsAccountId ?? null };
+  /** `channel` is required by the API once the workspace has a LINE account, so it is always sent. */
+  createLinkSet(
+    ws: string,
+    name: string,
+    postAsAccountId?: string | null,
+    channel: 'fb' | 'line' = 'fb',
+  ) {
+    const body: S['CreateLinkSetRequest'] = {
+      name,
+      postAsAccountId: postAsAccountId ?? null,
+      channel,
+    };
     return run(this.http.post<ApiLinkSet>(`/api/workspaces/${ws}/link-sets`, body));
   }
   /** Off: schedules that use it queue nothing to it. */
@@ -670,6 +688,49 @@ export class ApiService {
   /** The groups a connected account's browser has synced (name + address). */
   accountGroups(ws: string, account: string) {
     return run(this.http.get<ApiGroupLink[]>(`/api/workspaces/${ws}/accounts/${account}/groups`));
+  }
+  /**
+   * The customers (chats) of a LINE Official Account that the browser synced, a page at a time: filtered by name,
+   * label, how recently they wrote and the owner's "do not send" mark. 403 when the owner's plan has no LINE chats.
+   * background: live refreshes do not toast failures (the roster shows its own lock and error).
+   */
+  lineChats(
+    ws: string,
+    q: {
+      accountId?: string;
+      q?: string;
+      label?: string;
+      activeWithinDays?: number;
+      doNotSend?: boolean;
+      page?: number;
+      pageSize?: number;
+    } = {},
+    background = false,
+  ) {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(q))
+      if (value !== undefined && value !== '') params = params.set(key, String(value));
+    return run(
+      this.http.get<ApiLineChatPage>(`/api/workspaces/${ws}/line/chats`, {
+        params,
+        ...(background ? quiet : {}),
+      }),
+    );
+  }
+  /** "Do not send": the chat is never targeted again (it survives the next sync). Editors. */
+  setLineChatDoNotSend(ws: string, id: string, doNotSend: boolean) {
+    const body: S['UpdateLineChatRequest'] = { doNotSend };
+    return run(this.http.put<ApiLineChat>(`/api/workspaces/${ws}/line/chats/${id}`, body, quiet));
+  }
+  /** Puts chats into a LINE link set: the picked ones, or every chat matching a filter (`allMatching`). */
+  importLineChats(ws: string, set: string, body: ApiImportLineChats) {
+    return run(
+      this.http.post<ApiBulkLinksResult>(
+        `/api/workspaces/${ws}/link-sets/${set}/links/from-line-chats`,
+        body,
+        quiet,
+      ),
+    );
   }
   // Notifications (Telegram / LINE OA), auto-reply rules and reports.
   notifications(ws: string, background = false) {

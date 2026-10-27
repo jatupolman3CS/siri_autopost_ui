@@ -1,6 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { AccountsStore } from '../../core/data/accounts.store';
 import { SettingsStore } from '../../core/data/settings.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
@@ -12,6 +13,7 @@ import {
   settle,
   signIn,
 } from '../../testing/api-testing';
+import { LINE_CONNECTED } from '../../testing/line.fixtures';
 import { AppLayoutComponent } from './app-layout.component';
 
 interface Link {
@@ -79,6 +81,8 @@ describe('the sidebar of the app shell', () => {
         ['/app/posts', all.api.postsNav],
         ['/app/collections', t.collections],
         ['/app/targets', t.targets],
+        // The default test workspace is a Pro owner's: LINE chats are in the plan.
+        ['/app/line-chats', all.api.lineChatNav],
         ['/app/schedules', t.schedules],
         ['/app/calendar', t.calendar],
         ['/app/timeline', all.api.tlNav],
@@ -104,6 +108,19 @@ describe('the sidebar of the app shell', () => {
         expect(all).not.toContain(gone);
     });
 
+    it('has no LINE chats item where the plan lacks them and no browser reports a LINE account', async () => {
+      await render({ data: { workspace: { lineChat: false } } });
+      expect(groups().flatMap((g) => g.links.map((l) => l.path))).not.toContain('/app/line-chats');
+    });
+
+    it('keeps the LINE chats item, right after the link sets, for a LINE account whose plan lapsed (the page shows the lock)', async () => {
+      await render({ data: { workspace: { lineChat: false } } });
+      TestBed.inject(AccountsStore).list.set([LINE_CONNECTED]);
+      fixture.detectChanges();
+      const all = groups().flatMap((g) => g.links.map((l) => l.path));
+      expect(all.indexOf('/app/line-chats')).toBe(all.indexOf('/app/targets') + 1);
+    });
+
     it('offers to show the advanced menu', async () => {
       await render();
       const t = TestBed.inject(I18nService).t().nav;
@@ -122,6 +139,7 @@ describe('the sidebar of the app shell', () => {
         '/app/posts',
         '/app/collections',
         '/app/targets',
+        '/app/line-chats',
         '/app/schedules',
         '/app/calendar',
         '/app/timeline',

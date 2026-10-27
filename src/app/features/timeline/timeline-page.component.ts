@@ -16,6 +16,7 @@ import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
 import { CollectionsStore } from '../../core/data/collections.store';
 import { DevicesStore } from '../../core/data/devices.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
+import { channelOf } from '../../core/flow/line-chats';
 import { ownerOfSet } from '../../core/flow/link-ownership';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { PostsStore, QueueItem } from '../../core/data/posts.store';
@@ -23,6 +24,7 @@ import { SchedulesStore } from '../../core/data/schedules.store';
 import { dkey, fmtDate, hm } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
+import '../../core/i18n/i18n.line';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { PermNoteComponent } from '../../shared/components/perm-note/perm-note.component';
 import { PostDetailModalComponent } from '../posts/post-detail-modal.component';
@@ -242,7 +244,14 @@ export class TimelinePageComponent {
       ...this.accounts
         .list()
         .filter((a) => a.connected || withPosts.has(a.id))
-        .map((a) => ({ value: a.id, label: extensionNameOf(a, this.devices.list()) })),
+        .map((a) => {
+          const name = extensionNameOf(a, this.devices.list());
+          // The browser's LINE account has the browser's name too: tell the two apart.
+          return {
+            value: a.id,
+            label: a.platform === 'line' ? fmt(this.t().api.line.chatOwnLineOf, { name }) : name,
+          };
+        }),
     ];
   });
 
@@ -252,10 +261,13 @@ export class TimelinePageComponent {
    */
   protected readonly canHandOver = computed(() => {
     const connected = this.accounts.connected();
-    if (!connected.length) return false;
-    return this.linkSets
-      .sets()
-      .some((s) => connected.some((a) => a.id !== ownerOfSet(s, this.accounts.list())));
+    const connectedLine = this.accounts.connectedLine();
+    if (!connected.length && !connectedLine.length) return false;
+    // A set can only go to a browser of its own kind (Facebook accounts for groups, LINE accounts for chats).
+    return this.linkSets.sets().some((s) => {
+      const posters = channelOf(s) === 'line' ? connectedLine : connected;
+      return posters.some((a) => a.id !== ownerOfSet(s, this.accounts.list()));
+    });
   });
 
   protected readonly lightCounts = computed(() => {
