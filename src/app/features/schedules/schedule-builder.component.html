@@ -48,6 +48,7 @@
       />
     }
   </div>
+  <app-schedule-channel />
   @if (form.isNow()) {
     <p class="note">
       {{ form.isOnce() ? t().api.flow.schStartNowOnceNote : t().api.flow.schStartNowNote }}
@@ -128,7 +129,9 @@
       </div>
     </div>
 
-    <app-schedule-bump />
+    @if (!form.isLine()) {
+      <app-schedule-bump />
+    }
 
     <app-schedule-pattern />
     <p class="note">{{ orderNote() }}</p>

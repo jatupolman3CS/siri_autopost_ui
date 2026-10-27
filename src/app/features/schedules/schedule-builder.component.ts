@@ -26,6 +26,7 @@ import {
   SelectOption,
 } from '../../shared/components/select-field/select-field.component';
 import { ScheduleBumpComponent } from './schedule-bump.component';
+import { ScheduleChannelComponent } from './schedule-channel.component';
 import { gapLines, gapOptions } from './schedule-gap';
 import { ScheduleFormService, SCHEDULE_NAME_MAX } from './schedule-form.service';
 import { ScheduleOverridesComponent } from './schedule-overrides.component';
@@ -46,6 +47,7 @@ import { SchedulePatternComponent } from './schedule-pattern.component';
     SchedulePatternComponent,
     ScheduleOverridesComponent,
     ScheduleBumpComponent,
+    ScheduleChannelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './schedule-builder.component.html',

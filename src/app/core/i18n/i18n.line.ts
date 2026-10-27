@@ -68,6 +68,30 @@ export const AP_I18N_LINE = {
     'Cannot sync until LINE OA is signed in on that machine',
   ],
   chatNoLineTitle: ['ยังไม่มีเครื่องที่เชื่อม LINE OA', 'No machine is connected to a LINE OA yet'],
+  // Schedule builder: where the schedule posts, and the LINE chat options.
+  schTarget: ['ส่งไปที่', 'Posts to'],
+  schTargetFb: ['Facebook · กลุ่มและเพจ', 'Facebook · groups and pages'],
+  schTargetLine: [
+    'LINE · แชทลูกค้า (ข้อความหาลูกค้าที่เคยแชทกับ LINE OA)',
+    'LINE · customer chats (messages to customers who chatted with the LINE OA)',
+  ],
+  schTargetNone: [
+    'เลือกชุดลิงก์ก่อน แล้วจะรู้ว่าตารางนี้ส่งไป Facebook หรือ LINE',
+    'Pick a link set first: it decides whether this schedule goes to Facebook or LINE',
+  ],
+  schLineHint: [
+    'ตารางนี้ส่งข้อความหาลูกค้าทีละแชทผ่านเครื่องที่ล็อกอิน LINE OA ในช่วงเวลาที่กำหนด ใส่ชื่อลูกค้าในข้อความได้ด้วยแท็กชื่อ ตั้งค่าเหล่านี้ตอนสร้างแล้วเปลี่ยนไม่ได้',
+    'This schedule sends to customers one chat at a time from the machine signed in to the LINE OA, inside the hours below. The customer’s name can go into the text with the name tag. These are fixed when the schedule is created',
+  ],
+  schLineFrom: ['ส่งได้ตั้งแต่', 'Send from'],
+  schLineTo: ['ถึง', 'until'],
+  schLineSkip: ['ถ้าลูกค้าเพิ่งตอบ ให้รอ (นาที)', 'If the customer wrote recently, wait (minutes)'],
+  schLineSplit: ['แยกข้อความยาวเป็นหลายบับเบิล', 'Split a long text into several bubbles'],
+  schLineImagesFirst: ['ส่งรูปก่อนข้อความ', 'Send the images before the text'],
+  schBadHours: [
+    'ช่วงเวลาส่งของ LINE ไม่ถูกต้อง (ใช้รูปแบบ 09:00)',
+    'The LINE sending hours are not valid (use a form like 09:00)',
+  ],
   chatChange: ['เปลี่ยน LINE OA', 'Change LINE OA'],
   chatChangeTitle: ['เปลี่ยน LINE OA ของเครื่องนี้', 'Change this machine’s LINE OA'],
   chatChangeBody: [

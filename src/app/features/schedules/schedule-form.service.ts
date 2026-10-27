@@ -8,6 +8,7 @@ import { SchedulesStore } from '../../core/data/schedules.store';
 import { SettingsStore } from '../../core/data/settings.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { linkLabel } from '../../core/flow/group-links';
+import { channelOf } from '../../core/flow/line-chats';
 import {
   BUMP_HOUR_OPTIONS,
   PostOrder,
@@ -30,7 +31,7 @@ import {
 } from '../../core/flow/schedule-math';
 import { ApiSaveSchedule } from '../../core/http/api.service';
 import { GAP_MAX, gapChoiceOf } from './schedule-gap';
-import { INPUT_LIMITS } from '../../core/http/input-limits';
+import { INPUT_LIMITS, LINE_TIME_PATTERN } from '../../core/http/input-limits';
 import { fmtDate } from '../../core/i18n/format';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.flow';
@@ -123,6 +124,16 @@ export class ScheduleFormService {
   readonly bumpEachWanted = signal(1);
   readonly del = signal(0);
   /**
+   * LINE chat schedules (the chosen set's channel is 'line'): the hours chats may be sent in (`HH:mm`, local time, may wrap
+   * midnight), how long a customer who wrote last counts as mid-conversation (the chat waits), whether a long text goes as
+   * several bubbles and whether the images go before the text. Fixed when the schedule is created.
+   */
+  readonly lineFrom = signal('09:00');
+  readonly lineTo = signal('20:00');
+  readonly lineSkip = signal(30);
+  readonly lineSplit = signal(false);
+  readonly lineImagesFirst = signal(false);
+  /**
    * Minutes between one group and the next ("how far apart per group"); 0 = the workspace's smart delay (a random
    * gap between its Min and Max, set on the anti-ban page). With a number the server keeps every post at least
    * that far from the one before it (plus up to a quarter more, at random) and lays the day's rounds on one line.
@@ -142,7 +153,7 @@ export class ScheduleFormService {
   /** The workspace owner's plan lacks bumping (only known once the workspaces have arrived). */
   readonly bumpLocked = this.workspaces.bumpLocked;
   /** The bump is on and allowed: what the request carries. A locked form never asks for one (the API says 403). */
-  readonly bumpActive = computed(() => this.bumpOn() && !this.bumpLocked());
+  readonly bumpActive = computed(() => this.bumpOn() && !this.bumpLocked() && !this.isLine());
   /** Images per bump: 0 to 5, never more than the images chosen (none chosen = a text-only bump). */
   readonly bumpEach = computed(() =>
     clamp(this.bumpEachWanted(), 0, Math.min(INPUT_LIMITS.bumpImages, this.bumpMedia().length)),
@@ -167,6 +178,9 @@ export class ScheduleFormService {
 
   readonly collection = computed(() => this.collections.byId(this.collectionId()));
   readonly set = computed(() => this.linkSets.byId(this.linkSetId()));
+  /** Where the schedule posts: Facebook groups and pages, or LINE customer chats. It is the chosen link set's channel. */
+  readonly channel = computed(() => channelOf(this.set()));
+  readonly isLine = computed(() => this.channel() === 'line');
   /** Usable posts of the chosen collection (all, or the approved ones when it needs approval). */
   readonly usablePosts = computed(() => {
     const c = this.collection();
@@ -309,6 +323,11 @@ export class ScheduleFormService {
     this.bumpMedia.set([]);
     this.bumpEachWanted.set(1);
     this.del.set(0);
+    this.lineFrom.set('09:00');
+    this.lineTo.set('20:00');
+    this.lineSkip.set(30);
+    this.lineSplit.set(false);
+    this.lineImagesFirst.set(false);
     this.gap.set(0);
     this.gapCustom.set(false);
     this.error.set('');
@@ -489,6 +508,30 @@ export class ScheduleFormService {
     }
     // A bump the plan does not include is never asked for. Images that left the library meanwhile are dropped
     // (the server refuses an unknown one) once the library has been read.
+    let lineOptions:
+      | {
+          allowedFrom: string;
+          allowedTo: string;
+          skipIfActiveMinutes: number;
+          splitBubbles: boolean;
+          imagesFirst: boolean;
+        }
+      | undefined;
+    if (this.isLine()) {
+      if (!LINE_TIME_PATTERN.test(this.lineFrom()) || !LINE_TIME_PATTERN.test(this.lineTo()))
+        return this.fail(t.api.line.schBadHours);
+      lineOptions = {
+        allowedFrom: this.lineFrom(),
+        allowedTo: this.lineTo(),
+        skipIfActiveMinutes: clamp(
+          this.lineSkip(),
+          INPUT_LIMITS.lineSkipMin,
+          INPUT_LIMITS.lineSkipMax,
+        ),
+        splitBubbles: this.lineSplit(),
+        imagesFirst: this.lineImagesFirst(),
+      };
+    }
     const bump = this.bumpActive();
     const have = new Set(this.library.media().map((m) => m.id));
     const pool = this.library.loaded()
@@ -526,6 +569,7 @@ export class ScheduleFormService {
       utcOffsetMinutes: utcOffsetMinutes(),
       startNow: this.isNow(),
       groupGapMinutes: clamp(this.gap(), 0, GAP_MAX),
+      ...(lineOptions ? { lineOptions } : {}),
     };
   }
 
