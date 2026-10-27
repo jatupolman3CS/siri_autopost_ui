@@ -190,6 +190,16 @@ export class DevicesStore {
     await this.api.sendDeviceCommand(wsId, id, 'syncLineChats');
   }
 
+  /**
+   * Tells a browser to open its extension status page (the `openLineSetup` command), where "use LINE OA on this machine"
+   * asks Chrome for the chat.line.biz permission: only a click inside the extension can grant it, so the web cannot.
+   */
+  async openLineSetup(id: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    await this.api.sendDeviceCommand(wsId, id, 'openLineSetup');
+  }
+
   async revoke(id: string): Promise<void> {
     const wsId = this.ws.id();
     if (!wsId) return;

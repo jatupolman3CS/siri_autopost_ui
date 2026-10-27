@@ -68,6 +68,13 @@ export const AP_I18N_LINE = {
     'Cannot sync until LINE OA is signed in on that machine',
   ],
   chatNoLineTitle: ['ยังไม่มีเครื่องที่เชื่อม LINE OA', 'No machine is connected to a LINE OA yet'],
+  chatConnect: ['เชื่อมต่อ LINE OA', 'Connect LINE OA'],
+  chatConnectSent: [
+    'สั่ง {name} แล้ว: เปิดหน้าสถานะของส่วนขยายในเครื่องนั้น กด “ใช้ LINE OA ในเครื่องนี้” ต่อได้เลย',
+    'Sent to {name}: its extension status page opens there. Press “Use LINE OA on this machine”',
+  ],
+  chatConnectOffline: ['เครื่องนี้ออฟไลน์อยู่', 'This machine is offline'],
+  chatConnectTitle: ['เครื่องที่ยังไม่ได้เชื่อม LINE OA', 'Machines not connected to a LINE OA'],
   chatNoLineBody: [
     'เปิดหน้าสถานะของส่วนขยายในเครื่องที่ล็อกอิน LINE Official Account Manager แล้วกด “ใช้ LINE OA ในเครื่องนี้” จากนั้นรายชื่อแชทจะขึ้นที่นี่หลังซิงก์',
     'Open the extension’s status page on the machine that is signed in to LINE Official Account Manager and press “Use LINE OA on this machine”. The chat list appears here after it syncs',

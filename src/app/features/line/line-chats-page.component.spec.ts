@@ -365,6 +365,10 @@ describe('LineChatsPageComponent', () => {
       );
       expect(el.textContent).not.toContain(t().api.line.chatEmptyTitle);
       expect(rows(el)).toHaveLength(0);
+      // The browser is listed with a button that opens its extension's LINE setup.
+      const connect = el.querySelector<HTMLButtonElement>('app-line-status .su-btn-primary')!;
+      expect(connect.textContent).toContain(t().api.line.chatConnect);
+      expect(connect.disabled).toBe(false);
     });
 
     it('says the list fills after the sync when a browser is connected but no chat is there yet', async () => {

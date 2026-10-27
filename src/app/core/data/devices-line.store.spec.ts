@@ -55,6 +55,14 @@ describe('DevicesStore: LINE', () => {
     req.flush({ id: 'c1', cmd: 'syncLineChats', status: 'pending' });
     await done;
   });
+
+  it('tells a browser to open its LINE setup with the openLineSetup command', async () => {
+    const done = store.openLineSetup('dev-1');
+    const req = http.expectOne(`${URL}/dev-1/commands`);
+    expect(req.request.body).toEqual({ cmd: 'openLineSetup', args: {} });
+    req.flush({ id: 'c2', cmd: 'openLineSetup', status: 'pending' });
+    await done;
+  });
 });
 
 describe('lineStateOf', () => {

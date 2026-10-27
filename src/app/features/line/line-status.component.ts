@@ -72,6 +72,29 @@ interface LineDeviceRow {
         </ul>
       </section>
     }
+    @if (devices.loaded() && unconnected().length) {
+      <section class="panel st" [attr.aria-label]="t().api.line.chatConnectTitle">
+        <div class="fw6">{{ t().api.line.chatConnectTitle }}</div>
+        <ul>
+          @for (d of unconnected(); track d.id) {
+            <li>
+              <div class="who">
+                <span class="fw6">{{ d.name }}</span>
+              </div>
+              <button
+                type="button"
+                class="su-btn su-btn-sm su-btn-primary"
+                [disabled]="!!d.blocked || busy().has(d.id)"
+                [attr.title]="d.blocked || null"
+                (click)="connect(d)"
+              >
+                <i class="ph ph-plugs-connected"></i>{{ t().api.line.chatConnect }}
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
   `,
   styles: `
     :host {
@@ -193,6 +216,43 @@ export class LineStatusComponent {
       ];
     });
   });
+
+  /** Paired browsers that have not switched LINE OA on yet, each with a button that opens the extension's setup there. */
+  protected readonly unconnected = computed(() =>
+    this.devices
+      .list()
+      .filter((d) => !d.line)
+      .map((d) => ({
+        id: d.id,
+        name: d.name,
+        blocked: this.perm.readOnly()
+          ? this.perm.editHint()
+          : !d.online
+            ? this.t().api.line.chatConnectOffline
+            : '',
+      })),
+  );
+
+  protected async connect(d: { id: string; name: string; blocked: string }): Promise<void> {
+    if (d.blocked || this.busy().has(d.id)) return;
+    this.busy.update((s) => new Set(s).add(d.id));
+    try {
+      await this.devices.openLineSetup(d.id);
+      this.notify.success(fmt(this.t().api.line.chatConnectSent, { name: d.name }));
+    } catch {
+      // The error interceptor has shown why.
+    } finally {
+      setTimeout(
+        () =>
+          this.busy.update((s) => {
+            const next = new Set(s);
+            next.delete(d.id);
+            return next;
+          }),
+        3000,
+      );
+    }
+  }
 
   protected async sync(row: LineDeviceRow): Promise<void> {
     if (row.syncBlocked || this.busy().has(row.id)) return;
