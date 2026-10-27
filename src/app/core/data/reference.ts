@@ -1,16 +1,5 @@
-// Reference tables that are not data: what each platform is called and drawn as, and the Thai and English
+// Reference tables that are not data: the Thai and English
 // names of months and weekdays. Hand-maintained (customer data always comes from SIRIAUTOPOST.Api).
-import { Platform, PlatformKey } from './models';
-
-export const PLATFORMS: Record<PlatformKey, Platform> = {
-  fb: { name: 'Facebook', icon: 'ph-facebook-logo' },
-  x: { name: 'X', icon: 'ph-x-logo' },
-  ig: { name: 'Instagram', icon: 'ph-instagram-logo' },
-  tt: { name: 'TikTok', icon: 'ph-tiktok-logo' },
-  line: { name: 'LINE OA', icon: 'ph-chat-circle-dots' },
-  th: { name: 'Threads', icon: 'ph-threads-logo' },
-};
-
 export const TH_MONTHS = [
   'ม.ค.',
   'ก.พ.',
