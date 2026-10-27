@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { DeviceEventsService } from '../../core/data/device-events.service';
 import { DevicesStore } from '../../core/data/devices.store';
+import { LineOasStore } from '../../core/data/line-oas.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { ApiLinkSet } from '../../core/http/api.service';
@@ -47,6 +48,7 @@ describe('TargetsPageComponent: LINE chat sets', () => {
     TestBed.inject(AccountsStore);
     TestBed.inject(DevicesStore);
     TestBed.inject(LinkSetsStore);
+    TestBed.inject(LineOasStore);
     await signIn(http, { workspace, linkSets: sets, devices: [apiLineDevice()] });
     TestBed.inject(AccountsStore).list.set([FB_CONNECTED, LINE_CONNECTED]);
     const fixture = TestBed.createComponent(TargetsPageComponent);

@@ -87,13 +87,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/targets/targets-page.component').then((m) => m.TargetsPageComponent),
       },
-      // The customers of the shop's LINE Official Account (the chat roster); the strings are in the lazy pack "line".
+      // The LINE OA master list: the Official Accounts, each with the customers (chat links) read from it; the strings are in the lazy pack "line".
       {
-        path: 'line-chats',
-        title: 'api.lineChatNav',
+        path: 'line-oas',
+        title: 'api.lineOaNav',
         loadComponent: () =>
-          import('./features/line/line-chats-page.component').then((m) => m.LineChatsPageComponent),
+          import('./features/line-oas/line-oas-page.component').then((m) => m.LineOasPageComponent),
       },
+      // The old roster page is part of the OA master list now.
+      { path: 'line-chats', redirectTo: 'line-oas', pathMatch: 'full' },
       {
         path: 'schedules',
         title: 'nav.schedules',

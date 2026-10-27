@@ -82,7 +82,7 @@ describe('the sidebar of the app shell', () => {
         ['/app/collections', t.collections],
         ['/app/targets', t.targets],
         // The default test workspace is a Pro owner's: LINE chats are in the plan.
-        ['/app/line-chats', all.api.lineChatNav],
+        ['/app/line-oas', all.api.lineOaNav],
         ['/app/schedules', t.schedules],
         ['/app/calendar', t.calendar],
         ['/app/timeline', all.api.tlNav],
@@ -110,7 +110,7 @@ describe('the sidebar of the app shell', () => {
 
     it('has no LINE chats item where the plan lacks them and no browser reports a LINE account', async () => {
       await render({ data: { workspace: { lineChat: false } } });
-      expect(groups().flatMap((g) => g.links.map((l) => l.path))).not.toContain('/app/line-chats');
+      expect(groups().flatMap((g) => g.links.map((l) => l.path))).not.toContain('/app/line-oas');
     });
 
     it('keeps the LINE chats item, right after the link sets, for a LINE account whose plan lapsed (the page shows the lock)', async () => {
@@ -118,7 +118,7 @@ describe('the sidebar of the app shell', () => {
       TestBed.inject(AccountsStore).list.set([LINE_CONNECTED]);
       fixture.detectChanges();
       const all = groups().flatMap((g) => g.links.map((l) => l.path));
-      expect(all.indexOf('/app/line-chats')).toBe(all.indexOf('/app/targets') + 1);
+      expect(all.indexOf('/app/line-oas')).toBe(all.indexOf('/app/targets') + 1);
     });
 
     it('offers to show the advanced menu', async () => {
@@ -139,7 +139,7 @@ describe('the sidebar of the app shell', () => {
         '/app/posts',
         '/app/collections',
         '/app/targets',
-        '/app/line-chats',
+        '/app/line-oas',
         '/app/schedules',
         '/app/calendar',
         '/app/timeline',

@@ -113,13 +113,13 @@ export class AppLayoutComponent {
     const posts = item('posts', 'composer', 'ph-note-pencil', { label: this.t().api.postsNav });
     // Every post of the day on one board, by the minute (the label comes from the api texts like the library's).
     const timeline = item('timeline', 'calendar', 'ph-chart-line', { label: this.t().api.tlNav });
-    // The shop's LINE customers: only where the plan has LINE chats or a browser already reports a LINE Official Account
+    // The LINE OA master list (and through it the shop's LINE customers): only where the plan has LINE chats or a browser already reports a LINE Official Account
     // (a lapsed plan keeps the page, which then shows its lock banner).
     const lineChats: NavItem[] =
       this.workspaces.current()?.lineChat || this.accounts.lineAccounts().length
         ? [
-            item('line-chats', 'targets', 'ph-chat-circle-text', {
-              label: this.t().api.lineChatNav,
+            item('line-oas', 'targets', 'ph-chat-circle-text', {
+              label: this.t().api.lineOaNav,
             }),
           ]
         : [];

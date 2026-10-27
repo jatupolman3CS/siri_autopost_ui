@@ -79,7 +79,9 @@ export class ExtensionStore {
     this.busy.set(true);
     try {
       await this.devices.update(device.id, { jobsPaused: pause });
-      this.notify.info(pause ? this.i18n.t().api.jobsPausedNote : this.i18n.t().api.jobsResumedNote);
+      this.notify.info(
+        pause ? this.i18n.t().api.jobsPausedNote : this.i18n.t().api.jobsResumedNote,
+      );
     } finally {
       this.busy.set(false);
     }

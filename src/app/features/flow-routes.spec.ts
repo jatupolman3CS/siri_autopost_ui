@@ -110,25 +110,25 @@ describe('routes of the redesigned app', () => {
   }
 
   // The chat roster of the shop's LINE Official Account sits right after the link sets (the page itself is covered by
-  // line-chats-page.component.spec.ts, which gives it a server to talk to).
-  describe('/app/line-chats', () => {
-    const route = () => app.children!.find((c) => c.path === 'line-chats')!;
+  // the line-oas page spec).
+  describe('/app/line-oas', () => {
+    const route = () => app.children!.find((c) => c.path === 'line-oas')!;
     const paths = () => app.children!.map((c) => c.path);
 
     it('is a lazy page of the signed-in area whose title is in the shared dictionary, not in the lazy pack', async () => {
       expect(route()).toBeDefined();
-      expect(route().title).toBe('api.lineChatNav');
+      expect(route().title).toBe('api.lineOaNav');
       expect(typeof route().loadComponent).toBe('function');
-      expect(paths().indexOf('line-chats')).toBe(paths().indexOf('targets') + 1);
+      expect(paths().indexOf('line-oas')).toBe(paths().indexOf('targets') + 1);
       // The title strategy resolves it before any lazy pack has loaded.
       const t = TestBed.inject(I18nService).t();
-      expect(lookup(t, 'api.lineChatNav')).toBeTruthy();
-      expect(lookup(t, 'api.lineChatNav')).toBe(t.api.lineChatNav);
+      expect(lookup(t, 'api.lineOaNav')).toBeTruthy();
+      expect(lookup(t, 'api.lineOaNav')).toBe(t.api.lineOaNav);
     });
 
-    it('loads LineChatsPageComponent', async () => {
+    it('loads LineOasPageComponent', async () => {
       const type = await load(route());
-      expect(type).toBe((await import('./line/line-chats-page.component')).LineChatsPageComponent);
+      expect(type).toBe((await import('./line-oas/line-oas-page.component')).LineOasPageComponent);
     });
   });
 

@@ -286,6 +286,76 @@ export const AP_I18N_LINE = {
     'Left out {n} chats another machine already has: {note}',
   ],
   chatImportFailed: ['นำเข้าแชทไม่สำเร็จ', 'The chats could not be imported'],
+
+  // ---- The LINE OA master list (/app/line-oas) ---------------------------------------------------------------------
+  oaTitle: ['LINE OA (ข้อมูลหลัก)', 'LINE OA master list'],
+  oaSub: [
+    'รายการ LINE Official Account ของร้านทั้งหมด วางลิงก์ chat.line.biz ของแต่ละ OA ส่วนขยายจะเปิด OA นั้นแล้วอ่านลิงก์แชทของลูกค้าแต่ละคนมาเก็บไว้ แยกตาม OA ชุดโพสต์ฝั่ง LINE เลือก OA จากรายการนี้ได้เลย (ฝั่ง Facebook ใช้หน้า “ชุดลิงก์” เหมือนเดิม)',
+    'Every LINE Official Account of the shop. Paste the chat.line.biz link of each OA: the extension opens that OA and reads each customer’s chat link, kept apart per OA. LINE link sets pick their OA from this list (Facebook still uses the “Link sets” page)',
+  ],
+  oaUrlLabel: ['ลิงก์ LINE OA', 'LINE OA link'],
+  oaUrlPh: ['https://chat.line.biz/Uxxxxxxxxxxxx', 'https://chat.line.biz/Uxxxxxxxxxxxx'],
+  oaDeviceLabel: ['เครื่องที่อ่านรายชื่อลูกค้า', 'Machine that reads the customers'],
+  oaDevicePick: ['เลือกเครื่อง', 'Pick a machine'],
+  oaDeviceErr: ['เลือกเครื่องที่จะอ่านรายชื่อ', 'Pick the machine that reads the list'],
+  oaUrlErr: ['วางลิงก์ที่ขึ้นต้นด้วย chat.line.biz', 'Paste a link that starts with chat.line.biz'],
+  oaAdd: ['เพิ่ม LINE OA', 'Add LINE OA'],
+  oaAdded: [
+    'เพิ่ม {name} แล้ว กำลังสั่งให้ส่วนขยายอ่านรายชื่อลูกค้า (ต้องล็อกอิน LINE OA Manager ในเครื่องนั้นไว้)',
+    'Added {name}. The extension is told to read its customers (LINE OA Manager must be signed in on that machine)',
+  ],
+  oaNoDevice: [
+    'ยังไม่มีส่วนขยายที่เชื่อมไว้ เชื่อมส่วนขยายที่หน้า “ทีม” ก่อน แล้วค่อยเพิ่ม LINE OA',
+    'No extension is connected yet. Connect one on the “Team” page, then add a LINE OA',
+  ],
+  oaEmptyTitle: ['ยังไม่มี LINE OA ในรายการ', 'No LINE OA in the list yet'],
+  oaEmptyBody: [
+    'วางลิงก์ chat.line.biz ของ OA ด้านบน แล้วระบบจะดึงลิงก์แชทของลูกค้ามาให้',
+    'Paste the chat.line.biz link of an OA above and its customers’ chat links are fetched',
+  ],
+  oaLoading: ['กำลังอ่านรายการ LINE OA…', 'Reading the LINE OA list…'],
+  oaLoadFailed: ['อ่านรายการ LINE OA ไม่สำเร็จ', 'The LINE OA list could not be read'],
+  oaOpenOa: ['เปิด LINE OA', 'Open LINE OA'],
+  oaMachine: ['เครื่อง: {name}', 'Machine: {name}'],
+  oaMachineOffline: ['เครื่อง: {name} (ออฟไลน์)', 'Machine: {name} (offline)'],
+  oaReady: ['พร้อม', 'Ready'],
+  oaWaiting: ['รอเครื่องอ่านรายชื่อ', 'Waiting for the machine to read'],
+  oaSessionLost: ['ต้องล็อกอิน LINE OA ใหม่', 'LINE OA needs signing in again'],
+  oaCustomers: ['ลูกค้า {n} คน', '{n} customers'],
+  oaSets: ['ใช้ใน {n} ชุดโพสต์', 'Used by {n} link sets'],
+  oaNoSets: ['ยังไม่มีชุดโพสต์ใช้', 'No link set uses it'],
+  oaSync: ['อ่านรายชื่อใหม่', 'Read again'],
+  oaSyncSent: [
+    'สั่งให้เครื่องอ่านรายชื่อของ {name} แล้ว รายชื่อจะอัปเดตเมื่ออ่านเสร็จ',
+    'Told the machine to read {name}. The list updates when it is done',
+  ],
+  oaSyncFailed: ['สั่งอ่านรายชื่อไม่สำเร็จ', 'Could not start the reading'],
+  oaRemove: ['ลบ', 'Remove'],
+  oaRemoveTitle: ['ลบ LINE OA นี้?', 'Remove this LINE OA?'],
+  oaRemoveBody: [
+    'ลบ {name} ออกจากรายการ รายชื่อลูกค้าของ OA นี้จะถูกลบด้วย (ลบไม่ได้ถ้ามีชุดโพสต์ใช้อยู่)',
+    'Removes {name} from the list together with its customers (not possible while a link set uses it)',
+  ],
+  oaRemoved: ['ลบ {name} แล้ว', 'Removed {name}'],
+  oaShowCustomers: ['ดูลูกค้า', 'Show customers'],
+  oaHideCustomers: ['ซ่อนลูกค้า', 'Hide customers'],
+  oaOpenChat: ['เปิดแชท', 'Open chat'],
+  oaNoCustomers: [
+    'ยังไม่มีรายชื่อลูกค้าของ OA นี้ กด “อ่านรายชื่อใหม่” หรือรอให้เครื่องอ่านเสร็จ',
+    'No customers read for this OA yet. Press “Read again” or wait for the machine to finish',
+  ],
+  // The link-set dialog: the OA is picked from the master list.
+  oaPickLabel: [
+    'LINE OA ที่จะส่งแชท (จากรายการ LINE OA)',
+    'LINE OA to send through (from the LINE OA list)',
+  ],
+  oaPickPh: ['เลือก LINE OA', 'Pick a LINE OA'],
+  oaPickErr: ['เลือก LINE OA ที่จะส่ง', 'Pick the LINE OA to send through'],
+  oaPickNone: [
+    'ยังไม่มี LINE OA ในรายการ: เพิ่มที่หน้า “LINE OA” ก่อน',
+    'No LINE OA in the list yet: add one on the “LINE OA” page first',
+  ],
+  oaPickManage: ['จัดการรายการ LINE OA', 'Manage the LINE OA list'],
 } as const;
 
 registerPack('line', AP_I18N_LINE);

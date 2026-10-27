@@ -435,6 +435,8 @@ export const AP_I18N_EXTRA = {
   tlNav: ['ไทม์ไลน์โพสต์', 'Post timeline'],
   // The LINE OA customer-chat roster: the sidebar item and the route title (the rest is in the lazy pack i18n.line.ts).
   lineChatNav: ['แชท LINE', 'LINE chats'],
+  // The LINE OA master list (/app/line-oas): the sidebar item and the route title.
+  lineOaNav: ['LINE OA (ข้อมูลหลัก)', 'LINE OA master list'],
   flowPosts: ['เขียนและจัดการโพสต์', 'Write and manage posts'],
   flowPostsB: ['เปิด/ปิด ตั้งเวลาเอง ดูผลทีละโพสต์', 'On/off, own timing, results post by post'],
   nextToCollections: ['จัดโพสต์เข้าชุดโพสต์', 'Put the posts into a collection'],

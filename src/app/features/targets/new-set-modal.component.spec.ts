@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { AccountsStore } from '../../core/data/accounts.store';
 import { DeviceEventsService } from '../../core/data/device-events.service';
 import { DevicesStore } from '../../core/data/devices.store';
+import { LineOasStore } from '../../core/data/line-oas.store';
 import { LinkSetsStore } from '../../core/data/link-sets.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { ApiAccount } from '../../core/http/api.service';
@@ -30,6 +31,7 @@ describe('NewSetModalComponent', () => {
     TestBed.inject(AccountsStore);
     TestBed.inject(DevicesStore);
     TestBed.inject(LinkSetsStore);
+    TestBed.inject(LineOasStore);
     await signIn(http, {
       devices: [apiDevice(), apiDevice({ id: 'dev-2', name: 'Laptop', accountId: 'acc-fb2' })],
     });

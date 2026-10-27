@@ -85,6 +85,8 @@ export type ApiLineChatAccount = S['LineChatAccountSummaryDto'];
 export type ApiImportLineChats = S['ImportLineChatsRequest'];
 export type ApiLineChatFilter = S['FromLineChatsFilter'];
 export type ApiLineOptions = S['LineOptionsDto'];
+/** One LINE Official Account of the workspace's master list. */
+export type ApiLineOa = S['LineOaDto'];
 /** What the device list says of a browser's LINE Official Account (absent: the browser has none). */
 export type ApiDeviceLine = S['DeviceLineSummaryDto'];
 export type ApiLinkSet = S['LinkSetDto'];
@@ -784,6 +786,24 @@ export class ApiService {
   setLineChatDoNotSend(ws: string, id: string, doNotSend: boolean) {
     const body: S['UpdateLineChatRequest'] = { doNotSend };
     return run(this.http.put<ApiLineChat>(`/api/workspaces/${ws}/line/chats/${id}`, body, quiet));
+  }
+  /** The master list of LINE Official Accounts (one per address the owner pasted). */
+  lineOas(ws: string, background = false) {
+    return run(
+      this.http.get<ApiLineOa[]>(`/api/workspaces/${ws}/line/oas`, background ? quiet : {}),
+    );
+  }
+  /** Adds an Official Account by its chat.line.biz address; the chosen browser then reads its customers. Editors. */
+  addLineOa(ws: string, body: S['AddLineOaRequest']) {
+    return run(this.http.post<ApiLineOa>(`/api/workspaces/${ws}/line/oas`, body, quiet));
+  }
+  /** Asks the browser of an Official Account to read its customers again. Editors. */
+  syncLineOa(ws: string, id: string) {
+    return run(this.http.post<void>(`/api/workspaces/${ws}/line/oas/${id}/sync`, {}, quiet));
+  }
+  /** Takes an Official Account out of the list (its customers go too). Admins. */
+  removeLineOa(ws: string, id: string) {
+    return run(this.http.delete<void>(`/api/workspaces/${ws}/line/oas/${id}`));
   }
   /** Puts chats into a LINE link set: the picked ones, or every chat matching a filter (`allMatching`). */
   importLineChats(ws: string, set: string, body: ApiImportLineChats) {

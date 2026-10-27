@@ -218,7 +218,14 @@ describe('AdminStore', () => {
       groups: null,
       images: null,
       libraryPosts: null,
-      features: ['advanced_anti_ban', 'notifications', 'auto_reply', 'ai', 'bump', 'client_reports'],
+      features: [
+        'advanced_anti_ban',
+        'notifications',
+        'auto_reply',
+        'ai',
+        'bump',
+        'client_reports',
+      ],
     });
     expect(admin.health()?.latestExtension).toBe('2.5.0');
   });

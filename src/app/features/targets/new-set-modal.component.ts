@@ -9,9 +9,10 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
+import { AccountsStore, extensionNameOf, lineOaName } from '../../core/data/accounts.store';
 import { DevicesStore } from '../../core/data/devices.store';
 import { LINK_LIMITS, LinkSetsStore } from '../../core/data/link-sets.store';
+import { LineOasStore } from '../../core/data/line-oas.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { LinkChannel } from '../../core/flow/line-chats';
@@ -27,9 +28,9 @@ import {
 } from '../../shared/components/select-field/select-field.component';
 
 // "New link set": what it posts to (Facebook groups, or LINE customer chats when the plan has them and a browser is
-// logged in to a LINE Official Account), a name and, with two or more extensions of that kind connected, the extension
-// that posts it (there is no "automatic" any more: the set belongs to the extension picked here). With one extension
-// the API names it for the set. The set is created empty. A set keeps its channel for good.
+// has an OA in the master list), a name and, for Facebook with two or more extensions connected, the extension that
+// posts it, for LINE the Official Account (picked from the "LINE OA" master list; its customers become the set's chats).
+// With one Facebook extension the API names it for the set. The set is created empty. A set keeps its channel for good.
 @Component({
   selector: 'app-new-set-modal',
   imports: [ModalComponent, InputFieldComponent, SelectFieldComponent],
@@ -72,9 +73,18 @@ import {
           [error]="error()"
           [maxlength]="limits.setName"
         />
-        @if (several()) {
+        @if (channel() === 'line') {
+          <!-- The LINE OA is picked from the master list ("LINE OA" page): its customers are the set's chats. -->
           <app-select-field
-            [label]="channel() === 'line' ? t().api.line.chatNewSetExt : t().api.flow.newSetExt"
+            [label]="t().api.line.oaPickLabel"
+            [options]="oaOptions()"
+            [placeholder]="t().api.line.oaPickPh"
+            [(value)]="postAs"
+            [error]="postAsError()"
+          />
+        } @else if (several()) {
+          <app-select-field
+            [label]="t().api.flow.newSetExt"
             [options]="extensions()"
             [placeholder]="t().api.flow.postAsPick"
             [(value)]="postAs"
@@ -116,6 +126,7 @@ export class NewSetModalComponent {
 
   private readonly store = inject(LinkSetsStore);
   private readonly accounts = inject(AccountsStore);
+  private readonly lineOas = inject(LineOasStore);
   private readonly devices = inject(DevicesStore);
   private readonly notify = inject(NotificationService);
   protected readonly perm = inject(PermissionsService);
@@ -130,28 +141,30 @@ export class NewSetModalComponent {
   protected readonly postAsError = signal('');
   protected readonly busy = signal(false);
 
-  /** The browsers that can post a set of the chosen kind: Facebook accounts, or LINE Official Accounts. */
-  private readonly posters = computed(() =>
-    this.channel() === 'line' ? this.accounts.connectedLine() : this.accounts.connected(),
-  );
-
-  /** Two or more extensions: the person has to say which one posts the set. */
-  protected readonly several = computed(() => this.posters().length >= 2);
+  /** Two or more Facebook extensions: the person has to say which one posts the set. */
+  protected readonly several = computed(() => this.accounts.connected().length >= 2);
 
   protected readonly extensions = computed<SelectOption[]>(() =>
-    this.posters().map((a) => ({ value: a.id, label: extensionNameOf(a, this.devices.list()) })),
+    this.accounts
+      .connected()
+      .map((a) => ({ value: a.id, label: extensionNameOf(a, this.devices.list()) })),
   );
 
-  /** LINE chats need the plan and a browser that is logged in to a LINE Official Account. */
+  /** The LINE Official Accounts of the master list that a browser reads: the account IS the set's poster. */
+  protected readonly oaOptions = computed<SelectOption[]>(() =>
+    this.lineOas.usable().map((o) => ({ value: o.id, label: lineOaName({ name: o.name }) })),
+  );
+
+  /** LINE chats need the plan and at least one LINE OA in the master list. */
   protected readonly lineAvailable = computed(
-    () => !this.workspaces.lineChatLocked() && this.accounts.connectedLine().length > 0,
+    () => !this.workspaces.lineChatLocked() && this.lineOas.usable().length > 0,
   );
   /** Why "LINE chats" cannot be chosen ('' when it can). */
   protected readonly lineHint = computed(() => {
     const line = this.t().api.line;
     if (this.workspaces.lineChatLocked())
       return fmt(line.chatChannelLineLocked, { plan: this.t().plans.pro.name });
-    return this.accounts.connectedLine().length ? '' : line.chatChannelLineNoAccount;
+    return this.lineOas.usable().length ? '' : line.oaPickNone;
   });
 
   constructor() {
@@ -175,6 +188,8 @@ export class NewSetModalComponent {
       this.postAsError.set('');
     }
     this.channel.set(channel);
+    if (channel === 'line' && !this.postAs() && this.oaOptions().length === 1)
+      this.postAs.set(this.oaOptions()[0].value);
   }
 
   protected async create(): Promise<void> {
@@ -184,7 +199,11 @@ export class NewSetModalComponent {
       this.error.set(this.t().ts.errName);
       return;
     }
-    if (this.several() && !this.postAs()) {
+    if (this.channel() === 'line' && !this.postAs()) {
+      this.postAsError.set(this.t().api.line.oaPickErr);
+      return;
+    }
+    if (this.channel() === 'fb' && this.several() && !this.postAs()) {
       this.postAsError.set(this.t().api.flow.newSetExtErr);
       return;
     }

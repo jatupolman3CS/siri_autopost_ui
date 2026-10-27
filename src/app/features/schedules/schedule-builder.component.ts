@@ -1,3 +1,4 @@
+import { PLATFORMS } from '../../core/data/platforms';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AccountsStore, extensionNameOf } from '../../core/data/accounts.store';
@@ -84,7 +85,9 @@ export class ScheduleBuilderComponent {
       const on = account
         ? ` · ${fmt(this.t().api.flow.optExt, { name: extensionNameOf(account, this.devices.list()) })}`
         : '';
-      return { value: s.id, label: this.offLabel(s.name, s.active) + on };
+      // The channel is said up front: a LINE set sends to customers' chats, a Facebook set posts to groups and pages.
+      const channel = `[${PLATFORMS[s.channel === 'line' ? 'line' : 'fb'].name}] `;
+      return { value: s.id, label: channel + this.offLabel(s.name, s.active) + on };
     }),
   );
   /** A switched-off collection or set stays in the list, marked: a schedule cannot be made from it. */

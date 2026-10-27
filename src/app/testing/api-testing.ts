@@ -10,6 +10,7 @@ import {
   ApiCollectionPost,
   ApiDevice,
   ApiLinkSet,
+  ApiLineOa,
   ApiPost,
   ApiUser,
   ApiWorkspace,
@@ -167,6 +168,7 @@ export async function signIn(
     /** Answers GET master-posts (the post library); by default the posts of `collections`, each once. */
     masterPosts?: ApiCollectionPost[];
     linkSets?: ApiLinkSet[];
+    lineOas?: ApiLineOa[];
     /** Answers GET schedules (the schedules store; typed by whoever builds it). */
     schedules?: unknown[];
     /** Answers GET ai/status (only read once an editor is open): by default a key and a plan, no limit. */
@@ -225,6 +227,7 @@ export function answerWorkspaceLoads(
     collections?: ApiCollection[];
     masterPosts?: ApiCollectionPost[];
     linkSets?: ApiLinkSet[];
+    lineOas?: ApiLineOa[];
     schedules?: unknown[];
     aiStatus?: ApiAiStatus;
   } = {},
@@ -256,6 +259,7 @@ export function answerWorkspaceLoads(
   for (const r of http.match(`${base}/ai/status`)) r.flush(data.aiStatus ?? AI_STATUS);
   for (const r of http.match(`${base}/notifications`)) r.flush(NOTIFICATIONS);
   for (const r of http.match(`${base}/auto-reply`)) r.flush({ on: false, rules: [] });
+  for (const r of http.match(`${base}/line/oas`)) r.flush(data.lineOas ?? []);
   for (const r of http.match(`${base}/engine`))
     r.flush({
       antiBan: {

@@ -1431,6 +1431,180 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/billing/profile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['BillingProfileDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/profile/notifications': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NotificationsRequest'];
+          'text/json': components['schemas']['NotificationsRequest'];
+          'application/*+json': components['schemas']['NotificationsRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['BillingProfileDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/profile/payment-method': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['PaymentMethodRequest'];
+          'text/json': components['schemas']['PaymentMethodRequest'];
+          'application/*+json': components['schemas']['PaymentMethodRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['BillingProfileDto'];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['BillingProfileDto'];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/billing/invoices/{id}/statement': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+            'text/html': unknown;
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/billing/plan': {
     parameters: {
       query?: never;
@@ -2819,6 +2993,44 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/workspaces/{wsId}/devices/{deviceId}/line': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          deviceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['DeviceDto'];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/engine': {
     parameters: {
       query?: never;
@@ -4060,6 +4272,146 @@ export interface paths {
     };
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/line/oas': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['LineOaDto'][];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AddLineOaRequest'];
+          'text/json': components['schemas']['AddLineOaRequest'];
+          'application/*+json': components['schemas']['AddLineOaRequest'];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['LineOaDto'];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/line/oas/{id}/sync': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/workspaces/{wsId}/line/oas/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          wsId: string;
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': unknown;
+          };
+        };
+      };
+    };
     options?: never;
     head?: never;
     patch?: never;
@@ -5431,6 +5783,41 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/public/stats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            'application/json': components['schemas']['PublicStatsDto'];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/workspaces/{wsId}/reports': {
     parameters: {
       query?: never;
@@ -6334,6 +6721,12 @@ export interface components {
     AddExistingPostsRequest: {
       postIds: string[];
     };
+    AddLineOaRequest: {
+      url: string;
+      /** Format: uuid */
+      deviceId?: null | string;
+      name?: null | string;
+    };
     AddLinkRequest: {
       name: null | string;
       url: null | string;
@@ -6600,6 +6993,13 @@ export interface components {
       card: null | components['schemas']['CardDto'];
       limits: components['schemas']['LimitsDto'];
       usage: components['schemas']['UsageDto'];
+    };
+    BillingProfileDto: {
+      notifyFailed: boolean;
+      notifyExpiring: boolean;
+      notifyRenewal: boolean;
+      card: null | components['schemas']['PaymentMethodDto'];
+      paymentsConnected: boolean;
     };
     BulkLinksRequest: {
       text: string;
@@ -7237,6 +7637,25 @@ export interface components {
       allowedFrom: string;
       allowedTo: string;
     };
+    LineOaDto: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      botId: string;
+      url: string;
+      /** Format: uuid */
+      deviceId: null | string;
+      deviceName: null | string;
+      deviceOnline: boolean;
+      ready: boolean;
+      /** Format: int32 */
+      chats: number;
+      /** Format: date-time */
+      syncedAt: null | string;
+      sessionLost: boolean;
+      /** Format: int32 */
+      linkSetCount: number;
+    };
     LineOptionsDto: {
       /** @default 09:00 */
       allowedFrom: string;
@@ -7359,6 +7778,11 @@ export interface components {
       commandsOn: boolean;
       commandsUsers: string;
     };
+    NotificationsRequest: {
+      notifyFailed: boolean;
+      notifyExpiring: boolean;
+      notifyRenewal: boolean;
+    };
     /** @enum {unknown} */
     NotifyChannel: 'default' | 'tg' | 'line' | 'both' | 'off';
     NotifyEventsDto: {
@@ -7437,8 +7861,26 @@ export interface components {
       flow: components['schemas']['PaymentFlow'];
       method: components['schemas']['PaymentMethodKind'];
     };
+    PaymentMethodDto: {
+      brand: string;
+      last4: string;
+      /** Format: int32 */
+      expMonth: number;
+      /** Format: int32 */
+      expYear: number;
+      expired: boolean;
+      expiresSoon: boolean;
+    };
     /** @enum {unknown} */
     PaymentMethodKind: 'card' | 'apple_pay' | 'google_pay' | 'link' | 'promptpay' | null;
+    PaymentMethodRequest: {
+      brand: null | string;
+      last4: string;
+      /** Format: int32 */
+      expMonth: number;
+      /** Format: int32 */
+      expYear: number;
+    };
     PaymentOverrideDto: {
       enabled: boolean;
       /** Format: int32 */
@@ -7632,6 +8074,24 @@ export interface components {
       discount: string;
       /** Format: date-time */
       expiresAt: null | string;
+    };
+    PublicDayDto: {
+      date: string;
+      /** Format: int32 */
+      sent: number;
+      /** Format: int32 */
+      failed: number;
+    };
+    PublicStatsDto: {
+      /** Format: int32 */
+      postsSent7d: number;
+      /** Format: int32 */
+      postsFailed7d: number;
+      /** Format: double */
+      successRate7d: null | number;
+      /** Format: int32 */
+      devicesActive24h: number;
+      days: components['schemas']['PublicDayDto'][];
     };
     RenameRequest: {
       name: string;

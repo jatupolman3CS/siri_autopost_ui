@@ -4,6 +4,7 @@ import {
   ApiDeviceLine,
   ApiLineChat,
   ApiLineChatPage,
+  ApiLineOa,
   ApiLinkSet,
   ApiSetLink,
 } from '../core/http/api.service';
@@ -113,6 +114,25 @@ export function apiLineSet(over: Partial<ApiLinkSet> & { id: string }): ApiLinkS
     randomOrder: true,
     dailyPerGroup: 1,
     channel: 'line',
+    ...over,
+  };
+}
+
+/** One Official Account of the master list as `GET line/oas` answers it (read by a browser, ready, no customers yet). */
+export function apiLineOa(over: Partial<ApiLineOa> = {}): ApiLineOa {
+  return {
+    id: 'acc-line',
+    name: 'LINE · Shop OA',
+    botId: LINE_BOT,
+    url: `https://chat.line.biz/${LINE_BOT}`,
+    deviceId: 'dev-1',
+    deviceName: 'Shop PC',
+    deviceOnline: true,
+    ready: true,
+    chats: 0,
+    syncedAt: null,
+    sessionLost: false,
+    linkSetCount: 0,
     ...over,
   };
 }

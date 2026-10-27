@@ -8,6 +8,7 @@ import { AccountsStore } from '../../core/data/accounts.store';
 import { DeviceEventsService } from '../../core/data/device-events.service';
 import { DevicesStore } from '../../core/data/devices.store';
 import { EDIT_DEBOUNCE_MS, LinkSetsStore } from '../../core/data/link-sets.store';
+import { LineOasStore } from '../../core/data/line-oas.store';
 import { WorkspaceStore } from '../../core/data/workspace.store';
 import { ApiCollection, ApiDevice, ApiRole } from '../../core/http/api.service';
 import { I18nService, fmt } from '../../core/i18n/i18n.service';
@@ -82,6 +83,7 @@ describe('TargetsPageComponent', () => {
     TestBed.inject(AccountsStore);
     TestBed.inject(DevicesStore);
     TestBed.inject(LinkSetsStore);
+    TestBed.inject(LineOasStore);
     await signIn(http, {
       workspace: { role: opts.role ?? 'owner' },
       linkSets: opts.holdSets ? [] : (opts.sets ?? [SET]),

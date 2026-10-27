@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { LineChatsStore } from '../../core/data/line-chats.store';
+import { LineChatList } from '../../core/data/line-chats.store';
 import { PermissionsService } from '../../core/data/permissions.service';
 import { ApiLineChat } from '../../core/http/api.service';
 import { fmtDate, hm } from '../../core/i18n/format';
@@ -40,6 +40,15 @@ function whenText(d: Date, li: number, now: Date): string {
         </div>
         <div class="small muted">{{ last() }} · {{ inSets() }}</div>
       </div>
+      <a
+        class="su-btn su-btn-sm su-btn-ghost open"
+        [href]="chat().url"
+        target="_blank"
+        rel="noopener noreferrer"
+        [attr.aria-label]="t().api.line.oaOpenChat + ' ' + name()"
+      >
+        <i class="ph ph-arrow-square-out" aria-hidden="true"></i> {{ t().api.line.oaOpenChat }}
+      </a>
       <app-checkbox
         [label]="t().api.line.chatDoNotSend"
         [ariaLabel]="aria()"
@@ -97,7 +106,7 @@ function whenText(d: Date, li: number, now: Date): string {
 export class LineChatRowComponent {
   readonly chat = input.required<ApiLineChat>();
 
-  private readonly store = inject(LineChatsStore);
+  private readonly store = inject(LineChatList);
   private readonly notify = inject(NotificationService);
   protected readonly perm = inject(PermissionsService);
   private readonly i18n = inject(I18nService);
