@@ -4,6 +4,7 @@ import { ApiDevice } from '../http/api.service';
 import { WS, provideApiTesting, settle, signIn } from '../../testing/api-testing';
 import { FakeDeviceEvents } from '../../testing/fake-events';
 import { apiDeviceLine, apiLineDevice } from '../../testing/line.fixtures';
+import { apiDevice } from '../../testing/link-sets.fixtures';
 import { DeviceEventsService } from './device-events.service';
 import { DevicesStore, lineStateOf } from './devices.store';
 
@@ -62,6 +63,16 @@ describe('DevicesStore: LINE', () => {
     expect(req.request.body).toEqual({ cmd: 'openLineSetup', args: {} });
     req.flush({ id: 'c2', cmd: 'openLineSetup', status: 'pending' });
     await done;
+  });
+
+  it('lets go of the LINE OA of a browser and shows it without one', async () => {
+    store.list.set([apiDevice({ id: 'dev-1', line: apiDeviceLine() })]);
+    const done = store.disconnectLine('dev-1');
+    const req = http.expectOne(`${URL}/dev-1/line`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(apiDevice({ id: 'dev-1', line: undefined }));
+    await done;
+    expect(store.list()[0].line).toBeFalsy();
   });
 });
 

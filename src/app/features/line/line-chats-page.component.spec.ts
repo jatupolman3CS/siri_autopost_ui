@@ -337,13 +337,24 @@ describe('LineChatsPageComponent', () => {
           apiLineDevice({ id: 'dev-2', name: 'Laptop' }, { ready: false, sessionLost: true }),
         ],
       });
-      const buttons = [...el.querySelectorAll<HTMLButtonElement>('app-line-status button')];
+      const buttons = [...el.querySelectorAll<HTMLButtonElement>('app-line-status .su-btn-secondary')];
       expect(buttons.map((b) => b.disabled)).toEqual([true, true]);
       expect(buttons[0].title).toBe(t().api.line.chatDeviceOffline);
       expect(buttons[1].title).toBe(t().api.line.chatSyncNeedsLogin);
       const text = el.querySelector('app-line-status')!.textContent!;
       expect(text).toContain(t().api.line.chatStateLogin);
       expect(text).toContain(t().api.line.chatStateLoginHint);
+    });
+
+    it('has a change-LINE-OA button on every connected browser that opens the confirm dialog', async () => {
+      const { el, fixture } = await open({ devices: [apiLineDevice()] });
+      const change = [...el.querySelectorAll<HTMLButtonElement>('app-line-status .su-btn-ghost')].find((b) =>
+        b.textContent?.includes(t().api.line.chatChange),
+      )!;
+      expect(change.disabled).toBe(false);
+      change.click();
+      fixture.detectChanges();
+      expect(el.ownerDocument.body.textContent).toContain(t().api.line.chatChangeTitle);
     });
 
     it('says a LINE account that is resting, with the time it rests until', async () => {

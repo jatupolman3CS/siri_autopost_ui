@@ -6,6 +6,7 @@ import { hm } from '../../core/i18n/format';
 import { I18nService, ago, fmt } from '../../core/i18n/i18n.service';
 import '../../core/i18n/i18n.line';
 import { NotificationService } from '../../core/services/notification.service';
+import { ConfirmModalComponent } from '../../shared/components/confirm-modal/confirm-modal.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 
 /** One browser that drives a LINE Official Account, as the status card shows it. */
@@ -31,7 +32,7 @@ interface LineDeviceRow {
 // roster below it reads the chats.
 @Component({
   selector: 'app-line-status',
-  imports: [EmptyStateComponent],
+  imports: [EmptyStateComponent, ConfirmModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (!devices.loaded()) {
@@ -67,11 +68,28 @@ interface LineDeviceRow {
               >
                 <i class="ph ph-arrows-clockwise"></i>{{ t().api.line.chatSyncNow }}
               </button>
+              <button
+                type="button"
+                class="su-btn su-btn-sm su-btn-ghost"
+                [disabled]="perm.readOnly()"
+                [attr.title]="perm.readOnly() ? perm.editHint() : null"
+                (click)="changing.set(r)"
+              >
+                <i class="ph ph-swap"></i>{{ t().api.line.chatChange }}
+              </button>
             </li>
           }
         </ul>
       </section>
     }
+    <app-confirm-modal
+      [open]="!!changing()"
+      [title]="t().api.line.chatChangeTitle"
+      [body]="changeBody()"
+      [confirmLabel]="t().api.line.chatChange"
+      [action]="disconnect"
+      (closed)="changing.set(null)"
+    />
     @if (devices.loaded() && unconnected().length) {
       <section class="panel st" [attr.aria-label]="t().api.line.chatConnectTitle">
         <div class="fw6">{{ t().api.line.chatConnectTitle }}</div>
@@ -253,6 +271,19 @@ export class LineStatusComponent {
       );
     }
   }
+
+  /** The row whose LINE OA is being changed (the confirm dialog is open for it). */
+  protected readonly changing = signal<LineDeviceRow | null>(null);
+  protected readonly changeBody = computed(() => {
+    const r = this.changing();
+    return r ? fmt(this.t().api.line.chatChangeBody, { oa: r.oa, name: r.name }) : '';
+  });
+  protected readonly disconnect = async (): Promise<void> => {
+    const r = this.changing();
+    if (!r) return;
+    await this.devices.disconnectLine(r.id);
+    this.notify.success(fmt(this.t().api.line.chatChangeDone, { name: r.name }));
+  };
 
   protected async sync(row: LineDeviceRow): Promise<void> {
     if (row.syncBlocked || this.busy().has(row.id)) return;

@@ -415,6 +415,10 @@ export class ApiService {
   revokeDevice(ws: string, id: string) {
     return run(this.http.delete<void>(`/api/workspaces/${ws}/devices/${id}`));
   }
+  /** Lets go of a browser's LINE OA (admin): its chats are deleted, Facebook stays. */
+  disconnectDeviceLine(ws: string, id: string) {
+    return run(this.http.delete<ApiDevice>(`/api/workspaces/${ws}/devices/${id}/line`));
+  }
   members(ws: string) {
     return run(this.http.get<ApiMember[]>(`/api/workspaces/${ws}/members`));
   }

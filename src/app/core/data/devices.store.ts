@@ -200,6 +200,17 @@ export class DevicesStore {
     await this.api.sendDeviceCommand(wsId, id, 'openLineSetup');
   }
 
+  /**
+   * "Change LINE OA": the server lets go of the browser's LINE account (its chats go, Facebook stays) and tells the extension
+   * to forget the OA (the `resetLine` command); the browser can then connect another one from its status page.
+   */
+  async disconnectLine(id: string): Promise<void> {
+    const wsId = this.ws.id();
+    if (!wsId) return;
+    const device = await this.api.disconnectDeviceLine(wsId, id);
+    this.list.update((l) => l.map((d) => (d.id === id ? { ...device, line: null } : d)));
+  }
+
   async revoke(id: string): Promise<void> {
     const wsId = this.ws.id();
     if (!wsId) return;
