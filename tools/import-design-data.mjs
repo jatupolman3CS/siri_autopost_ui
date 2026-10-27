@@ -1,4 +1,7 @@
-// Regenerates the i18n dictionary and seed data from the Claude Design handoff's autopost-data.js.
+// Regenerates the i18n dictionary from the Claude Design handoff's autopost-data.js.
+// The handoff also carries sample data (accounts, posts, customers...); the app does not use it: every
+// figure on screen comes from SIRIAUTOPOST.Api. Platform names and calendar names are in
+// src/app/core/data/reference.ts (kept by hand).
 // Usage: node tools/import-design-data.mjs <path/to/autopost-data.js>
 // The sample data is cut down to Facebook groups and pages (tools/facebook-only.mjs): the other social
 // platforms of the design are a later phase. Dictionary wording that the system contradicts is corrected

@@ -74,7 +74,7 @@ src/app/
 src/styles/          # tokens (สี/ระยะ/เงา), CSS ของ design system, layout utilities
 ```
 
-## อัปเดตข้อความหรือข้อมูลตัวอย่างจากดีไซน์ใหม่
+## อัปเดตข้อความจากดีไซน์ใหม่
 
 ```bash
 npm run import:design -- path/to/autopost-data.js

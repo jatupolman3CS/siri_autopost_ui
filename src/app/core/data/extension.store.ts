@@ -2,6 +2,8 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../http/api.service';
 import { I18nService, fmt } from '../i18n/i18n.service';
 import { NotificationService } from '../services/notification.service';
+import { DeviceLiveStore } from './device-live.store';
+import { DevicesStore } from './devices.store';
 import { PostsStore } from './posts.store';
 import { SettingsStore } from './settings.store';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
@@ -19,6 +21,8 @@ export class ExtensionStore {
   private readonly settings = inject(SettingsStore);
   private readonly notify = inject(NotificationService);
   private readonly i18n = inject(I18nService);
+  private readonly devices = inject(DevicesStore);
+  private readonly liveDevice = inject(DeviceLiveStore);
 
   readonly online = this.settings.extensionOnline.asReadonly();
   /** Offline because of "simulate offline" (the banner then offers to reconnect). */

@@ -96,6 +96,9 @@ const toPromo = (p: ApiPromo): Promo => ({
   active: p.active,
 });
 
+/** Until /api/plans answers (the app initializer waits for it, so pages never render with these). */
+const NOT_LOADED: PlanLimits = { price: 0, accounts: 0, posts: 0, devices: 0, seats: 0 };
+
 function toPlans(list: ApiPlanSetting[]): Record<PlanKey, PlanLimits> {
   const out = structuredClone(DESIGN_PLANS);
   for (const p of list)
@@ -184,8 +187,9 @@ export class AdminStore {
   async loadPlans(): Promise<void> {
     try {
       this.plans.set(toPlans(await this.api.plans()));
+      this.plansLoaded.set(true);
     } catch {
-      // Keep the design's values; the server refuses changes that do not fit its own.
+      // The pages that show prices stay at 0 until the next load; the API enforces its own limits either way.
     }
   }
 

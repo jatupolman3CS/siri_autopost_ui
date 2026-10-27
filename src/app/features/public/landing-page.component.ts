@@ -1,10 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminStore } from '../../core/data/admin.store';
-import { kpisOf, queueRowsOf } from '../../core/data/dashboard-stats.service';
-import { groupByDay, withDay } from '../../core/data/posts.store';
-import { samplePosts } from '../../core/data/sample';
-import { dkey } from '../../core/i18n/format';
+import { PublicStatsStore } from '../../core/data/public-stats.store';
+import { dayNames } from '../../core/i18n/format';
 import { PlanKey } from '../../core/data/models';
 import { tierViews } from '../../core/data/plans';
 import { PLATFORMS } from '../../core/data/platforms';
@@ -38,10 +36,10 @@ export class LandingPageComponent {
   private readonly sampleToday = computed(
     () => groupByDay(this.sample()).get(dkey(this.now)) ?? [],
   );
-  protected readonly kpis = computed(() =>
-    kpisOf(this.sample(), this.sampleToday(), this.now, this.t()).slice(0, 3),
-  );
-  protected readonly queue = computed(() => queueRowsOf(this.sampleToday(), this.t()).slice(0, 4));
+
+  constructor() {
+    void this.publicStats.load();
+  }
 
   protected readonly steps = computed(() => {
     const l = this.t().land;

@@ -25,11 +25,8 @@
     </div>
     <div class="preview">
       <div class="preview-head">
-        <span class="small fw5 muted">{{ t().land.previewTitle }}</span>
-        <span class="status muted"
-          ><span class="dot" style="background: var(--color-success)"></span
-          >{{ t().top.extOnline }}</span
-        >
+        <span class="small fw5 muted">{{ t().api.landTitle }}</span>
+        <span class="small muted">{{ t().ov.last7 }}</span>
       </div>
       <div class="preview-kpis">
         @for (k of kpis(); track k.label) {
@@ -39,16 +36,33 @@
           </div>
         }
       </div>
-      <div class="preview-queue">
-        @for (p of queue(); track p.id) {
-          <div class="q-row">
-            <span class="q-time">{{ p.time }}</span>
-            <span class="pico s28"><i class="ph" [class]="p.icon"></i></span>
-            <span class="grow ellipsis">{{ p.text }}</span>
-            <span class="status"
-              ><span class="dot" [style.background]="p.dot"></span>{{ p.statusLabel }}</span
-            >
-          </div>
+      <div class="preview-bars" role="img" [attr.aria-label]="t().api.landSent">
+        @if (stats() === 'error') {
+          <p class="small muted flush">{{ t().api.landUnavailable }}</p>
+        } @else if (stats() !== 'ready') {
+          <p class="small muted flush">{{ t().api.landLoading }}</p>
+        } @else {
+          @for (b of bars(); track $index) {
+            <div class="bar-col">
+              <span class="small muted">{{ b.total }}</span>
+              <div class="bar-track">
+                <div
+                  class="bar-fill"
+                  [style.height.%]="b.h"
+                  [style.background]="
+                    b.failPct
+                      ? 'linear-gradient(to top, var(--color-danger) ' +
+                        b.failPct +
+                        '%, var(--color-primary) ' +
+                        b.failPct +
+                        '%)'
+                      : 'var(--color-primary)'
+                  "
+                ></div>
+              </div>
+              <span class="small muted">{{ b.label }}</span>
+            </div>
+          }
         }
       </div>
     </div>

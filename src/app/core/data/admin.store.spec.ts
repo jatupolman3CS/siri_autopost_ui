@@ -56,6 +56,13 @@ const tx = (over: Partial<ApiTransaction> = {}): ApiTransaction => ({
   ...over,
 });
 
+const PLANS = [
+  { key: 'free', price: 0, accounts: 1, posts: 10, devices: 1, seats: 1 },
+  { key: 'basic', price: 290, accounts: 2, posts: 30, devices: 1, seats: 1 },
+  { key: 'pro', price: 790, accounts: 10, posts: null, devices: 3, seats: 1 },
+  { key: 'agency', price: 1990, accounts: null, posts: null, devices: null, seats: 10 },
+];
+
 const HEALTH: ApiHealth = {
   mrr: 790,
   mrrPrev: 0,
@@ -172,6 +179,14 @@ describe('AdminStore', () => {
     expect(admin.revenue()).toEqual([[2026, 8, 790]]);
     expect(admin.transactions()[0]).toMatchObject({ id: 't1', cust: 'c1', amount: 790 });
     expect(admin.loaded()).toBe(true);
+    expect(admin.plansLoaded()).toBe(true);
+    expect(admin.plans().agency).toEqual({
+      price: 1990,
+      accounts: null,
+      posts: null,
+      devices: null,
+      seats: 10,
+    });
     expect(admin.health()?.latestExtension).toBe('2.5.0');
   });
 
@@ -349,7 +364,7 @@ describe('AdminStore', () => {
     expect(served).toContain('/api/admin/health');
     expect(served).toContain('/api/admin/audit'); // the platform-wide log, no customer
     expect(admin.plans().pro.devices).toBeNull();
-    expect(admin.plans().basic.price).toBeGreaterThan(0); // the other plans are kept
+    expect(admin.plans().basic.price).toBe(290); // the other plans are kept
   });
 
   it('reads the three new numbers and the functions of every plan, ignoring a function it does not know', async () => {

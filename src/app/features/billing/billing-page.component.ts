@@ -71,6 +71,7 @@ export class BillingPageComponent {
   protected readonly billing = inject(BillingStore);
   protected readonly payments = inject(PaymentStore);
   protected readonly settings = inject(SettingsStore);
+  protected readonly billing = inject(BillingStore);
   protected readonly t = this.i18n.t;
   private readonly info = this.billing.info;
 
