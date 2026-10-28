@@ -38,11 +38,11 @@ describe('LineOasStore', () => {
     const req = http.expectOne(`${OAS}/one/use`);
     expect(req.request.method).toBe('POST');
     req.flush(null);
-    expect(await done).toBe(true);
+    expect(await done).toBe('');
 
     const refused = store.use('one');
     http.expectOne(`${OAS}/one/use`).flush({ title: 'x' }, { status: 422, statusText: 'x' });
-    expect(await refused).toBe(false);
+    expect(await refused).toBe('x');
   });
 
   it('"force sync" sends the read command for that OA', async () => {
@@ -52,7 +52,7 @@ describe('LineOasStore', () => {
     const req = http.expectOne(`${OAS}/one/sync`);
     expect(req.request.method).toBe('POST');
     req.flush(null);
-    expect(await done).toBe(true);
+    expect(await done).toBe('');
   });
 
   it('adds an OA by its address and takes it out again', async () => {

@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { ApiLineOa, ApiService } from '../http/api.service';
+import { problemMessage } from '../http/problem-details';
 import { DeviceEventsService } from './device-events.service';
 import { loadWithRetry } from './loading';
 import { WorkspaceStore, whenWorkspaceChanges } from './workspace.store';
@@ -107,27 +108,25 @@ export class LineOasStore {
     return row;
   }
 
-  /** Asks the OA's browser to read its customers again. Answers whether the API took it. */
-  async sync(id: string): Promise<boolean> {
-    const wsId = this.ws.id();
-    if (!wsId) return false;
-    try {
-      await this.api.syncLineOa(wsId, id);
-      return true;
-    } catch {
-      return false;
-    }
+  /** Asks the OA's browser to read its customers again. Answers '' when the API took it, else why not. */
+  async sync(id: string): Promise<string> {
+    return this.send(id, (wsId) => this.api.syncLineOa(wsId, id));
   }
 
-  /** Tells the OA's browser to work for that OA from now on. Answers whether the API took it. */
-  async use(id: string): Promise<boolean> {
+  /** Tells the OA's browser to work for that OA from now on. Answers '' when the API took it, else why not. */
+  async use(id: string): Promise<string> {
+    return this.send(id, (wsId) => this.api.useLineOa(wsId, id));
+  }
+
+  // The requests are quiet (no toast of their own), so the reason of a refusal is handed back for the page to show.
+  private async send(id: string, call: (wsId: string) => Promise<unknown>): Promise<string> {
     const wsId = this.ws.id();
-    if (!wsId) return false;
+    if (!wsId) return 'no workspace';
     try {
-      await this.api.useLineOa(wsId, id);
-      return true;
-    } catch {
-      return false;
+      await call(wsId);
+      return '';
+    } catch (e) {
+      return problemMessage(e) ?? (e instanceof HttpErrorResponse ? `HTTP ${e.status}` : String(e));
     }
   }
 

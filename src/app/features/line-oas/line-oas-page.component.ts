@@ -351,15 +351,15 @@ export class LineOasPageComponent implements OnInit {
 
   protected async use(o: ApiLineOa): Promise<void> {
     const line = this.t().api.line;
-    if (await this.store.use(o.id))
-      this.notify.success(fmt(line.oaUseSent, { name: this.shortName(o) }));
-    else this.notify.error(line.oaUseFailed);
+    const why = await this.store.use(o.id);
+    if (!why) this.notify.success(fmt(line.oaUseSent, { name: this.shortName(o) }));
+    else this.notify.error(`${line.oaUseFailed}: ${why}`);
   }
 
   protected async sync(o: ApiLineOa): Promise<void> {
     const line = this.t().api.line;
-    if (await this.store.sync(o.id))
-      this.notify.success(fmt(line.oaSyncSent, { name: this.shortName(o) }));
-    else this.notify.error(line.oaSyncFailed);
+    const why = await this.store.sync(o.id);
+    if (!why) this.notify.success(fmt(line.oaSyncSent, { name: this.shortName(o) }));
+    else this.notify.error(`${line.oaSyncFailed}: ${why}`);
   }
 }
