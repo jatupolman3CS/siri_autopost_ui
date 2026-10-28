@@ -72,6 +72,28 @@ describe('LineOasPageComponent', () => {
     await settle();
   });
 
+  it('has ONE field for an OA address (the status card has no second connect form)', async () => {
+    const el = await open([apiLineOa({ id: 'a' })]);
+    expect(el.querySelector('[data-testid=connect]')).toBeNull();
+    expect(el.querySelectorAll('input[type=text], app-input-field input').length).toBe(1);
+  });
+
+  it('says why an OA cannot be removed (a link set uses it) instead of a general failure', async () => {
+    const el = await open([apiLineOa({ id: 'a', name: 'LINE · Flowers', linkSetCount: 1 })]);
+    buttons(el, t().oaRemove)[0].click();
+    await settle();
+    const confirm = [
+      ...document.body.querySelectorAll<HTMLButtonElement>('app-modal button.su-btn-primary'),
+    ].at(-1)!;
+    confirm.click();
+    const reason = 'ลบ LINE OA นี้ไม่ได้: ชุดโพสต์ ชุดดอกไม้ ใช้อยู่ (ลบหรือย้ายชุดก่อน)';
+    http
+      .expectOne(`/api/workspaces/${WS}/line/oas/a`)
+      .flush({ title: reason }, { status: 422, statusText: 'x' });
+    await settle();
+    expect(document.body.textContent).toContain(reason);
+  });
+
   it('has a "force sync" button on every OA', async () => {
     const el = await open([apiLineOa({ id: 'a' }), apiLineOa({ id: 'b', active: false })]);
     expect(buttons(el, t().oaSync).length).toBe(2);

@@ -693,7 +693,8 @@ describe('CollectionsPageComponent', () => {
         .flush({ title: 'ลบไม่ได้' }, { status: 422, statusText: 'Unprocessable' });
       await rerender();
       expect(cards().length).toBe(2);
-      expect(openConfirm().textContent).toContain(t().api.itemActionFailed);
+      // The dialog gives the API's own reason, not the general failure text.
+      expect(openConfirm().textContent).toContain('ลบไม่ได้');
     });
 
     it('is off for a viewer', async () => {

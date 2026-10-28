@@ -341,8 +341,8 @@ export const AP_I18N_LINE = {
   oaRemove: ['ลบ', 'Remove'],
   oaRemoveTitle: ['ลบ LINE OA นี้?', 'Remove this LINE OA?'],
   oaRemoveBody: [
-    'ลบ {name} ออกจากรายการ รายชื่อลูกค้าของ OA นี้จะถูกลบด้วย (ลบไม่ได้ถ้ามีชุดโพสต์ใช้อยู่)',
-    'Removes {name} from the list together with its customers (not possible while a link set uses it)',
+    'ลบ {name} ออกจากรายการ รายชื่อลูกค้า โพสต์ที่ค้างคิวและประวัติการส่งของ OA นี้จะถูกลบด้วย ชุดโพสต์ที่ใช้ OA นี้จะไม่มี OA จนกว่าจะเลือกใหม่',
+    'Removes {name} from the list together with its customers, queued posts and send history. Link sets that used it have no OA until you choose another',
   ],
   oaRemoved: ['ลบ {name} แล้ว', 'Removed {name}'],
   oaShowCustomers: ['ดูลูกค้า', 'Show customers'],

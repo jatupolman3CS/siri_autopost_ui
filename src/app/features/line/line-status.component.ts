@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { LINE_ACCOUNT_PREFIX } from '../../core/data/accounts.store';
 import { DevicesStore, LineState, lineStateOf } from '../../core/data/devices.store';
 import { PermissionsService } from '../../core/data/permissions.service';
@@ -44,7 +44,7 @@ interface LineDeviceRow {
         [heading]="t().api.line.chatNoLineTitle"
         [description]="t().api.line.chatNoLineBody"
       />
-    } @else if (devices.loaded()) {
+    } @else if (devices.loaded() && showConnect()) {
       <section
         class="panel st connect"
         [attr.aria-label]="t().api.line.chatLinkTitle"
@@ -229,6 +229,9 @@ export class LineStatusComponent {
   protected readonly perm = inject(PermissionsService);
   private readonly i18n = inject(I18nService);
   protected readonly t = this.i18n.t;
+  /** The "connect a LINE OA" box; the OA master page has its own form for adding an OA, so it turns this one off. */
+  readonly showConnect = input(true);
+
   /** Names of what was just sent (a browser id, or 'connect'): its button waits a few seconds, not for the browser itself. */
   protected readonly busy = signal<ReadonlySet<string>>(new Set());
 

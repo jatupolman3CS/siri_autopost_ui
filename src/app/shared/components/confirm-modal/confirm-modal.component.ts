@@ -8,6 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { problemMessage } from '../../../core/http/problem-details';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ModalComponent } from '../modal/modal.component';
 
@@ -78,8 +79,9 @@ export class ConfirmModalComponent {
     try {
       await this.action()();
       this.closed.emit();
-    } catch {
-      this.err.set(this.t().api.itemActionFailed);
+    } catch (e) {
+      // The API's own reason ("a link set uses it") says what to do; the general text only when there is none.
+      this.err.set(problemMessage(e) ?? this.t().api.itemActionFailed);
     } finally {
       this.busy.set(false);
     }

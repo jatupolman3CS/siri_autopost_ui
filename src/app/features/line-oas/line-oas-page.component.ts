@@ -97,7 +97,7 @@ function whenText(d: Date, li: number, now: Date): string {
           </div>
         </section>
 
-        <app-line-status />
+        <app-line-status [showConnect]="false" />
 
         @if (!store.loaded()) {
           <p class="muted fs14" role="status">
