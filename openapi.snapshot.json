@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5100/"
+      "url": "http://localhost:5199/"
     }
   ],
   "paths": {
@@ -9136,6 +9136,14 @@
           "maxPerDay": {
             "type": "integer",
             "format": "int32"
+          },
+          "lineRepeat": {
+            "$ref": "#/components/schemas/LineRepeat"
+          },
+          "lineRepeatDays": {
+            "type": "integer",
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -11096,6 +11104,14 @@
             "default": false
           }
         }
+      },
+      "LineRepeat": {
+        "enum": [
+          "always",
+          "once",
+          "every_days"
+        ],
+        "default": "always"
       },
       "LineSettingsDto": {
         "required": [

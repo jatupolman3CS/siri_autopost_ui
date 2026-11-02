@@ -355,6 +355,43 @@
               <p class="small muted none">{{ maxHint() }}</p>
             </div>
           </div>
+
+          <div class="sub" data-test="line-repeat">
+            <div class="block-head">
+              <span class="fw5"
+                ><i class="ph ph-chat-circle-dots"></i> {{ t().api.flow.plLineTitle }}</span
+              >
+            </div>
+            <p class="small muted none">{{ t().api.flow.plLineHint }}</p>
+            <div class="chips" role="radiogroup" [attr.aria-label]="t().api.flow.plLineTitle">
+              @for (c of lineChoices(); track c.value) {
+                <button
+                  type="button"
+                  class="pick"
+                  role="radio"
+                  [class.on]="c.on"
+                  [disabled]="!perm.canEdit()"
+                  [attr.aria-checked]="c.on"
+                  [attr.data-mode]="c.value"
+                  (click)="setLineRepeat(c.value)"
+                >
+                  {{ c.label }}
+                </button>
+              }
+            </div>
+            @if (lineRepeat() === 'every_days') {
+              <div class="max">
+                <app-input-field
+                  type="number"
+                  [label]="t().api.flow.plLineDays"
+                  [disabled]="!perm.canEdit()"
+                  [error]="errLineDays()"
+                  [(value)]="lineDays"
+                />
+              </div>
+            }
+            <p class="small muted none">{{ lineHint() }}</p>
+          </div>
         </div>
       }
     </section>

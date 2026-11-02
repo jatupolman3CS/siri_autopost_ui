@@ -33,6 +33,8 @@ export const POST_SETTINGS: ApiPostSettings = {
   timeFrom: null,
   timeTo: null,
   maxPerDay: 0,
+  lineRepeat: 'always',
+  lineRepeatDays: 0,
 };
 
 export function apiPostSettings(over: Partial<ApiPostSettings> = {}): ApiPostSettings {

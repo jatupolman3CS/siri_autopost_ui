@@ -109,6 +109,14 @@ export class MasterPostCardComponent {
   );
   protected readonly ownMessage = computed(() => hasOwnMessage(this.post().settings));
   protected readonly ownSchedule = computed(() => hasOwnSchedule(this.post().settings));
+  /** The post's LINE "send again" rule when it is not the default. */
+  protected readonly lineChip = computed(() => {
+    const s = this.post().settings;
+    const f = this.t().api.flow;
+    if (s.lineRepeat === 'once') return f.plLineChipOnce;
+    if (s.lineRepeat === 'every_days') return fmt(f.plLineChipEvery, { n: s.lineRepeatDays });
+    return null;
+  });
   /** The numbers and times of what became of the post, ready to show. */
   protected readonly stats = computed(() => {
     const a = this.t().api.flow;

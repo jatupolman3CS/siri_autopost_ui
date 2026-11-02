@@ -56,7 +56,13 @@ const BLANK_SETTINGS: ApiPostSettings = {
   timeFrom: null,
   timeTo: null,
   maxPerDay: 0,
+  lineRepeat: 'always',
+  lineRepeatDays: 0,
 };
+
+/** The post's own LINE "send again" rule, in the order the switch shows them. */
+export type LineRepeatMode = 'always' | 'once' | 'every_days';
+const LINE_REPEATS: LineRepeatMode[] = ['always', 'once', 'every_days'];
 
 const hasOwnSettings = (s: ApiPostSettings | undefined): boolean =>
   !!s &&
@@ -68,7 +74,8 @@ const hasOwnSettings = (s: ApiPostSettings | undefined): boolean =>
     (s.weekdays?.length ?? 0) > 0 ||
     !!s.timeFrom ||
     !!s.timeTo ||
-    s.maxPerDay > 0);
+    s.maxPerDay > 0 ||
+    (s.lineRepeat ?? 'always') !== 'always');
 
 // THE editor of a library post: a new one and an existing one are the same screen. The text with the insert
 // toolbar right above it ({{code}}, Spintax, saved snippets, AI) writes at the caret; under it a status line
@@ -136,6 +143,8 @@ export class PostEditorComponent {
   protected readonly timeFrom = signal('');
   protected readonly timeTo = signal('');
   protected readonly maxPerDay = signal('0');
+  protected readonly lineRepeat = signal<LineRepeatMode>('always');
+  protected readonly lineDays = signal('1');
   protected readonly activeNew = signal(true);
 
   protected readonly busy = signal(false);
@@ -145,6 +154,7 @@ export class PostEditorComponent {
   protected readonly errDates = signal('');
   protected readonly errTime = signal('');
   protected readonly errMax = signal('');
+  protected readonly errLineDays = signal('');
   protected readonly errForm = signal('');
   protected readonly pickerOpen = signal(false);
   protected readonly moreOpen = signal(false);
@@ -201,6 +211,23 @@ export class PostEditorComponent {
   protected readonly maxHint = computed(() =>
     fmt(this.t().api.flow.plMaxPerDayHint, { n: INPUT_LIMITS.postMaxPerDay }),
   );
+  /** The LINE "send again" switch: one button per rule, and the sentence under it for the chosen one. */
+  protected readonly lineChoices = computed(() => {
+    const f = this.t().api.flow;
+    const labels = { always: f.plLineAlways, once: f.plLineOnce, every_days: f.plLineEvery };
+    return LINE_REPEATS.map((value) => ({
+      value,
+      label: labels[value],
+      on: this.lineRepeat() === value,
+    }));
+  });
+  protected readonly lineHint = computed(() => {
+    const f = this.t().api.flow;
+    const mode = this.lineRepeat();
+    if (mode === 'once') return f.plLineOnceHint;
+    if (mode === 'every_days') return fmt(f.plLineEveryHint, { n: Number(this.lineDays()) || 1 });
+    return f.plLineAlwaysHint;
+  });
   /** Files attached to the post, with what the library knows about them. */
   protected readonly attached = computed(() => {
     const files = this.library.media();
@@ -287,11 +314,14 @@ export class PostEditorComponent {
     this.timeFrom.set(s?.timeFrom ?? '');
     this.timeTo.set(s?.timeTo ?? '');
     this.maxPerDay.set(String(s?.maxPerDay ?? 0));
+    this.lineRepeat.set(s?.lineRepeat ?? 'always');
+    this.lineDays.set(String(s?.lineRepeatDays || 1));
     this.activeNew.set(true);
     this.errText.set('');
     this.errDates.set('');
     this.errTime.set('');
     this.errMax.set('');
+    this.errLineDays.set('');
     this.errForm.set('');
     this.pickerOpen.set(false);
     // The own settings are tucked away unless the post has some (or the person turned simple mode off).
@@ -496,7 +526,14 @@ export class PostEditorComponent {
       timeFrom: time ? this.timeFrom() : null,
       timeTo: time ? this.timeTo() : null,
       maxPerDay: Number(this.maxPerDay()) || 0,
+      lineRepeat: this.lineRepeat(),
+      lineRepeatDays: this.lineRepeat() === 'every_days' ? Number(this.lineDays()) || 0 : 0,
     };
+  }
+
+  protected setLineRepeat(mode: LineRepeatMode): void {
+    this.lineRepeat.set(mode);
+    this.errLineDays.set('');
   }
 
   /** The chosen collections that still exist (one deleted since the draft was started is left out). */
@@ -521,9 +558,17 @@ export class PostEditorComponent {
     const n = Number(max);
     const badMax = max === '' || !Number.isInteger(n) || n < 0 || n > INPUT_LIMITS.postMaxPerDay;
     this.errMax.set(badMax ? fmt(a.plErrMax, { n: INPUT_LIMITS.postMaxPerDay }) : '');
-    const ok = !(this.errText() || this.errDates() || this.errTime() || this.errMax());
+    const days = Number(this.lineDays().trim());
+    const badDays =
+      this.lineRepeat() === 'every_days' &&
+      (!Number.isInteger(days) || days < 1 || days > INPUT_LIMITS.postLineRepeatDays);
+    this.errLineDays.set(
+      badDays ? fmt(a.plErrLineDays, { n: INPUT_LIMITS.postLineRepeatDays }) : '',
+    );
+    const folded = this.errDates() || this.errTime() || this.errMax() || this.errLineDays();
+    const ok = !(this.errText() || folded);
     // A problem inside the folded "more options" must be seen: open them.
-    if (this.errDates() || this.errTime() || this.errMax()) this.moreOpen.set(true);
+    if (folded) this.moreOpen.set(true);
     return ok;
   }
 

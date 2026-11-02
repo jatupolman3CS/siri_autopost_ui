@@ -7177,6 +7177,12 @@ export interface components {
       timeTo: null | string;
       /** Format: int32 */
       maxPerDay: number;
+      lineRepeat?: components['schemas']['LineRepeat'];
+      /**
+       * Format: int32
+       * @default 0
+       */
+      lineRepeatDays: number;
     };
     CollectionSettingsDto: {
       hashtags: string;
@@ -7710,6 +7716,11 @@ export interface components {
       /** @default false */
       imagesFirst: boolean;
     };
+    /**
+     * @default always
+     * @enum {unknown}
+     */
+    LineRepeat: 'always' | 'once' | 'every_days';
     LineSettingsDto: {
       on: boolean;
       token: null | string;

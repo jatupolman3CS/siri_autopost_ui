@@ -35,6 +35,11 @@
         @if (ownSchedule()) {
           <span class="chip"><i class="ph ph-clock"></i>{{ t().api.flow.plOwnSched }}</span>
         }
+        @if (lineChip(); as chip) {
+          <span class="chip" data-test="line-chip"
+            ><i class="ph ph-chat-circle-dots"></i>{{ chip }}</span
+          >
+        }
         @if (showStatus()) {
           <span class="status"
             ><span class="dot" [style.background]="dot()"></span>{{ statusLabel() }}</span

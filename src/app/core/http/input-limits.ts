@@ -8,6 +8,8 @@ export const INPUT_LIMITS = {
   /** The collections one post may sit in, and its own per-day cap (CollectionPostSettings) */
   postCollections: 50,
   postMaxPerDay: 50,
+  /** Days between two sends of one post to one LINE chat (`CollectionPostSettings.MaxLineRepeatDays`). */
+  postLineRepeatDays: 365,
   /** Snippet.MaxTitleLength / MaxTextLength */
   snippetTitle: 120,
   snippetText: 2000,

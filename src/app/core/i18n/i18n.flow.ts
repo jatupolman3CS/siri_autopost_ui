@@ -494,6 +494,31 @@ export const AP_I18N_FLOW = {
   ],
   plErrDates: ['วันเริ่มต้องไม่เกินวันสิ้นสุด', 'The first date must not be after the last'],
   plErrMax: ['ใส่จำนวนเต็มตั้งแต่ 0 ถึง {n}', 'Enter a whole number from 0 to {n}'],
+  // The post's own LINE "send again" rule (2026-11-02).
+  plLineTitle: ['ส่งซ้ำทางแชท LINE', 'Sending again in LINE chats'],
+  plLineHint: [
+    'ใช้กับชุดแชท LINE เท่านั้น นับต่อลูกค้าหนึ่งคน ทุกตารางและการทดสอบรวมกัน (Facebook ไม่ใช้ค่านี้)',
+    'LINE chat sets only, counted per customer over every schedule and test (Facebook ignores it)',
+  ],
+  plLineAlways: ['ส่งซ้ำได้', 'May repeat'],
+  plLineOnce: ['ส่งครั้งเดียว', 'Once only'],
+  plLineEvery: ['เว้นเป็นรอบวัน', 'Every N days'],
+  plLineAlwaysHint: [
+    'ตารางส่งข้อความนี้ให้ลูกค้าเดิมได้อีกตามรอบของตาราง',
+    'Schedules may send it to the same customer again on their own rounds',
+  ],
+  plLineOnceHint: [
+    'ลูกค้าที่เคยได้รับข้อความนี้แล้ว (หรือมีคิวรออยู่) จะไม่ได้รับซ้ำอีก',
+    'A customer who already got it (or has it queued) never gets it again',
+  ],
+  plLineEveryHint: [
+    'ลูกค้าคนเดิมได้รับซ้ำได้เมื่อครบ {n} วัน (1 = วันละครั้ง, 7 = สัปดาห์ละครั้ง)',
+    'The same customer may get it again after {n} days (1 = once a day, 7 = once a week)',
+  ],
+  plLineDays: ['ทุกกี่วัน', 'Every how many days'],
+  plErrLineDays: ['ใส่จำนวนวันตั้งแต่ 1 ถึง {n}', 'Enter a number of days from 1 to {n}'],
+  plLineChipOnce: ['LINE: ส่งครั้งเดียว', 'LINE: once only'],
+  plLineChipEvery: ['LINE: ทุก {n} วัน', 'LINE: every {n} days'],
   plActiveNew: ['เปิดใช้งานทันที', 'Switch it on right away'],
   plApprovalResets: [
     'ถ้าโพสต์นี้อนุมัติแล้ว และมีชุดโพสต์ที่ต้องอนุมัติ การแก้ข้อความหรือสื่อจะทำให้โพสต์กลับเป็นฉบับร่าง',

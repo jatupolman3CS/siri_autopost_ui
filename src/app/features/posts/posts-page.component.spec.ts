@@ -1102,6 +1102,8 @@ describe('PostsPageComponent', () => {
           timeFrom: '09:00',
           timeTo: '17:30',
           maxPerDay: 5,
+          lineRepeat: 'always',
+          lineRepeatDays: 0,
         },
       });
       req.flush({ ...p1, text: 'ขายคอนโดใหม่', collectionIds: ['a', 'b'] });
@@ -1130,6 +1132,8 @@ describe('PostsPageComponent', () => {
         timeFrom: null,
         timeTo: null,
         maxPerDay: 0,
+        lineRepeat: 'always',
+        lineRepeatDays: 0,
       });
       req.flush(p1);
       await answerLists();
@@ -1246,6 +1250,46 @@ describe('PostsPageComponent', () => {
       await submit();
       const req = http.expectOne({ method: 'PUT', url: `${MASTER}/p1` });
       expect(req.request.body.settings.maxPerDay).toBe(INPUT_LIMITS.postMaxPerDay);
+      req.flush(p1);
+      await answerLists();
+    });
+
+    it('sends the LINE "send once" switch', async () => {
+      const once = editor().querySelector<HTMLButtonElement>(
+        '[data-test="line-repeat"] [data-mode="once"]',
+      )!;
+      once.click();
+      await rerender();
+      expect(once.getAttribute('aria-checked')).toBe('true');
+      await submit();
+      const req = http.expectOne({ method: 'PUT', url: `${MASTER}/p1` });
+      expect(req.request.body.settings.lineRepeat).toBe('once');
+      expect(req.request.body.settings.lineRepeatDays).toBe(0);
+      req.flush(p1);
+      await answerLists();
+    });
+
+    it('sends "every N days" with its days and refuses a number out of range', async () => {
+      editor()
+        .querySelector<HTMLButtonElement>('[data-test="line-repeat"] [data-mode="every_days"]')!
+        .click();
+      await rerender();
+      const days = editor().querySelector<HTMLInputElement>(
+        '[data-test="line-repeat"] input[type="number"]',
+      )!;
+      await setValue(days, '0');
+      await submit();
+      http.expectNone(`${MASTER}/p1`);
+      expect(err()).toContain(
+        t().api.flow.plErrLineDays.replace('{n}', String(INPUT_LIMITS.postLineRepeatDays)),
+      );
+      await setValue(days, '7');
+      await submit();
+      const req = http.expectOne({ method: 'PUT', url: `${MASTER}/p1` });
+      expect(req.request.body.settings).toMatchObject({
+        lineRepeat: 'every_days',
+        lineRepeatDays: 7,
+      });
       req.flush(p1);
       await answerLists();
     });
