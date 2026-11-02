@@ -1,11 +1,11 @@
 // Domain types for the AutoPost dashboard. Bilingual values are [th, en] pairs.
 export type L10n = readonly [string, string];
 
-/** The platform keys of the design's seed data: only Facebook (the other social platforms are a later phase). */
+/** The Facebook platform key (the other social platforms are a later phase). */
 export type PlatformKey = 'fb';
 /**
  * What a post, an account or a link set can be for: Facebook groups and pages, or a LINE Official Account's customer
- * chats. `PlatformKey` stays 'fb' because the generated seed types are built on it; everything that comes from the API
+ * chats. `PlatformKey` stays 'fb'; everything that comes from the API
  * (posts, accounts, link set channels) uses this one.
  */
 export type PostPlatform = PlatformKey | 'line';
@@ -20,7 +20,6 @@ export type CustomerStatus = 'active' | 'trial' | 'pastdue' | 'suspended' | 'ban
 export type TxType = 'charge' | 'refund' | 'failed';
 export type DiscountKey = 'd10' | 'd20' | 'd30' | 'dFree';
 export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
-export type AgoKey = 'now' | 'h2' | 'yesterday' | 'd3' | 'd12';
 
 export interface Platform {
   name: string;
@@ -82,18 +81,6 @@ export function accountKind(a: Pick<SocialAccount, 'connected'>): AccountKind {
   return a.connected ? 'connected' : 'unbound';
 }
 
-/** Sample Facebook account in the design data (landing preview). */
-export interface SeedAccount {
-  id: string;
-  /** The sample device (SeedData.devices) the account posts through. */
-  deviceId: string;
-  platform: PlatformKey;
-  name: string;
-  handle: L10n;
-  health: Health;
-  hasGroups?: boolean;
-}
-
 export interface Target {
   a: string;
   p: PlatformKey;
@@ -125,21 +112,6 @@ export interface Snippet {
   used: number;
   /** Off = kept in the library but not offered for new posts; absent = on. */
   active?: boolean;
-}
-
-export interface SeedMedia {
-  id: string;
-  label: L10n;
-  meta: string;
-  kind: 'image' | 'video';
-  used: number;
-}
-
-export interface SeedSnippet {
-  id: string;
-  title: L10n;
-  text: L10n;
-  used: number;
 }
 
 export interface Member {
@@ -194,9 +166,6 @@ export interface PlanLimits extends Record<LimitKey, number | null> {
   features: PlanFeature[];
 }
 
-/** The design handoff's sample plan (it knew four numbers and no functions): only the seed types use it. */
-export type SeedPlanLimits = Pick<PlanLimits, 'accounts' | 'posts' | 'devices' | 'seats' | 'price'>;
-
 export interface CustomerDevice {
   id: string;
   n: string;
@@ -204,13 +173,6 @@ export interface CustomerDevice {
   /** Last call from the extension. */
   seen: Date | null;
   online: boolean;
-  i: string;
-}
-
-export interface SeedCustomerDevice {
-  n: string;
-  b: string;
-  s: AgoKey;
   i: string;
 }
 
@@ -266,11 +228,6 @@ export interface Customer {
   cancelAtPeriodEnd?: boolean;
 }
 
-export interface SeedCustomer extends Omit<Customer, 'lastActive' | 'devices'> {
-  active: AgoKey;
-  devices: SeedCustomerDevice[];
-}
-
 export interface Transaction {
   id: string;
   /** [year, month0, day] on the Bangkok calendar */
@@ -298,157 +255,7 @@ export interface Promo {
   active: boolean;
 }
 
-export interface SeedFailure {
-  id: string;
-  /** [year, month0, day, hour, minute] */
-  dt: number[];
-  accountId: string;
-  platform: PlatformKey;
-  target: L10n;
-  cidx: number;
-  code: ErrorCode;
-}
-
-export interface SeedCollection {
-  id: string;
-  name: L10n;
-  /** Phosphor icon class. */
-  icon: string;
-}
-
-/** One Facebook group of a link set. */
-export interface SeedLink {
-  /** https://www.facebook.com/groups/<slug> */
-  url: string;
-  name: string;
-  /** Written before the post text in this group ("" = none). */
-  code: string;
-  enabled: boolean;
-  /** Most posts a day to this group (0 = no limit). */
-  dailyMax: number;
-}
-
-export interface SeedTargetSet {
-  id: string;
-  name: L10n;
-  links: SeedLink[];
-}
-
 export type ScheduleMode = 'daily' | 'weekdays' | 'weekend' | 'interval' | 'drip' | 'once';
-
-export interface SeedSchedule {
-  id: string;
-  name: L10n;
-  /** Collection id. */
-  col: string;
-  /** Link set id. */
-  set: string;
-  mode: ScheduleMode;
-  /** HH:MM */
-  times: string[];
-  /** Interval mode: a round every N hours from `first`. */
-  every: number;
-  /** HH:MM of the first round. */
-  first: string;
-  /** YYYY-MM-DD */
-  start: string;
-  order: 'shuffle' | 'rotate';
-  /** Group URL -> own HH:MM times (a group missing here follows the schedule). */
-  overrides: Record<string, string[]>;
-  active: boolean;
-  // Set only by the schedule builder (no sample schedule uses these modes or options).
-  /** Drip mode: the window and the number of posts per group per day. */
-  dripFrom?: string;
-  dripTo?: string;
-  dripN?: number;
-  /** Once mode: HH:MM of the single post (its date is `start`). */
-  onceTime?: string;
-  /** Bump after N hours (applied: the extension comments on the post again) and delete after N days (0 = off; saved only). */
-  bump?: number;
-  del?: number;
-}
-
-export interface SeedPost {
-  id: string;
-  /** Collection id. */
-  col: string;
-  /** Media ids of the library. */
-  media: string[];
-  text: L10n;
-}
-
-export interface SeedArRule {
-  id: string;
-  /** Comma separated keywords. */
-  keywords: string;
-  reply: string;
-  inbox: string;
-  /** 'all', or the id of the one collection the rule applies to. */
-  scope: string;
-  on: boolean;
-}
-
-export interface SeedArFeedItem {
-  who: string;
-  text: string;
-  group: string;
-  /** HH:MM */
-  time: string;
-  /** The rule that matched, null = none. */
-  rule: string | null;
-}
-
-export interface SeedData {
-  user: { name: L10n; email: string; initials: string };
-  workspaces: Omit<
-    Workspace,
-    | 'role'
-    | 'limits'
-    | 'advancedAntiBan'
-    | 'notifications'
-    | 'autoReply'
-    | 'clientReports'
-    | 'ai'
-    | 'bump'
-    | 'lineChat'
-  >[];
-  platforms: Record<PlatformKey, Platform>;
-  groups: string[];
-  /** Post collections ("ชุดโพสต์") of the three-step flow: collections, link sets, schedules. */
-  collections: SeedCollection[];
-  /** Link sets ("ชุดลิงก์"): Facebook group links with a group code each. */
-  targetSets: SeedTargetSet[];
-  schedules: SeedSchedule[];
-  accounts: SeedAccount[];
-  targets: Target[];
-  /** Library posts: each belongs to one collection and may carry media of the library. */
-  posts: SeedPost[];
-  failed: SeedFailure[];
-  media: SeedMedia[];
-  snippets: SeedSnippet[];
-  limits: Record<PlatformKey, number>;
-  usedToday: Record<PlatformKey, number>;
-  /** Auto-reply rules and the comment feed of the engage page. */
-  arRules: SeedArRule[];
-  arFeed: SeedArFeedItem[];
-  members: Member[];
-  devices: Device[];
-  planLimits: Record<PlanKey, SeedPlanLimits>;
-  invoices: number[][];
-  customers: SeedCustomer[];
-  subs: Record<'basic' | 'pro' | 'agency', number>;
-  transactions: Transaction[];
-  /** [year, month0, amount] */
-  revenue: number[][];
-  promos: Omit<Promo, 'expiresAt'>[];
-  health: { label: L10n; value: string; status: 'ok' | 'warn' }[];
-  thMonths: string[];
-  thMonthsFull: string[];
-  enMonths: string[];
-  enMonthsFull: string[];
-  thDays: string[];
-  enDays: string[];
-}
 
 /** One scheduled or finished posting task (a queue item or an error report). */
 export interface PostItem {

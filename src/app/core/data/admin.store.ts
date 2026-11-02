@@ -96,7 +96,7 @@ const toPromo = (p: ApiPromo): Promo => ({
   active: p.active,
 });
 
-/** Until /api/plans answers (the app initializer waits for it, so pages never render with these). */
+/** The API's packages laid over the defaults (DESIGN_PLANS) for anything the API does not send. */
 function toPlans(list: ApiPlanSetting[]): Record<PlanKey, PlanLimits> {
   const out = structuredClone(DESIGN_PLANS);
   for (const p of list)
@@ -129,7 +129,7 @@ export class AdminStore {
   readonly customers = signal<Customer[]>([]);
   readonly transactions = signal<Transaction[]>([]);
   readonly promos = signal<Promo[]>([]);
-  /** The design values until /api/plans answers. */
+  /** The packages' defaults (DESIGN_PLANS) until /api/plans answers. */
   readonly plans = signal<Record<PlanKey, PlanLimits>>(structuredClone(DESIGN_PLANS));
   readonly plansLoaded = signal(false);
   readonly subs = signal<Record<'basic' | 'pro' | 'agency', number>>({
@@ -188,7 +188,7 @@ export class AdminStore {
       this.plans.set(toPlans(await this.api.plans()));
       this.plansLoaded.set(true);
     } catch {
-      // The pages that show prices stay at 0 until the next load; the API enforces its own limits either way.
+      // The pages keep the packages' default numbers (DESIGN_PLANS) until the next load; the API enforces its own limits either way.
     }
   }
 

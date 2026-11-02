@@ -1,5 +1,4 @@
-// Month and weekday names (the design's values), kept out of the generated seed data so the
-// formatters do not pull the sample data into the first bundle.
+// Month and weekday names (the design's values), hand-maintained.
 export const TH_MONTHS = [
   'ม.ค.',
   'ก.พ.',

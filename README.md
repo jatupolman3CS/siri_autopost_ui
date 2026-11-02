@@ -80,4 +80,4 @@ src/styles/          # tokens (สี/ระยะ/เงา), CSS ของ des
 npm run import:design -- path/to/autopost-data.js
 ```
 
-สร้าง `src/app/core/i18n/i18n.data.ts` และ `src/app/core/data/seed.data.ts` ใหม่จากไฟล์ของ handoff (ไฟล์ที่สร้างอัตโนมัติ ห้ามแก้ด้วยมือ: ข้อความที่ต้องแก้ให้ใส่ใน `src/app/core/i18n/i18n.fixes.ts` ซึ่งการ import ใหม่ไม่ทับ)
+สร้าง `src/app/core/i18n/i18n.data.ts` ใหม่จากไฟล์ของ handoff (ข้อมูลตัวอย่างในไฟล์นั้นแอปไม่ใช้) (ไฟล์ที่สร้างอัตโนมัติ ห้ามแก้ด้วยมือ: ข้อความที่ต้องแก้ให้ใส่ใน `src/app/core/i18n/i18n.fixes.ts` ซึ่งการ import ใหม่ไม่ทับ)
